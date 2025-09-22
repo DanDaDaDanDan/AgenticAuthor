@@ -1,0 +1,455 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Historical Fiction Classification System",
+  "extends": "base-taxonomy",
+  "genre": "historical-fiction",
+  "description": "Fiction set in the past, recreating historical periods, events, and cultures",
+  "categories": {
+    "historical_period": {
+      "category_name": "Historical Period",
+      "selection_rule": "select_primary",
+      "description": "The main time period of the story",
+      "options": {
+        "ancient_world": {
+          "name": "Ancient World (Before 500 CE)",
+          "description": "Ancient civilizations",
+          "civilizations": ["Egypt", "Greece", "Rome", "Mesopotamia", "China", "Maya"],
+          "themes": ["empire building", "mythology meets history", "lost knowledge", "foundations"],
+          "challenges": "limited sources"
+        },
+        "medieval": {
+          "name": "Medieval (500-1500)",
+          "description": "Middle Ages",
+          "elements": ["knights", "castles", "feudalism", "crusades", "plague"],
+          "settings": ["courts", "monasteries", "villages", "battlefields"],
+          "atmosphere": "faith and superstition"
+        },
+        "renaissance": {
+          "name": "Renaissance (1400-1600)",
+          "description": "Cultural rebirth period",
+          "features": ["art patronage", "scientific discovery", "exploration", "city-states"],
+          "themes": ["humanism", "knowledge explosion", "political intrigue", "religious reform"],
+          "centers": ["Florence", "Venice", "Rome", "London"]
+        },
+        "age_of_exploration": {
+          "name": "Age of Exploration (1500-1700)",
+          "description": "Global expansion era",
+          "elements": ["voyages", "colonization", "trade routes", "cultural collision"],
+          "perspectives": ["explorers", "indigenous peoples", "traders", "missionaries"],
+          "impact": "world changing"
+        },
+        "enlightenment": {
+          "name": "Enlightenment (1650-1800)",
+          "description": "Age of reason",
+          "themes": ["scientific revolution", "political philosophy", "social reform", "revolution"],
+          "settings": ["salons", "coffeehouses", "universities", "colonies"],
+          "conflicts": "reason vs tradition"
+        },
+        "napoleonic": {
+          "name": "Napoleonic Era (1799-1815)",
+          "description": "Napoleonic Wars period",
+          "elements": ["military campaigns", "empire", "nationalism", "social upheaval"],
+          "scope": ["European wars", "social change", "rise and fall"],
+          "perspectives": "soldiers to society"
+        },
+        "regency": {
+          "name": "Regency (1811-1820)",
+          "description": "British Regency period",
+          "features": ["social season", "marriage mart", "fashion", "manners"],
+          "settings": ["London society", "country estates", "Bath", "seaside"],
+          "tone": "romance and propriety"
+        },
+        "victorian": {
+          "name": "Victorian Era (1837-1901)",
+          "description": "British Empire height",
+          "aspects": ["industrialization", "empire", "social reform", "scientific progress"],
+          "contrasts": ["wealth and poverty", "progress and tradition", "propriety and vice"],
+          "atmosphere": "fog and gaslight"
+        },
+        "american_civil_war": {
+          "name": "American Civil War (1861-1865)",
+          "description": "US Civil War period",
+          "perspectives": ["Union", "Confederate", "enslaved people", "civilians"],
+          "themes": ["division", "slavery", "brotherhood", "reconstruction"],
+          "scope": "nation defining"
+        },
+        "wild_west": {
+          "name": "Wild West (1865-1895)",
+          "description": "American frontier",
+          "elements": ["cowboys", "frontier towns", "Native Americans", "railroads"],
+          "themes": ["lawlessness", "manifest destiny", "survival", "mythology vs reality"],
+          "setting": "vast frontiers"
+        },
+        "gilded_age": {
+          "name": "Gilded Age (1870-1900)",
+          "description": "Industrial boom era",
+          "features": ["robber barons", "immigration", "urbanization", "labor struggles"],
+          "contrasts": ["opulence and squalor", "old money vs new", "progress cost"],
+          "cities": ["New York", "Chicago", "San Francisco"]
+        },
+        "edwardian": {
+          "name": "Edwardian (1901-1914)",
+          "description": "Pre-WWI elegance",
+          "characteristics": ["last golden age", "class system", "suffragettes", "titanic era"],
+          "themes": ["change brewing", "empire twilight", "social reform"],
+          "mood": "sunset of era"
+        },
+        "world_war_one": {
+          "name": "World War I (1914-1918)",
+          "description": "The Great War",
+          "experiences": ["trenches", "home front", "lost generation", "technology horror"],
+          "themes": ["innocence lost", "futility", "class breakdown", "modern warfare"],
+          "aftermath": "world transformed"
+        },
+        "roaring_twenties": {
+          "name": "Roaring Twenties (1920-1929)",
+          "description": "Jazz Age",
+          "elements": ["prohibition", "flappers", "jazz", "art deco", "stock market"],
+          "themes": ["liberation", "excess", "modernity", "hidden darkness"],
+          "energy": "frenetic celebration"
+        },
+        "great_depression": {
+          "name": "Great Depression (1929-1939)",
+          "description": "Economic collapse era",
+          "struggles": ["poverty", "dust bowl", "migration", "survival"],
+          "themes": ["resilience", "community", "loss", "hope"],
+          "scope": "widespread suffering"
+        },
+        "world_war_two": {
+          "name": "World War II (1939-1945)",
+          "description": "Global conflict",
+          "fronts": ["European theater", "Pacific theater", "home front", "Holocaust"],
+          "perspectives": ["soldiers", "resistance", "civilians", "refugees"],
+          "themes": ["good vs evil", "sacrifice", "survival", "moral choices"]
+        },
+        "cold_war": {
+          "name": "Cold War (1945-1991)",
+          "description": "Ideological conflict era",
+          "elements": ["espionage", "nuclear threat", "proxy wars", "space race"],
+          "themes": ["paranoia", "divided world", "mutually assured destruction"],
+          "atmosphere": "tension and suspicion"
+        },
+        "modern_historical": {
+          "name": "Recent History (1960-2000)",
+          "description": "Late 20th century",
+          "events": ["civil rights", "Vietnam", "counterculture", "technology rise"],
+          "themes": ["social change", "generation gap", "globalization"],
+          "perspective": "living memory"
+        }
+      }
+    },
+    "historical_accuracy": {
+      "category_name": "Historical Accuracy Level",
+      "selection_rule": "select_one",
+      "description": "Fidelity to historical facts",
+      "options": {
+        "strict_accuracy": {
+          "name": "Strictly Accurate",
+          "description": "Meticulous historical fidelity",
+          "approach": ["extensive research", "period language", "accurate details", "real events"],
+          "challenge": "balancing fact and fiction"
+        },
+        "mostly_accurate": {
+          "name": "Mostly Accurate",
+          "description": "Generally faithful with some liberties",
+          "approach": ["major events accurate", "some timeline compression", "representative characters"],
+          "balance": "story and history"
+        },
+        "inspired_by": {
+          "name": "Inspired By History",
+          "description": "Historical flavor with creative freedom",
+          "liberties": ["composite characters", "invented events", "atmosphere over accuracy"],
+          "priority": "story first"
+        },
+        "alternate_history": {
+          "name": "Alternate History",
+          "description": "What if scenarios",
+          "divergence": ["different outcome", "key figure survives/dies", "technology appears early"],
+          "exploration": "consequences of change"
+        },
+        "historical_fantasy": {
+          "name": "Historical Fantasy",
+          "description": "History with magical elements",
+          "blend": ["real events", "magical causes", "mythical beings", "supernatural"],
+          "appeal": "familiar yet magical"
+        }
+      }
+    },
+    "protagonist_role": {
+      "category_name": "Protagonist Role",
+      "selection_rule": "select_one",
+      "description": "The main character's position in history",
+      "options": {
+        "historical_figure": {
+          "name": "Historical Figure",
+          "description": "Real person from history",
+          "challenges": ["known facts", "filling gaps", "humanizing legends", "avoiding libel"],
+          "opportunity": "new perspective"
+        },
+        "fictional_witness": {
+          "name": "Fictional Witness",
+          "description": "Invented character in real events",
+          "advantages": ["creative freedom", "everyperson perspective", "fills historical gaps"],
+          "role": "eyes of reader"
+        },
+        "ordinary_person": {
+          "name": "Ordinary Person",
+          "description": "Common folk perspective",
+          "viewpoints": ["farmer", "merchant", "servant", "soldier", "housewife"],
+          "value": "ground-level history"
+        },
+        "marginal_voice": {
+          "name": "Marginalized Voice",
+          "description": "Underrepresented perspectives",
+          "voices": ["enslaved people", "women", "minorities", "colonized peoples"],
+          "importance": "untold stories"
+        },
+        "noble_royal": {
+          "name": "Noble/Royal",
+          "description": "Aristocratic perspective",
+          "elements": ["court intrigue", "political marriage", "succession", "privilege"],
+          "access": "power centers"
+        },
+        "adventurer_explorer": {
+          "name": "Adventurer/Explorer",
+          "description": "Discovery and adventure",
+          "types": ["explorer", "merchant", "spy", "diplomat"],
+          "scope": "wide-ranging"
+        },
+        "artist_intellectual": {
+          "name": "Artist/Intellectual",
+          "description": "Cultural figure perspective",
+          "roles": ["writer", "painter", "scientist", "philosopher"],
+          "themes": "ideas and creation"
+        }
+      }
+    },
+    "historical_focus": {
+      "category_name": "Historical Focus",
+      "selection_rule": "select_primary",
+      "description": "The main historical element explored",
+      "options": {
+        "major_event": {
+          "name": "Major Historical Event",
+          "description": "Centered on specific event",
+          "examples": ["battles", "disasters", "revolutions", "discoveries"],
+          "approach": "event as crucible"
+        },
+        "daily_life": {
+          "name": "Daily Life/Social History",
+          "description": "Everyday existence in period",
+          "elements": ["customs", "food", "work", "entertainment", "family life"],
+          "value": "lived experience"
+        },
+        "political_intrigue": {
+          "name": "Political Intrigue",
+          "description": "Power and politics",
+          "elements": ["succession", "conspiracy", "diplomacy", "revolution"],
+          "stakes": "kingdoms and nations"
+        },
+        "cultural_movement": {
+          "name": "Cultural Movement",
+          "description": "Artistic/intellectual periods",
+          "movements": ["Renaissance art", "Enlightenment thought", "Romantic poetry"],
+          "focus": "ideas changing world"
+        },
+        "social_change": {
+          "name": "Social Change",
+          "description": "Societal transformation",
+          "examples": ["abolition", "suffrage", "labor movement", "civil rights"],
+          "perspective": "progress struggle"
+        },
+        "war_conflict": {
+          "name": "War and Conflict",
+          "description": "Military history",
+          "aspects": ["battles", "home front", "occupation", "resistance"],
+          "themes": "courage and cost"
+        },
+        "exploration_discovery": {
+          "name": "Exploration/Discovery",
+          "description": "New frontiers",
+          "types": ["geographic exploration", "scientific discovery", "archaeological finds"],
+          "spirit": "human curiosity"
+        },
+        "economic_history": {
+          "name": "Economic/Trade History",
+          "description": "Commerce and economy",
+          "elements": ["trade routes", "industrial revolution", "economic crisis"],
+          "perspective": "money moves history"
+        }
+      }
+    },
+    "cultural_setting": {
+      "category_name": "Cultural/Geographic Setting",
+      "selection_rule": "select_one_or_two",
+      "description": "The cultural and geographic location",
+      "options": {
+        "european": {
+          "name": "European",
+          "description": "European settings",
+          "regions": ["British Isles", "France", "Italy", "Germany", "Spain", "Russia"],
+          "variety": "diverse cultures"
+        },
+        "american": {
+          "name": "American",
+          "description": "Americas settings",
+          "regions": ["Colonial America", "United States", "Latin America", "Caribbean"],
+          "themes": "new world"
+        },
+        "asian": {
+          "name": "Asian",
+          "description": "Asian settings",
+          "cultures": ["China", "Japan", "India", "Southeast Asia", "Middle East"],
+          "richness": "ancient civilizations"
+        },
+        "african": {
+          "name": "African",
+          "description": "African settings",
+          "regions": ["Ancient Egypt", "West Africa", "East Africa", "North Africa"],
+          "perspective": "often untold"
+        },
+        "middle_eastern": {
+          "name": "Middle Eastern",
+          "description": "Middle East settings",
+          "eras": ["Ancient Persia", "Islamic Golden Age", "Ottoman Empire", "Modern conflicts"],
+          "crossroads": "civilization cradle"
+        },
+        "oceanic": {
+          "name": "Oceanic/Pacific",
+          "description": "Pacific region settings",
+          "locations": ["Australia", "New Zealand", "Polynesia", "Maritime Southeast Asia"],
+          "themes": "isolation and connection"
+        },
+        "multicultural": {
+          "name": "Multicultural/Crossroads",
+          "description": "Cultural meeting points",
+          "examples": ["Silk Road", "Constantinople", "Colonial ports", "Trade centers"],
+          "dynamics": "cultural exchange"
+        }
+      }
+    },
+    "research_depth": {
+      "category_name": "Research Depth Shown",
+      "selection_rule": "select_one",
+      "description": "Level of historical detail included",
+      "options": {
+        "light_touch": {
+          "name": "Light Touch",
+          "description": "Minimal period detail",
+          "approach": ["broad strokes", "familiar elements", "accessible"],
+          "focus": "story over setting"
+        },
+        "authentic_atmosphere": {
+          "name": "Authentic Atmosphere",
+          "description": "Period feel without overwhelming detail",
+          "balance": ["key details", "period language hints", "cultural markers"],
+          "goal": "immersion without lectures"
+        },
+        "rich_detail": {
+          "name": "Rich Historical Detail",
+          "description": "Extensive period information",
+          "includes": ["clothing", "food", "customs", "language", "politics"],
+          "risk": "info-dumping"
+        },
+        "educational": {
+          "name": "Educational Focus",
+          "description": "Teaching through fiction",
+          "elements": ["historical notes", "real figures", "accurate events", "context"],
+          "purpose": "learning entertainment"
+        }
+      }
+    },
+    "themes": {
+      "category_name": "Historical Themes",
+      "selection_rule": "select_up_to_three",
+      "description": "Major themes explored",
+      "options": {
+        "power_corruption": {
+          "name": "Power and Corruption",
+          "description": "How power corrupts",
+          "explorations": ["rise and fall", "absolute power", "revolution", "tyranny"],
+          "timeless": "human nature"
+        },
+        "love_duty": {
+          "name": "Love vs Duty",
+          "description": "Personal desire vs obligation",
+          "conflicts": ["arranged marriage", "class boundaries", "family honor", "patriotic duty"],
+          "tension": "heart vs responsibility"
+        },
+        "progress_tradition": {
+          "name": "Progress vs Tradition",
+          "description": "Change versus continuity",
+          "manifestations": ["modernization", "cultural preservation", "generational conflict"],
+          "question": "price of progress"
+        },
+        "survival": {
+          "name": "Survival",
+          "description": "Enduring hardship",
+          "contexts": ["war", "famine", "persecution", "disaster"],
+          "focus": "human resilience"
+        },
+        "identity": {
+          "name": "Identity and Belonging",
+          "description": "Finding place in history",
+          "aspects": ["cultural identity", "assimilation", "exile", "divided loyalties"],
+          "struggle": "who am I?"
+        },
+        "justice": {
+          "name": "Justice and Injustice",
+          "description": "Right and wrong in context",
+          "issues": ["slavery", "oppression", "resistance", "moral evolution"],
+          "perspective": "historical lens"
+        },
+        "faith": {
+          "name": "Faith and Belief",
+          "description": "Religion's historical role",
+          "aspects": ["religious conflict", "faith under pressure", "conversion", "heresy"],
+          "influence": "driving force"
+        },
+        "memory": {
+          "name": "Memory and Legacy",
+          "description": "How history is remembered",
+          "questions": ["whose story", "truth vs myth", "generational trauma", "monuments"],
+          "meta": "history about history"
+        }
+      }
+    },
+    "narrative_approach": {
+      "category_name": "Narrative Approach",
+      "selection_rule": "select_one",
+      "description": "How the historical story is told",
+      "options": {
+        "linear_chronicle": {
+          "name": "Linear Chronicle",
+          "description": "Chronological progression",
+          "structure": ["clear timeline", "cause and effect", "historical sequence"],
+          "clarity": "easy to follow"
+        },
+        "frame_narrative": {
+          "name": "Frame Narrative",
+          "description": "Story within story",
+          "devices": ["modern discovery", "memoir", "investigation", "archaeological find"],
+          "advantage": "dual perspective"
+        },
+        "multiple_timelines": {
+          "name": "Multiple Timelines",
+          "description": "Parallel time periods",
+          "connection": ["ancestry", "reincarnation", "historical parallels", "mystery solving"],
+          "complexity": "time weaving"
+        },
+        "epistolary_historical": {
+          "name": "Epistolary/Documents",
+          "description": "Told through period documents",
+          "formats": ["letters", "diaries", "official records", "newspaper articles"],
+          "authenticity": "period voice"
+        },
+        "oral_history": {
+          "name": "Oral History Style",
+          "description": "Story as told narrative",
+          "approach": ["storyteller voice", "folklore style", "generational tale"],
+          "tradition": "passing down stories"
+        }
+      }
+    }
+  }
+}

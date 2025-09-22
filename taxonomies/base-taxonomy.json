@@ -1,0 +1,300 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Base Story Properties",
+  "description": "Universal properties applicable to all genres",
+  "categories": {
+    "length_scope": {
+      "category_name": "Story Length",
+      "selection_rule": "select_one",
+      "description": "The target length of the complete story",
+      "required": true,
+      "options": {
+        "flash_fiction": {
+          "name": "Flash Fiction",
+          "description": "Ultra-short complete story",
+          "word_range": "500-1,500",
+          "chapter_count": "1",
+          "reading_time": "5 minutes"
+        },
+        "short_story": {
+          "name": "Short Story",
+          "description": "Brief complete narrative",
+          "word_range": "1,500-7,500",
+          "chapter_count": "1-3",
+          "reading_time": "15-30 minutes"
+        },
+        "novelette": {
+          "name": "Novelette",
+          "description": "Longer short story",
+          "word_range": "7,500-17,500",
+          "chapter_count": "4-6",
+          "reading_time": "45-90 minutes"
+        },
+        "novella": {
+          "name": "Novella",
+          "description": "Short novel",
+          "word_range": "17,500-40,000",
+          "chapter_count": "8-12",
+          "reading_time": "2-4 hours"
+        },
+        "novel": {
+          "name": "Novel",
+          "description": "Standard full-length book",
+          "word_range": "40,000-120,000",
+          "chapter_count": "15-30",
+          "reading_time": "6-12 hours"
+        },
+        "epic": {
+          "name": "Epic",
+          "description": "Extended narrative",
+          "word_range": "120,000+",
+          "chapter_count": "30+",
+          "reading_time": "12+ hours"
+        }
+      }
+    },
+    "target_audience": {
+      "category_name": "Target Audience",
+      "selection_rule": "select_one",
+      "description": "Primary reader demographic",
+      "required": true,
+      "options": {
+        "middle_grade": {
+          "name": "Middle Grade",
+          "description": "Ages 8-12",
+          "content_restrictions": ["no explicit content", "mild violence only", "age-appropriate themes"],
+          "typical_length": "20,000-50,000 words",
+          "reading_level": "grades 3-7"
+        },
+        "young_adult": {
+          "name": "Young Adult (YA)",
+          "description": "Ages 13-17",
+          "content_restrictions": ["limited explicit content", "coming-of-age themes", "first experiences"],
+          "typical_length": "50,000-80,000 words",
+          "reading_level": "grades 7-12"
+        },
+        "new_adult": {
+          "name": "New Adult",
+          "description": "Ages 18-25",
+          "content_restrictions": ["mature themes allowed", "college/early career settings", "identity exploration"],
+          "typical_length": "60,000-85,000 words",
+          "reading_level": "adult"
+        },
+        "adult": {
+          "name": "Adult",
+          "description": "Ages 18+",
+          "content_restrictions": ["no restrictions", "mature themes", "complex narratives"],
+          "typical_length": "70,000-120,000 words",
+          "reading_level": "adult"
+        }
+      }
+    },
+    "content_rating": {
+      "category_name": "Content Rating",
+      "selection_rule": "select_one",
+      "description": "Content appropriateness level",
+      "required": true,
+      "options": {
+        "clean": {
+          "name": "Clean/All Ages",
+          "description": "No profanity, violence, or sexual content",
+          "includes": ["G-rated content", "implied violence only", "closed-door romance"],
+          "excludes": ["profanity", "graphic violence", "sexual content"]
+        },
+        "mild": {
+          "name": "Mild/PG",
+          "description": "Minimal mature content",
+          "includes": ["mild profanity", "non-graphic violence", "kissing only"],
+          "excludes": ["strong language", "graphic violence", "sexual scenes"]
+        },
+        "moderate": {
+          "name": "Moderate/PG-13",
+          "description": "Some mature content",
+          "includes": ["moderate profanity", "action violence", "suggestive content"],
+          "excludes": ["excessive profanity", "graphic violence", "explicit sex"]
+        },
+        "mature": {
+          "name": "Mature/R",
+          "description": "Adult content present",
+          "includes": ["strong language", "violence", "sexual content"],
+          "excludes": ["extreme violence", "explicit erotica"]
+        },
+        "explicit": {
+          "name": "Explicit/NC-17",
+          "description": "Graphic adult content",
+          "includes": ["all content types", "graphic descriptions", "no limits"],
+          "excludes": ["illegal content only"]
+        }
+      }
+    },
+    "series_structure": {
+      "category_name": "Series Structure",
+      "selection_rule": "select_one",
+      "description": "How the story fits into a larger narrative",
+      "required": true,
+      "options": {
+        "standalone": {
+          "name": "Standalone",
+          "description": "Complete story in one book",
+          "arc_completion": "100%",
+          "sequel_potential": "optional",
+          "reader_commitment": "low"
+        },
+        "duology": {
+          "name": "Duology",
+          "description": "Two-book arc",
+          "arc_completion": "50% per book",
+          "sequel_potential": "required",
+          "reader_commitment": "medium"
+        },
+        "trilogy": {
+          "name": "Trilogy",
+          "description": "Three-book arc",
+          "arc_completion": "33% per book",
+          "sequel_potential": "required",
+          "reader_commitment": "medium-high"
+        },
+        "series": {
+          "name": "Series (4+ books)",
+          "description": "Extended multi-book arc",
+          "arc_completion": "varies",
+          "sequel_potential": "required",
+          "reader_commitment": "high"
+        },
+        "serial": {
+          "name": "Serial/Episodic",
+          "description": "Ongoing episodes",
+          "arc_completion": "episode-based",
+          "sequel_potential": "continuous",
+          "reader_commitment": "variable"
+        }
+      }
+    },
+    "pacing": {
+      "category_name": "Story Pacing",
+      "selection_rule": "select_one",
+      "description": "The speed at which the story unfolds",
+      "required": false,
+      "options": {
+        "breakneck": {
+          "name": "Breakneck",
+          "description": "Non-stop action and developments",
+          "characteristics": ["constant motion", "minimal downtime", "rapid scene changes"],
+          "best_for": ["thrillers", "action", "page-turners"]
+        },
+        "fast": {
+          "name": "Fast",
+          "description": "Quick progression with brief pauses",
+          "characteristics": ["frequent developments", "short chapters", "cliffhangers"],
+          "best_for": ["mysteries", "adventure", "YA"]
+        },
+        "moderate": {
+          "name": "Moderate",
+          "description": "Balanced progression",
+          "characteristics": ["steady development", "breathing room", "balanced action/reflection"],
+          "best_for": ["most genres", "character-driven", "romance"]
+        },
+        "slow": {
+          "name": "Slow",
+          "description": "Deliberate, thoughtful progression",
+          "characteristics": ["detailed exploration", "character depth", "atmospheric"],
+          "best_for": ["literary fiction", "historical", "epic fantasy"]
+        },
+        "variable": {
+          "name": "Variable",
+          "description": "Alternating pace throughout",
+          "characteristics": ["dynamic rhythm", "intense/calm cycles", "strategic pacing"],
+          "best_for": ["epics", "sagas", "complex narratives"]
+        }
+      }
+    },
+    "point_of_view": {
+      "category_name": "Narrative Point of View",
+      "selection_rule": "select_one",
+      "description": "The perspective from which the story is told",
+      "required": false,
+      "options": {
+        "first_person": {
+          "name": "First Person",
+          "description": "I/me narration",
+          "characteristics": ["intimate", "limited knowledge", "subjective"],
+          "variations": ["single narrator", "multiple first-person", "unreliable narrator"]
+        },
+        "third_limited": {
+          "name": "Third Person Limited",
+          "description": "He/she with one character's thoughts",
+          "characteristics": ["focused", "some distance", "one consciousness"],
+          "variations": ["close third", "distant third", "free indirect"]
+        },
+        "third_multiple": {
+          "name": "Third Person Multiple",
+          "description": "Multiple character perspectives",
+          "characteristics": ["broader scope", "chapter switches", "parallel stories"],
+          "variations": ["rotating POV", "ensemble cast", "split timeline"]
+        },
+        "third_omniscient": {
+          "name": "Third Person Omniscient",
+          "description": "All-knowing narrator",
+          "characteristics": ["god-like perspective", "all thoughts accessible", "narrative commentary"],
+          "variations": ["editorial omniscient", "neutral omniscient", "limited omniscient"]
+        },
+        "second_person": {
+          "name": "Second Person",
+          "description": "You narration",
+          "characteristics": ["immersive", "unusual", "direct address"],
+          "variations": ["choose your own adventure", "instructional", "experimental"]
+        }
+      }
+    },
+    "ending_type": {
+      "category_name": "Ending Type",
+      "selection_rule": "select_one",
+      "description": "How the story concludes",
+      "required": false,
+      "options": {
+        "happily_ever_after": {
+          "name": "Happily Ever After (HEA)",
+          "description": "Complete positive resolution",
+          "reader_satisfaction": "high",
+          "common_in": ["romance", "fairy tales", "feel-good fiction"]
+        },
+        "happy_for_now": {
+          "name": "Happy For Now (HFN)",
+          "description": "Positive but not permanent resolution",
+          "reader_satisfaction": "medium-high",
+          "common_in": ["series romance", "YA", "realistic fiction"]
+        },
+        "bittersweet": {
+          "name": "Bittersweet",
+          "description": "Mixed positive and negative outcomes",
+          "reader_satisfaction": "variable",
+          "common_in": ["literary fiction", "historical", "war stories"]
+        },
+        "tragic": {
+          "name": "Tragic",
+          "description": "Negative outcome for protagonists",
+          "reader_satisfaction": "cathartic",
+          "common_in": ["literary fiction", "horror", "Greek tragedy"]
+        },
+        "open": {
+          "name": "Open/Ambiguous",
+          "description": "Reader interpretation required",
+          "reader_satisfaction": "intellectual",
+          "common_in": ["literary fiction", "psychological", "experimental"]
+        },
+        "cliffhanger": {
+          "name": "Cliffhanger",
+          "description": "Unresolved tension requiring sequel",
+          "reader_satisfaction": "frustrated/excited",
+          "common_in": ["series", "serials", "trilogy middle books"]
+        }
+      }
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "required_categories": ["length_scope", "target_audience", "content_rating", "series_structure"],
+    "optional_categories": ["pacing", "point_of_view", "ending_type"],
+    "usage": "This base taxonomy should be merged with genre-specific taxonomies. Required categories must always be present in user selections."
+  }
+}

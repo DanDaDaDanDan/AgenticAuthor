@@ -1,0 +1,534 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Horror Classification System",
+  "extends": "base-taxonomy",
+  "genre": "horror",
+  "description": "Horror fiction designed to frighten, unsettle, and explore humanity's darkest fears",
+  "categories": {
+    "horror_subgenre": {
+      "category_name": "Horror Subgenre",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The specific type of horror story",
+      "options": {
+        "supernatural_horror": {
+          "name": "Supernatural Horror",
+          "description": "Ghosts, demons, and otherworldly threats",
+          "elements": ["ghosts", "demons", "possession", "curses", "haunted places"],
+          "fear_source": ["unknown", "afterlife", "evil forces", "helplessness"],
+          "atmosphere": "dread and unease"
+        },
+        "psychological_horror": {
+          "name": "Psychological Horror",
+          "description": "Mental and emotional terror",
+          "elements": ["madness", "paranoia", "gaslighting", "unreliable reality"],
+          "techniques": ["ambiguity", "isolation", "identity crisis", "perception distortion"],
+          "impact": "questioning sanity"
+        },
+        "body_horror": {
+          "name": "Body Horror",
+          "description": "Physical transformation and mutation",
+          "elements": ["transformation", "disease", "parasites", "medical horror"],
+          "themes": ["loss of control", "identity", "disgust", "violation"],
+          "visceral": "physical revulsion"
+        },
+        "cosmic_horror": {
+          "name": "Cosmic/Lovecraftian Horror",
+          "description": "Incomprehensible cosmic threats",
+          "elements": ["ancient gods", "madness", "insignificance", "forbidden knowledge"],
+          "philosophy": ["nihilism", "human irrelevance", "unknowable", "existential dread"],
+          "scope": "universal terror"
+        },
+        "gothic_horror": {
+          "name": "Gothic Horror",
+          "description": "Classic atmospheric horror",
+          "elements": ["castles", "family curses", "dark romance", "decay"],
+          "settings": ["mansions", "moors", "ruins", "crypts"],
+          "mood": "romantic darkness"
+        },
+        "slasher": {
+          "name": "Slasher",
+          "description": "Killer stalking victims",
+          "elements": ["masked killer", "final girl", "creative kills", "teen victims"],
+          "structure": ["group isolated", "picked off", "reveal", "confrontation"],
+          "appeal": "adrenaline rush"
+        },
+        "monster_horror": {
+          "name": "Monster/Creature Horror",
+          "description": "Non-human threats",
+          "creatures": ["vampires", "werewolves", "zombies", "aliens", "cryptids"],
+          "themes": ["predation", "infection", "humanity lost", "survival"],
+          "fear": "being hunted"
+        },
+        "occult_horror": {
+          "name": "Occult/Religious Horror",
+          "description": "Dark magic and religious themes",
+          "elements": ["satanism", "witchcraft", "rituals", "prophecies", "exorcism"],
+          "conflicts": ["good vs evil", "faith tested", "corruption", "damnation"],
+          "power": "forbidden forces"
+        },
+        "survival_horror": {
+          "name": "Survival Horror",
+          "description": "Enduring horrific situations",
+          "scenarios": ["zombie apocalypse", "trapped", "hunted", "post-disaster"],
+          "focus": ["resource management", "moral choices", "group dynamics"],
+          "tension": "constant threat"
+        },
+        "folk_horror": {
+          "name": "Folk Horror",
+          "description": "Rural and pagan horror",
+          "elements": ["isolated communities", "ancient practices", "nature worship", "sacrifice"],
+          "themes": ["outsider threat", "old ways", "land connection", "primal fears"],
+          "setting": "remote locations"
+        },
+        "techno_horror": {
+          "name": "Techno Horror",
+          "description": "Technology gone wrong",
+          "threats": ["AI malevolence", "virtual reality", "surveillance", "biohacking"],
+          "fears": ["loss of humanity", "control", "privacy", "dependency"],
+          "relevance": "modern anxieties"
+        },
+        "weird_horror": {
+          "name": "Weird Horror",
+          "description": "Strange and surreal horror",
+          "characteristics": ["reality distortion", "bizarre entities", "dream logic", "unexplainable"],
+          "influence": ["surrealism", "absurdism", "nightmare imagery"],
+          "effect": "unsettling confusion"
+        }
+      }
+    },
+    "threat_type": {
+      "category_name": "Primary Threat",
+      "selection_rule": "select_one",
+      "description": "The main source of horror",
+      "options": {
+        "human_monster": {
+          "name": "Human Monster",
+          "description": "Evil people as threat",
+          "types": ["serial killer", "cult leader", "torturer", "cannibal"],
+          "horror": "humanity's darkness",
+          "realism": "could be real"
+        },
+        "supernatural_entity": {
+          "name": "Supernatural Entity",
+          "description": "Otherworldly beings",
+          "entities": ["ghosts", "demons", "spirits", "poltergeists"],
+          "power": ["possession", "manipulation", "haunting", "cursing"],
+          "defense": "limited options"
+        },
+        "creature": {
+          "name": "Creature/Monster",
+          "description": "Physical monsters",
+          "types": ["alien", "mutant", "cryptid", "hybrid", "prehistoric"],
+          "threat": ["predation", "infection", "breeding", "intelligence"],
+          "origin": "various"
+        },
+        "infection_plague": {
+          "name": "Infection/Plague",
+          "description": "Spreading horror",
+          "types": ["zombie virus", "parasites", "mutation", "madness plague"],
+          "spread": ["contact", "airborne", "waterborne", "psychological"],
+          "fear": "becoming them"
+        },
+        "location": {
+          "name": "Location/Place",
+          "description": "The place itself is evil",
+          "examples": ["haunted house", "cursed land", "hell dimension", "abandoned asylum"],
+          "manifestations": ["trapping", "corruption", "madness inducing", "reality warping"],
+          "escape": "difficult or impossible"
+        },
+        "object_artifact": {
+          "name": "Object/Artifact",
+          "description": "Cursed or evil items",
+          "items": ["cursed book", "possessed doll", "evil mirror", "ancient artifact"],
+          "effects": ["possession", "curse spreading", "summoning", "corruption"],
+          "challenge": "destruction difficult"
+        },
+        "internal_self": {
+          "name": "Internal/Self",
+          "description": "The threat is within",
+          "manifestations": ["split personality", "possession", "transformation", "madness"],
+          "horror": ["loss of control", "becoming monster", "harming loved ones"],
+          "inescapable": "can't run from self"
+        },
+        "cosmic_force": {
+          "name": "Cosmic/Incomprehensible",
+          "description": "Beyond human understanding",
+          "characteristics": ["vast scale", "alien logic", "reality breaking", "sanity destroying"],
+          "defense": "none possible",
+          "theme": "human insignificance"
+        }
+      }
+    },
+    "fear_mechanism": {
+      "category_name": "Primary Fear Mechanism",
+      "selection_rule": "select_primary",
+      "description": "How the story creates fear",
+      "options": {
+        "jump_scares": {
+          "name": "Jump Scares",
+          "description": "Sudden shocks",
+          "techniques": ["false security", "sudden appearance", "loud noises", "quick movement"],
+          "effect": "adrenaline spike"
+        },
+        "atmospheric_dread": {
+          "name": "Atmospheric Dread",
+          "description": "Building unease",
+          "techniques": ["slow reveal", "oppressive atmosphere", "isolation", "helplessness"],
+          "effect": "sustained anxiety"
+        },
+        "gore_shock": {
+          "name": "Gore/Graphic Violence",
+          "description": "Visceral horror",
+          "elements": ["detailed violence", "body destruction", "torture", "cannibalism"],
+          "impact": "physical revulsion"
+        },
+        "psychological_manipulation": {
+          "name": "Psychological Manipulation",
+          "description": "Mental games",
+          "techniques": ["gaslighting", "paranoia building", "trust destruction", "reality questioning"],
+          "effect": "mental unease"
+        },
+        "existential_dread": {
+          "name": "Existential Dread",
+          "description": "Philosophical terror",
+          "themes": ["meaninglessness", "inevitability", "cosmic indifference", "death"],
+          "impact": "deep discomfort"
+        },
+        "uncanny_valley": {
+          "name": "Uncanny/Disturbing",
+          "description": "Wrong but familiar",
+          "elements": ["almost human", "corrupted innocence", "twisted familiar", "subtle wrongness"],
+          "effect": "deep unease"
+        },
+        "claustrophobia": {
+          "name": "Claustrophobic Tension",
+          "description": "Trapped feeling",
+          "situations": ["confined spaces", "no escape", "closing in", "buried alive"],
+          "panic": "suffocating fear"
+        },
+        "violation": {
+          "name": "Violation/Invasion",
+          "description": "Boundaries broken",
+          "types": ["home invasion", "body violation", "mind intrusion", "possession"],
+          "horror": "safety destroyed"
+        }
+      }
+    },
+    "horror_setting": {
+      "category_name": "Primary Setting",
+      "selection_rule": "select_one_or_two",
+      "description": "Where the horror takes place",
+      "options": {
+        "haunted_house": {
+          "name": "Haunted House/Building",
+          "description": "Malevolent structures",
+          "variants": ["mansion", "apartment", "hotel", "asylum"],
+          "elements": ["hidden rooms", "dark history", "trapped spirits", "living house"],
+          "atmosphere": "oppressive enclosure"
+        },
+        "isolated_wilderness": {
+          "name": "Isolated Wilderness",
+          "description": "Remote natural settings",
+          "locations": ["forest", "mountains", "desert", "island"],
+          "threats": ["no help", "primal fears", "getting lost", "nature itself"],
+          "mood": "primitive fear"
+        },
+        "urban_horror": {
+          "name": "Urban/City",
+          "description": "Horror in populated areas",
+          "elements": ["anonymity", "hidden dangers", "underground", "crowds"],
+          "contrast": "danger among people",
+          "varieties": "modern fears"
+        },
+        "small_town": {
+          "name": "Small Town/Village",
+          "description": "Insular community horror",
+          "elements": ["dark secrets", "everyone involved", "no escape", "outsider fear"],
+          "dynamics": "collective evil"
+        },
+        "institutional": {
+          "name": "Institution",
+          "description": "Hospitals, schools, prisons",
+          "variants": ["asylum", "hospital", "school", "prison", "orphanage"],
+          "fears": ["authority", "experiments", "trapped", "past atrocities"],
+          "history": "suffering soaked"
+        },
+        "underground": {
+          "name": "Underground/Subterranean",
+          "description": "Below the surface",
+          "locations": ["caves", "tunnels", "catacombs", "bunkers"],
+          "fears": ["darkness", "lost", "collapse", "what lurks below"],
+          "claustrophobia": "intense"
+        },
+        "religious_site": {
+          "name": "Religious/Sacred Site",
+          "description": "Corrupted holy places",
+          "locations": ["church", "monastery", "cemetery", "ancient temple"],
+          "themes": ["desecration", "false faith", "evil presence", "apocalypse"],
+          "irony": "sanctuary violated"
+        },
+        "domestic": {
+          "name": "Domestic/Home",
+          "description": "Horror invades home",
+          "elements": ["safety violated", "familiar corrupted", "can't leave", "family threat"],
+          "impact": "nowhere safe"
+        },
+        "liminal_space": {
+          "name": "Liminal/In-Between",
+          "description": "Transitional spaces",
+          "examples": ["highways", "airports", "hotels", "empty malls"],
+          "atmosphere": ["uncanny", "displaced", "wrong", "endless"],
+          "effect": "reality unstable"
+        },
+        "digital_virtual": {
+          "name": "Digital/Virtual Space",
+          "description": "Online and virtual horror",
+          "elements": ["dark web", "VR nightmare", "AI space", "digital haunting"],
+          "modern": "technology terror"
+        }
+      }
+    },
+    "protagonist_type": {
+      "category_name": "Protagonist Type",
+      "selection_rule": "select_one",
+      "description": "The main character facing horror",
+      "options": {
+        "innocent_victim": {
+          "name": "Innocent Victim",
+          "description": "Wrong place, wrong time",
+          "characteristics": ["unprepared", "normal person", "learning curve", "survival growth"],
+          "arc": "victim to survivor"
+        },
+        "investigator": {
+          "name": "Investigator/Detective",
+          "description": "Seeking the truth",
+          "types": ["paranormal investigator", "journalist", "detective", "scientist"],
+          "motivation": ["solve mystery", "stop threat", "expose truth"],
+          "risk": "too deep"
+        },
+        "survivor": {
+          "name": "Previous Survivor",
+          "description": "Experienced with horror",
+          "background": ["past trauma", "special knowledge", "unwilling expert"],
+          "conflict": ["drawn back", "PTSD", "disbelieved"],
+          "advantage": "knows the threat"
+        },
+        "chosen_one": {
+          "name": "Chosen/Marked",
+          "description": "Destined involvement",
+          "reasons": ["bloodline", "prophecy", "special ability", "curse"],
+          "burden": "can't escape fate"
+        },
+        "professional": {
+          "name": "Professional",
+          "description": "Job-related involvement",
+          "types": ["priest", "doctor", "security", "caretaker"],
+          "situation": ["duty bound", "trapped by job", "expertise needed"],
+          "dilemma": "duty vs survival"
+        },
+        "skeptic": {
+          "name": "Skeptic",
+          "description": "Disbeliever forced to believe",
+          "arc": ["denial", "evidence", "acceptance", "action"],
+          "value": "rational perspective"
+        },
+        "child_protagonist": {
+          "name": "Child",
+          "description": "Young protagonist",
+          "elements": ["innocence", "adults don't believe", "vulnerability", "pure perception"],
+          "power": "sees truth"
+        },
+        "corrupted": {
+          "name": "Corrupted/Complicit",
+          "description": "Part of the horror",
+          "types": ["infected", "possessed", "guilty past", "monster becoming"],
+          "conflict": "internal and external"
+        }
+      }
+    },
+    "horror_structure": {
+      "category_name": "Story Structure",
+      "selection_rule": "select_one",
+      "description": "How the horror unfolds",
+      "options": {
+        "slow_build": {
+          "name": "Slow Build",
+          "description": "Gradual escalation",
+          "progression": ["normal", "something off", "first incident", "escalation", "full horror"],
+          "technique": "frog boiling"
+        },
+        "immediate_threat": {
+          "name": "Immediate Threat",
+          "description": "Horror from start",
+          "structure": ["thrown in", "survival mode", "brief respites", "final confrontation"],
+          "pace": "relentless"
+        },
+        "mystery_reveal": {
+          "name": "Mystery to Horror",
+          "description": "Investigation unveils horror",
+          "progression": ["mystery", "clues", "partial truth", "horrible revelation"],
+          "satisfaction": "puzzle and fear"
+        },
+        "anthology": {
+          "name": "Anthology/Connected Stories",
+          "description": "Multiple horror tales",
+          "structure": ["frame story", "connected theme", "escalating horror", "final revelation"],
+          "variety": "different fears"
+        },
+        "found_footage": {
+          "name": "Found Footage/Documentation",
+          "description": "Discovered record of horror",
+          "formats": ["video", "journal", "recordings", "reports"],
+          "authenticity": "this happened"
+        },
+        "countdown": {
+          "name": "Countdown/Time Limit",
+          "description": "Race against horror",
+          "elements": ["deadline", "ritual timing", "infection spread", "escape window"],
+          "tension": "ticking clock"
+        },
+        "cyclical": {
+          "name": "Cyclical/Repeating",
+          "description": "Horror loops",
+          "types": ["time loop", "generational curse", "recurring nightmare", "eternal return"],
+          "despair": "no escape"
+        }
+      }
+    },
+    "gore_level": {
+      "category_name": "Gore/Violence Level",
+      "selection_rule": "select_one",
+      "description": "Amount of graphic content",
+      "options": {
+        "minimal": {
+          "name": "Minimal/Implied",
+          "description": "Violence mostly offscreen",
+          "approach": ["suggestion", "aftermath", "shadows", "imagination"],
+          "focus": "psychological fear"
+        },
+        "moderate": {
+          "name": "Moderate",
+          "description": "Some graphic content",
+          "balance": ["key moments shown", "not gratuitous", "serves story"],
+          "impact": "punctuation marks"
+        },
+        "explicit": {
+          "name": "Explicit/Graphic",
+          "description": "Detailed violence",
+          "content": ["gore", "torture", "body horror", "extreme violence"],
+          "warning": "not for squeamish"
+        },
+        "extreme": {
+          "name": "Extreme/Splatterpunk",
+          "description": "Maximum graphic content",
+          "characteristics": ["transgressive", "shocking", "boundary pushing", "visceral"],
+          "audience": "hardcore only"
+        }
+      }
+    },
+    "ending_type": {
+      "category_name": "Ending Type",
+      "selection_rule": "select_one",
+      "description": "How the horror concludes",
+      "options": {
+        "triumphant": {
+          "name": "Triumphant Victory",
+          "description": "Evil defeated",
+          "elements": ["monster killed", "curse broken", "escape successful", "light wins"],
+          "satisfaction": "cathartic relief"
+        },
+        "pyrrhic": {
+          "name": "Pyrrhic Victory",
+          "description": "Won but at great cost",
+          "losses": ["friends dead", "sanity lost", "innocence gone", "permanently changed"],
+          "tone": "bittersweet"
+        },
+        "ambiguous": {
+          "name": "Ambiguous",
+          "description": "Uncertain outcome",
+          "questions": ["really over?", "was it real?", "who survived?", "what was it?"],
+          "effect": "lingering unease"
+        },
+        "downer": {
+          "name": "Downer/Evil Wins",
+          "description": "The horror triumphs",
+          "outcomes": ["everyone dies", "evil spreads", "hope lost", "cycle continues"],
+          "impact": "despair"
+        },
+        "twist": {
+          "name": "Twist Ending",
+          "description": "Revelation changes everything",
+          "types": ["was dead all along", "was the monster", "it's spreading", "not over"],
+          "effect": "retrospective horror"
+        },
+        "false_victory": {
+          "name": "False Victory",
+          "description": "Seems over but isn't",
+          "structure": ["apparent win", "relief", "final scare", "true horror"],
+          "classic": "one more scare"
+        },
+        "open_ended": {
+          "name": "Open/Continuous",
+          "description": "Horror continues",
+          "implications": ["sequel bait", "endless threat", "new beginning", "cycle starts"],
+          "message": "evil endures"
+        }
+      }
+    },
+    "horror_themes": {
+      "category_name": "Horror Themes",
+      "selection_rule": "select_up_to_three",
+      "description": "Deeper themes explored through horror",
+      "options": {
+        "mortality": {
+          "name": "Death and Mortality",
+          "description": "Facing death",
+          "explorations": ["fear of dying", "afterlife", "undeath", "grief"],
+          "universal": "ultimate fear"
+        },
+        "identity_loss": {
+          "name": "Loss of Identity",
+          "description": "Losing self",
+          "manifestations": ["possession", "transformation", "memory loss", "replacement"],
+          "horror": "not being you"
+        },
+        "isolation": {
+          "name": "Isolation",
+          "description": "Alone with horror",
+          "types": ["physical", "social", "psychological", "cosmic"],
+          "impact": "no help coming"
+        },
+        "corruption": {
+          "name": "Corruption/Contamination",
+          "description": "Purity violated",
+          "forms": ["moral", "physical", "spiritual", "environmental"],
+          "fear": "spreading taint"
+        },
+        "madness": {
+          "name": "Madness/Sanity",
+          "description": "Losing mind",
+          "causes": ["trauma", "knowledge", "isolation", "infection"],
+          "question": "what's real?"
+        },
+        "guilt_punishment": {
+          "name": "Guilt and Punishment",
+          "description": "Past sins return",
+          "manifestations": ["vengeful spirits", "karma", "confession", "atonement"],
+          "justice": "horrific"
+        },
+        "technology_nature": {
+          "name": "Technology vs Nature",
+          "description": "Progress backfires",
+          "examples": ["AI threat", "genetic horror", "nuclear mutation", "playing god"],
+          "warning": "hubris punished"
+        },
+        "otherness": {
+          "name": "Fear of Other",
+          "description": "Xenophobia explored",
+          "manifestations": ["foreign threat", "infiltration", "assimilation", "unknown"],
+          "reflection": "social fears"
+        }
+      }
+    }
+  }
+}

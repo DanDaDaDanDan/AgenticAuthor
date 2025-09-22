@@ -1,0 +1,416 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Urban Fantasy Classification System",
+  "extends": "base-taxonomy",
+  "genre": "urban-fantasy",
+  "description": "Fantasy set in modern urban environments with magic hidden or revealed in contemporary cities",
+  "categories": {
+    "urban_fantasy_type": {
+      "category_name": "Urban Fantasy Type",
+      "selection_rule": "select_primary",
+      "description": "The specific approach to urban fantasy",
+      "options": {
+        "hidden_world": {
+          "name": "Hidden World",
+          "description": "Magic exists secretly alongside normal world",
+          "elements": ["masquerade", "secret societies", "hidden locations", "normal people unaware"],
+          "revelation": ["protagonist discovers", "always knew", "gradual reveal"],
+          "tension": "keeping secret"
+        },
+        "open_magic": {
+          "name": "Open Magic",
+          "description": "Magic is publicly known",
+          "world": ["integrated society", "magic regulation", "public supernatural", "new normal"],
+          "conflicts": ["discrimination", "regulation", "power balance", "integration"],
+          "contemporary": "magic meets modern"
+        },
+        "emerging_magic": {
+          "name": "Emerging Magic",
+          "description": "Magic recently appeared/revealed",
+          "scenarios": ["the reveal", "magic returns", "first generation", "world adapting"],
+          "chaos": ["society disrupted", "power struggles", "fear and wonder"],
+          "themes": "change and adaptation"
+        },
+        "parallel_city": {
+          "name": "Parallel/Mirror City",
+          "description": "Magical version exists alongside",
+          "structure": ["overlay", "shadow city", "flip side", "between spaces"],
+          "access": ["special ability", "portals", "invitation only", "accidents"],
+          "duality": "two worlds one place"
+        },
+        "post_apocalyptic_magic": {
+          "name": "Post-Apocalyptic Urban",
+          "description": "City after magical disaster",
+          "setting": ["ruined metropolis", "magic zones", "survivor enclaves", "changed reality"],
+          "survival": ["scavenging", "magic dangers", "faction conflicts"],
+          "mood": "gritty survival"
+        }
+      }
+    },
+    "protagonist_role": {
+      "category_name": "Protagonist Role",
+      "selection_rule": "select_one",
+      "description": "The main character's position",
+      "options": {
+        "magical_detective": {
+          "name": "Magical Detective/PI",
+          "description": "Supernatural investigator",
+          "cases": ["magical crimes", "missing persons", "supernatural mysteries", "curses"],
+          "tools": ["magical abilities", "supernatural contacts", "occult knowledge"],
+          "tone": "noir meets magic"
+        },
+        "enforcer_police": {
+          "name": "Magical Law Enforcement",
+          "description": "Supernatural police/enforcer",
+          "duties": ["maintain masquerade", "police supernaturals", "prevent wars", "enforce laws"],
+          "conflicts": ["jurisdiction", "corruption", "species politics"],
+          "structure": "procedural"
+        },
+        "chosen_one_urban": {
+          "name": "Urban Chosen One",
+          "description": "Destined for greatness",
+          "discovery": ["hidden heritage", "prophecy", "special power", "birthright"],
+          "resistance": ["wants normal life", "unprepared", "reluctant hero"],
+          "arc": "ordinary to extraordinary"
+        },
+        "supernatural_being": {
+          "name": "Supernatural Creature",
+          "description": "Non-human protagonist",
+          "types": ["vampire", "werewolf", "fae", "demon", "witch", "angel"],
+          "challenges": ["fitting in", "hiding nature", "hunting threats", "finding place"],
+          "perspective": "outsider looking in"
+        },
+        "magic_professional": {
+          "name": "Magical Professional",
+          "description": "Magic as career",
+          "jobs": ["wizard for hire", "magical shop owner", "supernatural therapist", "curse breaker"],
+          "business": ["magical clients", "mundane problems", "professional ethics"],
+          "balance": "work-life-magic"
+        },
+        "hunter": {
+          "name": "Monster Hunter",
+          "description": "Eliminates supernatural threats",
+          "motivation": ["protection", "revenge", "calling", "money"],
+          "tools": ["weapons", "knowledge", "allies", "experience"],
+          "moral": "not all monsters evil"
+        },
+        "ordinary_person": {
+          "name": "Ordinary Caught Up",
+          "description": "Normal person in magic",
+          "entry": ["accident", "witness", "attacked", "recruited"],
+          "arc": ["disbelief to acceptance", "victim to hero", "learning curve"],
+          "value": "everyperson perspective"
+        },
+        "mediator": {
+          "name": "Mediator/Bridge",
+          "description": "Between worlds liaison",
+          "role": ["translator", "negotiator", "peace keeper", "go-between"],
+          "unique": ["sees both sides", "trusted by both", "neutral ground"],
+          "conflicts": "torn loyalties"
+        }
+      }
+    },
+    "magic_system_urban": {
+      "category_name": "Urban Magic System",
+      "selection_rule": "select_primary",
+      "description": "How magic works in the city",
+      "options": {
+        "traditional_hidden": {
+          "name": "Traditional Magic Hidden",
+          "description": "Old magic in new world",
+          "forms": ["spell casting", "rituals", "potions", "circles"],
+          "adaptation": ["modern components", "tech integration", "urban ingredients"],
+          "practitioners": "covens and circles"
+        },
+        "tech_magic_fusion": {
+          "name": "Technomagic",
+          "description": "Technology and magic merged",
+          "examples": ["magical apps", "enchanted devices", "digital spells", "cyber-witchcraft"],
+          "innovation": ["new possibilities", "hybrid threats", "accessibility"],
+          "aesthetic": "cyberpunk meets fantasy"
+        },
+        "faith_based_urban": {
+          "name": "Faith/Belief Magic",
+          "description": "Power from urban belief",
+          "sources": ["city gods", "urban legends", "collective belief", "modern mythology"],
+          "manifestations": ["graffiti sigils", "subway spirits", "building guardians"],
+          "power": "city as organism"
+        },
+        "contract_bargain": {
+          "name": "Contract/Bargain System",
+          "description": "Deals for power",
+          "entities": ["demons", "fae", "spirits", "corporations"],
+          "currency": ["favors", "souls", "memories", "years of life"],
+          "modern": "legal contracts"
+        },
+        "innate_abilities": {
+          "name": "Innate Powers",
+          "description": "Born with abilities",
+          "manifestation": ["puberty", "stress", "exposure", "inheritance"],
+          "types": ["psychic", "elemental", "shapeshifting", "healing"],
+          "challenge": "control and hiding"
+        },
+        "ritual_geographic": {
+          "name": "Geographic/Ley Line",
+          "description": "City's magical geography",
+          "elements": ["ley lines", "nodes", "thin places", "power sites"],
+          "urban": ["subway lines", "skyscrapers as towers", "parks as groves"],
+          "politics": "territory control"
+        },
+        "consumption_based": {
+          "name": "Consumable Magic",
+          "description": "Magic through substances",
+          "forms": ["potions", "drugs", "enchanted food", "magical energy drinks"],
+          "economy": ["black market", "legal shops", "addiction", "regulation"],
+          "modern": "commercialized magic"
+        }
+      }
+    },
+    "urban_supernatural_community": {
+      "category_name": "Supernatural Community",
+      "selection_rule": "select_all_that_apply",
+      "description": "Supernatural inhabitants and groups",
+      "options": {
+        "vampire_society": {
+          "name": "Vampire Society",
+          "description": "Organized vampire presence",
+          "structure": ["courts", "clans", "businesses", "nightlife control"],
+          "modern": ["blood banks", "willing donors", "synthetic blood", "vampire bars"],
+          "politics": "ancient in modern"
+        },
+        "werewolf_packs": {
+          "name": "Werewolf Packs",
+          "description": "Urban wolf territories",
+          "adaptation": ["city territories", "corporate packs", "biker gangs", "protection services"],
+          "challenges": ["full moon", "territory disputes", "human-wolf balance"],
+          "dynamics": "pack in city"
+        },
+        "fae_courts_urban": {
+          "name": "Urban Fae Courts",
+          "description": "Fairy courts in cities",
+          "locations": ["parks", "abandoned places", "between spaces", "nightclubs"],
+          "modern": ["glamour tech", "urban bargains", "gentrification conflicts"],
+          "danger": "beautiful and deadly"
+        },
+        "witch_covens": {
+          "name": "Witch Covens",
+          "description": "Organized magic practitioners",
+          "types": ["traditional", "chaos magic", "hedge witches", "corporate witches"],
+          "activities": ["shops", "services", "teaching", "protection"],
+          "modern": "ancient craft adapted"
+        },
+        "demon_underground": {
+          "name": "Demonic Presence",
+          "description": "Demons in the city",
+          "manifestations": ["possession", "deals", "clubs", "corporate"],
+          "hierarchy": ["Hell's bureaucracy", "soul trade", "temptation services"],
+          "modern": "suited devils"
+        },
+        "spirit_population": {
+          "name": "Spirits and Ghosts",
+          "description": "Incorporeal inhabitants",
+          "types": ["building spirits", "urban legends", "accident ghosts", "genius loci"],
+          "interactions": ["haunting", "helping", "territory", "communication"],
+          "visibility": "those who see"
+        },
+        "magical_creatures": {
+          "name": "Magical Creatures",
+          "description": "Various beings adapted to city",
+          "examples": ["dragons in human form", "trolls under bridges", "gargoyles", "phoenixes"],
+          "adaptation": ["disguise", "urban evolution", "new ecological niches"],
+          "diversity": "hidden zoo"
+        },
+        "human_aware": {
+          "name": "Aware Humans",
+          "description": "Humans in the know",
+          "types": ["hereditary knowledge", "accidentally aware", "researchers", "servants"],
+          "roles": ["allies", "hunters", "neutral", "exploiters"],
+          "burden": "dangerous knowledge"
+        }
+      }
+    },
+    "urban_setting_specific": {
+      "category_name": "Specific Urban Settings",
+      "selection_rule": "select_primary",
+      "description": "The city environment type",
+      "options": {
+        "metropolis": {
+          "name": "Major Metropolis",
+          "description": "Large iconic city",
+          "examples": ["New York", "London", "Tokyo", "Paris"],
+          "advantages": ["anonymity", "diversity", "resources", "hidden spaces"],
+          "scale": "endless possibilities"
+        },
+        "midwest_city": {
+          "name": "Mid-Size City",
+          "description": "Secondary urban center",
+          "characteristics": ["manageable size", "established supernatural", "territorial", "under radar"],
+          "dynamics": "big enough for variety"
+        },
+        "college_town_urban": {
+          "name": "College Town",
+          "description": "University-centered",
+          "elements": ["young population", "academic magic", "experimental", "transitional"],
+          "energy": "constant renewal"
+        },
+        "border_city": {
+          "name": "Border/Port City",
+          "description": "Crossroads location",
+          "significance": ["smuggling", "immigration", "cultural mix", "transition point"],
+          "supernatural": "everything passes through"
+        },
+        "rust_belt": {
+          "name": "Declining Industrial",
+          "description": "Post-industrial decay",
+          "atmosphere": ["abandoned factories", "economic decline", "old magic", "desperate"],
+          "opportunities": "forgotten spaces"
+        },
+        "new_city": {
+          "name": "New/Planned City",
+          "description": "Recently built urban",
+          "conflicts": ["no established supernatural", "modern planning vs magic", "rapid growth"],
+          "potential": "unclaimed territory"
+        },
+        "underground_city": {
+          "name": "Underground/Hidden City",
+          "description": "Beneath the surface",
+          "locations": ["sewers", "tunnels", "forgotten subways", "catacombs"],
+          "inhabitants": "those who hide"
+        }
+      }
+    },
+    "urban_conflicts": {
+      "category_name": "Central Urban Conflicts",
+      "selection_rule": "select_primary",
+      "description": "Main source of conflict",
+      "options": {
+        "territorial_disputes": {
+          "name": "Territory Wars",
+          "description": "Fighting over urban space",
+          "combatants": ["species", "factions", "old vs new", "gangs"],
+          "stakes": ["feeding grounds", "power nodes", "safe spaces", "resources"],
+          "escalation": "war in streets"
+        },
+        "masquerade_threat": {
+          "name": "Masquerade Breaking",
+          "description": "Secret at risk of exposure",
+          "threats": ["social media", "cameras everywhere", "curious humans", "careless supernaturals"],
+          "consequences": ["panic", "persecution", "war", "exploitation"],
+          "tension": "constant vigilance"
+        },
+        "supernatural_serial": {
+          "name": "Supernatural Crime",
+          "description": "Magical criminal activity",
+          "types": ["serial killer", "soul theft", "magical drugs", "cursed objects"],
+          "investigation": ["magical forensics", "cross-species cooperation", "vigilante justice"],
+          "stakes": "community safety"
+        },
+        "apocalypse_prevention": {
+          "name": "Apocalypse Prevention",
+          "description": "Stop world ending",
+          "threats": ["demons rising", "reality breakdown", "ancient evil", "magical plague"],
+          "scale": ["starts small", "city threat", "global danger"],
+          "urgency": "countdown clock"
+        },
+        "integration_struggles": {
+          "name": "Integration/Coexistence",
+          "description": "Living together challenges",
+          "issues": ["species racism", "resource competition", "cultural clash", "fear"],
+          "progress": ["laws", "understanding", "mixed relationships", "next generation"],
+          "hope": "better future"
+        },
+        "power_corruption_urban": {
+          "name": "Corruption/Power",
+          "description": "Abuse of supernatural power",
+          "forms": ["magical mafia", "corrupt enforcers", "power monopoly", "exploitation"],
+          "resistance": ["underground", "vigilantes", "reformers", "revolution"],
+          "noir": "dark city"
+        }
+      }
+    },
+    "urban_tone": {
+      "category_name": "Urban Tone",
+      "selection_rule": "select_one",
+      "description": "The mood and atmosphere",
+      "options": {
+        "gritty_noir": {
+          "name": "Gritty Noir",
+          "description": "Dark and cynical",
+          "elements": ["corruption", "moral ambiguity", "urban decay", "everyone has angle"],
+          "aesthetic": ["rain", "neon", "shadows", "whiskey"],
+          "mood": "hardboiled"
+        },
+        "action_adventure": {
+          "name": "Action Adventure",
+          "description": "Fast-paced excitement",
+          "elements": ["chases", "fights", "explosions", "one-liners"],
+          "pacing": ["relentless", "set pieces", "escalation"],
+          "fun": "popcorn entertainment"
+        },
+        "mystery_investigation": {
+          "name": "Mystery/Investigation",
+          "description": "Puzzle solving focus",
+          "structure": ["clues", "red herrings", "revelation", "solution"],
+          "satisfaction": ["fair play", "reader participation", "surprising yet logical"],
+          "cerebral": "think first"
+        },
+        "romantic_urban": {
+          "name": "Romantic Urban Fantasy",
+          "description": "Love in magical city",
+          "elements": ["supernatural romance", "destiny", "forbidden love", "soul mates"],
+          "balance": ["action and romance", "danger and passion"],
+          "appeal": "heart and magic"
+        },
+        "comedic": {
+          "name": "Comedic/Light",
+          "description": "Humor and fun",
+          "elements": ["snarky protagonist", "absurd situations", "pop culture", "witty banter"],
+          "tone": ["self-aware", "doesn't take itself seriously", "fun first"],
+          "relief": "escape"
+        },
+        "horror_tinged": {
+          "name": "Horror Urban",
+          "description": "Frightening and dark",
+          "elements": ["body horror", "cosmic dread", "urban legends real", "nowhere safe"],
+          "atmosphere": ["oppressive", "paranoid", "grotesque", "nightmarish"],
+          "warning": "not for faint"
+        }
+      }
+    },
+    "series_structure": {
+      "category_name": "Series Structure",
+      "selection_rule": "select_one",
+      "description": "How stories connect",
+      "options": {
+        "episodic": {
+          "name": "Episodic/Case-based",
+          "description": "Stand-alone adventures",
+          "structure": ["monster of week", "case files", "client problems", "reset button"],
+          "advantages": ["easy entry", "no order required", "variety"],
+          "classic": "detective style"
+        },
+        "continuous_arc": {
+          "name": "Continuous Arc",
+          "description": "Ongoing storyline",
+          "development": ["building threat", "character growth", "deepening mystery", "escalation"],
+          "commitment": ["reader investment", "payoff planning", "continuity"],
+          "epic": "long-form story"
+        },
+        "seasonal_arcs": {
+          "name": "Seasonal Arcs",
+          "description": "Complete arcs per book",
+          "structure": ["big bad per book", "overarching hints", "character through-line"],
+          "balance": ["satisfaction and continuation", "closure and hooks"],
+          "modern": "TV-inspired"
+        },
+        "anthology_connected": {
+          "name": "Anthology/Shared World",
+          "description": "Different protagonists same world",
+          "connections": ["cameos", "shared events", "world building", "different perspectives"],
+          "freedom": ["explore variety", "reader favorite", "world expansion"],
+          "rich": "universe building"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,726 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Romantasy Classification System",
+  "extends": "base-taxonomy",
+  "genre": "romantasy",
+  "description": "Fantasy romance with magical elements and romantic storylines of equal importance",
+  "categories": {
+    "world_setting": {
+      "category_name": "Primary World Setting",
+      "selection_rule": "select_one_primary_optional_secondary",
+      "description": "The fundamental world type where the story takes place",
+      "options": {
+        "contemporary_hidden": {
+          "name": "Contemporary Hidden World",
+          "description": "Modern Earth with secret magical societies. Mundane world exists alongside hidden supernatural communities.",
+          "key_features": ["modern technology", "the veil/masquerade", "dual world navigation", "urban settings"],
+          "example_elements": ["coffee shops and covens", "subway stations with portal gates", "magical smartphones"]
+        },
+        "secondary_high_fantasy": {
+          "name": "Secondary World - High Fantasy",
+          "description": "Completely separate world with its own geography, history, and cultures. Pre-industrial technology level.",
+          "key_features": ["original geography", "complex politics", "medieval technology", "deep worldbuilding"],
+          "example_elements": ["multiple kingdoms", "unique calendars", "constructed languages", "ancient prophecies"]
+        },
+        "secondary_gaslamp": {
+          "name": "Secondary World - Gaslamp/Steampunk",
+          "description": "Victorian or Edwardian-inspired setting with magic. Magical technology fusion.",
+          "key_features": ["industrial magic", "class systems", "urban focus", "academic magic"],
+          "example_elements": ["magical universities", "steam-powered enchantments", "gas lamp lit streets", "magical factories"]
+        },
+        "portal_fantasy": {
+          "name": "Portal Fantasy",
+          "description": "Character travels between mundane Earth and magical realm(s).",
+          "key_features": ["world travel", "fish-out-of-water", "dual allegiances", "return journey question"],
+          "example_elements": ["magical doorways", "summoning rituals", "dream walking", "mirror passages"]
+        },
+        "post_apocalyptic_magical": {
+          "name": "Post-Apocalyptic Magical",
+          "description": "Earth after magical catastrophe or revelation. Collapsed civilization rebuilt with magic.",
+          "key_features": ["ruined cities", "magical mutations", "resource scarcity", "new societies"],
+          "example_elements": ["magic radiation zones", "scavenged artifacts", "tribal magic users", "reclaimed ruins"]
+        },
+        "space_fantasy": {
+          "name": "Space Fantasy",
+          "description": "Magic in space or across multiple planets. Technology alongside magical systems.",
+          "key_features": ["interplanetary travel", "alien magic", "tech-magic fusion", "galactic scope"],
+          "example_elements": ["magical FTL travel", "planet-specific magic", "space dragons", "cosmic deities"]
+        }
+      }
+    },
+    "dominant_species": {
+      "category_name": "Dominant Species/Courts",
+      "selection_rule": "select_all_that_apply",
+      "description": "The primary magical species or groups that shape the world",
+      "options": {
+        "fae": {
+          "name": "Fae/Faerie",
+          "description": "Traditional fairy folk with court structures and bargain-based magic",
+          "subtypes": ["Seelie Court", "Unseelie Court", "Seasonal Courts", "Solar/Lunar Courts", "Wild Fae"],
+          "key_features": ["bargain magic", "true name power", "iron weakness", "glamour", "immortality"],
+          "common_traits": ["capricious nature", "binding words", "ritual importance", "nature connection"]
+        },
+        "vampires": {
+          "name": "Vampires",
+          "description": "Blood-drinking immortals with clan or coven structures",
+          "subtypes": ["Ancient Houses", "Newborn Covens", "Daywalkers", "Psychic Vampires", "Blood Mages"],
+          "key_features": ["blood dependency", "immortality", "enhanced abilities", "sire bonds", "sunlight sensitivity"],
+          "common_traits": ["predator nature", "political intrigue", "territorial disputes", "human livestock debates"]
+        },
+        "shifters": {
+          "name": "Shifters/Weres",
+          "description": "Beings who transform between human and animal forms",
+          "subtypes": ["Wolf Packs", "Cat Prides", "Bear Clans", "Dragon Shifters", "Avian Flocks", "Multi-shifters"],
+          "key_features": ["pack hierarchy", "alpha dynamics", "mate bonds", "territorial instincts", "moon influence"],
+          "common_traits": ["primal instincts", "pack loyalty", "enhanced senses", "partial shifting", "beast communication"]
+        },
+        "dragons": {
+          "name": "Dragons",
+          "description": "Ancient reptilian beings with vast power and intelligence",
+          "subtypes": ["Elemental Dragons", "Shapeshifting Dragons", "Lesser Drakes", "Wyverns", "Sea Serpents"],
+          "key_features": ["hoard bonding", "rider bonds", "ancient knowledge", "territorial nature", "magical breath"],
+          "common_traits": ["pride", "long memory", "treasure obsession", "magical resistance", "flight"]
+        },
+        "demons_angels": {
+          "name": "Demons/Angels",
+          "description": "Beings from higher or lower planes with alignment-based powers",
+          "subtypes": ["Fallen Angels", "Archdemons", "Seraphim", "Succubi/Incubi", "Nephilim"],
+          "key_features": ["soul contracts", "moral alignment", "planar travel", "possession abilities", "divine/infernal magic"],
+          "common_traits": ["wing manifestation", "aura reading", "temptation/redemption", "immortality", "hierarchy"]
+        },
+        "witches_mages": {
+          "name": "Witches/Mages",
+          "description": "Humans or humanoids who practice learned or inherited magic",
+          "subtypes": ["Hedge Witches", "High Mages", "Elementalists", "Necromancers", "Blood Witches", "Technomancers"],
+          "key_features": ["spell casting", "ritual magic", "familiar bonds", "coven membership", "magical study"],
+          "common_traits": ["power growth", "magical exhaustion", "component needs", "grimoire keeping", "circle casting"]
+        },
+        "elementals": {
+          "name": "Elementals",
+          "description": "Beings made of or controlling natural elements",
+          "subtypes": ["Fire Spirits", "Water Nymphs", "Earth Golems", "Air Sylphs", "Storm Lords", "Ice Wraiths"],
+          "key_features": ["element embodiment", "environmental influence", "seasonal power", "natural disasters", "element immunity"],
+          "common_traits": ["environment dependency", "emotional weather", "opposing elements", "nature protection"]
+        },
+        "gods_demigods": {
+          "name": "Gods/Demigods",
+          "description": "Divine beings with worship-based or inherent cosmic power",
+          "subtypes": ["Pantheon Gods", "Forgotten Deities", "Demigod Heroes", "Divine Avatars", "Ascended Mortals"],
+          "key_features": ["divine domains", "worship power", "immortality", "reality alteration", "divine intervention"],
+          "common_traits": ["hubris", "mortal fascination", "divine politics", "prophecy creation", "champion choosing"]
+        },
+        "elves": {
+          "name": "Elves",
+          "description": "Ancient, long-lived humanoids with natural magic affinity",
+          "subtypes": ["High Elves", "Wood Elves", "Dark Elves", "Sea Elves", "Sun Elves", "Moon Elves"],
+          "key_features": ["immortality", "nature magic", "ancient knowledge", "artistic mastery", "magical sight"],
+          "common_traits": ["isolationism", "declining population", "human prejudice", "magical superiority", "forest homes"]
+        },
+        "merfolk": {
+          "name": "Merfolk/Aquatic",
+          "description": "Underwater dwelling beings with aquatic adaptations",
+          "subtypes": ["Mermaids", "Sirens", "Selkies", "Naiads", "Tritons", "Cecaelia"],
+          "key_features": ["water breathing", "transformation magic", "siren song", "tide control", "underwater cities"],
+          "common_traits": ["land/sea conflict", "drowning powers", "pearl magic", "storm calling", "ship sinking"]
+        },
+        "phoenix": {
+          "name": "Phoenix/Firebirds",
+          "description": "Rare beings of fire and rebirth with resurrection abilities",
+          "subtypes": ["True Phoenix", "Firebirds", "Thunderbirds", "Simurgh", "Bennu"],
+          "key_features": ["rebirth cycles", "healing tears", "fire immunity", "prophetic visions", "magical feathers"],
+          "common_traits": ["solitary nature", "hunted status", "rebirth memory loss", "sacred status", "nest guardianship"]
+        },
+        "shadow_beings": {
+          "name": "Shadow/Void Beings",
+          "description": "Creatures of darkness, shadows, or void magic",
+          "subtypes": ["Shadowkin", "Void Walkers", "Nightmare Lords", "Shade Wraiths", "Umbral Mages"],
+          "key_features": ["shadow manipulation", "intangibility", "fear feeding", "darkness travel", "light weakness"],
+          "common_traits": ["misunderstood nature", "isolation", "dream walking", "possession abilities", "emotion feeding"]
+        }
+      }
+    },
+    "magic_system": {
+      "category_name": "Magic System Type",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The fundamental rules and sources of magical power",
+      "options": {
+        "hard_magic": {
+          "name": "Hard Magic - Ruled",
+          "description": "Magic with specific costs, limitations, and consistent laws",
+          "key_features": ["energy conservation", "specific costs", "predictable outcomes", "scientific approach"],
+          "limitations": ["magical exhaustion", "component requirements", "equivalent exchange", "backlash consequences"],
+          "learning_curve": "high"
+        },
+        "soft_magic": {
+          "name": "Soft Magic - Intuitive",
+          "description": "Emotion and intention-based magic with vague limitations",
+          "key_features": ["emotional power", "intuitive use", "unpredictable results", "narrative convenience"],
+          "limitations": ["emotional state dependency", "unclear boundaries", "willpower based", "mysterious failures"],
+          "learning_curve": "variable"
+        },
+        "bloodline_magic": {
+          "name": "Bloodline/Inherited",
+          "description": "Magical power passed through family lines",
+          "key_features": ["genetic inheritance", "family gifts", "power concentration", "breeding politics"],
+          "limitations": ["cannot be learned", "bloodline dilution", "inbreeding risks", "family feuds"],
+          "learning_curve": "natural_manifestation"
+        },
+        "bargain_magic": {
+          "name": "Bargain/Contract",
+          "description": "Power gained through deals with entities or forces",
+          "key_features": ["negotiated power", "binding contracts", "loopholes", "escalating costs"],
+          "limitations": ["always has a price", "contract terms", "deal breakers", "enforcement entities"],
+          "learning_curve": "negotiation_based"
+        },
+        "elemental_magic": {
+          "name": "Elemental/Natural",
+          "description": "Control over natural forces and elements",
+          "key_features": ["element affinity", "natural harmony", "environmental power", "opposing elements"],
+          "limitations": ["element availability", "environmental dependency", "elemental weakness", "balance requirements"],
+          "learning_curve": "moderate"
+        },
+        "divine_magic": {
+          "name": "Divine/Faith-Based",
+          "description": "Power derived from deities or faith",
+          "key_features": ["deity granted", "faith powered", "moral requirements", "divine intervention"],
+          "limitations": ["faith dependency", "moral restrictions", "divine will", "crisis of faith"],
+          "learning_curve": "devotion_based"
+        },
+        "crafted_magic": {
+          "name": "Crafted/Artifice",
+          "description": "Magic through created objects, runes, or potions",
+          "key_features": ["item creation", "rune scribing", "potion brewing", "enchantment"],
+          "limitations": ["material requirements", "crafting time", "skill needed", "item durability"],
+          "learning_curve": "high"
+        }
+      }
+    },
+    "romance_structure": {
+      "category_name": "Romance Structure",
+      "selection_rule": "select_one",
+      "description": "The fundamental romantic relationship configuration",
+      "options": {
+        "monogamous": {
+          "name": "Monogamous Pair",
+          "description": "Traditional two-person exclusive romantic endgame",
+          "typical_progression": ["meeting", "attraction", "conflict", "resolution", "commitment"],
+          "common_conflicts": ["external obstacles", "internal wounds", "miscommunication", "power imbalance"]
+        },
+        "love_triangle": {
+          "name": "Love Triangle - Choice Required",
+          "description": "Protagonist must choose between two love interests",
+          "typical_progression": ["dual attraction", "comparison", "jealousy", "decision point", "resolution"],
+          "common_conflicts": ["different worlds", "opposing traits", "timing issues", "loyalty conflicts"]
+        },
+        "reverse_harem": {
+          "name": "Reverse Harem/Why Choose",
+          "description": "Multiple male love interests, no choice required",
+          "typical_progression": ["sequential meetings", "group dynamics", "acceptance", "balance", "group commitment"],
+          "common_conflicts": ["jealousy management", "time division", "social acceptance", "power dynamics"]
+        },
+        "polyamorous": {
+          "name": "Polyamorous/Throuple",
+          "description": "Committed multi-person equal relationship",
+          "typical_progression": ["pair formation", "third introduction", "negotiation", "balance finding", "triad stability"],
+          "common_conflicts": ["equal attention", "jealousy", "social stigma", "communication complexity"]
+        },
+        "harem": {
+          "name": "Harem",
+          "description": "Multiple female love interests for male protagonist",
+          "typical_progression": ["collection phase", "individual arcs", "group acceptance", "hierarchy establishment", "stable dynamic"],
+          "common_conflicts": ["favoritism", "competition", "resource allocation", "external threats"]
+        },
+        "serial_monogamy": {
+          "name": "Serial Monogamy",
+          "description": "Different exclusive partner each book in series",
+          "typical_progression": ["complete arc per book", "closure", "new beginning", "past reference", "growth shown"],
+          "common_conflicts": ["past baggage", "comparison", "series continuity", "reader attachment"]
+        },
+        "fated_rejection": {
+          "name": "Fated Rejection/Second Chance",
+          "description": "Destined mates initially rejected or separated",
+          "typical_progression": ["initial bond", "rejection/separation", "growth apart", "reunion", "acceptance"],
+          "common_conflicts": ["pride", "hurt", "changed people", "forgiveness", "trust rebuilding"]
+        }
+      }
+    },
+    "relationship_dynamics": {
+      "category_name": "Relationship Dynamics",
+      "selection_rule": "select_all_that_apply",
+      "description": "The emotional and power dynamics within the romance",
+      "options": {
+        "enemies_to_lovers": {
+          "name": "Enemies to Lovers",
+          "description": "Active antagonism transforms into romantic love",
+          "tension_sources": ["opposing sides", "personal vendettas", "misunderstandings", "competition"],
+          "turning_points": ["forced proximity", "seeing vulnerability", "common enemy", "life saving"]
+        },
+        "allies_to_lovers": {
+          "name": "Allies to Lovers",
+          "description": "Partnership and friendship developing into romance",
+          "tension_sources": ["fear of ruining friendship", "professional boundaries", "timing", "obliviousness"],
+          "turning_points": ["jealousy realization", "near loss", "confession", "breaking point"]
+        },
+        "forbidden_love": {
+          "name": "Forbidden Love",
+          "description": "Romance prohibited by external forces",
+          "tension_sources": ["different species", "warring factions", "social class", "prophecies", "laws"],
+          "turning_points": ["choosing love", "secret revelation", "rule breaking", "exile acceptance"]
+        },
+        "bodyguard_protected": {
+          "name": "Bodyguard/Protected",
+          "description": "Protection duty complicated by romantic feelings",
+          "tension_sources": ["professional ethics", "power imbalance", "constant proximity", "life-or-death stakes"],
+          "turning_points": ["attack survival", "off-duty moment", "contract end", "role reversal"]
+        },
+        "mentor_student": {
+          "name": "Mentor/Student",
+          "description": "Teaching relationship with romantic undertones",
+          "tension_sources": ["power imbalance", "age gap", "ethical concerns", "institutional rules"],
+          "turning_points": ["graduation", "surpassing teacher", "equal footing", "crisis cooperation"]
+        },
+        "fake_relationship": {
+          "name": "Fake Relationship",
+          "description": "Pretend romance that becomes real",
+          "tension_sources": ["maintaining facade", "boundary confusion", "public vs private", "end date"],
+          "turning_points": ["jealousy", "unscripted moment", "confession", "contract end"]
+        },
+        "marriage_convenience": {
+          "name": "Marriage of Convenience",
+          "description": "Political or practical marriage developing into love",
+          "tension_sources": ["lack of choice", "public performance", "separate lives", "resentment"],
+          "turning_points": ["genuine care", "choosing to stay", "renegotiation", "true intimacy"]
+        },
+        "kidnapped_captured": {
+          "name": "Kidnapped/Captured",
+          "description": "Captivity situation with romantic development",
+          "tension_sources": ["power imbalance", "stockholm syndrome", "moral complexity", "escape desire"],
+          "turning_points": ["seeing humanity", "protection", "choosing to stay", "role reversal"]
+        },
+        "reincarnated_lovers": {
+          "name": "Reincarnated Lovers",
+          "description": "Souls finding each other across lifetimes",
+          "tension_sources": ["memory gaps", "different circumstances", "past tragedies", "recognition delay"],
+          "turning_points": ["memory return", "pattern recognition", "soul acknowledgment", "breaking cycle"]
+        },
+        "soul_bonds": {
+          "name": "Soul/Fate Bonds",
+          "description": "Magical or destined connection between souls",
+          "tension_sources": ["loss of choice", "bond rejection", "incomplete bonds", "bond sickness"],
+          "turning_points": ["bond acceptance", "completion ritual", "choosing beyond fate", "bond evolution"]
+        },
+        "power_exchange": {
+          "name": "Power Exchange",
+          "description": "Dominant/submissive dynamics in relationship",
+          "tension_sources": ["control issues", "vulnerability", "trust building", "public vs private"],
+          "turning_points": ["first submission", "safe word use", "power flip", "trust establishment"]
+        },
+        "grumpy_sunshine": {
+          "name": "Grumpy/Sunshine",
+          "description": "Opposite personalities attracting",
+          "tension_sources": ["irritation", "worldview clash", "communication styles", "pace of life"],
+          "turning_points": ["seeing beneath surface", "protection moment", "joy teaching", "balance finding"]
+        },
+        "touch_aversion": {
+          "name": "Touch Aversion/Exception",
+          "description": "Character who can only tolerate one person's touch",
+          "tension_sources": ["trauma history", "physical limitation", "trust issues", "magical curse"],
+          "turning_points": ["first touch", "healing moment", "choosing contact", "barrier breaking"]
+        }
+      }
+    },
+    "protagonist_archetype": {
+      "category_name": "Protagonist Archetype",
+      "selection_rule": "select_primary",
+      "description": "The fundamental character type of the main protagonist",
+      "options": {
+        "chosen_one": {
+          "name": "Chosen One",
+          "description": "Prophesied savior with unique destiny",
+          "typical_traits": ["reluctant hero", "unique power", "prophecy burden", "mentor guided"],
+          "character_arc": ["denial", "acceptance", "training", "sacrifice", "triumph"],
+          "common_powers": ["prophecy magic", "unique ability", "destiny sight", "chosen weapon"]
+        },
+        "hidden_royalty": {
+          "name": "Hidden Royalty",
+          "description": "Unknown heir to throne or power",
+          "typical_traits": ["humble origins", "natural leadership", "royal instincts", "identity crisis"],
+          "character_arc": ["discovery", "denial", "training", "acceptance", "claiming throne"],
+          "common_powers": ["bloodline magic", "royal artifacts", "command ability", "ancestral memories"]
+        },
+        "outsider_human": {
+          "name": "Outsider/Human",
+          "description": "Normal person thrust into magical world",
+          "typical_traits": ["skeptical", "adaptable", "questioning", "bridge between worlds"],
+          "character_arc": ["disbelief", "adaptation", "finding place", "choosing side", "belonging"],
+          "common_powers": ["null magic", "immunity", "sight", "unexpected compatibility"]
+        },
+        "powered_orphan": {
+          "name": "Powered Orphan",
+          "description": "Orphan with mysterious origins and hidden powers",
+          "typical_traits": ["survivor", "independent", "trust issues", "self-reliant"],
+          "character_arc": ["survival", "power discovery", "origin seeking", "family finding", "legacy claiming"],
+          "common_powers": ["suppressed abilities", "rare magic", "hybrid powers", "ancient bloodline"]
+        },
+        "trained_warrior": {
+          "name": "Trained Warrior",
+          "description": "Skilled fighter seeking purpose or redemption",
+          "typical_traits": ["disciplined", "deadly", "haunted", "honor-bound"],
+          "character_arc": ["mission focused", "questioning purpose", "finding cause", "choosing love", "redemption"],
+          "common_powers": ["weapon mastery", "enhanced physique", "battle magic", "strategic mind"]
+        },
+        "scholar_researcher": {
+          "name": "Scholar/Researcher",
+          "description": "Academic approaching magic through knowledge",
+          "typical_traits": ["curious", "intelligent", "bookish", "theoretical"],
+          "character_arc": ["theory", "practical application", "field experience", "wisdom", "mastery"],
+          "common_powers": ["ritual magic", "ancient languages", "artifact identification", "spell creation"]
+        },
+        "thief_assassin": {
+          "name": "Thief/Assassin",
+          "description": "Morally gray character with deadly skills",
+          "typical_traits": ["stealthy", "pragmatic", "untrusting", "survival focused"],
+          "character_arc": ["job gone wrong", "unwilling involvement", "loyalty development", "moral choice", "redemption"],
+          "common_powers": ["shadow magic", "poison immunity", "lock picking", "invisibility"]
+        },
+        "healer_empath": {
+          "name": "Healer/Empath",
+          "description": "Nurturing character with healing abilities",
+          "typical_traits": ["compassionate", "self-sacrificing", "sensitive", "peaceful"],
+          "character_arc": ["helping others", "learning limits", "finding strength", "choosing self", "balanced power"],
+          "common_powers": ["healing magic", "emotion sensing", "pain transfer", "life force manipulation"]
+        },
+        "prisoner_slave": {
+          "name": "Prisoner/Slave",
+          "description": "Character breaking free from bondage",
+          "typical_traits": ["resilient", "cautious", "freedom seeking", "trauma bearing"],
+          "character_arc": ["captivity", "opportunity", "escape", "freedom adjustment", "power claiming"],
+          "common_powers": ["suppressed magic", "bond breaking", "resistance", "hidden strength"]
+        },
+        "royal_noble": {
+          "name": "Royal/Noble",
+          "description": "Aristocrat navigating court politics",
+          "typical_traits": ["privileged", "educated", "politically savvy", "duty bound"],
+          "character_arc": ["gilded cage", "rebellion", "duty vs desire", "choosing path", "redefining role"],
+          "common_powers": ["court magic", "diplomatic immunity", "bloodline gifts", "political influence"]
+        },
+        "wild_power": {
+          "name": "Wild Power",
+          "description": "Character with uncontrolled, feared abilities",
+          "typical_traits": ["dangerous", "isolated", "feared", "unstable"],
+          "character_arc": ["incident", "hiding", "discovery", "control learning", "acceptance"],
+          "common_powers": ["chaos magic", "elemental storms", "reality warping", "berserker states"]
+        }
+      }
+    },
+    "love_interest_archetype": {
+      "category_name": "Love Interest Archetype",
+      "selection_rule": "select_all_that_apply",
+      "description": "Character types for romantic interests",
+      "options": {
+        "alpha_dominant": {
+          "name": "Alpha/Dominant",
+          "description": "Pack leader or controlling, protective figure",
+          "typical_traits": ["commanding", "protective", "possessive", "leader"],
+          "attractive_qualities": ["strength", "decisiveness", "protection", "confidence"],
+          "common_flaws": ["controlling", "overprotective", "jealous", "inflexible"]
+        },
+        "dark_lord": {
+          "name": "Dark Lord/Villain",
+          "description": "Morally gray or evil-coded character",
+          "typical_traits": ["dangerous", "powerful", "morally ambiguous", "tragic past"],
+          "attractive_qualities": ["power", "danger", "selective softness", "forbidden nature"],
+          "common_flaws": ["cruel", "manipulative", "violent past", "redemption needed"]
+        },
+        "cinnamon_roll": {
+          "name": "Cinnamon Roll",
+          "description": "Sweet, supportive, kind character",
+          "typical_traits": ["gentle", "supportive", "optimistic", "caring"],
+          "attractive_qualities": ["kindness", "reliability", "emotional support", "genuine goodness"],
+          "common_flaws": ["too trusting", "self-sacrificing", "conflict avoidant", "naive"]
+        },
+        "trickster_chaos": {
+          "name": "Trickster/Chaos",
+          "description": "Unpredictable, playful, dangerous character",
+          "typical_traits": ["chaotic", "clever", "unpredictable", "mischievous"],
+          "attractive_qualities": ["excitement", "intelligence", "humor", "spontaneity"],
+          "common_flaws": ["unreliable", "destructive", "commitment issues", "emotional distance"]
+        },
+        "brooding_warrior": {
+          "name": "Brooding Warrior",
+          "description": "Traumatized fighter with emotional walls",
+          "typical_traits": ["silent", "deadly", "haunted", "protective"],
+          "attractive_qualities": ["hidden depth", "protective nature", "competence", "intensity"],
+          "common_flaws": ["emotional unavailability", "violence", "trust issues", "self-destructive"]
+        },
+        "ancient_immortal": {
+          "name": "Ancient/Immortal",
+          "description": "Centuries-old being with vast experience",
+          "typical_traits": ["wise", "powerful", "jaded", "lonely"],
+          "attractive_qualities": ["knowledge", "power", "experience", "patience"],
+          "common_flaws": ["condescending", "detached", "inflexible", "haunted by past"]
+        },
+        "beast_monster": {
+          "name": "Beast/Monster",
+          "description": "Inhuman or transformed creature",
+          "typical_traits": ["inhuman features", "primal", "isolated", "powerful"],
+          "attractive_qualities": ["unique perspective", "raw power", "protective instincts", "loyalty"],
+          "common_flaws": ["lack of control", "social isolation", "communication issues", "feared by others"]
+        },
+        "rival_competition": {
+          "name": "Rival/Competition",
+          "description": "Competitor for same goal or position",
+          "typical_traits": ["competitive", "skilled", "ambitious", "challenging"],
+          "attractive_qualities": ["equal match", "mutual respect", "shared passion", "growth catalyst"],
+          "common_flaws": ["too competitive", "pride", "win-at-all-costs", "initial cruelty"]
+        },
+        "best_friend": {
+          "name": "Best Friend",
+          "description": "Long-standing platonic relationship turned romantic",
+          "typical_traits": ["familiar", "comfortable", "supportive", "understanding"],
+          "attractive_qualities": ["deep knowledge", "trust", "shared history", "comfort"],
+          "common_flaws": ["fear of change", "friend-zoned mindset", "taken for granted", "timing issues"]
+        },
+        "mysterious_stranger": {
+          "name": "Mysterious Stranger",
+          "description": "Unknown figure with hidden past and motives",
+          "typical_traits": ["secretive", "intriguing", "capable", "aloof"],
+          "attractive_qualities": ["mystery", "gradual revelation", "hidden depths", "special interest"],
+          "common_flaws": ["trust issues", "dangerous past", "commitment fears", "secrets"]
+        },
+        "broken_damaged": {
+          "name": "Broken/Damaged",
+          "description": "Character needing healing or redemption",
+          "typical_traits": ["wounded", "guarded", "self-destructive", "touch-starved"],
+          "attractive_qualities": ["vulnerability", "healing journey", "devotion when healed", "understanding"],
+          "common_flaws": ["self-sabotage", "emotional baggage", "trust issues", "healing dependency"]
+        },
+        "sunshine_golden": {
+          "name": "Sunshine/Golden",
+          "description": "Optimistic light to protagonist's darkness",
+          "typical_traits": ["cheerful", "optimistic", "warm", "inclusive"],
+          "attractive_qualities": ["joy bringing", "emotional warmth", "hope", "balance providing"],
+          "common_flaws": ["toxic positivity", "naive", "boundary issues", "emotional labor"]
+        }
+      }
+    },
+    "plot_driver": {
+      "category_name": "Plot Driver",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The main narrative engine moving the story forward",
+      "options": {
+        "political_intrigue": {
+          "name": "Political Intrigue",
+          "description": "Court maneuvering and succession disputes",
+          "key_elements": ["throne succession", "court alliances", "betrayals", "marriage politics"],
+          "typical_stakes": ["kingdom fate", "war prevention", "power balance", "dynasty survival"]
+        },
+        "war_rebellion": {
+          "name": "War/Rebellion",
+          "description": "Large-scale conflicts and choosing sides",
+          "key_elements": ["battle scenes", "military strategy", "civilian impact", "moral choices"],
+          "typical_stakes": ["freedom", "survival", "regime change", "genocide prevention"]
+        },
+        "tournament_competition": {
+          "name": "Tournament/Competition",
+          "description": "Magical contests and proving worth",
+          "key_elements": ["trials", "rankings", "sabotage", "public performance"],
+          "typical_stakes": ["honor", "prize", "survival", "recognition", "marriage"]
+        },
+        "quest_journey": {
+          "name": "Quest/Journey",
+          "description": "Seeking object, person, or place",
+          "key_elements": ["travel", "obstacles", "companions", "destination"],
+          "typical_stakes": ["world saving", "curse breaking", "rescue", "artifact recovery"]
+        },
+        "academy_training": {
+          "name": "Academy/Training",
+          "description": "Learning and growing in power",
+          "key_elements": ["classes", "tests", "rival students", "mentor relationships"],
+          "typical_stakes": ["graduation", "power mastery", "social standing", "survival"]
+        },
+        "mystery_investigation": {
+          "name": "Mystery/Investigation",
+          "description": "Solving magical crimes or puzzles",
+          "key_elements": ["clues", "suspects", "reveals", "danger escalation"],
+          "typical_stakes": ["justice", "prevention", "truth revelation", "clearing names"]
+        },
+        "survival_apocalypse": {
+          "name": "Survival/Apocalypse",
+          "description": "Staying alive in hostile world",
+          "key_elements": ["resource scarcity", "shelter finding", "threat avoidance", "alliance building"],
+          "typical_stakes": ["immediate survival", "group protection", "safe haven", "rebuilding"]
+        },
+        "revenge_vengeance": {
+          "name": "Revenge/Vengeance",
+          "description": "Righting past wrongs",
+          "key_elements": ["planning", "infiltration", "confrontation", "moral questioning"],
+          "typical_stakes": ["justice", "closure", "prevention", "redemption"]
+        },
+        "curse_breaking": {
+          "name": "Curse Breaking",
+          "description": "Undoing magical affliction",
+          "key_elements": ["curse rules", "loopholes", "sacrifice", "time limits"],
+          "typical_stakes": ["transformation reversal", "death prevention", "kingdom saving", "love enabling"]
+        },
+        "power_awakening": {
+          "name": "Power Awakening",
+          "description": "Coming into magical abilities",
+          "key_elements": ["manifestation", "control learning", "power growth", "responsibility"],
+          "typical_stakes": ["self-acceptance", "control", "protection", "destiny fulfillment"]
+        },
+        "social_season": {
+          "name": "Social Season",
+          "description": "Magical society debut and marriage mart",
+          "key_elements": ["balls", "courtship", "reputation", "alliances"],
+          "typical_stakes": ["marriage", "social standing", "family honor", "political alliance"]
+        }
+      }
+    },
+    "heat_level": {
+      "category_name": "Heat Level",
+      "selection_rule": "select_one",
+      "description": "The explicitness of romantic/sexual content",
+      "options": {
+        "closed_door": {
+          "name": "Closed Door",
+          "description": "Romance without explicit scenes",
+          "content_includes": ["kissing", "emotional intimacy", "fade to black", "morning after"],
+          "audience": "all_ages"
+        },
+        "mild_steam": {
+          "name": "Mild Steam",
+          "description": "Some sensual scenes with limited detail",
+          "content_includes": ["passionate kissing", "light touching", "implied intimacy", "emotional focus"],
+          "audience": "teen_plus"
+        },
+        "moderate_steam": {
+          "name": "Moderate Steam",
+          "description": "Several explicit scenes with emotional focus",
+          "content_includes": ["detailed intimacy", "emotional connection", "consent focus", "relationship development"],
+          "audience": "mature"
+        },
+        "high_heat": {
+          "name": "High Heat",
+          "description": "Frequent explicit scenes with full detail",
+          "content_includes": ["graphic scenes", "multiple encounters", "varied activities", "kink elements"],
+          "audience": "adult"
+        },
+        "erotica_adjacent": {
+          "name": "Erotica-Adjacent",
+          "description": "Sex scenes central to plot",
+          "content_includes": ["plot-driving intimacy", "magical sex", "bonding through intimacy", "explicit focus"],
+          "audience": "adult"
+        }
+      }
+    },
+    "tone_mood": {
+      "category_name": "Tone/Mood",
+      "selection_rule": "select_all_that_apply",
+      "description": "The overall emotional atmosphere of the story",
+      "options": {
+        "dark_gritty": {
+          "name": "Dark/Gritty",
+          "description": "Serious consequences and moral ambiguity",
+          "elements": ["violence", "trauma", "difficult choices", "realistic consequences"],
+          "atmosphere": ["oppressive", "dangerous", "morally gray", "high stakes"]
+        },
+        "light_humorous": {
+          "name": "Light/Humorous",
+          "description": "Comedic elements and witty banter",
+          "elements": ["banter", "situational comedy", "witty dialogue", "comic relief"],
+          "atmosphere": ["fun", "entertaining", "lighthearted", "optimistic"]
+        },
+        "epic_sweeping": {
+          "name": "Epic/Sweeping",
+          "description": "World-ending stakes and grand scale",
+          "elements": ["prophecies", "armies", "multiple POVs", "world-building"],
+          "atmosphere": ["grand", "important", "legendary", "consequential"]
+        },
+        "intimate_character": {
+          "name": "Intimate/Character-Driven",
+          "description": "Small cast with personal stakes",
+          "elements": ["deep POV", "internal conflict", "relationship focus", "character growth"],
+          "atmosphere": ["personal", "emotional", "introspective", "relatable"]
+        },
+        "gothic_atmospheric": {
+          "name": "Gothic/Atmospheric",
+          "description": "Moody with architectural and environmental focus",
+          "elements": ["dark settings", "old buildings", "family secrets", "isolation"],
+          "atmosphere": ["brooding", "mysterious", "decaying", "haunting"]
+        },
+        "angsty": {
+          "name": "Angsty",
+          "description": "Emotional torture and yearning",
+          "elements": ["pining", "separation", "misunderstandings", "emotional pain"],
+          "atmosphere": ["tense", "yearning", "painful", "emotionally charged"]
+        },
+        "cozy": {
+          "name": "Cozy",
+          "description": "Low stakes comfort reading",
+          "elements": ["found family", "domestic scenes", "comfort", "healing"],
+          "atmosphere": ["warm", "safe", "comforting", "gentle"]
+        },
+        "action_packed": {
+          "name": "Action-Packed",
+          "description": "Constant movement and fights",
+          "elements": ["battles", "chases", "escapes", "physical conflict"],
+          "atmosphere": ["fast-paced", "thrilling", "dangerous", "adrenaline-fueled"]
+        }
+      }
+    }
+  },
+  "usage_instructions": {
+    "classification_process": [
+      "Start with world_setting to establish base reality",
+      "Identify dominant_species present in the world",
+      "Determine magic_system rules",
+      "Classify romance_structure and relationship_dynamics",
+      "Identify protagonist and love interest archetypes",
+      "Determine primary and secondary plot_drivers",
+      "Assess heat_level for content rating",
+      "Tag all applicable tone_mood elements"
+    ],
+    "tagging_rules": {
+      "minimum_tags": {
+        "world_setting": 1,
+        "dominant_species": 1,
+        "magic_system": 1,
+        "romance_structure": 1,
+        "relationship_dynamics": 1,
+        "protagonist_archetype": 1,
+        "love_interest_archetype": 1,
+        "plot_driver": 1,
+        "heat_level": 1,
+        "tone_mood": 1
+      },
+      "maximum_tags": {
+        "world_setting": 2,
+        "dominant_species": "unlimited",
+        "magic_system": 3,
+        "romance_structure": 1,
+        "relationship_dynamics": "unlimited",
+        "protagonist_archetype": 1,
+        "love_interest_archetype": "unlimited",
+        "plot_driver": 3,
+        "heat_level": 1,
+        "tone_mood": "unlimited"
+      }
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "last_updated": "2024",
+    "total_categories": 10,
+    "total_options": 160,
+    "use_cases": [
+      "Book classification",
+      "Reader preference matching",
+      "Trend analysis",
+      "Recommendation systems",
+      "Author planning tools",
+      "Publisher categorization",
+      "Marketing analysis"
+    ]
+  }
+}

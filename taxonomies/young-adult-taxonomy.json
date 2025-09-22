@@ -1,0 +1,467 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Young Adult (YA) Classification System",
+  "extends": "base-taxonomy",
+  "genre": "young-adult",
+  "description": "Fiction for teens and young adults featuring coming-of-age themes and young protagonists",
+  "categories": {
+    "ya_genre": {
+      "category_name": "YA Genre",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The specific genre within YA",
+      "options": {
+        "ya_fantasy": {
+          "name": "YA Fantasy",
+          "description": "Magic and adventure for teens",
+          "elements": ["chosen one", "magic school", "quest", "powers awakening"],
+          "popular_types": ["urban fantasy", "high fantasy", "fairy tale retelling", "mythology"],
+          "appeal": "escape and empowerment"
+        },
+        "ya_dystopian": {
+          "name": "YA Dystopian",
+          "description": "Teen heroes in oppressive futures",
+          "themes": ["rebellion", "corrupt authority", "survival", "freedom"],
+          "structure": ["divided society", "selection/ceremony", "revolution", "love triangle"],
+          "message": "youth power"
+        },
+        "ya_contemporary": {
+          "name": "YA Contemporary",
+          "description": "Real-world teen experiences",
+          "themes": ["first love", "identity", "family", "friendship", "school"],
+          "issues": ["mental health", "sexuality", "social media", "pressure"],
+          "tone": "authentic voice"
+        },
+        "ya_romance": {
+          "name": "YA Romance",
+          "description": "Love stories for teens",
+          "elements": ["first love", "crushes", "love triangles", "forbidden love"],
+          "heat_level": ["sweet", "closed door", "fade to black"],
+          "focus": "emotional connection"
+        },
+        "ya_paranormal": {
+          "name": "YA Paranormal",
+          "description": "Supernatural teen stories",
+          "creatures": ["vampires", "werewolves", "witches", "angels", "ghosts"],
+          "themes": ["otherness", "hidden identity", "power control", "acceptance"],
+          "setting": "contemporary with magic"
+        },
+        "ya_scifi": {
+          "name": "YA Science Fiction",
+          "description": "Future and technology for teens",
+          "elements": ["space adventure", "time travel", "dystopia", "superpowers"],
+          "themes": ["identity", "rebellion", "discovery", "humanity"],
+          "tone": "accessible sci-fi"
+        },
+        "ya_thriller": {
+          "name": "YA Thriller/Mystery",
+          "description": "Suspense for teen readers",
+          "elements": ["missing persons", "dark secrets", "conspiracy", "murder mystery"],
+          "protagonists": ["amateur sleuth", "witness", "suspect", "victim"],
+          "pacing": "page-turner"
+        },
+        "ya_horror": {
+          "name": "YA Horror",
+          "description": "Age-appropriate scares",
+          "elements": ["haunting", "monsters", "survival", "folklore"],
+          "boundaries": ["less gore", "psychological focus", "hope elements"],
+          "appeal": "safe scares"
+        },
+        "ya_historical": {
+          "name": "YA Historical",
+          "description": "History through teen eyes",
+          "periods": ["WWII", "Victorian", "1960s", "Ancient civilizations"],
+          "perspectives": ["coming of age in history", "teen heroes", "untold stories"],
+          "balance": "accuracy and accessibility"
+        },
+        "ya_sports": {
+          "name": "YA Sports",
+          "description": "Athletic teen stories",
+          "themes": ["competition", "teamwork", "dedication", "identity beyond sports"],
+          "conflicts": ["injury", "pressure", "rivals", "balance"],
+          "sports": ["football", "dance", "swimming", "basketball"]
+        }
+      }
+    },
+    "protagonist_age": {
+      "category_name": "Protagonist Age",
+      "selection_rule": "select_one",
+      "description": "Age of main character",
+      "options": {
+        "younger_ya": {
+          "name": "Younger YA (12-14)",
+          "description": "Middle school age",
+          "themes": ["first crushes", "friend drama", "identity forming", "family important"],
+          "content": "very mild"
+        },
+        "mid_ya": {
+          "name": "Mid YA (15-16)",
+          "description": "High school age",
+          "themes": ["dating", "independence", "future anxiety", "peer pressure"],
+          "content": "moderate"
+        },
+        "older_ya": {
+          "name": "Older YA (17-18)",
+          "description": "Senior/gap year",
+          "themes": ["college prep", "serious relationships", "adulthood looming", "big decisions"],
+          "content": "mature YA"
+        },
+        "crossover": {
+          "name": "Crossover (18-25)",
+          "description": "YA/Adult bridge",
+          "themes": ["college", "first job", "adult relationships", "finding path"],
+          "audience": "YA and adults"
+        }
+      }
+    },
+    "school_setting": {
+      "category_name": "School/Social Setting",
+      "selection_rule": "select_one",
+      "description": "The social environment",
+      "options": {
+        "high_school": {
+          "name": "High School",
+          "description": "Traditional school setting",
+          "elements": ["classes", "lockers", "cafeteria", "prom", "cliques"],
+          "dynamics": "social hierarchy"
+        },
+        "boarding_school": {
+          "name": "Boarding School",
+          "description": "Residential school",
+          "elements": ["dorms", "house systems", "traditions", "isolation from family"],
+          "advantages": "24/7 drama"
+        },
+        "magic_school": {
+          "name": "Magic/Special School",
+          "description": "School for gifted/powered",
+          "elements": ["training", "houses/teams", "special classes", "destiny prep"],
+          "appeal": "wish fulfillment"
+        },
+        "summer_program": {
+          "name": "Summer Camp/Program",
+          "description": "Seasonal intensity",
+          "types": ["camp", "internship", "travel program", "competition"],
+          "dynamics": "temporary intensity"
+        },
+        "no_school": {
+          "name": "Outside School",
+          "description": "Non-academic setting",
+          "reasons": ["graduated", "dropped out", "homeschool", "apocalypse"],
+          "focus": "work or survival"
+        },
+        "college": {
+          "name": "College/University",
+          "description": "Higher education setting",
+          "elements": ["dorms", "parties", "classes", "freedom"],
+          "themes": "transition to adulthood"
+        }
+      }
+    },
+    "central_conflict": {
+      "category_name": "Central YA Conflict",
+      "selection_rule": "select_primary",
+      "description": "Main source of conflict",
+      "options": {
+        "identity_discovery": {
+          "name": "Identity Discovery",
+          "description": "Finding who you are",
+          "aspects": ["sexuality", "culture", "values", "talents", "purpose"],
+          "journey": "self-acceptance"
+        },
+        "family_conflict": {
+          "name": "Family Conflict",
+          "description": "Issues with family",
+          "types": ["divorce", "expectations", "siblings", "absent parents", "secrets"],
+          "resolution": "understanding or independence"
+        },
+        "social_belonging": {
+          "name": "Social Belonging",
+          "description": "Finding your tribe",
+          "challenges": ["fitting in", "bullying", "popularity", "friendship drama"],
+          "goal": "authentic connections"
+        },
+        "first_love": {
+          "name": "First Love/Romance",
+          "description": "Navigating romance",
+          "elements": ["crushes", "heartbreak", "jealousy", "self-worth"],
+          "growth": "emotional maturity"
+        },
+        "power_responsibility": {
+          "name": "Power and Responsibility",
+          "description": "Handling new abilities/role",
+          "types": ["magical powers", "leadership", "knowledge", "influence"],
+          "lesson": "with great power..."
+        },
+        "survival_competition": {
+          "name": "Survival/Competition",
+          "description": "High-stakes contest",
+          "formats": ["death games", "selection", "tournament", "audition"],
+          "stakes": "life or dreams"
+        },
+        "justice_rebellion": {
+          "name": "Justice/Rebellion",
+          "description": "Fighting the system",
+          "targets": ["corrupt authority", "unfair rules", "oppression", "adult failures"],
+          "role": "reluctant hero"
+        },
+        "mental_health": {
+          "name": "Mental Health",
+          "description": "Psychological challenges",
+          "issues": ["anxiety", "depression", "eating disorders", "trauma"],
+          "journey": "healing and coping"
+        }
+      }
+    },
+    "relationship_dynamics": {
+      "category_name": "Relationship Dynamics",
+      "selection_rule": "select_all_that_apply",
+      "description": "Key relationships in the story",
+      "options": {
+        "love_triangle": {
+          "name": "Love Triangle",
+          "description": "Choosing between two",
+          "types": ["two suitors", "best friend vs new person", "safe vs dangerous"],
+          "tension": "torn hearts"
+        },
+        "enemies_to_lovers": {
+          "name": "Enemies to Lovers",
+          "description": "Hate to love journey",
+          "progression": ["initial conflict", "forced proximity", "understanding", "attraction"],
+          "appeal": "tension and banter"
+        },
+        "best_friends": {
+          "name": "Best Friend Drama",
+          "description": "Friendship challenges",
+          "conflicts": ["growing apart", "betrayal", "secrets", "competition"],
+          "importance": "friendship = family"
+        },
+        "found_family": {
+          "name": "Found Family",
+          "description": "Creating chosen family",
+          "elements": ["misfits unite", "team bonding", "loyalty", "belonging"],
+          "theme": "family you choose"
+        },
+        "mentor_relationship": {
+          "name": "Mentor/Guide",
+          "description": "Adult guidance figure",
+          "types": ["teacher", "coach", "relative", "mysterious guide"],
+          "role": "wisdom and support"
+        },
+        "sibling_dynamics": {
+          "name": "Sibling Relationships",
+          "description": "Brother/sister bonds",
+          "types": ["protective", "rivalry", "twins", "step-siblings"],
+          "complexity": "love and competition"
+        },
+        "parent_teen": {
+          "name": "Parent-Teen Conflict",
+          "description": "Generational tension",
+          "issues": ["independence", "understanding", "expectations", "secrets"],
+          "resolution": "balance or break"
+        },
+        "squad_group": {
+          "name": "Squad/Group Dynamic",
+          "description": "Friend group navigation",
+          "elements": ["group dynamics", "loyalty tests", "peer pressure", "inclusion"],
+          "challenge": "individual vs group"
+        }
+      }
+    },
+    "ya_themes": {
+      "category_name": "YA Themes",
+      "selection_rule": "select_up_to_three",
+      "description": "Core themes explored",
+      "options": {
+        "coming_of_age": {
+          "name": "Coming of Age",
+          "description": "Growing into adulthood",
+          "elements": ["innocence lost", "responsibility", "self-discovery", "independence"],
+          "universal": "growing up"
+        },
+        "belonging": {
+          "name": "Belonging/Acceptance",
+          "description": "Finding your place",
+          "aspects": ["fitting in", "standing out", "acceptance", "community"],
+          "need": "fundamental human"
+        },
+        "identity": {
+          "name": "Identity Formation",
+          "description": "Who am I?",
+          "explorations": ["values", "sexuality", "culture", "purpose"],
+          "journey": "self-definition"
+        },
+        "first_experiences": {
+          "name": "First Experiences",
+          "description": "Life milestones",
+          "types": ["first love", "first loss", "first failure", "first triumph"],
+          "impact": "formative moments"
+        },
+        "power_corruption": {
+          "name": "Power and Corruption",
+          "description": "Authority questioned",
+          "targets": ["adults", "government", "systems", "traditions"],
+          "message": "question everything"
+        },
+        "sacrifice_heroism": {
+          "name": "Sacrifice/Heroism",
+          "description": "Rising to occasion",
+          "elements": ["reluctant hero", "greater good", "personal cost", "bravery"],
+          "growth": "ordinary to extraordinary"
+        },
+        "diversity_inclusion": {
+          "name": "Diversity/Inclusion",
+          "description": "Celebrating differences",
+          "aspects": ["race", "culture", "sexuality", "disability", "neurodiversity"],
+          "importance": "representation matters"
+        },
+        "hope_resilience": {
+          "name": "Hope/Resilience",
+          "description": "Overcoming adversity",
+          "messages": ["it gets better", "strength within", "survival", "tomorrow"],
+          "tone": "ultimately uplifting"
+        }
+      }
+    },
+    "tone_style": {
+      "category_name": "Tone and Style",
+      "selection_rule": "select_one",
+      "description": "The narrative voice and mood",
+      "options": {
+        "earnest_sincere": {
+          "name": "Earnest/Sincere",
+          "description": "Genuine emotional tone",
+          "characteristics": ["honest feelings", "vulnerability", "authenticity"],
+          "connection": "deep emotional"
+        },
+        "sarcastic_witty": {
+          "name": "Sarcastic/Witty",
+          "description": "Humor as defense",
+          "voice": ["snark", "clever observations", "pop culture refs", "self-deprecation"],
+          "appeal": "relatable humor"
+        },
+        "dramatic_intense": {
+          "name": "Dramatic/Intense",
+          "description": "High emotion",
+          "elements": ["everything matters", "life or death feelings", "passionate"],
+          "authenticity": "teen intensity"
+        },
+        "lyrical_poetic": {
+          "name": "Lyrical/Poetic",
+          "description": "Beautiful language",
+          "style": ["metaphorical", "emotional", "artistic", "quotable"],
+          "audience": "literary YA"
+        },
+        "action_packed": {
+          "name": "Action-Packed",
+          "description": "Fast-paced adventure",
+          "pacing": ["quick chapters", "cliffhangers", "constant motion"],
+          "reader": "page-turner"
+        },
+        "dark_gritty": {
+          "name": "Dark/Gritty",
+          "description": "Unflinching reality",
+          "content": ["harsh truths", "real consequences", "moral ambiguity"],
+          "maturity": "older YA"
+        }
+      }
+    },
+    "romance_level": {
+      "category_name": "Romance Level",
+      "selection_rule": "select_one",
+      "description": "Amount of romantic content",
+      "options": {
+        "no_romance": {
+          "name": "No Romance",
+          "description": "Focus on other themes",
+          "focus": ["friendship", "adventure", "self-discovery", "family"],
+          "audience": "romance-averse readers"
+        },
+        "subplot": {
+          "name": "Romance Subplot",
+          "description": "Romance enhances main plot",
+          "balance": ["not central", "adds dimension", "emotional stakes"],
+          "integration": "natural part"
+        },
+        "dual_focus": {
+          "name": "Equal Focus",
+          "description": "Romance and plot balanced",
+          "structure": ["parallel development", "intertwined", "both important"],
+          "satisfaction": "plot and romance"
+        },
+        "romance_centered": {
+          "name": "Romance Centered",
+          "description": "Love story is the story",
+          "elements": ["relationship development", "romantic obstacles", "emotional journey"],
+          "audience": "romance readers"
+        }
+      }
+    },
+    "content_maturity": {
+      "category_name": "Content Maturity",
+      "selection_rule": "select_one",
+      "description": "Mature content level",
+      "options": {
+        "clean_ya": {
+          "name": "Clean YA",
+          "description": "No explicit content",
+          "boundaries": ["no swearing", "no violence", "no sexual content"],
+          "audience": "younger or conservative"
+        },
+        "standard_ya": {
+          "name": "Standard YA",
+          "description": "Age-appropriate content",
+          "content": ["mild language", "some violence", "kissing only", "implied consequences"],
+          "balance": "realistic but not graphic"
+        },
+        "mature_ya": {
+          "name": "Mature YA",
+          "description": "Older teen content",
+          "includes": ["strong language", "violence", "sexual situations", "drug/alcohol"],
+          "handling": "responsible portrayal"
+        },
+        "crossover_adult": {
+          "name": "Crossover/New Adult",
+          "description": "Bridge to adult content",
+          "content": ["explicit themes", "graphic content", "adult situations"],
+          "audience": "17+ and adults"
+        }
+      }
+    },
+    "ending_type": {
+      "category_name": "Ending Type",
+      "selection_rule": "select_one",
+      "description": "How the story concludes",
+      "options": {
+        "hopeful": {
+          "name": "Hopeful/Uplifting",
+          "description": "Positive conclusion",
+          "elements": ["growth achieved", "problems solved", "future bright"],
+          "message": "it gets better"
+        },
+        "bittersweet": {
+          "name": "Bittersweet",
+          "description": "Mixed emotions",
+          "balance": ["losses and gains", "growth through pain", "realistic"],
+          "maturity": "life complexity"
+        },
+        "cliffhanger": {
+          "name": "Cliffhanger",
+          "description": "Series continuation",
+          "setup": ["major revelation", "new threat", "unresolved", "to be continued"],
+          "purpose": "next book hook"
+        },
+        "open_ended": {
+          "name": "Open/Ambiguous",
+          "description": "Reader interpretation",
+          "elements": ["multiple possibilities", "journey continues", "you decide"],
+          "sophistication": "literary"
+        },
+        "triumphant": {
+          "name": "Triumphant",
+          "description": "Clear victory",
+          "satisfaction": ["evil defeated", "goal achieved", "love wins", "justice served"],
+          "catharsis": "complete"
+        }
+      }
+    }
+  }
+}

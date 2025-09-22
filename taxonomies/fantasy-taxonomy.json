@@ -1,0 +1,465 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Fantasy Classification System",
+  "extends": "base-taxonomy",
+  "genre": "fantasy",
+  "description": "Fantasy fiction featuring magical elements, imaginary worlds, and mythical beings",
+  "categories": {
+    "fantasy_subgenre": {
+      "category_name": "Fantasy Subgenre",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The specific type of fantasy story",
+      "options": {
+        "epic_fantasy": {
+          "name": "Epic/High Fantasy",
+          "description": "Grand scope with world-altering stakes",
+          "key_features": ["secondary world", "complex magic", "multiple POVs", "long journey"],
+          "themes": ["good vs evil", "prophecy", "chosen one", "world-ending threat"],
+          "scope": "kingdoms and continents"
+        },
+        "sword_sorcery": {
+          "name": "Sword and Sorcery",
+          "description": "Personal adventures with magic and combat",
+          "key_features": ["personal stakes", "episodic adventures", "warrior heroes", "dark magic"],
+          "tone": ["gritty", "violent", "morally grey", "survival focused"],
+          "protagonists": "rogues and warriors"
+        },
+        "dark_fantasy": {
+          "name": "Dark Fantasy",
+          "description": "Fantasy with horror elements",
+          "key_features": ["moral ambiguity", "grim atmosphere", "tragic outcomes", "corrupting magic"],
+          "themes": ["cost of power", "fallen heroes", "inevitable doom", "corruption"],
+          "mood": "bleak and oppressive"
+        },
+        "urban_fantasy": {
+          "name": "Urban Fantasy",
+          "description": "Magic in modern city settings",
+          "key_features": ["hidden magic", "modern technology", "supernatural creatures", "city as character"],
+          "common_elements": ["magical police", "supernatural politics", "masquerade", "magical businesses"],
+          "setting": "contemporary cities"
+        },
+        "mythic_fantasy": {
+          "name": "Mythic/Folklore Fantasy",
+          "description": "Based on myths and folklore",
+          "key_features": ["gods and heroes", "mythological creatures", "epic quests", "divine intervention"],
+          "sources": ["Greek mythology", "Norse mythology", "Celtic folklore", "Eastern mythology"],
+          "tone": "legendary and timeless"
+        },
+        "fairy_tale_retelling": {
+          "name": "Fairy Tale Retelling",
+          "description": "Reimagined classic fairy tales",
+          "approaches": ["perspective shift", "modern setting", "dark twist", "expanded world"],
+          "common_tales": ["Cinderella", "Beauty and Beast", "Snow White", "Little Mermaid"],
+          "appeal": "familiar yet fresh"
+        },
+        "portal_fantasy": {
+          "name": "Portal Fantasy",
+          "description": "Travel between worlds",
+          "key_features": ["fish out of water", "two worlds", "gateway", "return question"],
+          "structure": ["discovery", "adaptation", "quest", "choice to stay/return"],
+          "examples": ["wardrobe", "rabbit hole", "train platform"]
+        },
+        "historical_fantasy": {
+          "name": "Historical Fantasy",
+          "description": "Real history with magical elements",
+          "key_features": ["historical accuracy", "subtle magic", "real events", "period detail"],
+          "popular_periods": ["Medieval", "Renaissance", "Victorian", "Ancient civilizations"],
+          "balance": "history and magic"
+        },
+        "magical_realism": {
+          "name": "Magical Realism",
+          "description": "Subtle magic in realistic settings",
+          "key_features": ["understated magic", "literary focus", "metaphorical elements", "ambiguous reality"],
+          "approach": ["magic as normal", "no explanation", "symbolic meaning"],
+          "tone": "contemplative"
+        },
+        "grimdark": {
+          "name": "Grimdark Fantasy",
+          "description": "Extremely dark and violent fantasy",
+          "key_features": ["moral nihilism", "graphic violence", "no heroes", "pyrrhic victories"],
+          "themes": ["war is hell", "power corrupts", "survival", "human darkness"],
+          "warning": "mature content"
+        },
+        "noblebright": {
+          "name": "Noblebright Fantasy",
+          "description": "Optimistic fantasy with heroic ideals",
+          "key_features": ["true heroes", "good triumphs", "noble sacrifice", "hope prevails"],
+          "themes": ["redemption", "courage", "friendship", "light over darkness"],
+          "tone": "uplifting and hopeful"
+        },
+        "weird_fantasy": {
+          "name": "New Weird/Weird Fantasy",
+          "description": "Surreal and bizarre fantasy",
+          "key_features": ["strange worlds", "body horror", "reality distortion", "incomprehensible"],
+          "influences": ["Lovecraft", "China Miéville", "surrealism"],
+          "mood": "unsettling and alien"
+        }
+      }
+    },
+    "world_type": {
+      "category_name": "World Setting Type",
+      "selection_rule": "select_one",
+      "description": "The type of world where the story occurs",
+      "options": {
+        "secondary_world": {
+          "name": "Secondary World",
+          "description": "Completely imaginary world",
+          "characteristics": ["unique geography", "original cultures", "distinct history", "own cosmology"],
+          "examples": ["Middle-earth", "Westeros", "Discworld"],
+          "worldbuilding": "extensive"
+        },
+        "earth_hidden": {
+          "name": "Earth with Hidden Magic",
+          "description": "Our world with secret magical elements",
+          "characteristics": ["masquerade", "mundane/magical divide", "hidden locations", "normal life disrupted"],
+          "reveal": ["gradual discovery", "always knew", "sudden awakening"],
+          "conflict": "two worlds colliding"
+        },
+        "alternate_earth": {
+          "name": "Alternate Earth",
+          "description": "Earth but history diverged",
+          "divergence_points": ["magic never faded", "different evolution", "alternate timeline"],
+          "characteristics": ["recognizable but different", "what if scenario", "parallel development"],
+          "balance": "familiar and strange"
+        },
+        "multiverse": {
+          "name": "Multiverse/Many Worlds",
+          "description": "Multiple connected worlds",
+          "structure": ["parallel dimensions", "connected realms", "world-hopping", "planar travel"],
+          "variety": ["different physics", "varied magic", "time differentials"],
+          "scope": "infinite possibilities"
+        },
+        "dying_earth": {
+          "name": "Dying Earth",
+          "description": "Fantasy in world's final age",
+          "characteristics": ["ancient magic", "fading power", "lost knowledge", "entropy"],
+          "mood": ["melancholic", "twilight", "last heroes", "end times"],
+          "themes": "endings and legacy"
+        },
+        "pocket_dimension": {
+          "name": "Pocket Dimension",
+          "description": "Small magical realm",
+          "characteristics": ["limited space", "unique rules", "accessible from earth", "time distortion"],
+          "examples": ["magical school", "fairy realm", "djinn bottle", "painting world"],
+          "focus": "contained adventure"
+        }
+      }
+    },
+    "magic_system_type": {
+      "category_name": "Magic System",
+      "selection_rule": "select_one_or_two",
+      "description": "How magic works in the world",
+      "options": {
+        "hard_magic_system": {
+          "name": "Hard Magic System",
+          "description": "Detailed rules and limitations",
+          "characteristics": ["consistent laws", "defined costs", "predictable results", "scientific approach"],
+          "limitations": ["energy drain", "material components", "knowledge required", "consequences"],
+          "reader_experience": "can predict and understand"
+        },
+        "soft_magic_system": {
+          "name": "Soft Magic System",
+          "description": "Mysterious and undefined magic",
+          "characteristics": ["wonder", "unpredictable", "rare", "narrative convenience"],
+          "purpose": ["atmosphere", "mystery", "divine intervention", "last resort"],
+          "reader_experience": "sense of awe"
+        },
+        "elemental_magic": {
+          "name": "Elemental Magic",
+          "description": "Control over natural elements",
+          "elements": ["fire", "water", "earth", "air", "lightning", "ice"],
+          "variations": ["single element mastery", "all elements", "opposing elements", "element combining"],
+          "source": "natural affinity"
+        },
+        "ritual_magic": {
+          "name": "Ritual/Ceremonial Magic",
+          "description": "Magic through ceremonies and rites",
+          "requirements": ["specific procedures", "timing", "location", "participants"],
+          "characteristics": ["time-consuming", "powerful", "group casting", "precise"],
+          "risks": "interruption catastrophic"
+        },
+        "innate_magic": {
+          "name": "Innate/Bloodline Magic",
+          "description": "Born with magical ability",
+          "manifestation": ["puberty", "stress trigger", "gradual growth", "always present"],
+          "variations": ["family gifts", "random mutation", "divine blessing", "magical races"],
+          "conflicts": "gifted vs mundane"
+        },
+        "learned_magic": {
+          "name": "Learned/Academic Magic",
+          "description": "Magic through study and practice",
+          "requirements": ["education", "practice", "talent", "dedication"],
+          "tools": ["spellbooks", "wands", "components", "formulas"],
+          "institutions": "magical schools"
+        },
+        "divine_magic": {
+          "name": "Divine/Faith Magic",
+          "description": "Power from deities or belief",
+          "source": ["gods", "faith", "prayer", "devotion"],
+          "characteristics": ["moral requirements", "divine will", "miracles", "blessings/curses"],
+          "limitations": "deity's agenda"
+        },
+        "pact_magic": {
+          "name": "Pact/Contract Magic",
+          "description": "Power through bargains with entities",
+          "entities": ["demons", "fae", "spirits", "dragons"],
+          "costs": ["soul", "service", "firstborn", "memories"],
+          "nature": "always a price"
+        },
+        "rune_magic": {
+          "name": "Rune/Symbol Magic",
+          "description": "Power through written symbols",
+          "applications": ["enchantment", "wards", "summoning", "binding"],
+          "requirements": ["precise drawing", "proper materials", "activation", "language knowledge"],
+          "permanence": "lasting effects"
+        },
+        "music_magic": {
+          "name": "Music/Song Magic",
+          "description": "Magic through music and voice",
+          "forms": ["bardic songs", "true names", "creation songs", "siren calls"],
+          "power": ["emotional manipulation", "reality shaping", "enchantment", "breaking"],
+          "vulnerability": "silence"
+        }
+      }
+    },
+    "fantasy_races": {
+      "category_name": "Fantasy Races/Species",
+      "selection_rule": "select_all_that_apply",
+      "description": "Non-human intelligent species in the world",
+      "options": {
+        "elves": {
+          "name": "Elves",
+          "description": "Graceful, long-lived magical beings",
+          "variants": ["high elves", "wood elves", "dark elves", "sea elves"],
+          "characteristics": ["immortal/long-lived", "magical affinity", "nature connection", "ancient wisdom"],
+          "relations": "often declining"
+        },
+        "dwarves": {
+          "name": "Dwarves",
+          "description": "Sturdy mountain-dwelling craftsmen",
+          "characteristics": ["mining", "smithing", "beards", "clan loyalty", "grudges"],
+          "culture": ["underground cities", "craftsmanship pride", "tradition", "gold love"],
+          "typical_role": "stalwart allies"
+        },
+        "orcs": {
+          "name": "Orcs/Goblinoids",
+          "description": "Traditionally hostile warrior species",
+          "modern_takes": ["noble savage", "misunderstood", "complex culture", "corrupted elves"],
+          "variants": ["orcs", "goblins", "hobgoblins", "trolls"],
+          "narrative_role": "antagonist or subversion"
+        },
+        "dragons": {
+          "name": "Dragons",
+          "description": "Powerful reptilian beings",
+          "intelligence": ["bestial", "cunning", "ancient wisdom", "shapeshifters"],
+          "variants": ["chromatic", "metallic", "eastern", "wyverns"],
+          "role": ["ultimate threat", "wise mentor", "hoarder", "rider bond"]
+        },
+        "fae_folk": {
+          "name": "Fae/Faeries",
+          "description": "Capricious magical nature spirits",
+          "characteristics": ["tricksters", "bargains", "glamour", "iron weakness"],
+          "courts": ["seelie", "unseelie", "seasonal", "wild fae"],
+          "danger": "alien morality"
+        },
+        "undead": {
+          "name": "Undead",
+          "description": "Beings between life and death",
+          "types": ["vampires", "zombies", "ghosts", "liches", "wraiths"],
+          "origins": ["curse", "dark magic", "unfinished business", "plague"],
+          "themes": "death and immortality"
+        },
+        "beastfolk": {
+          "name": "Beastfolk/Anthropomorphic",
+          "description": "Human-animal hybrid species",
+          "variants": ["werewolves", "cat-people", "lizardfolk", "centaurs", "minotaurs"],
+          "characteristics": ["dual nature", "pack/herd dynamics", "instincts", "physical advantages"],
+          "conflicts": "beast vs civilized"
+        },
+        "giants": {
+          "name": "Giants/Titans",
+          "description": "Massive humanoid beings",
+          "variants": ["frost giants", "fire giants", "stone giants", "cloud giants"],
+          "role": ["ancient enemies", "elemental forces", "fallen civilization"],
+          "scale": "literally huge impact"
+        },
+        "angels_demons": {
+          "name": "Angels/Demons",
+          "description": "Beings of pure good or evil",
+          "characteristics": ["wings", "divine/infernal magic", "immortal", "purpose-driven"],
+          "involvement": ["divine intervention", "temptation", "cosmic war", "fallen angels"],
+          "stakes": "souls and morality"
+        },
+        "original_species": {
+          "name": "Original/Created Species",
+          "description": "Unique species for this world",
+          "considerations": ["ecology", "culture", "abilities", "history"],
+          "purpose": ["fresh perspective", "specific narrative need", "worldbuilding depth"],
+          "challenge": "making believable"
+        }
+      }
+    },
+    "quest_type": {
+      "category_name": "Quest/Journey Type",
+      "selection_rule": "select_primary",
+      "description": "The central journey or mission",
+      "options": {
+        "fetch_quest": {
+          "name": "Fetch Quest/MacGuffin",
+          "description": "Retrieve important object",
+          "objects": ["artifact", "weapon", "cure", "key", "person"],
+          "structure": ["learn of item", "journey to location", "trials", "retrieval", "return"],
+          "importance": "world-saving"
+        },
+        "destroy_evil": {
+          "name": "Destroy the Dark Lord",
+          "description": "Defeat ultimate evil",
+          "progression": ["gather allies", "obtain power", "find weakness", "final confrontation"],
+          "variations": ["prophecy", "chosen one", "unlikely hero", "ensemble"],
+          "stakes": "world domination"
+        },
+        "rescue_mission": {
+          "name": "Rescue Mission",
+          "description": "Save someone important",
+          "targets": ["princess", "loved one", "mentor", "kingdom"],
+          "obstacles": ["fortress", "dragon", "curse", "time limit"],
+          "personal": "emotional stakes"
+        },
+        "coming_of_age": {
+          "name": "Coming of Age/Hero's Journey",
+          "description": "Personal growth through trials",
+          "stages": ["call", "refusal", "mentor", "trials", "death/rebirth", "return transformed"],
+          "internal": "character transformation",
+          "external": "world-changing deed"
+        },
+        "restoration": {
+          "name": "Restoration/Healing",
+          "description": "Restore balance or heal land",
+          "problems": ["curse", "blight", "broken magic", "lost king"],
+          "solution": ["ritual", "true ruler", "sacrifice", "redemption"],
+          "theme": "renewal"
+        },
+        "survival": {
+          "name": "Survival",
+          "description": "Endure hostile fantasy environment",
+          "threats": ["monster-filled wilderness", "magical disasters", "collapsing realm", "hunt"],
+          "focus": ["resources", "shelter", "allies", "escape"],
+          "tone": "gritty realism"
+        },
+        "mystery_investigation": {
+          "name": "Mystery/Investigation",
+          "description": "Solve magical mystery",
+          "mysteries": ["murder", "disappearance", "curse origin", "ancient secret"],
+          "tools": ["magical detection", "prophecy", "visions", "interrogation"],
+          "revelation": "world-changing truth"
+        },
+        "war_campaign": {
+          "name": "War/Military Campaign",
+          "description": "Fantasy warfare",
+          "scope": ["battles", "sieges", "guerrilla", "total war"],
+          "elements": ["strategy", "logistics", "magic warfare", "alliances"],
+          "cost": "victory price"
+        },
+        "political_intrigue": {
+          "name": "Political Intrigue",
+          "description": "Navigate court politics",
+          "elements": ["succession", "coups", "marriages", "assassinations"],
+          "tools": ["spies", "blackmail", "alliances", "magic"],
+          "stakes": "throne and power"
+        }
+      }
+    },
+    "fantasy_themes": {
+      "category_name": "Central Themes",
+      "selection_rule": "select_up_to_three",
+      "description": "Core themes explored in the story",
+      "options": {
+        "good_vs_evil": {
+          "name": "Good vs Evil",
+          "description": "Clear moral conflict",
+          "variations": ["absolute morality", "shades of grey", "corruption", "redemption possible"],
+          "symbols": "light and darkness"
+        },
+        "power_corruption": {
+          "name": "Power and Corruption",
+          "description": "How power changes people",
+          "explorations": ["magic addiction", "ring of power", "divine right", "tyranny"],
+          "message": "power's true cost"
+        },
+        "nature_vs_civilization": {
+          "name": "Nature vs Civilization",
+          "description": "Wild magic versus ordered society",
+          "conflicts": ["forest vs city", "old ways vs progress", "magic vs technology"],
+          "balance": "finding harmony"
+        },
+        "destiny_free_will": {
+          "name": "Destiny vs Free Will",
+          "description": "Prophecy and choice",
+          "questions": ["predetermined fate", "self-fulfilling prophecy", "breaking destiny", "chosen one"],
+          "tension": "fate or choice"
+        },
+        "identity_belonging": {
+          "name": "Identity and Belonging",
+          "description": "Finding one's place",
+          "journeys": ["outsider", "mixed heritage", "found family", "true self"],
+          "resolution": "self-acceptance"
+        },
+        "sacrifice_love": {
+          "name": "Sacrifice and Love",
+          "description": "What we give up for others",
+          "types": ["noble sacrifice", "love conquers", "greater good", "personal cost"],
+          "emotion": "bittersweet triumph"
+        },
+        "knowledge_ignorance": {
+          "name": "Knowledge vs Ignorance",
+          "description": "Dangerous knowledge and blissful ignorance",
+          "elements": ["forbidden knowledge", "lost wisdom", "price of truth", "enlightenment"],
+          "question": "should we know?"
+        },
+        "mortality_immortality": {
+          "name": "Mortality and Immortality",
+          "description": "Death and eternal life",
+          "perspectives": ["death acceptance", "immortality curse", "legacy", "undeath"],
+          "meaning": "what makes life precious"
+        },
+        "tradition_change": {
+          "name": "Tradition vs Change",
+          "description": "Old ways versus new",
+          "conflicts": ["ancient magic vs innovation", "prophecy vs action", "elders vs youth"],
+          "resolution": "evolution or revolution"
+        }
+      }
+    },
+    "worldbuilding_depth": {
+      "category_name": "Worldbuilding Depth",
+      "selection_rule": "select_one",
+      "description": "Level of world detail and complexity",
+      "options": {
+        "minimal": {
+          "name": "Minimal/Suggested",
+          "description": "Light worldbuilding, focus on story",
+          "approach": ["broad strokes", "familiar tropes", "unexplained magic", "fairy tale logic"],
+          "advantage": "accessibility"
+        },
+        "moderate": {
+          "name": "Moderate",
+          "description": "Solid foundation with room for mystery",
+          "elements": ["major history", "basic magic rules", "political structure", "some cultures"],
+          "balance": "detail and pace"
+        },
+        "extensive": {
+          "name": "Extensive/Deep",
+          "description": "Detailed world with rich history",
+          "includes": ["languages", "economies", "religions", "thousands of years history"],
+          "risk": "info dumping"
+        },
+        "obsessive": {
+          "name": "Obsessive/Tolkienesque",
+          "description": "Complete secondary world",
+          "details": ["linguistics", "genealogies", "calendars", "flora/fauna", "cosmology"],
+          "commitment": "lifetime work"
+        }
+      }
+    }
+  }
+}

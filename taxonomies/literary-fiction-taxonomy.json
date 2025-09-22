@@ -1,0 +1,379 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Literary Fiction Classification System",
+  "extends": "base-taxonomy",
+  "genre": "literary-fiction",
+  "description": "Character-driven fiction emphasizing prose quality, theme exploration, and human condition",
+  "categories": {
+    "literary_style": {
+      "category_name": "Literary Style",
+      "selection_rule": "select_primary",
+      "description": "The dominant literary approach",
+      "options": {
+        "realist": {
+          "name": "Literary Realism",
+          "description": "Faithful representation of reality",
+          "characteristics": ["psychological depth", "social observation", "everyday life", "moral complexity"],
+          "focus": ["character psychology", "social dynamics", "authentic dialogue"],
+          "masters": ["George Eliot", "Henry James", "Alice Munro"]
+        },
+        "modernist": {
+          "name": "Modernist",
+          "description": "Experimental narrative techniques",
+          "techniques": ["stream of consciousness", "fragmentation", "unreliable narrator", "temporal shifts"],
+          "themes": ["alienation", "subjectivity", "breakdown of certainty"],
+          "influence": ["Joyce", "Woolf", "Faulkner"]
+        },
+        "postmodernist": {
+          "name": "Postmodernist",
+          "description": "Playful, self-aware fiction",
+          "elements": ["metafiction", "pastiche", "irony", "unreliable reality"],
+          "approach": ["questioning truth", "multiple interpretations", "genre mixing"],
+          "examples": ["Pynchon", "DeLillo", "Morrison"]
+        },
+        "minimalist": {
+          "name": "Minimalist",
+          "description": "Sparse, understated prose",
+          "characteristics": ["economy of language", "surface details", "implied emotion", "white space"],
+          "philosophy": ["show don't tell", "iceberg theory", "reader participation"],
+          "masters": ["Hemingway", "Carver", "Amy Hempel"]
+        },
+        "maximalist": {
+          "name": "Maximalist",
+          "description": "Elaborate, expansive prose",
+          "features": ["lengthy sentences", "detailed descriptions", "multiple storylines", "excess"],
+          "ambition": ["encyclopedic", "total novel", "everything included"],
+          "examples": ["Pynchon", "David Foster Wallace", "Rushdie"]
+        },
+        "experimental": {
+          "name": "Experimental/Avant-garde",
+          "description": "Pushing formal boundaries",
+          "innovations": ["unconventional structure", "typography play", "genre defying", "reader challenge"],
+          "purpose": ["expand possibilities", "question form", "new experience"],
+          "risk": "accessibility"
+        },
+        "lyrical": {
+          "name": "Lyrical/Poetic",
+          "description": "Musical, poetic prose",
+          "qualities": ["rhythm", "imagery", "metaphor", "sensory detail"],
+          "effect": ["emotional resonance", "beauty priority", "mood creation"],
+          "examples": ["Ondaatje", "Toni Morrison", "Ocean Vuong"]
+        }
+      }
+    },
+    "narrative_focus": {
+      "category_name": "Narrative Focus",
+      "selection_rule": "select_one",
+      "description": "What drives the narrative",
+      "options": {
+        "character_study": {
+          "name": "Character Study",
+          "description": "Deep psychological exploration",
+          "elements": ["internal conflict", "psychological complexity", "moral ambiguity", "growth or decline"],
+          "plot": "secondary to character"
+        },
+        "social_commentary": {
+          "name": "Social Commentary",
+          "description": "Society and culture examination",
+          "themes": ["class", "race", "gender", "power structures", "cultural critique"],
+          "approach": "individual as mirror"
+        },
+        "philosophical": {
+          "name": "Philosophical Exploration",
+          "description": "Ideas and meaning",
+          "questions": ["existence", "morality", "consciousness", "truth", "death"],
+          "style": "thought experiments"
+        },
+        "language_focused": {
+          "name": "Language/Form Focused",
+          "description": "Words and structure primary",
+          "priority": ["prose beauty", "formal innovation", "linguistic play", "style over story"],
+          "reader": "aesthete"
+        },
+        "memory_time": {
+          "name": "Memory and Time",
+          "description": "Temporal exploration",
+          "techniques": ["non-linear", "memory fragments", "past haunting present", "time's passage"],
+          "themes": "impermanence"
+        },
+        "relationship_dynamics": {
+          "name": "Relationship Dynamics",
+          "description": "Human connections explored",
+          "types": ["family", "marriage", "friendship", "community"],
+          "depth": "psychological complexity"
+        }
+      }
+    },
+    "thematic_concerns": {
+      "category_name": "Central Themes",
+      "selection_rule": "select_up_to_three",
+      "description": "Major themes explored",
+      "options": {
+        "identity": {
+          "name": "Identity and Self",
+          "description": "Who are we?",
+          "explorations": ["constructed self", "authentic self", "fragmented identity", "self-deception"],
+          "questions": "nature of self"
+        },
+        "mortality": {
+          "name": "Death and Mortality",
+          "description": "Facing finitude",
+          "approaches": ["death anxiety", "legacy", "grief", "meaning in face of death"],
+          "tone": "existential"
+        },
+        "love_relationships": {
+          "name": "Love and Human Connection",
+          "description": "Bonds between people",
+          "aspects": ["intimacy", "alienation", "communication failure", "need for other"],
+          "complexity": "no simple answers"
+        },
+        "power_politics": {
+          "name": "Power and Politics",
+          "description": "Systems of control",
+          "examinations": ["oppression", "resistance", "corruption", "ideology"],
+          "scale": "personal to systemic"
+        },
+        "art_creativity": {
+          "name": "Art and Creativity",
+          "description": "Creative process and meaning",
+          "meta": ["artist's role", "art's purpose", "creation struggle", "beauty"],
+          "self-reflexive": "fiction about fiction"
+        },
+        "trauma_healing": {
+          "name": "Trauma and Healing",
+          "description": "Damage and recovery",
+          "approaches": ["generational trauma", "PTSD", "resilience", "impossible healing"],
+          "sensitivity": "human damage"
+        },
+        "class_inequality": {
+          "name": "Class and Inequality",
+          "description": "Social stratification",
+          "examinations": ["privilege", "poverty", "social mobility", "systemic inequality"],
+          "perspective": "critical"
+        },
+        "nature_environment": {
+          "name": "Nature and Environment",
+          "description": "Human-nature relationship",
+          "themes": ["pastoral", "wilderness", "climate change", "alienation from nature"],
+          "style": "often lyrical"
+        },
+        "faith_meaning": {
+          "name": "Faith and Meaning",
+          "description": "Belief in secular age",
+          "questions": ["God's absence", "meaning without God", "spiritual seeking", "doubt"],
+          "approach": "questioning"
+        }
+      }
+    },
+    "prose_quality": {
+      "category_name": "Prose Quality Priority",
+      "selection_rule": "select_one",
+      "description": "Language and style emphasis",
+      "options": {
+        "ornate": {
+          "name": "Ornate/Baroque",
+          "description": "Rich, elaborate prose",
+          "features": ["complex sentences", "extensive metaphor", "detailed description", "vocabulary richness"],
+          "reading": "slow and savored"
+        },
+        "clean": {
+          "name": "Clean/Transparent",
+          "description": "Clear, invisible prose",
+          "goal": ["story clarity", "no distraction", "efficient", "accessible"],
+          "philosophy": "window pane"
+        },
+        "distinctive_voice": {
+          "name": "Distinctive Voice",
+          "description": "Unique narrative voice",
+          "characteristics": ["recognizable style", "consistent tone", "personality", "memorable"],
+          "achievement": "unmistakable"
+        },
+        "varied_texture": {
+          "name": "Varied/Textured",
+          "description": "Multiple styles and registers",
+          "techniques": ["code-switching", "pastiche", "different voices", "style matching content"],
+          "skill": "versatility"
+        }
+      }
+    },
+    "temporal_structure": {
+      "category_name": "Temporal Structure",
+      "selection_rule": "select_one",
+      "description": "How time is handled",
+      "options": {
+        "linear": {
+          "name": "Linear/Chronological",
+          "description": "Traditional time flow",
+          "advantage": ["clarity", "cause-effect", "natural progression"],
+          "focus": "events unfold"
+        },
+        "fragmented": {
+          "name": "Fragmented/Non-linear",
+          "description": "Time jumps and breaks",
+          "techniques": ["flashbacks", "flash-forwards", "parallel times", "memory intrusions"],
+          "effect": "mosaic understanding"
+        },
+        "circular": {
+          "name": "Circular/Cyclical",
+          "description": "Ending meets beginning",
+          "philosophy": ["eternal return", "history repeats", "no progress", "fate"],
+          "structure": "ouroboros"
+        },
+        "stream_time": {
+          "name": "Stream of Consciousness Time",
+          "description": "Psychological time",
+          "characteristics": ["thought flow", "memory triggers", "subjective duration", "past in present"],
+          "masters": "modernist technique"
+        }
+      }
+    },
+    "point_of_view": {
+      "category_name": "Narrative Perspective",
+      "selection_rule": "select_one",
+      "description": "Narrative point of view approach",
+      "options": {
+        "intimate_first": {
+          "name": "Intimate First Person",
+          "description": "Deep inside one mind",
+          "advantages": ["psychological depth", "unreliability", "voice", "immediacy"],
+          "limitations": "single perspective"
+        },
+        "omniscient": {
+          "name": "Omniscient Narrator",
+          "description": "All-knowing perspective",
+          "powers": ["enter any mind", "historical context", "ironic distance", "god-like"],
+          "style": "classical"
+        },
+        "limited_third": {
+          "name": "Limited Third Person",
+          "description": "Close but not inside",
+          "balance": ["intimacy and distance", "flexibility", "multiple characters possible"],
+          "modern": "most common"
+        },
+        "multiple_perspectives": {
+          "name": "Multiple Perspectives",
+          "description": "Various viewpoints",
+          "advantages": ["complete picture", "contradictions", "subjectivity highlighted"],
+          "challenge": "coherence"
+        },
+        "experimental_pov": {
+          "name": "Experimental POV",
+          "description": "Unusual perspectives",
+          "examples": ["second person", "collective we", "non-human", "objects"],
+          "effect": "defamiliarization"
+        }
+      }
+    },
+    "cultural_context": {
+      "category_name": "Cultural Context",
+      "selection_rule": "select_one_or_two",
+      "description": "Cultural setting and perspective",
+      "options": {
+        "western_canonical": {
+          "name": "Western Literary Tradition",
+          "description": "European/American literary tradition",
+          "inheritance": ["classical influences", "canonical engagement", "tradition dialogue"],
+          "position": "established"
+        },
+        "postcolonial": {
+          "name": "Postcolonial",
+          "description": "Colonial aftermath perspectives",
+          "themes": ["identity", "hybridity", "language", "power", "cultural recovery"],
+          "voices": "previously marginalized"
+        },
+        "diaspora": {
+          "name": "Diaspora/Immigration",
+          "description": "Between cultures experience",
+          "themes": ["belonging", "translation", "generational difference", "dual identity"],
+          "perspective": "liminal"
+        },
+        "indigenous": {
+          "name": "Indigenous Voices",
+          "description": "Native perspectives",
+          "elements": ["oral tradition", "land connection", "colonial trauma", "cultural preservation"],
+          "importance": "decolonizing"
+        },
+        "global_south": {
+          "name": "Global South",
+          "description": "Non-Western perspectives",
+          "challenge": ["western assumptions", "different values", "alternative modernities"],
+          "enrichment": "world literature"
+        },
+        "multicultural": {
+          "name": "Multicultural/Cosmopolitan",
+          "description": "Multiple culture intersection",
+          "reality": ["globalized world", "cultural mixing", "translation", "hybrid identities"],
+          "contemporary": "21st century"
+        }
+      }
+    },
+    "reader_demand": {
+      "category_name": "Reader Engagement Level",
+      "selection_rule": "select_one",
+      "description": "Difficulty and accessibility",
+      "options": {
+        "accessible": {
+          "name": "Accessible Literary",
+          "description": "Literary but approachable",
+          "balance": ["quality and clarity", "depth without obscurity", "engaging plot"],
+          "audience": "broad literary"
+        },
+        "challenging": {
+          "name": "Challenging",
+          "description": "Demands active reading",
+          "requirements": ["attention", "patience", "literary knowledge", "rereading"],
+          "reward": "deep engagement"
+        },
+        "difficult": {
+          "name": "Difficult/Demanding",
+          "description": "Significant challenge",
+          "obstacles": ["complex language", "experimental form", "dense allusion", "ambiguity"],
+          "audience": "devoted readers"
+        },
+        "scholarly": {
+          "name": "Scholarly/Academic",
+          "description": "Requires education",
+          "assumptions": ["literary knowledge", "theoretical awareness", "cultural capital"],
+          "context": "university"
+        }
+      }
+    },
+    "emotional_register": {
+      "category_name": "Emotional Register",
+      "selection_rule": "select_one",
+      "description": "Emotional tone and range",
+      "options": {
+        "melancholic": {
+          "name": "Melancholic/Elegiac",
+          "description": "Sadness and loss",
+          "mood": ["mourning", "nostalgia", "regret", "beauty in sadness"],
+          "aesthetic": "beautiful sadness"
+        },
+        "ironic_detached": {
+          "name": "Ironic/Detached",
+          "description": "Emotional distance",
+          "technique": ["irony", "satire", "cool observation", "critique"],
+          "protection": "from sentiment"
+        },
+        "passionate": {
+          "name": "Passionate/Intense",
+          "description": "Strong emotions",
+          "expression": ["love", "anger", "ecstasy", "despair"],
+          "risk": "melodrama"
+        },
+        "contemplative": {
+          "name": "Contemplative/Meditative",
+          "description": "Reflective and quiet",
+          "pace": ["slow", "thoughtful", "observant", "philosophical"],
+          "mood": "peaceful depth"
+        },
+        "darkly_comic": {
+          "name": "Darkly Comic",
+          "description": "Humor in darkness",
+          "balance": ["tragedy and comedy", "absurdity", "gallows humor"],
+          "philosophy": "laugh or cry"
+        }
+      }
+    }
+  }
+}

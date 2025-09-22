@@ -1,0 +1,699 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Generic Story Classification",
+  "extends": "base-taxonomy",
+  "genre": "custom",
+  "description": "Comprehensive taxonomy supporting all genres - based on original selections.json",
+  "categories": {
+    "genres": {
+      "category_name": "Genre",
+      "selection_rule": "select_multiple",
+      "description": "The story's genre classification(s)",
+      "options": {
+        "literary_fiction": {
+          "name": "Literary Fiction",
+          "description": "Language-driven, character-first narratives"
+        },
+        "mystery_crime": {
+          "name": "Mystery / Crime",
+          "description": "Detective whodunits and crime puzzles"
+        },
+        "thriller_suspense": {
+          "name": "Thriller / Suspense",
+          "description": "High-stakes, ticking-clock tension"
+        },
+        "horror": {
+          "name": "Horror",
+          "description": "Frightening tales—psychological or visceral"
+        },
+        "science_fiction": {
+          "name": "Science Fiction",
+          "description": "Speculative tech or science 'what-if' scenarios"
+        },
+        "fantasy": {
+          "name": "Fantasy",
+          "description": "Magic, mythical creatures or secondary worlds"
+        },
+        "romance": {
+          "name": "Romance",
+          "description": "Central love story with satisfying resolution"
+        },
+        "historical_fiction": {
+          "name": "Historical Fiction",
+          "description": "Imagined lives woven into real past eras"
+        },
+        "adventure": {
+          "name": "Adventure",
+          "description": "Action-heavy journeys or quests"
+        },
+        "western": {
+          "name": "Western",
+          "description": "Frontier settings; law-vs-chaos conflicts"
+        },
+        "contemporary_realistic": {
+          "name": "Contemporary / Realistic",
+          "description": "Modern-day conflicts; no speculative elements"
+        },
+        "dystopian": {
+          "name": "Dystopian",
+          "description": "Oppressive future society; rebellion themes"
+        },
+        "paranormal": {
+          "name": "Paranormal",
+          "description": "Supernatural beings in an otherwise real world"
+        },
+        "magical_realism": {
+          "name": "Magical Realism",
+          "description": "Subtle, matter-of-fact magic in daily life"
+        },
+        "comedy_humor": {
+          "name": "Comedy / Humor",
+          "description": "Stories aiming primarily for laughter"
+        },
+        "drama_family_saga": {
+          "name": "Drama / Family Saga",
+          "description": "Interpersonal conflict across generations"
+        },
+        "satire": {
+          "name": "Satire",
+          "description": "Irony or exaggeration to critique society"
+        }
+      }
+    },
+    "narrative_blueprints": {
+      "category_name": "Narrative Blueprints",
+      "selection_rule": "select_primary",
+      "description": "The fundamental story structure",
+      "options": {
+        "quest": {
+          "name": "Quest",
+          "description": "Hero seeks vital object or truth"
+        },
+        "adventure": {
+          "name": "Adventure",
+          "description": "Action-driven journey, thrills over destination"
+        },
+        "pursuit": {
+          "name": "Pursuit (Chase)",
+          "description": "Cat-and-mouse chase; hunter vs. hunted"
+        },
+        "rescue": {
+          "name": "Rescue",
+          "description": "Hero must save victim from danger"
+        },
+        "escape": {
+          "name": "Escape",
+          "description": "Protagonist flees confinement or threat"
+        },
+        "revenge": {
+          "name": "Revenge",
+          "description": "Seeking retribution for past wrong"
+        },
+        "mystery": {
+          "name": "Mystery",
+          "description": "Solving puzzle, uncovering hidden truth"
+        },
+        "underdog": {
+          "name": "Underdog",
+          "description": "Unlikely hero overcomes stronger opponent"
+        },
+        "temptation": {
+          "name": "Temptation",
+          "description": "Moral choice between desire and duty"
+        },
+        "transformation": {
+          "name": "Transformation",
+          "description": "Character fundamentally changes"
+        },
+        "love": {
+          "name": "Love",
+          "description": "Romance overcomes obstacles"
+        },
+        "forbidden_love": {
+          "name": "Forbidden Love",
+          "description": "Romance defying social/moral barriers"
+        },
+        "sacrifice": {
+          "name": "Sacrifice",
+          "description": "Giving up something vital for greater good"
+        },
+        "discovery": {
+          "name": "Discovery",
+          "description": "Learning crucial truth about self/world"
+        },
+        "rise_fall": {
+          "name": "Rise and Fall",
+          "description": "Character gains then loses power/status"
+        }
+      }
+    },
+    "themes": {
+      "category_name": "Themes",
+      "selection_rule": "select_multiple",
+      "description": "Central ideas explored in the story",
+      "options": {
+        "good_vs_evil": {
+          "name": "Good vs. Evil",
+          "description": "Clear moral opposition"
+        },
+        "love_conquers": {
+          "name": "Love Conquers All",
+          "description": "Love overcomes obstacles"
+        },
+        "coming_of_age": {
+          "name": "Coming of Age",
+          "description": "Transition to maturity"
+        },
+        "redemption": {
+          "name": "Redemption",
+          "description": "Atonement and second chances"
+        },
+        "power_corruption": {
+          "name": "Power and Corruption",
+          "description": "How power corrupts"
+        },
+        "survival": {
+          "name": "Survival",
+          "description": "Enduring against odds"
+        },
+        "identity": {
+          "name": "Identity",
+          "description": "Finding one's true self"
+        },
+        "family": {
+          "name": "Family",
+          "description": "Blood and chosen family bonds"
+        },
+        "betrayal": {
+          "name": "Betrayal",
+          "description": "Trust broken"
+        },
+        "justice": {
+          "name": "Justice",
+          "description": "Right vs. wrong"
+        },
+        "freedom": {
+          "name": "Freedom",
+          "description": "Liberty vs. oppression"
+        },
+        "fate_free_will": {
+          "name": "Fate vs. Free Will",
+          "description": "Destiny vs. choice"
+        },
+        "man_vs_nature": {
+          "name": "Man vs. Nature",
+          "description": "Humanity against natural forces"
+        },
+        "technology_humanity": {
+          "name": "Technology vs. Humanity",
+          "description": "Tech impact on human nature"
+        },
+        "social_inequality": {
+          "name": "Social Inequality",
+          "description": "Class and social justice"
+        }
+      }
+    },
+    "moods": {
+      "category_name": "Overall Mood",
+      "selection_rule": "select_multiple",
+      "description": "The emotional atmosphere",
+      "options": {
+        "lighthearted": {
+          "name": "Lighthearted",
+          "description": "Playful and upbeat"
+        },
+        "dark": {
+          "name": "Dark",
+          "description": "Grim and serious"
+        },
+        "humorous": {
+          "name": "Humorous",
+          "description": "Comedy-infused"
+        },
+        "romantic": {
+          "name": "Romantic",
+          "description": "Love-focused atmosphere"
+        },
+        "suspenseful": {
+          "name": "Suspenseful",
+          "description": "Tension and uncertainty"
+        },
+        "mysterious": {
+          "name": "Mysterious",
+          "description": "Enigmatic and puzzling"
+        },
+        "melancholic": {
+          "name": "Melancholic",
+          "description": "Sad and reflective"
+        },
+        "hopeful": {
+          "name": "Hopeful",
+          "description": "Optimistic despite challenges"
+        },
+        "cynical": {
+          "name": "Cynical",
+          "description": "Distrustful and pessimistic"
+        },
+        "whimsical": {
+          "name": "Whimsical",
+          "description": "Playfully quaint or fanciful"
+        },
+        "gritty": {
+          "name": "Gritty",
+          "description": "Raw and realistic"
+        },
+        "epic": {
+          "name": "Epic",
+          "description": "Grand and sweeping"
+        },
+        "intimate": {
+          "name": "Intimate",
+          "description": "Personal and close"
+        },
+        "nostalgic": {
+          "name": "Nostalgic",
+          "description": "Yearning for the past"
+        },
+        "tense": {
+          "name": "Tense",
+          "description": "Constant pressure"
+        }
+      }
+    },
+    "vibes": {
+      "category_name": "Vibe",
+      "selection_rule": "select_multiple",
+      "description": "The world's overall feeling",
+      "options": {
+        "mundane_realism": {
+          "name": "Mundane Realism",
+          "description": "Strictly lifelike; no fantastical elements"
+        },
+        "contemporary_dramatic": {
+          "name": "Contemporary Dramatic",
+          "description": "Real world plus heightened drama"
+        },
+        "low_spec_twist": {
+          "name": "Low-Spec Twist",
+          "description": "Mostly realistic with one impossible element"
+        },
+        "magical_realism": {
+          "name": "Magical Realism",
+          "description": "Subtle unexplained magic in daily life"
+        },
+        "near_future_tech": {
+          "name": "Near-Future Tech",
+          "description": "Plausible advances, mild world shifts"
+        },
+        "urban_fantasy": {
+          "name": "Urban Fantasy",
+          "description": "Modern cities where magic operates in secret"
+        },
+        "mythic_adventure": {
+          "name": "Mythic Adventure",
+          "description": "Legendary creatures and archetypal quests"
+        },
+        "high_fantasy": {
+          "name": "High Fantasy",
+          "description": "Secondary worlds with extensive magic systems"
+        },
+        "cosmic_space_opera": {
+          "name": "Cosmic / Space-Opera",
+          "description": "Vast galactic scope and star-spanning stakes"
+        },
+        "surreal_dreamscape": {
+          "name": "Surreal / Dreamscape",
+          "description": "Logic-bending realms where reality collapses"
+        }
+      }
+    },
+    "temporal_setting": {
+      "category_name": "Time Period",
+      "selection_rule": "select_one",
+      "description": "When the story takes place",
+      "options": {
+        "pre_industrial": {
+          "name": "Pre-Industrial",
+          "description": "Before 19th-century technology"
+        },
+        "19th_20th_century": {
+          "name": "19th-20th Century",
+          "description": "Historical modern era"
+        },
+        "contemporary": {
+          "name": "Contemporary",
+          "description": "Present day or near present"
+        },
+        "near_future": {
+          "name": "Near-Future",
+          "description": "Within ~50 years of now"
+        },
+        "far_future": {
+          "name": "Far-Future",
+          "description": "Distant future, advanced tech"
+        }
+      }
+    },
+    "cultural_lens": {
+      "category_name": "Cultural Perspective",
+      "selection_rule": "select_multiple",
+      "description": "Cultural influences and perspective",
+      "options": {
+        "western": {
+          "name": "Western",
+          "description": "Primarily Euro-American traditions"
+        },
+        "east_asian": {
+          "name": "East Asian",
+          "description": "Influenced by Chinese, Japanese, Korean, etc."
+        },
+        "african": {
+          "name": "African",
+          "description": "Rooted in African or Afrofuturist cultures"
+        },
+        "latin_american": {
+          "name": "Latin American",
+          "description": "Inspired by South/Central American traditions"
+        },
+        "multi_global": {
+          "name": "Multi / Global",
+          "description": "Blended or non-specific cultural influences"
+        }
+      }
+    },
+    "worldbuilding_density": {
+      "category_name": "World Building",
+      "selection_rule": "select_one",
+      "description": "How much world detail is included",
+      "options": {
+        "minimal": {
+          "name": "Minimal",
+          "description": "Hints of setting; reader fills gaps"
+        },
+        "functional": {
+          "name": "Functional",
+          "description": "Enough detail to ground the plot"
+        },
+        "rich": {
+          "name": "Rich",
+          "description": "Significant lore and cultural depth"
+        },
+        "encyclopedic": {
+          "name": "Encyclopedic",
+          "description": "Extensive, immersive setting detail"
+        }
+      }
+    },
+    "magic_tech_hardness": {
+      "category_name": "Magic/Tech System",
+      "selection_rule": "select_one",
+      "description": "How defined the speculative elements are",
+      "options": {
+        "soft_mythic": {
+          "name": "Soft / Mythic",
+          "description": "Dream-like, unexplained forces"
+        },
+        "medium": {
+          "name": "Medium",
+          "description": "Some rules, room for mystery"
+        },
+        "hard_system": {
+          "name": "Hard / System",
+          "description": "Clearly defined rules and limits"
+        }
+      }
+    },
+    "emotional_intensity": {
+      "category_name": "Emotional Intensity",
+      "selection_rule": "select_one",
+      "description": "The emotional volatility level",
+      "options": {
+        "subtle": {
+          "name": "Subtle",
+          "description": "Feelings hinted rather than stated"
+        },
+        "moderate": {
+          "name": "Moderate",
+          "description": "Clear emotions, moderate volatility"
+        },
+        "high_drama": {
+          "name": "High Drama",
+          "description": "Big on-page reactions and tension"
+        },
+        "raw_extreme": {
+          "name": "Raw / Extreme",
+          "description": "Powerful, unfiltered emotional swings"
+        }
+      }
+    },
+    "humour_load": {
+      "category_name": "Humor Level",
+      "selection_rule": "select_one",
+      "description": "How much humor is present",
+      "options": {
+        "none": {
+          "name": "None",
+          "description": "Straight, serious narrative"
+        },
+        "occasional_wit": {
+          "name": "Occasional Wit",
+          "description": "Sporadic light humour"
+        },
+        "dry_sardonic": {
+          "name": "Dry / Sardonic",
+          "description": "Subtle, understated sarcasm"
+        },
+        "situational_comedy": {
+          "name": "Situational Comedy",
+          "description": "Frequent humorous incidents"
+        },
+        "farce_slapstick": {
+          "name": "Farce / Slapstick",
+          "description": "Broad, exaggerated comedy"
+        }
+      }
+    },
+    "stakes": {
+      "category_name": "Stakes",
+      "selection_rule": "select_one",
+      "description": "What's at risk in the story",
+      "options": {
+        "personal": {
+          "name": "Personal",
+          "description": "Protagonist's own well-being or goal"
+        },
+        "family": {
+          "name": "Family",
+          "description": "Safety or unity of close relations"
+        },
+        "community": {
+          "name": "Community",
+          "description": "Town, team, or small group at risk"
+        },
+        "national": {
+          "name": "National",
+          "description": "Fate of a country or large society"
+        },
+        "global": {
+          "name": "Global",
+          "description": "World-wide consequences"
+        },
+        "cosmic": {
+          "name": "Cosmic",
+          "description": "Universe-spanning or metaphysical risk"
+        }
+      }
+    },
+    "ending_atmosphere": {
+      "category_name": "Ending Tone",
+      "selection_rule": "select_one",
+      "description": "The story's conclusion feeling",
+      "options": {
+        "uplifting": {
+          "name": "Uplifting",
+          "description": "Joyful, triumphant resolution"
+        },
+        "hopeful": {
+          "name": "Hopeful",
+          "description": "Positive outlook, room for growth"
+        },
+        "bittersweet": {
+          "name": "Bittersweet",
+          "description": "Mix of gain and loss"
+        },
+        "tragic": {
+          "name": "Tragic",
+          "description": "Sad or catastrophic outcome"
+        },
+        "ambiguous": {
+          "name": "Ambiguous",
+          "description": "Open to interpretation"
+        }
+      }
+    },
+    "chronology": {
+      "category_name": "Timeline Structure",
+      "selection_rule": "select_one",
+      "description": "How time unfolds in the narrative",
+      "options": {
+        "linear": {
+          "name": "Linear",
+          "description": "Events told in chronological order"
+        },
+        "dual_timeline": {
+          "name": "Dual Timeline",
+          "description": "Alternating present/past threads"
+        },
+        "non_linear": {
+          "name": "Non-Linear",
+          "description": "Out-of-order storytelling"
+        },
+        "time_loop": {
+          "name": "Time-Loop",
+          "description": "Events repeat with variations"
+        },
+        "frame_story": {
+          "name": "Frame Story",
+          "description": "Story within a story wrapper"
+        }
+      }
+    },
+    "narrator_reliability": {
+      "category_name": "Narrator Reliability",
+      "selection_rule": "select_one",
+      "description": "How trustworthy the narrator is",
+      "options": {
+        "reliable": {
+          "name": "Reliable",
+          "description": "Narrator reports events truthfully"
+        },
+        "partially_reliable": {
+          "name": "Partially Reliable",
+          "description": "Minor bias or memory gaps"
+        },
+        "unreliable": {
+          "name": "Unreliable",
+          "description": "Deliberate or subconscious deceit"
+        }
+      }
+    },
+    "aesthetic_style": {
+      "category_name": "Writing Style",
+      "selection_rule": "select_one",
+      "description": "The prose style",
+      "options": {
+        "sparse": {
+          "name": "Sparse",
+          "description": "Minimalist prose; few adornments"
+        },
+        "neutral": {
+          "name": "Neutral",
+          "description": "Clear, unobtrusive storytelling voice"
+        },
+        "lyrical": {
+          "name": "Lyrical",
+          "description": "Poetic language and imagery"
+        },
+        "ornate": {
+          "name": "Ornate",
+          "description": "Rich, elaborate prose"
+        },
+        "experimental": {
+          "name": "Experimental",
+          "description": "Unconventional structure or language"
+        }
+      }
+    },
+    "thematic_weight": {
+      "category_name": "Thematic Depth",
+      "selection_rule": "select_one",
+      "description": "How deep the themes go",
+      "options": {
+        "light_entertainment": {
+          "name": "Light Entertainment",
+          "description": "Primarily escapist fun"
+        },
+        "reflective": {
+          "name": "Reflective",
+          "description": "Invites thought about life issues"
+        },
+        "philosophical": {
+          "name": "Philosophical",
+          "description": "Explores deep existential ideas"
+        }
+      }
+    },
+    "ethical_complexity": {
+      "category_name": "Moral Complexity",
+      "selection_rule": "select_one",
+      "description": "The moral landscape",
+      "options": {
+        "clear_good_vs_evil": {
+          "name": "Clear Good vs Evil",
+          "description": "Morality is black and white"
+        },
+        "shades_of_gray": {
+          "name": "Shades of Gray",
+          "description": "Mixed motives; ambiguous ethics"
+        },
+        "nihilistic": {
+          "name": "Nihilistic",
+          "description": "No moral order; existential void"
+        }
+      }
+    },
+    "sub_genre_motifs": {
+      "category_name": "Story Motifs",
+      "selection_rule": "select_multiple",
+      "description": "Specific story patterns and tropes",
+      "options": {
+        "enemies_to_lovers": {
+          "name": "Enemies to Lovers",
+          "description": "Opponents who develop romance"
+        },
+        "found_family": {
+          "name": "Found Family",
+          "description": "Strangers bond into supportive group"
+        },
+        "heist": {
+          "name": "Heist",
+          "description": "Caper focused on stealing something"
+        },
+        "court_intrigue": {
+          "name": "Court Intrigue",
+          "description": "Political maneuvering in royal/elite circles"
+        },
+        "cozy": {
+          "name": "Cozy",
+          "description": "Low-violence, comforting stakes"
+        },
+        "psychological_thriller": {
+          "name": "Psychological Thriller",
+          "description": "Mind-games, unreliable perceptions"
+        },
+        "chosen_one": {
+          "name": "Chosen One",
+          "description": "Prophesied hero destiny"
+        },
+        "redemption_arc": {
+          "name": "Redemption Arc",
+          "description": "Flawed character seeks atonement"
+        },
+        "political_intrigue": {
+          "name": "Political Intrigue",
+          "description": "Power plays and governance tension"
+        },
+        "survival_story": {
+          "name": "Survival Story",
+          "description": "Characters endure harsh environments"
+        }
+      }
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "source": "Original selections.json",
+    "usage": "This is the default taxonomy when 'Custom' genre is selected, supporting all story types"
+  }
+}

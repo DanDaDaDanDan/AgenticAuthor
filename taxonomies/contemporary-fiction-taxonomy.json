@@ -1,0 +1,450 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Contemporary Fiction Classification System",
+  "extends": "base-taxonomy",
+  "genre": "contemporary-fiction",
+  "description": "Realistic fiction set in the present day exploring modern life and relationships",
+  "categories": {
+    "contemporary_subgenre": {
+      "category_name": "Contemporary Subgenre",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The specific type of contemporary story",
+      "options": {
+        "family_saga": {
+          "name": "Family Saga",
+          "description": "Multi-generational family stories",
+          "key_features": ["family secrets", "generational trauma", "inheritance", "family dynamics"],
+          "themes": ["legacy", "tradition vs change", "family bonds", "secrets revealed"],
+          "scope": "decades spanning"
+        },
+        "coming_of_age": {
+          "name": "Coming of Age",
+          "description": "Transition to adulthood",
+          "key_features": ["self-discovery", "first experiences", "identity formation", "loss of innocence"],
+          "settings": ["high school", "college", "gap year", "first job"],
+          "tone": "nostalgic and honest"
+        },
+        "domestic_fiction": {
+          "name": "Domestic/Family Drama",
+          "description": "Home and family life focus",
+          "key_features": ["marriage dynamics", "parenting", "household tensions", "everyday struggles"],
+          "themes": ["work-life balance", "modern parenting", "relationship strain", "domestic secrets"],
+          "perspective": "intimate portrayal"
+        },
+        "womens_fiction": {
+          "name": "Women's Fiction",
+          "description": "Women's life experiences",
+          "key_features": ["female friendships", "career challenges", "motherhood", "self-empowerment"],
+          "themes": ["having it all", "sisterhood", "breaking barriers", "finding voice"],
+          "audience": "primarily women"
+        },
+        "workplace_drama": {
+          "name": "Workplace Drama",
+          "description": "Professional life and office politics",
+          "settings": ["corporate", "startup", "creative industry", "service industry"],
+          "conflicts": ["ambition", "ethics", "competition", "work relationships"],
+          "relevance": "modern work life"
+        },
+        "social_issue": {
+          "name": "Social Issue Fiction",
+          "description": "Contemporary social problems",
+          "topics": ["addiction", "homelessness", "immigration", "racism", "mental health"],
+          "approach": ["awareness raising", "humanizing", "systemic critique", "personal impact"],
+          "purpose": "illuminate issues"
+        },
+        "relationship_drama": {
+          "name": "Relationship Drama",
+          "description": "Romantic and platonic relationships",
+          "focus": ["marriage troubles", "friendship dynamics", "dating life", "divorce"],
+          "exploration": ["communication", "trust", "growth apart", "reconciliation"],
+          "realism": "authentic emotions"
+        },
+        "small_town_life": {
+          "name": "Small Town Life",
+          "description": "Rural and small community stories",
+          "elements": ["community dynamics", "local traditions", "everyone knows everyone", "slow change"],
+          "themes": ["belonging", "escape vs roots", "community support", "hidden depths"],
+          "atmosphere": "intimate scale"
+        },
+        "urban_life": {
+          "name": "Urban Life",
+          "description": "City living experiences",
+          "elements": ["anonymity", "diversity", "fast pace", "opportunity and struggle"],
+          "themes": ["isolation in crowds", "making it", "gentrification", "cultural melting pot"],
+          "energy": "vibrant and challenging"
+        },
+        "immigrant_experience": {
+          "name": "Immigrant Experience",
+          "description": "Immigration and cultural adaptation",
+          "themes": ["identity", "belonging", "cultural clash", "generational differences"],
+          "challenges": ["language barriers", "documentation", "discrimination", "preserving culture"],
+          "perspective": "between worlds"
+        },
+        "campus_novel": {
+          "name": "Campus Novel",
+          "description": "Academic setting stories",
+          "elements": ["academic politics", "student life", "intellectual debates", "campus culture"],
+          "themes": ["knowledge pursuit", "ivory tower", "coming of age", "privilege"],
+          "setting": "university world"
+        },
+        "suburban_drama": {
+          "name": "Suburban Drama",
+          "description": "Suburban life complexities",
+          "themes": ["keeping up appearances", "hidden problems", "conformity pressure", "american dream"],
+          "elements": ["PTA politics", "neighborhood drama", "perfect family facade", "mid-life crisis"],
+          "tone": "surface vs depth"
+        }
+      }
+    },
+    "protagonist_stage": {
+      "category_name": "Protagonist Life Stage",
+      "selection_rule": "select_one",
+      "description": "The life phase of main character",
+      "options": {
+        "child": {
+          "name": "Child (Under 12)",
+          "description": "Childhood perspective",
+          "themes": ["innocence", "discovery", "family dependency", "school life"],
+          "voice": "authentic child view"
+        },
+        "teenager": {
+          "name": "Teenager (13-18)",
+          "description": "Adolescent experiences",
+          "themes": ["identity", "first love", "rebellion", "peer pressure"],
+          "challenges": "finding self"
+        },
+        "young_adult_stage": {
+          "name": "Young Adult (19-25)",
+          "description": "Early adulthood transition",
+          "themes": ["career start", "independence", "relationships", "finding path"],
+          "struggles": "adulting"
+        },
+        "adult": {
+          "name": "Adult (26-45)",
+          "description": "Established adult life",
+          "themes": ["career", "marriage", "parenting", "life choices"],
+          "conflicts": "juggling responsibilities"
+        },
+        "middle_age": {
+          "name": "Middle Age (46-65)",
+          "description": "Mid-life experiences",
+          "themes": ["reflection", "empty nest", "career peak", "aging parents"],
+          "questions": "what's next?"
+        },
+        "senior": {
+          "name": "Senior (65+)",
+          "description": "Later life stories",
+          "themes": ["legacy", "health", "loss", "wisdom", "new chapters"],
+          "perspective": "life reviewed"
+        },
+        "multi_generational": {
+          "name": "Multi-Generational",
+          "description": "Multiple age perspectives",
+          "dynamics": ["family connections", "parallel lives", "generational differences"],
+          "scope": "life cycle"
+        }
+      }
+    },
+    "central_conflict": {
+      "category_name": "Central Conflict",
+      "selection_rule": "select_primary",
+      "description": "The main source of story tension",
+      "options": {
+        "internal_struggle": {
+          "name": "Internal/Personal",
+          "description": "Character vs self",
+          "types": ["identity crisis", "moral dilemma", "addiction", "mental health"],
+          "resolution": "self-acceptance"
+        },
+        "family_conflict": {
+          "name": "Family Conflict",
+          "description": "Family relationship tensions",
+          "types": ["parent-child", "sibling rivalry", "marriage strain", "inheritance disputes"],
+          "dynamics": "love and resentment"
+        },
+        "social_pressure": {
+          "name": "Social Pressure",
+          "description": "Individual vs society",
+          "sources": ["conformity", "expectations", "discrimination", "class barriers"],
+          "struggle": "authenticity"
+        },
+        "economic_struggle": {
+          "name": "Economic/Financial",
+          "description": "Money and class issues",
+          "challenges": ["poverty", "job loss", "debt", "class mobility"],
+          "impact": "survival and dignity"
+        },
+        "romantic_complication": {
+          "name": "Romantic Complication",
+          "description": "Love and relationship problems",
+          "types": ["unrequited love", "infidelity", "incompatibility", "timing"],
+          "emotion": "heart vs head"
+        },
+        "professional_challenge": {
+          "name": "Professional/Career",
+          "description": "Work-related conflicts",
+          "issues": ["ethics", "advancement", "work-life balance", "passion vs stability"],
+          "stakes": "livelihood and identity"
+        },
+        "health_crisis": {
+          "name": "Health Crisis",
+          "description": "Medical and wellness challenges",
+          "types": ["terminal illness", "mental health", "addiction", "caregiving"],
+          "impact": "life reevaluation"
+        },
+        "moral_dilemma": {
+          "name": "Moral/Ethical Dilemma",
+          "description": "Right vs wrong decisions",
+          "scenarios": ["whistleblowing", "loyalty conflicts", "truth vs kindness", "justice vs law"],
+          "complexity": "no clear answer"
+        }
+      }
+    },
+    "narrative_style": {
+      "category_name": "Narrative Style",
+      "selection_rule": "select_one",
+      "description": "How the story is told",
+      "options": {
+        "linear_realistic": {
+          "name": "Linear Realistic",
+          "description": "Straightforward chronological",
+          "approach": ["traditional narrative", "clear progression", "realistic pacing"],
+          "accessibility": "easy to follow"
+        },
+        "stream_consciousness": {
+          "name": "Stream of Consciousness",
+          "description": "Internal thought flow",
+          "characteristics": ["psychological depth", "free association", "minimal plot", "introspective"],
+          "challenge": "reader patience"
+        },
+        "multiple_perspectives": {
+          "name": "Multiple Perspectives",
+          "description": "Different viewpoint characters",
+          "advantages": ["complete picture", "unreliable narrators", "dramatic irony", "complexity"],
+          "structure": "alternating chapters"
+        },
+        "fragmented": {
+          "name": "Fragmented/Non-linear",
+          "description": "Jumbled timeline",
+          "techniques": ["flashbacks", "memory triggers", "parallel times", "puzzle pieces"],
+          "effect": "gradual understanding"
+        },
+        "epistolary": {
+          "name": "Epistolary",
+          "description": "Told through documents",
+          "formats": ["emails", "texts", "diary entries", "social media posts"],
+          "authenticity": "found documents"
+        },
+        "minimalist": {
+          "name": "Minimalist",
+          "description": "Spare, understated prose",
+          "characteristics": ["short sentences", "implied emotions", "white space", "show don't tell"],
+          "impact": "reader interpretation"
+        }
+      }
+    },
+    "contemporary_themes": {
+      "category_name": "Contemporary Themes",
+      "selection_rule": "select_up_to_three",
+      "description": "Modern life themes explored",
+      "options": {
+        "technology_impact": {
+          "name": "Technology and Social Media",
+          "description": "Digital life effects",
+          "aspects": ["online identity", "social media pressure", "digital relationships", "screen addiction"],
+          "relevance": "defining modern life"
+        },
+        "identity_politics": {
+          "name": "Identity and Representation",
+          "description": "Marginalized voices and experiences",
+          "focuses": ["race", "gender", "sexuality", "disability", "intersectionality"],
+          "importance": "visibility and understanding"
+        },
+        "mental_health": {
+          "name": "Mental Health",
+          "description": "Psychological wellness",
+          "topics": ["anxiety", "depression", "therapy", "medication", "stigma"],
+          "approach": "destigmatizing"
+        },
+        "climate_anxiety": {
+          "name": "Climate and Environment",
+          "description": "Ecological concerns",
+          "manifestations": ["eco-anxiety", "lifestyle changes", "activism", "future fears"],
+          "urgency": "generational worry"
+        },
+        "gig_economy": {
+          "name": "Modern Work Life",
+          "description": "Changing nature of work",
+          "elements": ["freelancing", "hustle culture", "work-from-home", "job insecurity"],
+          "pressure": "always on"
+        },
+        "political_division": {
+          "name": "Political Polarization",
+          "description": "Divided society",
+          "impacts": ["family rifts", "echo chambers", "activism", "disillusionment"],
+          "challenge": "finding common ground"
+        },
+        "gentrification": {
+          "name": "Gentrification/Urban Change",
+          "description": "Neighborhood transformation",
+          "effects": ["displacement", "culture loss", "economic pressure", "community change"],
+          "perspective": "progress or loss"
+        },
+        "modern_parenting": {
+          "name": "21st Century Parenting",
+          "description": "Raising kids today",
+          "challenges": ["helicopter parenting", "screen time", "overscheduling", "safety anxiety"],
+          "balance": "protection vs independence"
+        },
+        "aging_society": {
+          "name": "Aging and Eldercare",
+          "description": "Caring for aging population",
+          "issues": ["sandwich generation", "dementia", "retirement", "death dignity"],
+          "emotion": "role reversal"
+        },
+        "authenticity": {
+          "name": "Authenticity vs Performance",
+          "description": "Being real in curated world",
+          "tensions": ["social media persona", "professional image", "true self", "vulnerability"],
+          "quest": "genuine connection"
+        }
+      }
+    },
+    "setting_type": {
+      "category_name": "Primary Setting",
+      "selection_rule": "select_one_or_two",
+      "description": "Where the story primarily occurs",
+      "options": {
+        "metropolitan": {
+          "name": "Major City/Metropolitan",
+          "description": "Large urban center",
+          "characteristics": ["diversity", "opportunity", "anonymity", "pace"],
+          "specific_cities": ["New York", "London", "Los Angeles", "Chicago"],
+          "atmosphere": "energy and isolation"
+        },
+        "suburban_setting": {
+          "name": "Suburban",
+          "description": "Residential suburbs",
+          "elements": ["commuter life", "schools", "malls", "uniformity"],
+          "dynamics": "surface perfection"
+        },
+        "small_town_setting": {
+          "name": "Small Town/Rural",
+          "description": "Tight-knit communities",
+          "characteristics": ["everyone knows everyone", "slow change", "tradition", "gossip"],
+          "appeal": "intimacy and claustrophobia"
+        },
+        "coastal_setting": {
+          "name": "Coastal/Beach Town",
+          "description": "Oceanside communities",
+          "elements": ["seasonal tourists", "fishing industry", "beach culture", "weather dependency"],
+          "mood": "relaxed yet precarious"
+        },
+        "college_town": {
+          "name": "College Town",
+          "description": "University-centered community",
+          "dynamics": ["town vs gown", "seasonal population", "intellectual atmosphere", "youth energy"],
+          "culture": "academic bubble"
+        },
+        "international_setting": {
+          "name": "International/Expat",
+          "description": "Abroad or multicultural",
+          "themes": ["culture shock", "adaptation", "identity", "belonging"],
+          "perspective": "outsider looking in"
+        },
+        "mobile_nomadic": {
+          "name": "Mobile/Nomadic",
+          "description": "Constant movement",
+          "types": ["road trip", "van life", "digital nomad", "touring"],
+          "theme": "searching and rootlessness"
+        }
+      }
+    },
+    "tone_mood": {
+      "category_name": "Tone and Mood",
+      "selection_rule": "select_one",
+      "description": "The emotional atmosphere",
+      "options": {
+        "humorous": {
+          "name": "Humorous/Light",
+          "description": "Comedy and levity",
+          "approach": ["witty dialogue", "situational comedy", "satire", "absurdist"],
+          "purpose": "entertainment and truth"
+        },
+        "dramatic_serious": {
+          "name": "Dramatic/Serious",
+          "description": "Weighty and earnest",
+          "characteristics": ["emotional depth", "serious themes", "realistic consequences"],
+          "impact": "profound"
+        },
+        "bittersweet": {
+          "name": "Bittersweet",
+          "description": "Mixed emotions",
+          "balance": ["joy and sorrow", "gains and losses", "hope and regret"],
+          "resonance": "life's complexity"
+        },
+        "nostalgic": {
+          "name": "Nostalgic/Reflective",
+          "description": "Looking back",
+          "elements": ["memory", "lost time", "what if", "golden age"],
+          "emotion": "wistful longing"
+        },
+        "satirical": {
+          "name": "Satirical",
+          "description": "Social criticism through humor",
+          "targets": ["social media", "corporate culture", "politics", "privilege"],
+          "method": "exaggeration and irony"
+        },
+        "melancholic": {
+          "name": "Melancholic",
+          "description": "Pervading sadness",
+          "sources": ["loss", "missed opportunities", "isolation", "inevitability"],
+          "beauty": "sadness aesthetic"
+        },
+        "hopeful": {
+          "name": "Hopeful/Uplifting",
+          "description": "Optimistic despite challenges",
+          "elements": ["resilience", "growth", "connection", "possibility"],
+          "message": "life affirming"
+        }
+      }
+    },
+    "resolution_style": {
+      "category_name": "Resolution Style",
+      "selection_rule": "select_one",
+      "description": "How the story concludes",
+      "options": {
+        "neat_resolution": {
+          "name": "Neat Resolution",
+          "description": "Clear closure",
+          "satisfaction": ["questions answered", "conflicts resolved", "future clear"],
+          "audience": "closure seekers"
+        },
+        "open_ended": {
+          "name": "Open Ended",
+          "description": "Ambiguous conclusion",
+          "approach": ["life continues", "reader interpretation", "unresolved questions"],
+          "realism": "like real life"
+        },
+        "circular": {
+          "name": "Circular/Return",
+          "description": "Ends where it began",
+          "effect": ["full circle", "changed perspective", "inevitability", "cycles"],
+          "meaning": "nothing and everything changes"
+        },
+        "transformative": {
+          "name": "Transformative",
+          "description": "Character fundamentally changed",
+          "journey": ["growth", "loss of innocence", "awakening", "acceptance"],
+          "impact": "new person"
+        },
+        "slice_of_life": {
+          "name": "Slice of Life",
+          "description": "Moment in ongoing life",
+          "philosophy": ["no neat endings", "continuous flow", "small epiphanies"],
+          "style": "literary"
+        }
+      }
+    }
+  }
+}

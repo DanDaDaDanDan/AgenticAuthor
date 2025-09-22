@@ -1,0 +1,402 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Mystery/Thriller Classification System",
+  "extends": "base-taxonomy",
+  "genre": "mystery-thriller",
+  "description": "Mystery, thriller, and crime fiction focusing on suspense, investigation, and danger",
+  "categories": {
+    "mystery_subgenre": {
+      "category_name": "Mystery/Thriller Subgenre",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The specific type of mystery or thriller",
+      "options": {
+        "classic_detective": {
+          "name": "Classic Detective/Whodunit",
+          "description": "Traditional mystery with investigation focus",
+          "key_features": ["puzzle solving", "clue gathering", "red herrings", "reveal scene"],
+          "structure": ["crime discovered", "investigation", "false leads", "revelation"],
+          "examples": ["locked room", "country house", "murder mystery dinner"]
+        },
+        "hardboiled": {
+          "name": "Hardboiled/Noir",
+          "description": "Gritty, cynical crime fiction",
+          "key_features": ["moral ambiguity", "urban decay", "corruption", "antihero"],
+          "atmosphere": ["dark", "pessimistic", "violent", "realistic"],
+          "settings": ["mean streets", "dive bars", "back alleys"]
+        },
+        "cozy_mystery": {
+          "name": "Cozy Mystery",
+          "description": "Gentle mysteries in small communities",
+          "key_features": ["amateur sleuth", "small town", "minimal violence", "community focus"],
+          "common_elements": ["local business owner", "recurring cast", "hobby themes", "pets"],
+          "tone": "light and comfortable"
+        },
+        "police_procedural": {
+          "name": "Police Procedural",
+          "description": "Realistic police investigation methods",
+          "key_features": ["forensics", "department politics", "procedure accuracy", "team dynamics"],
+          "focus": ["evidence gathering", "interrogation", "court preparation", "chain of command"],
+          "realism": "high technical accuracy"
+        },
+        "psychological_thriller": {
+          "name": "Psychological Thriller",
+          "description": "Mental and emotional manipulation",
+          "key_features": ["mind games", "unreliable narrator", "gaslighting", "paranoia"],
+          "themes": ["identity", "memory", "perception", "madness"],
+          "tension": "mental rather than physical"
+        },
+        "legal_thriller": {
+          "name": "Legal Thriller",
+          "description": "Courtroom drama and legal maneuvering",
+          "key_features": ["trial scenes", "legal procedure", "evidence discovery", "jury dynamics"],
+          "conflicts": ["justice vs law", "ethics", "corruption", "witness protection"],
+          "settings": ["courtroom", "law offices", "judges chambers"]
+        },
+        "medical_thriller": {
+          "name": "Medical Thriller",
+          "description": "Medical settings and biological threats",
+          "key_features": ["medical accuracy", "ethical dilemmas", "outbreak scenarios", "research gone wrong"],
+          "threats": ["pandemics", "medical malpractice", "experimental drugs", "organ trafficking"],
+          "expertise": "medical knowledge crucial"
+        },
+        "techno_thriller": {
+          "name": "Techno-Thriller",
+          "description": "Technology-driven threats and solutions",
+          "key_features": ["hacking", "surveillance", "AI threats", "cyber warfare"],
+          "themes": ["privacy", "digital identity", "technological singularity", "information warfare"],
+          "pacing": "fast and complex"
+        },
+        "spy_thriller": {
+          "name": "Spy/Espionage Thriller",
+          "description": "International intrigue and espionage",
+          "key_features": ["double agents", "international stakes", "tradecraft", "betrayal"],
+          "elements": ["dead drops", "safe houses", "false identities", "intelligence agencies"],
+          "scope": "global consequences"
+        },
+        "conspiracy_thriller": {
+          "name": "Conspiracy Thriller",
+          "description": "Large-scale conspiracies and cover-ups",
+          "key_features": ["hidden agendas", "powerful enemies", "trust no one", "layers of deception"],
+          "scale": ["government", "corporate", "historical", "global"],
+          "protagonist": "david vs goliath"
+        },
+        "action_thriller": {
+          "name": "Action Thriller",
+          "description": "High-octane action with thriller elements",
+          "key_features": ["chase scenes", "fight sequences", "explosions", "countdown clocks"],
+          "pacing": ["relentless", "breathless", "escalating", "climactic"],
+          "stakes": "immediate physical danger"
+        },
+        "domestic_thriller": {
+          "name": "Domestic/Psychological Thriller",
+          "description": "Threats within home and relationships",
+          "key_features": ["marriage secrets", "family dysfunction", "suburban darkness", "intimate betrayal"],
+          "themes": ["trust", "identity", "appearances vs reality", "gaslighting"],
+          "setting": "familiar turned sinister"
+        }
+      }
+    },
+    "protagonist_type": {
+      "category_name": "Protagonist Type",
+      "selection_rule": "select_one",
+      "description": "The main character solving or surviving the mystery",
+      "options": {
+        "professional_detective": {
+          "name": "Professional Detective",
+          "description": "Trained law enforcement or private investigator",
+          "variants": ["police detective", "private investigator", "FBI agent", "consultant"],
+          "advantages": ["resources", "authority", "experience", "contacts"],
+          "challenges": ["bureaucracy", "jurisdiction", "politics"]
+        },
+        "amateur_sleuth": {
+          "name": "Amateur Sleuth",
+          "description": "Civilian drawn into investigation",
+          "motivations": ["personal stake", "curiosity", "justice", "protect loved ones"],
+          "advantages": ["outsider perspective", "unconventional methods", "underestimated"],
+          "challenges": ["no authority", "danger", "learning curve"]
+        },
+        "journalist": {
+          "name": "Journalist/Reporter",
+          "description": "Media professional investigating",
+          "tools": ["research skills", "source network", "public platform", "persistence"],
+          "conflicts": ["ethics vs story", "deadline pressure", "editorial interference"],
+          "advantages": ["access", "cover story", "public pressure"]
+        },
+        "lawyer": {
+          "name": "Lawyer/Legal Professional",
+          "description": "Attorney involved in criminal case",
+          "types": ["defense attorney", "prosecutor", "corporate lawyer", "public defender"],
+          "tools": ["legal knowledge", "discovery process", "cross-examination"],
+          "conflicts": ["truth vs winning", "client interests", "legal ethics"]
+        },
+        "forensic_specialist": {
+          "name": "Forensic Specialist",
+          "description": "Scientific approach to investigation",
+          "specialties": ["pathologist", "CSI", "profiler", "digital forensics"],
+          "advantages": ["scientific method", "evidence focus", "objective analysis"],
+          "limitations": ["lab dependent", "time constraints", "budget issues"]
+        },
+        "victim_survivor": {
+          "name": "Victim/Survivor",
+          "description": "Target becomes investigator",
+          "motivations": ["survival", "revenge", "clear name", "protect others"],
+          "arc": ["victim to survivor", "hunted to hunter", "powerless to empowered"],
+          "challenges": ["trauma", "credibility", "resources"]
+        },
+        "criminal_antihero": {
+          "name": "Criminal/Antihero",
+          "description": "Morally ambiguous protagonist",
+          "types": ["reformed criminal", "vigilante", "thief", "con artist"],
+          "advantages": ["criminal knowledge", "underworld contacts", "flexible morals"],
+          "conflicts": ["law vs justice", "past vs present", "loyalty conflicts"]
+        }
+      }
+    },
+    "crime_type": {
+      "category_name": "Central Crime/Threat",
+      "selection_rule": "select_primary",
+      "description": "The main crime or threat driving the plot",
+      "options": {
+        "murder": {
+          "name": "Murder",
+          "description": "Homicide investigation",
+          "variations": ["serial killer", "crime of passion", "professional hit", "accidental death"],
+          "investigation_focus": ["motive", "means", "opportunity", "alibis"]
+        },
+        "disappearance": {
+          "name": "Missing Person/Kidnapping",
+          "description": "Someone vanishes or is taken",
+          "urgency": ["ticking clock", "ransom demands", "trail going cold", "presumed dead"],
+          "types": ["child abduction", "runaway", "witness protection", "human trafficking"]
+        },
+        "theft_heist": {
+          "name": "Theft/Heist",
+          "description": "Valuable items stolen",
+          "targets": ["art", "jewels", "data", "identities", "corporate secrets"],
+          "complexity": ["planning", "execution", "aftermath", "double-crosses"]
+        },
+        "conspiracy": {
+          "name": "Conspiracy/Cover-up",
+          "description": "Organized deception",
+          "scale": ["corporate", "government", "criminal organization", "historical"],
+          "elements": ["whistle-blowers", "evidence destruction", "witness elimination", "media manipulation"]
+        },
+        "terrorism": {
+          "name": "Terrorism/Mass Threat",
+          "description": "Large-scale danger to many",
+          "types": ["bombing", "biological weapon", "cyber attack", "hostage situation"],
+          "stakes": ["mass casualties", "public panic", "political ramifications"]
+        },
+        "corruption": {
+          "name": "Corruption/White Collar Crime",
+          "description": "Systemic criminal activity",
+          "types": ["embezzlement", "bribery", "fraud", "money laundering"],
+          "challenges": ["paper trails", "powerful enemies", "legal complexity"]
+        },
+        "blackmail": {
+          "name": "Blackmail/Extortion",
+          "description": "Coercion through threats",
+          "leverage": ["secrets", "evidence", "loved ones", "reputation"],
+          "escalation": ["demands increase", "multiple victims", "counter-blackmail"]
+        }
+      }
+    },
+    "mystery_structure": {
+      "category_name": "Mystery Structure",
+      "selection_rule": "select_one",
+      "description": "How the mystery unfolds narratively",
+      "options": {
+        "linear_investigation": {
+          "name": "Linear Investigation",
+          "description": "Chronological following of clues",
+          "progression": ["crime", "initial investigation", "developing leads", "breakthrough", "resolution"],
+          "reader_experience": "solve alongside detective"
+        },
+        "inverted_mystery": {
+          "name": "Inverted/Howcatchem",
+          "description": "Criminal known, focus on proving guilt",
+          "structure": ["show crime", "introduce detective", "cat and mouse", "trap springs"],
+          "tension": "will they prove it?"
+        },
+        "multiple_timeline": {
+          "name": "Multiple Timelines",
+          "description": "Past and present narratives converge",
+          "structure": ["present investigation", "past events", "gradual revelation", "timelines merge"],
+          "complexity": "layered understanding"
+        },
+        "unreliable_narrator": {
+          "name": "Unreliable Narrator",
+          "description": "Narrator's truth is questionable",
+          "techniques": ["memory gaps", "lies", "delusion", "hidden agenda"],
+          "revelation": "truth vs perception"
+        },
+        "multiple_pov": {
+          "name": "Multiple POV",
+          "description": "Story from different perspectives",
+          "advantages": ["broader picture", "dramatic irony", "hidden information", "suspect POVs"],
+          "challenge": "maintaining mystery"
+        },
+        "locked_room": {
+          "name": "Locked Room/Impossible Crime",
+          "description": "Seemingly impossible crime",
+          "elements": ["physical impossibility", "alibi paradox", "no weapon", "no escape"],
+          "solution": "ingenious method"
+        }
+      }
+    },
+    "setting_atmosphere": {
+      "category_name": "Setting & Atmosphere",
+      "selection_rule": "select_one_or_two",
+      "description": "Where and when the mystery takes place",
+      "options": {
+        "urban_gritty": {
+          "name": "Urban/Gritty City",
+          "description": "Dark city streets and urban decay",
+          "elements": ["crime-ridden neighborhoods", "corruption", "anonymity", "24/7 activity"],
+          "mood": "noir and dangerous"
+        },
+        "small_town_secrets": {
+          "name": "Small Town Secrets",
+          "description": "Insular community with hidden darkness",
+          "elements": ["everyone knows everyone", "old secrets", "gossip network", "outsider suspicion"],
+          "mood": "claustrophobic"
+        },
+        "isolated_location": {
+          "name": "Isolated Location",
+          "description": "Cut off from outside help",
+          "examples": ["island", "snowbound hotel", "cruise ship", "remote mansion"],
+          "tension": "no escape"
+        },
+        "international": {
+          "name": "International/Exotic",
+          "description": "Globe-spanning investigation",
+          "elements": ["multiple countries", "cultural differences", "jurisdiction issues", "travel"],
+          "scope": "expanded world"
+        },
+        "historical_period": {
+          "name": "Historical Period",
+          "description": "Set in specific past era",
+          "advantages": ["no modern tech", "different social rules", "historical events"],
+          "popular_periods": ["Victorian", "1920s", "WWII", "Cold War"]
+        },
+        "institutional": {
+          "name": "Institutional",
+          "description": "Within specific institution",
+          "examples": ["university", "hospital", "military base", "corporation"],
+          "dynamics": ["hierarchy", "internal politics", "closed system"]
+        },
+        "suburban_darkness": {
+          "name": "Suburban Darkness",
+          "description": "Darkness beneath perfect facades",
+          "themes": ["appearances", "keeping up", "hidden lives", "neighborhood watch"],
+          "mood": "false security"
+        }
+      }
+    },
+    "pacing_tension": {
+      "category_name": "Pacing & Tension",
+      "selection_rule": "select_one",
+      "description": "How suspense builds through the story",
+      "options": {
+        "slow_burn": {
+          "name": "Slow Burn",
+          "description": "Gradual tension building",
+          "techniques": ["atmospheric dread", "subtle clues", "character development", "delayed revelation"],
+          "reader_experience": "creeping unease"
+        },
+        "breakneck": {
+          "name": "Breakneck/Relentless",
+          "description": "Non-stop action and reveals",
+          "techniques": ["cliffhangers", "short chapters", "multiple threats", "countdown"],
+          "reader_experience": "breathless rush"
+        },
+        "escalating": {
+          "name": "Escalating Stakes",
+          "description": "Progressively increasing danger",
+          "progression": ["small threat", "personal danger", "loved ones threatened", "widespread peril"],
+          "structure": "ramping tension"
+        },
+        "cat_and_mouse": {
+          "name": "Cat and Mouse",
+          "description": "Pursuer and pursued dynamics",
+          "elements": ["role reversals", "near misses", "taunting", "traps"],
+          "tension": "constant proximity"
+        },
+        "puzzle_box": {
+          "name": "Puzzle Box",
+          "description": "Intellectual challenge focus",
+          "elements": ["complex clues", "reader participation", "fair play", "logical deduction"],
+          "satisfaction": "solving before reveal"
+        }
+      }
+    },
+    "violence_level": {
+      "category_name": "Violence Level",
+      "selection_rule": "select_one",
+      "description": "Amount and explicitness of violence",
+      "options": {
+        "minimal": {
+          "name": "Minimal/Offscreen",
+          "description": "Violence implied or happens offscreen",
+          "approach": ["aftermath focus", "emotional impact", "investigation", "suggestion"],
+          "suitable_for": "cozy mysteries"
+        },
+        "moderate": {
+          "name": "Moderate",
+          "description": "Some violence shown but not graphic",
+          "approach": ["action sequences", "danger", "fights", "non-graphic deaths"],
+          "suitable_for": "mainstream thrillers"
+        },
+        "graphic": {
+          "name": "Graphic/Explicit",
+          "description": "Detailed violence and its effects",
+          "approach": ["realistic consequences", "forensic detail", "brutal honesty"],
+          "suitable_for": "noir and hardboiled"
+        },
+        "psychological": {
+          "name": "Psychological Only",
+          "description": "Mental/emotional violence primarily",
+          "approach": ["mind games", "manipulation", "threats", "fear"],
+          "impact": "mental rather than physical"
+        }
+      }
+    },
+    "resolution_type": {
+      "category_name": "Resolution Type",
+      "selection_rule": "select_one",
+      "description": "How the mystery concludes",
+      "options": {
+        "justice_served": {
+          "name": "Justice Served",
+          "description": "Criminal caught and punished",
+          "satisfaction": ["closure", "order restored", "good triumphs"],
+          "variations": ["arrest", "confession", "trial"]
+        },
+        "pyrrhic_victory": {
+          "name": "Pyrrhic Victory",
+          "description": "Win but at great cost",
+          "elements": ["personal loss", "moral compromise", "damaged relationships"],
+          "tone": "bittersweet"
+        },
+        "villain_escapes": {
+          "name": "Villain Escapes",
+          "description": "Antagonist gets away",
+          "implications": ["sequel setup", "realistic", "systemic issues"],
+          "mood": "unresolved tension"
+        },
+        "twist_ending": {
+          "name": "Twist Ending",
+          "description": "Unexpected revelation changes everything",
+          "types": ["identity reveal", "motive reversal", "hero was villain"],
+          "impact": "reframe entire story"
+        },
+        "ambiguous": {
+          "name": "Ambiguous",
+          "description": "Truth remains uncertain",
+          "elements": ["multiple possibilities", "unreliable information", "reader decides"],
+          "literary": "thought-provoking"
+        }
+      }
+    }
+  }
+}

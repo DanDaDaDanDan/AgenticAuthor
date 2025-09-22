@@ -1,0 +1,464 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Science Fiction Classification System",
+  "extends": "base-taxonomy",
+  "genre": "science-fiction",
+  "description": "Science fiction exploring technology, space, time, and humanity's future",
+  "categories": {
+    "scifi_subgenre": {
+      "category_name": "Science Fiction Subgenre",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The specific type of science fiction story",
+      "options": {
+        "space_opera": {
+          "name": "Space Opera",
+          "description": "Epic adventures across space",
+          "key_features": ["galactic scope", "space battles", "alien civilizations", "FTL travel"],
+          "themes": ["empire and rebellion", "exploration", "first contact", "galactic politics"],
+          "tone": "grand and adventurous"
+        },
+        "hard_scifi": {
+          "name": "Hard Science Fiction",
+          "description": "Scientifically accurate and detailed",
+          "key_features": ["real physics", "technical accuracy", "scientific method", "plausible technology"],
+          "focus": ["problem-solving", "realistic constraints", "actual science", "engineering"],
+          "audience": "science-literate"
+        },
+        "cyberpunk": {
+          "name": "Cyberpunk",
+          "description": "High tech, low life in near future",
+          "key_features": ["cyberspace", "body modification", "corporate dystopia", "hacking"],
+          "themes": ["technology vs humanity", "digital identity", "class divide", "rebellion"],
+          "aesthetic": "neon noir"
+        },
+        "military_scifi": {
+          "name": "Military Science Fiction",
+          "description": "Future warfare and military life",
+          "key_features": ["space marines", "tactical combat", "military hierarchy", "advanced weapons"],
+          "themes": ["duty", "sacrifice", "chain of command", "cost of war"],
+          "focus": "combat and strategy"
+        },
+        "dystopian": {
+          "name": "Dystopian",
+          "description": "Oppressive future societies",
+          "key_features": ["totalitarian control", "social engineering", "rebellion", "surveillance"],
+          "warnings": ["technology misuse", "social decay", "environmental collapse", "freedom loss"],
+          "mood": "cautionary"
+        },
+        "post_apocalyptic": {
+          "name": "Post-Apocalyptic",
+          "description": "After civilization's collapse",
+          "causes": ["nuclear war", "pandemic", "climate disaster", "AI uprising", "alien invasion"],
+          "themes": ["survival", "rebuilding", "human nature", "lost technology"],
+          "tone": "grim survival"
+        },
+        "time_travel": {
+          "name": "Time Travel",
+          "description": "Temporal manipulation stories",
+          "paradoxes": ["grandfather paradox", "bootstrap paradox", "butterfly effect", "fixed timeline"],
+          "uses": ["fix the past", "prevent disaster", "historical tourism", "time war"],
+          "complexity": "causality puzzles"
+        },
+        "alternate_history": {
+          "name": "Alternate History",
+          "description": "History diverged differently",
+          "divergence_points": ["technology earlier", "different war outcome", "scientific discovery", "first contact"],
+          "exploration": ["what if", "parallel development", "changed timeline", "multiverse"],
+          "blend": "history and speculation"
+        },
+        "biopunk": {
+          "name": "Biopunk",
+          "description": "Biotechnology and genetic engineering",
+          "key_features": ["genetic modification", "bioweapons", "cloning", "synthetic biology"],
+          "themes": ["evolution", "human enhancement", "bioethics", "corporate genetics"],
+          "focus": "biological revolution"
+        },
+        "climate_fiction": {
+          "name": "Climate Fiction (Cli-Fi)",
+          "description": "Climate change consequences",
+          "scenarios": ["sea level rise", "extreme weather", "ecosystem collapse", "climate refugees"],
+          "themes": ["environmental justice", "adaptation", "sustainability", "human impact"],
+          "purpose": "urgent warning"
+        },
+        "space_colonization": {
+          "name": "Space Colonization",
+          "description": "Humanity spreading to space",
+          "challenges": ["terraforming", "generation ships", "colony politics", "isolation"],
+          "themes": ["frontier life", "adaptation", "independence", "human evolution"],
+          "scope": "new worlds"
+        },
+        "first_contact": {
+          "name": "First Contact",
+          "description": "Meeting alien intelligence",
+          "scenarios": ["peaceful exchange", "invasion", "incomprehensible aliens", "uplift"],
+          "challenges": ["communication", "cultural gaps", "technology disparity", "xenophobia"],
+          "impact": "humanity transformed"
+        },
+        "singularity": {
+          "name": "Singularity/Transhuman",
+          "description": "Post-human evolution",
+          "elements": ["AI transcendence", "mind uploading", "human enhancement", "posthuman"],
+          "themes": ["consciousness", "identity", "obsolescence", "transcendence"],
+          "tone": "philosophical"
+        },
+        "solarpunk": {
+          "name": "Solarpunk",
+          "description": "Optimistic sustainable futures",
+          "key_features": ["renewable energy", "green cities", "community", "appropriate technology"],
+          "themes": ["sustainability", "cooperation", "innovation", "harmony with nature"],
+          "mood": "hopeful"
+        }
+      }
+    },
+    "technology_focus": {
+      "category_name": "Central Technology",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The main technological element",
+      "options": {
+        "ai_robotics": {
+          "name": "AI and Robotics",
+          "description": "Artificial intelligence and robots",
+          "variations": ["sentient AI", "robot uprising", "android companions", "hive minds"],
+          "questions": ["consciousness", "rights", "control", "replacement"],
+          "examples": ["AGI", "neural networks", "quantum computers"]
+        },
+        "space_travel": {
+          "name": "Space Travel",
+          "description": "Interstellar transportation",
+          "methods": ["FTL drives", "wormholes", "generation ships", "teleportation"],
+          "challenges": ["relativity", "navigation", "fuel", "isolation"],
+          "enabling": "galactic civilization"
+        },
+        "genetic_engineering": {
+          "name": "Genetic Engineering",
+          "description": "Modifying biological life",
+          "applications": ["designer babies", "supersoldiers", "disease elimination", "new species"],
+          "ethics": ["playing god", "inequality", "unintended consequences", "bioweapons"],
+          "impact": "evolution controlled"
+        },
+        "cybernetics": {
+          "name": "Cybernetics/Augmentation",
+          "description": "Human-machine integration",
+          "types": ["neural implants", "prosthetics", "exoskeletons", "brain-computer interface"],
+          "themes": ["enhanced vs natural", "identity", "dependency", "hacking"],
+          "society": "augmented humanity"
+        },
+        "virtual_reality": {
+          "name": "Virtual/Augmented Reality",
+          "description": "Digital worlds and overlays",
+          "uses": ["escape", "training", "communication", "alternate lives"],
+          "dangers": ["addiction", "reality confusion", "manipulation", "isolation"],
+          "question": "what is real?"
+        },
+        "nanotechnology": {
+          "name": "Nanotechnology",
+          "description": "Molecular-scale machines",
+          "applications": ["medical", "manufacturing", "grey goo", "enhancement"],
+          "power": ["transformation", "healing", "destruction", "invisibility"],
+          "risk": "uncontrolled replication"
+        },
+        "time_manipulation": {
+          "name": "Time Technology",
+          "description": "Temporal control devices",
+          "types": ["time machines", "chronostasis", "temporal weapons", "time dilation"],
+          "paradoxes": ["causality loops", "timeline preservation", "temporal war"],
+          "complexity": "cause and effect"
+        },
+        "energy_technology": {
+          "name": "Energy Technology",
+          "description": "Power generation and use",
+          "types": ["fusion", "antimatter", "zero-point", "Dyson spheres"],
+          "implications": ["post-scarcity", "weapons", "space travel", "terraforming"],
+          "control": "power literally"
+        },
+        "teleportation": {
+          "name": "Teleportation/Transportation",
+          "description": "Instant travel technology",
+          "methods": ["matter transmission", "portals", "quantum entanglement", "fold space"],
+          "issues": ["identity continuity", "accidents", "security", "energy requirements"],
+          "impact": "distance meaningless"
+        },
+        "terraforming": {
+          "name": "Terraforming/Geoengineering",
+          "description": "Planet modification technology",
+          "processes": ["atmosphere creation", "ecosystem design", "climate control", "gravity manipulation"],
+          "timescale": ["centuries", "generations", "instant transformation"],
+          "ethics": "playing god with worlds"
+        }
+      }
+    },
+    "setting_scope": {
+      "category_name": "Setting Scope",
+      "selection_rule": "select_one",
+      "description": "The physical scope of the story",
+      "options": {
+        "earth_bound": {
+          "name": "Earth-Bound",
+          "description": "Takes place on Earth",
+          "variations": ["near future", "far future", "alternate present", "underground/underwater"],
+          "focus": "familiar yet changed",
+          "advantage": "relatable setting"
+        },
+        "solar_system": {
+          "name": "Solar System",
+          "description": "Within our solar system",
+          "locations": ["Mars colonies", "asteroid belt", "Jupiter moons", "Venus clouds"],
+          "realism": "more scientifically grounded",
+          "themes": "humanity's first steps"
+        },
+        "interstellar": {
+          "name": "Interstellar",
+          "description": "Multiple star systems",
+          "scope": ["nearby stars", "galactic arm", "whole galaxy", "multiple galaxies"],
+          "challenge": "distance and time",
+          "civilization": "stellar empires"
+        },
+        "multiverse": {
+          "name": "Multiverse/Parallel Dimensions",
+          "description": "Multiple universes",
+          "variations": ["parallel earths", "different physics", "quantum realities", "dimensional travel"],
+          "complexity": "infinite possibilities",
+          "navigation": "between realities"
+        },
+        "virtual_world": {
+          "name": "Virtual/Digital World",
+          "description": "Inside digital realms",
+          "types": ["cyberspace", "simulation", "uploaded minds", "game worlds"],
+          "reality": "questioning existence",
+          "stakes": "digital death real?"
+        },
+        "generation_ship": {
+          "name": "Generation Ship/Ark",
+          "description": "Multigenerational spacecraft",
+          "themes": ["isolation", "social evolution", "destination doubt", "ship as world"],
+          "conflicts": ["resources", "authority", "purpose", "arrival"],
+          "metaphor": "society in microcosm"
+        },
+        "space_station": {
+          "name": "Space Station/Habitat",
+          "description": "Orbital or deep space structure",
+          "types": ["research station", "trading post", "mining platform", "colony"],
+          "dynamics": ["closed system", "isolation", "diverse inhabitants", "frontier law"],
+          "tension": "pressure cooker"
+        }
+      }
+    },
+    "time_period": {
+      "category_name": "Time Period",
+      "selection_rule": "select_one",
+      "description": "When the story takes place",
+      "options": {
+        "near_future": {
+          "name": "Near Future (20-50 years)",
+          "description": "Recognizable with advanced tech",
+          "characteristics": ["current issues evolved", "emerging technology matured", "social change"],
+          "relatability": "very high",
+          "prediction": "plausible"
+        },
+        "medium_future": {
+          "name": "Medium Future (50-200 years)",
+          "description": "Significantly changed world",
+          "characteristics": ["new technology paradigms", "social transformation", "space presence"],
+          "balance": "familiar and alien",
+          "speculation": "educated guess"
+        },
+        "far_future": {
+          "name": "Far Future (200+ years)",
+          "description": "Radically different civilization",
+          "characteristics": ["unrecognizable society", "advanced technology", "human evolution", "galactic presence"],
+          "freedom": "anything possible",
+          "challenge": "relatability"
+        },
+        "deep_time": {
+          "name": "Deep Time (Thousands+ years)",
+          "description": "Geological timescales",
+          "themes": ["civilizational cycles", "evolution", "cosmological", "deep history"],
+          "scope": "epic scale",
+          "perspective": "humanity's place"
+        },
+        "alternate_timeline": {
+          "name": "Alternate Timeline",
+          "description": "Different technological development",
+          "divergence": ["Victorian sci-fi", "retrofuturism", "early breakthrough", "delayed progress"],
+          "aesthetic": ["steampunk", "dieselpunk", "atompunk"],
+          "blend": "past and future"
+        }
+      }
+    },
+    "alien_presence": {
+      "category_name": "Alien Presence",
+      "selection_rule": "select_one",
+      "description": "Role of alien life in the story",
+      "options": {
+        "no_aliens": {
+          "name": "No Aliens",
+          "description": "Humans only",
+          "focus": ["human drama", "technology impact", "isolation", "are we alone?"],
+          "themes": "humanity examined"
+        },
+        "alien_threat": {
+          "name": "Alien Threat",
+          "description": "Aliens as antagonists",
+          "types": ["invasion", "predation", "conquest", "extermination"],
+          "response": ["resistance", "survival", "adaptation", "victory"],
+          "metaphor": "fear of other"
+        },
+        "alien_allies": {
+          "name": "Alien Allies",
+          "description": "Cooperative alien species",
+          "relationships": ["trade", "federation", "mentorship", "symbiosis"],
+          "challenges": ["communication", "trust", "cultural exchange", "mutual benefit"],
+          "theme": "cooperation"
+        },
+        "alien_mystery": {
+          "name": "Alien Mystery",
+          "description": "Incomprehensible aliens",
+          "characteristics": ["unknown motives", "bizarre biology", "advanced beyond understanding"],
+          "interaction": ["limited", "one-way", "archaeological", "observation"],
+          "tone": "cosmic horror"
+        },
+        "integrated_aliens": {
+          "name": "Integrated Society",
+          "description": "Aliens and humans coexist",
+          "dynamics": ["multicultural galaxy", "species tensions", "hybrids", "common government"],
+          "normalcy": "aliens everyday",
+          "conflicts": "prejudice and cooperation"
+        },
+        "ancient_aliens": {
+          "name": "Ancient/Extinct Aliens",
+          "description": "Long-gone civilizations",
+          "legacy": ["ruins", "artifacts", "uplift", "warnings"],
+          "mystery": ["what happened", "will return", "we're next"],
+          "discovery": "archaeological sci-fi"
+        }
+      }
+    },
+    "scientific_hardness": {
+      "category_name": "Scientific Hardness",
+      "selection_rule": "select_one",
+      "description": "Level of scientific accuracy",
+      "options": {
+        "hard": {
+          "name": "Hard SF",
+          "description": "Scientifically rigorous",
+          "requirements": ["real physics", "detailed explanations", "plausible extrapolation", "no handwaving"],
+          "audience": "science enthusiasts",
+          "limitation": "story constraints"
+        },
+        "firm": {
+          "name": "Firm SF",
+          "description": "Mostly scientifically accurate",
+          "approach": ["one big lie", "consistent rules", "logical consequences", "some handwaving"],
+          "balance": "story and science",
+          "flexibility": "moderate"
+        },
+        "soft": {
+          "name": "Soft SF",
+          "description": "Science as backdrop",
+          "focus": ["social sciences", "human stories", "technology impact", "minimal explanation"],
+          "priority": "story over accuracy",
+          "accessibility": "broad audience"
+        },
+        "science_fantasy": {
+          "name": "Science Fantasy",
+          "description": "Science fiction aesthetics with fantasy logic",
+          "elements": ["psychic powers", "the force", "techno-magic", "space wizards"],
+          "approach": "rule of cool",
+          "freedom": "unlimited"
+        }
+      }
+    },
+    "social_focus": {
+      "category_name": "Social Commentary",
+      "selection_rule": "select_up_to_three",
+      "description": "Social issues explored",
+      "options": {
+        "inequality": {
+          "name": "Class/Inequality",
+          "description": "Economic and social disparity",
+          "manifestations": ["enhanced vs natural", "earth vs spacers", "corporate feudalism", "genetic castes"],
+          "conflict": "revolution or acceptance"
+        },
+        "identity": {
+          "name": "Identity/Consciousness",
+          "description": "What makes us human",
+          "questions": ["uploaded minds", "AI personhood", "clone rights", "transhuman"],
+          "exploration": "self and other"
+        },
+        "environment": {
+          "name": "Environmental",
+          "description": "Ecological themes",
+          "issues": ["climate change", "extinction", "terraforming ethics", "sustainability"],
+          "message": "stewardship"
+        },
+        "governance": {
+          "name": "Governance/Politics",
+          "description": "How society organizes",
+          "systems": ["AI governance", "direct democracy", "corporate state", "anarchy"],
+          "question": "best system"
+        },
+        "warfare": {
+          "name": "War/Conflict",
+          "description": "Nature of future conflict",
+          "aspects": ["drone wars", "information warfare", "species conflict", "resource wars"],
+          "cost": "human toll"
+        },
+        "religion": {
+          "name": "Religion/Belief",
+          "description": "Faith in technological age",
+          "tensions": ["science vs faith", "new religions", "AI gods", "alien theology"],
+          "question": "meaning persistence"
+        },
+        "gender_sexuality": {
+          "name": "Gender/Sexuality",
+          "description": "Future of human relationships",
+          "explorations": ["post-gender", "new family structures", "alien compatibility", "virtual relationships"],
+          "theme": "love evolves"
+        },
+        "privacy": {
+          "name": "Privacy/Surveillance",
+          "description": "Information and control",
+          "technologies": ["total surveillance", "mind reading", "predictive AI", "privacy extinction"],
+          "tension": "freedom vs safety"
+        }
+      }
+    },
+    "narrative_structure": {
+      "category_name": "Narrative Structure",
+      "selection_rule": "select_one",
+      "description": "How the story is told",
+      "options": {
+        "linear_adventure": {
+          "name": "Linear Adventure",
+          "description": "Traditional chronological narrative",
+          "progression": ["problem", "investigation", "complications", "resolution"],
+          "clarity": "easy to follow"
+        },
+        "mystery_revelation": {
+          "name": "Mystery/Revelation",
+          "description": "Gradual uncovering of truth",
+          "structure": ["strange event", "investigation", "deeper mystery", "paradigm shift"],
+          "satisfaction": "puzzle solving"
+        },
+        "parallel_narratives": {
+          "name": "Parallel Narratives",
+          "description": "Multiple connected storylines",
+          "connections": ["converging paths", "cause and effect", "thematic echoes", "shared universe"],
+          "complexity": "rich tapestry"
+        },
+        "documentary_style": {
+          "name": "Documentary/Found Documents",
+          "description": "Presented as historical record",
+          "formats": ["reports", "logs", "interviews", "reconstructions"],
+          "authenticity": "believable future"
+        },
+        "experimental": {
+          "name": "Experimental/Non-linear",
+          "description": "Unconventional narrative",
+          "techniques": ["reverse chronology", "quantum possibilities", "consciousness stream", "nested realities"],
+          "challenge": "reader engagement"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,352 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Romance Classification System",
+  "extends": "base-taxonomy",
+  "genre": "romance",
+  "description": "Contemporary and historical romance focusing on the romantic relationship as the central plot",
+  "categories": {
+    "romance_subgenre": {
+      "category_name": "Romance Subgenre",
+      "selection_rule": "select_primary_and_secondary",
+      "description": "The specific type and setting of the romance",
+      "options": {
+        "contemporary": {
+          "name": "Contemporary Romance",
+          "description": "Modern-day setting with current social dynamics",
+          "key_features": ["modern technology", "current social issues", "urban/suburban settings", "relatable careers"],
+          "popular_settings": ["big city", "small town", "workplace", "vacation destinations"]
+        },
+        "historical": {
+          "name": "Historical Romance",
+          "description": "Set in a specific historical period with period-appropriate details",
+          "key_features": ["historical accuracy", "period customs", "social constraints", "historical events"],
+          "popular_periods": ["Regency", "Victorian", "Medieval", "American West", "World War II", "Roaring Twenties"]
+        },
+        "romantic_suspense": {
+          "name": "Romantic Suspense",
+          "description": "Romance combined with thriller/mystery elements",
+          "key_features": ["danger element", "mystery plot", "protective hero/heroine", "high stakes"],
+          "common_elements": ["stalkers", "witness protection", "undercover operations", "past secrets"]
+        },
+        "sports_romance": {
+          "name": "Sports Romance",
+          "description": "Athletes and sports-centered romantic relationships",
+          "key_features": ["athletic competition", "training dedication", "team dynamics", "sports celebrity"],
+          "popular_sports": ["hockey", "football", "baseball", "soccer", "MMA", "Olympics"]
+        },
+        "workplace_romance": {
+          "name": "Workplace/Office Romance",
+          "description": "Romance developing in professional settings",
+          "key_features": ["professional boundaries", "office politics", "career conflicts", "power dynamics"],
+          "common_scenarios": ["boss/employee", "rivals to lovers", "fake relationship", "business merger"]
+        },
+        "medical_romance": {
+          "name": "Medical Romance",
+          "description": "Set in hospitals and medical settings",
+          "key_features": ["life and death stakes", "long shifts", "hospital hierarchy", "patient care"],
+          "common_roles": ["doctors", "nurses", "surgeons", "paramedics", "therapists"]
+        },
+        "military_romance": {
+          "name": "Military Romance",
+          "description": "Featuring military personnel and themes",
+          "key_features": ["deployment", "PTSD themes", "honor and duty", "long-distance challenges"],
+          "common_elements": ["homecoming", "military bases", "veterans", "active duty", "special forces"]
+        },
+        "small_town": {
+          "name": "Small Town Romance",
+          "description": "Set in close-knit small communities",
+          "key_features": ["everyone knows everyone", "local traditions", "community involvement", "slower pace"],
+          "common_elements": ["returning home", "city vs country", "local businesses", "town festivals"]
+        },
+        "billionaire_romance": {
+          "name": "Billionaire/Rich Romance",
+          "description": "Wealthy protagonists and luxury settings",
+          "key_features": ["wealth disparity", "luxury lifestyle", "power dynamics", "different worlds"],
+          "common_elements": ["private jets", "exclusive events", "business empires", "arranged relationships"]
+        },
+        "second_chance": {
+          "name": "Second Chance Romance",
+          "description": "Former lovers reuniting",
+          "key_features": ["shared history", "unresolved feelings", "personal growth", "forgiveness"],
+          "common_scenarios": ["high school sweethearts", "divorced couples", "summer flings", "the one that got away"]
+        }
+      }
+    },
+    "heat_level": {
+      "category_name": "Heat Level",
+      "selection_rule": "select_one",
+      "description": "The level of sexual content and sensuality",
+      "options": {
+        "sweet": {
+          "name": "Sweet/Clean",
+          "description": "No sexual content, focus on emotional connection",
+          "content": ["kisses only", "closed door", "emotional intimacy", "tension through looks"],
+          "audience": "all ages"
+        },
+        "sensual": {
+          "name": "Sensual/Warm",
+          "description": "Some sexual content, tastefully described",
+          "content": ["some heat", "bedroom scenes fade to black", "passionate kissing", "sexual tension"],
+          "audience": "mature teens and up"
+        },
+        "steamy": {
+          "name": "Steamy",
+          "description": "Explicit sexual content as part of relationship development",
+          "content": ["open door", "detailed love scenes", "2-4 scenes", "emotional and physical"],
+          "audience": "adults"
+        },
+        "erotic": {
+          "name": "Erotic/Scorching",
+          "description": "High sexual content central to the plot",
+          "content": ["very explicit", "frequent scenes", "adventurous", "detailed descriptions"],
+          "audience": "adults only"
+        }
+      }
+    },
+    "relationship_dynamic": {
+      "category_name": "Relationship Dynamic",
+      "selection_rule": "select_all_that_apply",
+      "description": "The power dynamics and relationship structure",
+      "options": {
+        "alpha_hero": {
+          "name": "Alpha Hero/Heroine",
+          "description": "Dominant, protective, powerful character",
+          "traits": ["protective", "possessive", "confident", "leader type"],
+          "appeal": "strength and security"
+        },
+        "beta_hero": {
+          "name": "Beta Hero/Heroine",
+          "description": "Supportive, emotionally intelligent character",
+          "traits": ["communicative", "respectful", "friend-first", "emotionally available"],
+          "appeal": "emotional connection"
+        },
+        "enemies_to_lovers": {
+          "name": "Enemies to Lovers",
+          "description": "Antagonistic start evolving to romance",
+          "progression": ["initial dislike", "forced proximity", "grudging respect", "attraction", "love"],
+          "tension": "conflict-driven"
+        },
+        "friends_to_lovers": {
+          "name": "Friends to Lovers",
+          "description": "Friendship evolving into romance",
+          "progression": ["established friendship", "new awareness", "fear of ruining friendship", "taking the leap"],
+          "tension": "will they/won't they"
+        },
+        "fake_relationship": {
+          "name": "Fake Relationship",
+          "description": "Pretend relationship becomes real",
+          "scenarios": ["fake engagement", "wedding date", "work spouse", "publicity stunt"],
+          "tension": "blurred lines"
+        },
+        "forbidden_love": {
+          "name": "Forbidden Love",
+          "description": "Relationship faces external obstacles",
+          "obstacles": ["family feud", "professional ethics", "social class", "cultural differences"],
+          "tension": "us against the world"
+        },
+        "grumpy_sunshine": {
+          "name": "Grumpy/Sunshine",
+          "description": "Opposites in temperament",
+          "dynamic": ["pessimist vs optimist", "introvert vs extrovert", "serious vs playful"],
+          "appeal": "balance and growth"
+        },
+        "age_gap": {
+          "name": "Age Gap",
+          "description": "Significant age difference between partners",
+          "considerations": ["life experience", "different stages", "social judgment", "power balance"],
+          "appeal": "experience meets fresh perspective"
+        },
+        "forced_proximity": {
+          "name": "Forced Proximity",
+          "description": "Circumstances force close contact",
+          "scenarios": ["snowed in", "fake marriage", "bodyguard", "road trip", "island stranded"],
+          "tension": "can't escape attraction"
+        },
+        "slow_burn": {
+          "name": "Slow Burn",
+          "description": "Romance develops gradually over time",
+          "characteristics": ["building tension", "delayed gratification", "deep emotional connection", "worth the wait"],
+          "appeal": "anticipation"
+        }
+      }
+    },
+    "romantic_conflict": {
+      "category_name": "Central Romantic Conflict",
+      "selection_rule": "select_primary",
+      "description": "The main obstacle to the romantic relationship",
+      "options": {
+        "internal_conflict": {
+          "name": "Internal Conflict",
+          "description": "Personal issues preventing connection",
+          "examples": ["fear of commitment", "past trauma", "self-worth issues", "trust issues"],
+          "resolution": "personal growth"
+        },
+        "external_conflict": {
+          "name": "External Conflict",
+          "description": "Outside forces preventing relationship",
+          "examples": ["disapproving family", "distance/location", "career conflicts", "social pressure"],
+          "resolution": "overcoming obstacles"
+        },
+        "miscommunication": {
+          "name": "Miscommunication",
+          "description": "Misunderstandings driving conflict",
+          "examples": ["assumptions", "secrets", "poor timing", "third party interference"],
+          "resolution": "honest communication"
+        },
+        "past_baggage": {
+          "name": "Past Relationship Baggage",
+          "description": "Previous relationships affecting current",
+          "examples": ["cheating ex", "divorce", "loss of spouse", "abandonment"],
+          "resolution": "healing and trust"
+        },
+        "timing": {
+          "name": "Wrong Timing",
+          "description": "Right person, wrong time",
+          "examples": ["different life stages", "one person not ready", "other commitments", "geographic issues"],
+          "resolution": "patience or sacrifice"
+        }
+      }
+    },
+    "romantic_tropes": {
+      "category_name": "Romantic Tropes",
+      "selection_rule": "select_all_that_apply",
+      "description": "Classic romance story elements and scenarios",
+      "options": {
+        "one_bed": {
+          "name": "Only One Bed",
+          "description": "Forced to share sleeping arrangements",
+          "variations": ["hotel mix-up", "cabin getaway", "undercover mission"],
+          "tension": "physical proximity"
+        },
+        "secret_baby": {
+          "name": "Secret Baby/Pregnancy",
+          "description": "Hidden pregnancy or child",
+          "elements": ["revelation", "co-parenting", "instant family", "protection"],
+          "emotional_arc": "responsibility and connection"
+        },
+        "marriage_convenience": {
+          "name": "Marriage of Convenience",
+          "description": "Practical marriage becomes real",
+          "reasons": ["inheritance", "immigration", "business deal", "protection"],
+          "progression": "contract to genuine"
+        },
+        "love_triangle": {
+          "name": "Love Triangle",
+          "description": "Three-person romantic conflict",
+          "dynamics": ["choosing between two", "unrequited angles", "everyone finds love"],
+          "resolution": "choice or polyamory"
+        },
+        "amnesia": {
+          "name": "Amnesia/Memory Loss",
+          "description": "Memory loss affects relationship",
+          "variations": ["forgetting partner", "personality change", "selective memory", "gradual return"],
+          "tension": "rediscovering love"
+        },
+        "secret_identity": {
+          "name": "Secret Identity",
+          "description": "Hidden true identity",
+          "scenarios": ["undercover", "celebrity incognito", "witness protection", "pen names"],
+          "conflict": "truth vs deception"
+        },
+        "reunion_romance": {
+          "name": "Reunion Romance",
+          "description": "Meeting again after time apart",
+          "scenarios": ["class reunion", "wedding party", "hometown return", "work assignment"],
+          "tension": "what could have been"
+        },
+        "opposites_attract": {
+          "name": "Opposites Attract",
+          "description": "Contrasting personalities drawn together",
+          "contrasts": ["city/country", "rich/poor", "neat/messy", "logical/creative"],
+          "growth": "learning from differences"
+        },
+        "soul_mates": {
+          "name": "Soul Mates/Fated Love",
+          "description": "Destined to be together",
+          "elements": ["instant connection", "signs and synchronicities", "feeling of recognition", "inevitable"],
+          "appeal": "meant to be"
+        },
+        "makeover": {
+          "name": "Makeover/Transformation",
+          "description": "Physical or personal transformation",
+          "types": ["ugly duckling", "bet/dare", "self-improvement", "hidden beauty"],
+          "message": "seeing true worth"
+        }
+      }
+    },
+    "romantic_setting": {
+      "category_name": "Primary Setting",
+      "selection_rule": "select_one_or_two",
+      "description": "Where the romance primarily takes place",
+      "options": {
+        "urban": {
+          "name": "Urban/City",
+          "description": "Metropolitan settings",
+          "elements": ["nightlife", "career focus", "anonymity", "fast pace", "cultural diversity"],
+          "locations": ["New York", "London", "Paris", "Tokyo", "San Francisco"]
+        },
+        "small_town_setting": {
+          "name": "Small Town",
+          "description": "Close-knit community settings",
+          "elements": ["everyone knows everyone", "local traditions", "gossip", "community events"],
+          "atmosphere": "cozy and familiar"
+        },
+        "coastal": {
+          "name": "Coastal/Beach",
+          "description": "Ocean and beach settings",
+          "elements": ["beach walks", "summer romance", "lighthouse", "fishing towns", "beach houses"],
+          "mood": "relaxed and sensual"
+        },
+        "mountain": {
+          "name": "Mountain/Wilderness",
+          "description": "Remote natural settings",
+          "elements": ["cabins", "ski resorts", "hiking", "isolation", "survival"],
+          "mood": "rugged and intimate"
+        },
+        "international": {
+          "name": "International/Exotic",
+          "description": "Foreign or exotic locations",
+          "elements": ["culture clash", "vacation romance", "language barriers", "adventure"],
+          "popular": ["Italy", "Greece", "Bali", "Scotland", "Japan"]
+        },
+        "ranch_farm": {
+          "name": "Ranch/Farm",
+          "description": "Rural agricultural settings",
+          "elements": ["cowboys", "hard work", "simple living", "animals", "wide open spaces"],
+          "mood": "authentic and grounded"
+        }
+      }
+    },
+    "happily_ever_after": {
+      "category_name": "Ending Type",
+      "selection_rule": "select_one",
+      "description": "How the romantic story concludes",
+      "options": {
+        "hea": {
+          "name": "Happily Ever After (HEA)",
+          "description": "Definitive happy ending with commitment",
+          "elements": ["marriage", "engagement", "moving in together", "permanent commitment"],
+          "reader_expectation": "complete resolution"
+        },
+        "hfn": {
+          "name": "Happy For Now (HFN)",
+          "description": "Happy but open-ended conclusion",
+          "elements": ["together but not married", "taking next step", "hopeful future", "journey continues"],
+          "reader_expectation": "satisfying but realistic"
+        },
+        "bittersweet": {
+          "name": "Bittersweet",
+          "description": "Mixed emotions ending",
+          "elements": ["sacrifice for happiness", "personal growth over romance", "right person wrong time"],
+          "reader_expectation": "emotional complexity"
+        },
+        "tragic": {
+          "name": "Tragic/Star-Crossed",
+          "description": "Unhappy or tragic ending",
+          "elements": ["death", "permanent separation", "noble sacrifice", "impossible love"],
+          "reader_expectation": "emotional catharsis"
+        }
+      }
+    }
+  }
+}
