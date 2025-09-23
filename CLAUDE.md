@@ -13,27 +13,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Changing test coverage
    - Making any significant changes (add to Recent Changes with date)
 
-2. **`docs/API_REFERENCE.md`** - Update when:
-   - Adding new slash commands
-   - Adding new Python APIs
-   - Changing command syntax or behavior
-   - Adding configuration options
-
-3. **`docs/ARCHITECTURE.md`** - Update when:
-   - Changing system design
-   - Adding new components
-   - Modifying data flow
-   - Making architectural decisions
-
-4. **`docs/DEVELOPMENT.md`** - Update when:
-   - Changing development setup
-   - Adding new development workflows
-   - Updating testing approaches
-
-5. **`docs/PROJECT_README.md`** - Update when:
-   - Adding user-facing features
-   - Changing installation process
+2. **`docs/USER_GUIDE.md`** - Update when:
+   - Adding new commands or features
+   - Changing user-facing behavior
    - Updating command examples
+   - Adding usage instructions
+
+3. **`docs/DEVELOPER_GUIDE.md`** - Update when:
+   - Changing architecture or design
+   - Adding new APIs or components
+   - Updating development setup
+   - Adding implementation patterns
+
+4. **`docs/CHANGELOG.md`** - Update when:
+   - Completing features or fixing bugs
+   - Preparing releases
+   - Updating project status
+   - Tracking known issues
+
+5. **`README.md`** (root) - Update when:
+   - Changing quick start instructions only
+   - Keep minimal - points to full docs
 
 **Always check these files at the end of your work session and update them!**
 
@@ -217,14 +217,9 @@ AgenticAuthor/
 ├── src/                    # Source code
 ├── tests/                  # Test suite
 ├── docs/                   # All documentation
-│   ├── README.md          # Documentation index
-│   ├── PROJECT_README.md  # Main project README
-│   ├── ARCHITECTURE.md    # System design
-│   ├── API_REFERENCE.md   # Command/API reference
-│   ├── DEVELOPMENT.md     # Dev guidelines
-│   ├── IMPLEMENTATION_GUIDE.md  # Code patterns
-│   ├── IMPLEMENTATION_STATUS.md # Progress tracking
-│   ├── CHANGELOG.md       # Version history
+│   ├── USER_GUIDE.md      # Complete user guide
+│   ├── DEVELOPER_GUIDE.md # Developer reference
+│   ├── CHANGELOG.md       # Version history & status
 │   ├── LOD.md             # Level of Detail system
 │   └── taxonomies/        # Genre taxonomy files
 └── books/                  # Generated book projects

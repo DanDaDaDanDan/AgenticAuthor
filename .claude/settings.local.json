@@ -10,7 +10,10 @@
       "Bash(pytest:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(awk:*)",
+      "Bash(sort:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []
