@@ -30,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Adding new development workflows
    - Updating testing approaches
 
-5. **`README.md`** - Update when:
+5. **`docs/PROJECT_README.md`** - Update when:
    - Adding user-facing features
    - Changing installation process
    - Updating command examples
@@ -99,7 +99,7 @@ User: "Add more dialogue to chapter 3"
 - Auto-commit with descriptive messages
 - Unified diff support
 - Full git operations (rollback, branch, diff)
-- See `src/storage/git_manager.py` in plan.md
+- See `docs/IMPLEMENTATION_GUIDE.md` for code examples
 
 ### Analysis System
 Based on dv-story-generator's comprehensive analysis:
@@ -107,16 +107,16 @@ Based on dv-story-generator's comprehensive analysis:
 - Plot holes with severity levels
 - Character consistency tracking
 - Results in `analysis/` directory with git SHA references
-- See "Analysis System" section in plan.md
+- See `docs/IMPLEMENTATION_GUIDE.md` for analysis patterns
 
 ### Test Strategy
 - Real book fixture using grok-4-fast (cheap model)
 - Git-based test isolation
-- See "Test-Driven Development Strategy" in plan.md
+- See `docs/DEVELOPMENT.md` for testing approach
 
 ## Implementation Approach
 
-1. Start with `plan.md` - it contains the complete implementation blueprint
+1. Start with `docs/IMPLEMENTATION_GUIDE.md` - contains detailed code patterns
 2. Build in this order: Core Config → API Client → REPL → Generation → Iteration → Analysis
 3. Use subprocess for git (simpler than GitPython)
 4. Test with real generated content, not mocks
@@ -151,11 +151,26 @@ books/[project-name]/
 - Every operation creates a git commit automatically
 - Analysis files include git SHA for reproducibility
 - Use structured JSON for intent checking responses
-- See `plan.md` for detailed implementations and code examples
 
-## Documentation
+## Repository Structure
 
-- **plan.md** (PRIMARY): Complete implementation blueprint with code examples
-- **LOD.md**: Level of Detail system from dv-story-generator
-- **overview.md**: Original concept document
-- **taxonomies/**: Genre-specific JSON files for story generation
+```
+AgenticAuthor/
+├── CLAUDE.md               # AI assistant instructions (this file)
+├── .env                    # API keys (git-ignored)
+├── pyproject.toml          # Python package config
+├── src/                    # Source code
+├── tests/                  # Test suite
+├── docs/                   # All documentation
+│   ├── README.md          # Documentation index
+│   ├── PROJECT_README.md  # Main project README
+│   ├── ARCHITECTURE.md    # System design
+│   ├── API_REFERENCE.md   # Command/API reference
+│   ├── DEVELOPMENT.md     # Dev guidelines
+│   ├── IMPLEMENTATION_GUIDE.md  # Code patterns
+│   ├── IMPLEMENTATION_STATUS.md # Progress tracking
+│   ├── CHANGELOG.md       # Version history
+│   ├── LOD.md             # Level of Detail system
+│   └── taxonomies/        # Genre taxonomy files
+└── books/                  # Generated book projects
+```

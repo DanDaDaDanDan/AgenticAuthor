@@ -16,14 +16,11 @@ Welcome to the AgenticAuthor documentation. This directory contains comprehensiv
 
 ### Project Information
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
-- **[../README.md](../README.md)** - Main project README (user-facing)
+- **[PROJECT_README.md](PROJECT_README.md)** - Main project README (user-facing)
+- **[LOD.md](LOD.md)** - Level of Detail system explanation
 
-## Other Important Files
-
-### Configuration & Context
-- **[../LOD.md](../LOD.md)** - Level of Detail system explanation
-- **[../plan.md](../plan.md)** - Original implementation plan
-- **[../overview.md](../overview.md)** - Initial concept document
+### Taxonomies
+- **[taxonomies/](taxonomies/)** - Genre-specific taxonomy files for story generation
 
 ## Documentation Standards
 
@@ -56,7 +53,7 @@ Welcome to the AgenticAuthor documentation. This directory contains comprehensiv
 - [Project structure](ARCHITECTURE.md#file-structure)
 
 ### Key Concepts
-- [Level of Detail (LOD)](../LOD.md)
+- [Level of Detail (LOD)](LOD.md)
 - [Natural language iteration](ARCHITECTURE.md#iteration-flow)
 - [Git integration](ARCHITECTURE.md#storage-layer)
 - [Slash commands](API_REFERENCE.md#slash-commands)
