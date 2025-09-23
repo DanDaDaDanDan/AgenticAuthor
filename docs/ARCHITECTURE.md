@@ -87,11 +87,17 @@ graph TB
 ### Generation Flow
 1. User issues `/generate` command
 2. System determines generation type
-3. Appropriate prompt template loaded
+3. Appropriate prompt template loaded (Jinja2)
 4. API call with type-specific temperature
-5. Response streamed to display
+5. Response streamed to display (SSE parsing)
 6. Content saved to appropriate file
 7. Git commit created automatically
+
+#### Token Calculation
+Dynamic token calculation based on context window:
+- Safety buffer: `max(input_tokens * 0.2, 2000)`
+- Prevents context overflow
+- Adjusts per model capabilities
 
 ### Iteration Flow
 1. User types natural language feedback

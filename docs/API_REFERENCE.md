@@ -66,6 +66,8 @@ Types:
 #### `/git <command>`
 Run git commands on the project repository.
 - Examples: `/git status`, `/git log`, `/git diff`
+- `/rollback [n]` - Rollback n commits (default 1)
+- `/branch <name>` - Create experimental branch
 
 #### `/config [key] [value]`
 Show or set configuration values.
@@ -87,6 +89,19 @@ Show help information.
 
 #### `/exit` or `/quit`
 Exit the application.
+
+## Keybindings (REPL)
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Submit input |
+| `Shift+Enter` | New line in multi-line input |
+| `Escape` | Stop current generation |
+| `Ctrl+C` | Exit application (with confirmation) |
+| `Ctrl+L` | Clear screen |
+| `Up/Down` | Navigate command history |
+| `Tab` | Auto-complete commands |
+| `Ctrl+R` | Search history |
 
 ## Python API
 

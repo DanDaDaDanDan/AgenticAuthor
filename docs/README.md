@@ -12,6 +12,7 @@ Welcome to the AgenticAuthor documentation. This directory contains comprehensiv
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Setup, workflow, testing, and contribution guide
 - **[API_REFERENCE.md](API_REFERENCE.md)** - Command reference and Python API documentation
 - **[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)** - Current progress, todo list, known issues
+- **[IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)** - Detailed implementation patterns and code examples
 
 ### Project Information
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes

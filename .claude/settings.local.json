@@ -8,7 +8,8 @@
       "Bash(python test:*)",
       "Bash(agentic:*)",
       "Bash(pytest:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
