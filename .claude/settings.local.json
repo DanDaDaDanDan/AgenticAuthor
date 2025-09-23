@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Personal/Projects/dv-story-generator/**)",
+      "WebSearch",
+      "WebFetch(domain:openrouter.ai)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

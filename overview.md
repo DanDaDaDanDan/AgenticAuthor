@@ -8,13 +8,18 @@ LOD levels
 
 As part of the process we need to make sure that the various parts are always in sync.
 
-Structure should be that each book idea is a folder with its own git repository. 
+Structure should be that each book idea is a folder with its own git repository.
 
 Files:
-- premise.md
-- treatment-md
-- chapter-beats.md
-- prose.md
+- premise.md (LOD3 - core concept)
+- treatment.md (LOD2 - story treatment)
+- chapters.yaml (LOD2 - chapter outlines/beats)
+- chapters/ folder (LOD0 - prose for each chapter)
+  - chapter-01.md
+  - chapter-02.md
+  - etc.
+- summary.md (marketing blurb and metadata)
+- project.yaml (metadata and configuration)
 
 LOD.md contains a lot of information on how an existing project located in
 
