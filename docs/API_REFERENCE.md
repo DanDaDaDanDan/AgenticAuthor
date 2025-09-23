@@ -44,16 +44,49 @@ List available models from OpenRouter.
 - Shows pricing and context length
 - Sorted by price
 
-### Content Generation (Not Yet Implemented)
+### Content Generation
 
-#### `/generate <type> [options]`
-Generate content at specified LOD level.
+#### `/generate premise [genre] [concept]`
+Generate story premise (LOD3) with genre-specific support.
+- **genre** (optional): Genre for the story (fantasy, sci-fi, romance, etc.)
+  - Tab completion available: `/generate premise fan` → `fantasy`
+  - Interactive selection if not provided
+  - Aliases supported: `sci-fi` → `science-fiction`, `ya` → `young-adult`
+- **concept** (optional): Initial idea to build upon
+  - Can be brief (< 20 words) for full generation
+  - Standard (20-100 words) for enhancement
+  - Detailed (100-200 words) for structuring
+  - Treatment (200+ words) preserved with taxonomy extraction
+- Features:
+  - Genre-specific taxonomies and parameters
+  - Smart input detection (premise vs treatment)
+  - History tracking to avoid repetition
+  - Creates premise with metadata (protagonist, antagonist, stakes, themes)
+  - Auto-commits to git
+- Examples:
+  - `/generate premise` - Interactive genre selection
+  - `/generate premise fantasy` - Fantasy premise with random concept
+  - `/generate premise fantasy "a world where magic is illegal"` - Specific concept
+  - `/generate premise "a detective story"` - Auto-detects genre from concept
 
-Types:
-- `premise` - Generate story premise (LOD3)
-- `treatment` - Generate story treatment (LOD2)
-- `chapters` - Generate chapter outlines (LOD2)
-- `prose [chapter]` - Generate full prose (LOD0)
+#### `/generate treatment [words]`
+Generate story treatment from premise (LOD2).
+- **words** (optional): Target word count (default: 2500)
+- Expands premise into three-act structure
+- Auto-generates premise if missing
+
+#### `/generate chapters [count]`
+Generate chapter outlines from treatment (LOD2).
+- **count** (optional): Number of chapters (auto-calculated if not specified)
+- Creates detailed beats for each chapter
+- Saves to chapters.yaml
+
+#### `/generate prose <chapter>`
+Generate full prose for a chapter (LOD0).
+- **chapter**: Chapter number to generate (required)
+- Uses chapter outline as blueprint
+- Maintains continuity with previous chapters
+- Saves to chapters/chapter-NN.md
 
 #### `/iterate <feedback>`
 Apply natural language feedback to existing content.
@@ -74,9 +107,17 @@ Types:
 
 #### `/git <command>`
 Run git commands on the project repository.
-- Examples: `/git status`, `/git log`, `/git diff`
-- `/rollback [n]` - Rollback n commits (default 1)
-- `/branch <name>` - Create experimental branch
+
+**Supported commands:**
+- `/git status` - Show working tree status
+- `/git log [n]` - Show last n commits (default: 10)
+- `/git diff` - Show unstaged changes
+- `/git add` - Stage all changes
+- `/git commit <message>` - Commit staged changes
+- `/git branch [name]` - List branches or create new branch
+- `/git rollback [n]` - Undo last n commits (default: 1)
+
+**Note:** All generation commands auto-commit their changes
 
 #### `/config [key] [value]`
 Show or set configuration values.
@@ -90,6 +131,13 @@ Export story to different formats (not yet implemented).
 
 #### `/clear`
 Clear the terminal screen.
+
+#### `/logs`
+View recent log entries.
+- Shows log file location
+- Displays last 20 lines of current log
+- Logs stored in `~/.agentic/logs/agentic_YYYYMMDD.log`
+- Automatic rotation daily
 
 #### `/help [command]`
 Show help information.
@@ -109,10 +157,66 @@ Exit the application.
 | `Ctrl+C` | Exit application (with confirmation) |
 | `Ctrl+L` | Clear screen |
 | `Up/Down` | Navigate command history |
-| `Tab` | Auto-complete commands |
+| `Tab` | Auto-complete commands, genres, and models |
 | `Ctrl+R` | Search history |
 
 ## Python API
+
+### Taxonomy System
+
+```python
+from src.generation.taxonomies import (
+    TaxonomyLoader,
+    PremiseAnalyzer,
+    PremiseHistory
+)
+
+# Load genre-specific taxonomy
+loader = TaxonomyLoader()
+taxonomy = loader.load_merged_taxonomy('fantasy')
+options = loader.get_category_options(taxonomy)
+
+# Analyze input to determine type
+analysis = PremiseAnalyzer.analyze(user_input)
+if analysis['is_treatment']:
+    # Preserve as treatment, extract taxonomy
+    pass
+else:
+    # Generate or enhance premise
+    pass
+
+# Track generation history
+history = PremiseHistory()
+history.add(premise, genre, selections)
+if not history.should_regenerate(new_premise):
+    # Avoid repetition
+    pass
+```
+
+### Premise Generator
+
+```python
+from src.generation.premise import PremiseGenerator
+
+generator = PremiseGenerator(client, project, model='x-ai/grok-4-fast')
+
+# Generate with genre and concept
+result = await generator.generate(
+    genre='fantasy',
+    user_input='a world where dreams are currency'
+)
+
+# Extract taxonomy from existing treatment
+result = await generator.generate_taxonomy_only(
+    treatment=existing_text,
+    genre='fantasy'
+)
+
+# Iterate on existing premise
+result = await generator.iterate(
+    feedback='Make it darker and more mysterious'
+)
+```
 
 ### OpenRouter Client
 
@@ -268,6 +372,10 @@ OPENROUTER_API_KEY=sk-or-your-key-here
 BOOKS_DIR=/path/to/books
 TAXONOMIES_DIR=/path/to/taxonomies
 DEFAULT_MODEL=anthropic/claude-opus-4.1
+
+# Logging
+LOG_LEVEL=INFO  # DEBUG for verbose output
+LOG_FILE=/custom/path/to/logfile.log
 ```
 
 ## Configuration Files
@@ -302,6 +410,12 @@ updated_at: 2024-01-23T15:30:00
 author: Jane Doe
 genre: fantasy
 taxonomy: fantasy-taxonomy
+premise_metadata:
+  selections:
+    tone: dark
+    pacing: fast-paced
+    magic_system: hard
+    world_type: secondary_world
 model: anthropic/claude-opus-4.1
 word_count: 45000
 chapter_count: 15
@@ -321,3 +435,5 @@ tags:
 | `NoProjectLoaded` | No active project | Use `/open` or `/new` first |
 | `GenerationFailed` | API call failed | Check internet/API status |
 | `GitError` | Git operation failed | Check git installation |
+| `TaxonomyNotFound` | Genre taxonomy missing | Check taxonomies directory |
+| `HistoryValidation` | Duplicate premise detected | Provide different input |

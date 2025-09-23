@@ -22,6 +22,9 @@ from ..models import Project, Story
 from ..storage.git_manager import GitManager
 from .command_completer import SlashCommandCompleter, create_command_descriptions
 from .auto_suggest import SlashCommandAutoSuggest
+from ..generation import PremiseGenerator, TreatmentGenerator, ChapterGenerator, ProseGenerator
+from ..generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
+from ..utils.logging import setup_logging, get_logger
 
 
 class InteractiveSession:
@@ -41,6 +44,10 @@ class InteractiveSession:
         self.story: Optional[Story] = None
         self.git: Optional[GitManager] = None
         self.running = False
+
+        # Setup logging
+        self.logger = setup_logging(level="DEBUG")
+        self.logger.info("InteractiveSession initialized")
 
         # Command handlers - initialize before prompt session
         self.commands = {
@@ -64,6 +71,10 @@ class InteractiveSession:
         # Cache for model IDs (populated when client is initialized)
         self._cached_model_ids = []
 
+        # Initialize taxonomy loader for genre support
+        self.taxonomy_loader = TaxonomyLoader()
+        self.premise_history = PremiseHistory()
+
         # Setup prompt session (after commands are defined)
         self.session = self._create_prompt_session()
 
@@ -79,7 +90,10 @@ class InteractiveSession:
         # Model provider lambda that returns cached model IDs
         model_provider = lambda: self._cached_model_ids
 
-        completer = SlashCommandCompleter(command_descriptions, model_provider)
+        # Genre provider lambda that returns available genres
+        genre_provider = lambda: self.taxonomy_loader.get_available_genres()
+
+        completer = SlashCommandCompleter(command_descriptions, model_provider, genre_provider)
 
         # Custom style
         style = Style.from_dict({
@@ -102,6 +116,15 @@ class InteractiveSession:
             event.current_buffer.insert_text('/')
             event.current_buffer.start_completion()
 
+        @kb.add('tab')
+        def _(event):
+            """Handle tab completion."""
+            buff = event.current_buffer
+            if buff.complete_state:
+                buff.complete_next()
+            else:
+                buff.start_completion()
+
         # Create session
         history_file = Path.home() / '.agentic' / 'history'
         history_file.parent.mkdir(exist_ok=True)
@@ -118,7 +141,8 @@ class InteractiveSession:
             multiline=False,
             mouse_support=True,
             complete_while_typing=True,
-            key_bindings=kb
+            key_bindings=kb,
+            enable_history_search=True
         )
 
     def load_project(self, path: Path):
@@ -184,6 +208,7 @@ class InteractiveSession:
 
                 # Get user input
                 user_input = await self.session.prompt_async(prompt)
+                self.logger.debug(f"User input: {user_input}")
 
                 if not user_input.strip():
                     continue
@@ -192,10 +217,13 @@ class InteractiveSession:
                 await self.process_input(user_input.strip())
 
             except KeyboardInterrupt:
+                self.logger.debug("KeyboardInterrupt caught")
                 continue
             except EOFError:
+                self.logger.info("EOFError - exiting")
                 break
             except Exception as e:
+                self.logger.error(f"Error in main loop: {e}", exc_info=True)
                 self.console.print(f"[red]Error: {e}[/red]")
 
         # Cleanup
@@ -229,12 +257,15 @@ class InteractiveSession:
         Args:
             user_input: User's input string
         """
+        self.logger.debug(f"Processing input: {user_input}")
+
         # Check if it's a slash command
         if user_input.startswith('/'):
             # Command format: /command args
             parts = user_input[1:].split(None, 1)
             command = parts[0] if parts else ''
             args = parts[1] if len(parts) > 1 else ''
+            self.logger.debug(f"Parsed command: {command}, args: {args}")
 
             if command in self.commands:
                 await self._run_command(command, args)
@@ -627,8 +658,264 @@ class InteractiveSession:
 
     async def generate_content(self, args: str):
         """Generate content command."""
-        self.console.print(f"[cyan]Generate: {args}[/cyan]")
-        self.console.print("[yellow]Generation system not yet implemented[/yellow]")
+        if not self.project:
+            self.console.print("[yellow]No project loaded. Use /new or /open first.[/yellow]")
+            return
+
+        if not self.client:
+            self.console.print("[red]API client not initialized[/red]")
+            return
+
+        # Parse generation type
+        parts = args.strip().split(None, 1)
+        if not parts:
+            self.console.print("[yellow]Usage: /generate <premise|treatment|chapters|prose> [options][/yellow]")
+            return
+
+        gen_type = parts[0].lower()
+        options = parts[1] if len(parts) > 1 else ""
+
+        try:
+            if gen_type == "premise":
+                await self._generate_premise(options)
+            elif gen_type == "treatment":
+                await self._generate_treatment(options)
+            elif gen_type == "chapters":
+                await self._generate_chapters(options)
+            elif gen_type == "prose":
+                await self._generate_prose(options)
+            else:
+                self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
+                self.console.print("[dim]Valid types: premise, treatment, chapters, prose[/dim]")
+        except Exception as e:
+            self.console.print(f"[red]Generation failed: {e}[/red]")
+
+    async def _generate_premise(self, user_input: str = ""):
+        """Generate story premise with enhanced genre and taxonomy support."""
+        # Parse input for genre and concept
+        parts = user_input.strip().split(None, 1)
+        genre = None
+        concept = ""
+
+        if parts:
+            # Check if first part is a genre
+            normalized = self.taxonomy_loader.normalize_genre(parts[0])
+            if normalized != 'general' or parts[0].lower() in ['custom', 'general']:
+                genre = parts[0]
+                concept = parts[1] if len(parts) > 1 else ""
+            else:
+                # First part is not a genre, treat all as concept
+                concept = user_input
+
+        # If no genre specified, try interactive selection
+        if not genre and not concept:
+            genre = await self._select_genre_interactive()
+            if not genre:
+                return  # User cancelled
+
+        # Analyze the input to see if it's already a treatment
+        analysis = PremiseAnalyzer.analyze(concept)
+
+        if analysis['is_treatment']:
+            self.console.print(f"[yellow]Detected full treatment ({analysis['word_count']} words)[/yellow]")
+            self.console.print("[cyan]Preserving your treatment and generating parameters...[/cyan]")
+
+            # Use the treatment as the premise
+            self.project.save_premise(analysis['text'])
+
+            # Generate only taxonomy selections
+            generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+            result = await generator.generate_taxonomy_only(
+                treatment=analysis['text'],
+                genre=genre or self.project.metadata.genre
+            )
+
+            if result:
+                self.console.print("[green]✓ Treatment preserved with generated parameters[/green]")
+                self.console.print(f"\n{analysis['text'][:500]}...\n")
+
+                if 'selections' in result:
+                    self.console.print("[dim]Generated parameters:[/dim]")
+                    for category, values in result['selections'].items():
+                        if isinstance(values, list):
+                            values_str = ', '.join(values[:3])
+                        else:
+                            values_str = str(values)
+                        display_name = category.replace('_', ' ').title()
+                        self.console.print(f"  {display_name}: {values_str}")
+
+        else:
+            # Normal premise generation
+            self.console.print(f"[cyan]Generating {genre or 'general'} premise...[/cyan]")
+
+            generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+            result = await generator.generate(
+                user_input=concept if concept else None,
+                genre=genre or self.project.metadata.genre,
+                premise_history=self.premise_history
+            )
+
+            if result and 'premise' in result:
+                self.console.print("\n[green]✓ Premise generated:[/green]")
+                self.console.print(f"\n{result['premise']}\n")
+
+                if 'hook' in result:
+                    self.console.print(f"[dim]Hook: {result['hook']}[/dim]")
+                if 'themes' in result:
+                    self.console.print(f"[dim]Themes: {', '.join(result['themes'])}[/dim]")
+
+                # Add to history
+                self.premise_history.add(
+                    result['premise'],
+                    genre or 'general',
+                    result.get('selections', {})
+                )
+
+                self.console.print("\n[dim]Saved to premise.md[/dim]")
+            else:
+                self.console.print("[red]Failed to generate premise[/red]")
+
+    async def _select_genre_interactive(self):
+        """Interactive genre selection."""
+        genres = self.taxonomy_loader.get_available_genres()
+
+        self.console.print("\n[cyan]Select a genre:[/cyan]")
+        for i, genre in enumerate(genres, 1):
+            display_name = genre.replace('-', ' ').title()
+            self.console.print(f"  {i:2}. {display_name}")
+
+        self.console.print(f"  {len(genres) + 1:2}. Custom")
+
+        try:
+            choice = input("\nSelect (1-{}) or Enter to cancel: ".format(len(genres) + 1))
+            if not choice:
+                return None
+
+            idx = int(choice) - 1
+            if 0 <= idx < len(genres):
+                return genres[idx]
+            elif idx == len(genres):
+                return 'custom'
+            else:
+                self.console.print("[red]Invalid selection[/red]")
+                return None
+
+        except (ValueError, KeyboardInterrupt):
+            return None
+
+    async def _generate_treatment(self, options: str = ""):
+        """Generate story treatment."""
+        # Check for premise
+        if not self.project.get_premise():
+            self.console.print("[yellow]No premise found. Generating premise first...[/yellow]")
+            await self._generate_premise()
+
+        # Parse word count if provided
+        target_words = 2500
+        if options:
+            try:
+                target_words = int(options)
+            except ValueError:
+                pass
+
+        self.console.print(f"[cyan]Generating treatment ({target_words} words)...[/cyan]")
+
+        generator = TreatmentGenerator(self.client, self.project)
+        result = await generator.generate(target_words=target_words)
+
+        if result:
+            word_count = len(result.split())
+            self.console.print(f"\n[green]✓ Treatment generated ({word_count} words)[/green]")
+            self.console.print(f"\n{result[:500]}...\n")
+            self.console.print("[dim]Full treatment saved to treatment.md[/dim]")
+        else:
+            self.console.print("[red]Failed to generate treatment[/red]")
+
+    async def _generate_chapters(self, options: str = ""):
+        """Generate chapter outlines."""
+        # Check for treatment
+        if not self.project.get_treatment():
+            self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
+            return
+
+        # Parse options (chapter count or word count)
+        chapter_count = None
+        total_words = 50000
+
+        if options:
+            parts = options.split()
+            for part in parts:
+                if part.isdigit():
+                    num = int(part)
+                    if num < 50:  # Assume it's chapter count
+                        chapter_count = num
+                    else:  # Assume it's word count
+                        total_words = num
+
+        self.console.print(f"[cyan]Generating chapter outlines...[/cyan]")
+
+        generator = ChapterGenerator(self.client, self.project)
+        chapters = await generator.generate(
+            chapter_count=chapter_count,
+            total_words=total_words
+        )
+
+        if chapters:
+            self.console.print(f"\n[green]✓ Generated {len(chapters)} chapter outlines[/green]\n")
+
+            # Show first few chapters
+            for chapter in chapters[:3]:
+                self.console.print(f"Chapter {chapter.number}: {chapter.title}")
+                self.console.print(f"  [dim]{chapter.summary}[/dim]")
+
+            if len(chapters) > 3:
+                self.console.print(f"  [dim]... and {len(chapters) - 3} more[/dim]")
+
+            self.console.print("\n[dim]Saved to chapters.yaml[/dim]")
+        else:
+            self.console.print("[red]Failed to generate chapters[/red]")
+
+    async def _generate_prose(self, options: str = ""):
+        """Generate prose for chapters."""
+        # Check for chapter outlines
+        chapters_file = self.project.path / "chapters.yaml"
+        if not chapters_file.exists():
+            self.console.print("[yellow]No chapter outlines found. Generate chapters first with /generate chapters[/yellow]")
+            return
+
+        # Parse chapter number or "all"
+        if not options:
+            self.console.print("[yellow]Usage: /generate prose <chapter_number|all>[/yellow]")
+            return
+
+        generator = ProseGenerator(self.client, self.project)
+
+        if options.lower() == "all":
+            self.console.print("[cyan]Generating prose for all chapters...[/cyan]")
+            # This would generate all chapters
+            self.console.print("[yellow]Batch generation not yet fully implemented. Generate individual chapters.[/yellow]")
+        else:
+            try:
+                chapter_num = int(options.split()[0])
+                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
+
+                result = await generator.generate_chapter(chapter_num)
+
+                if result:
+                    word_count = len(result.split())
+                    self.console.print(f"\n[green]✓ Chapter {chapter_num} generated ({word_count} words)[/green]")
+
+                    # Show preview
+                    lines = result.split('\n')
+                    preview = '\n'.join(lines[:10])
+                    self.console.print(f"\n{preview}...")
+
+                    self.console.print(f"\n[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
+                else:
+                    self.console.print("[red]Failed to generate prose[/red]")
+
+            except ValueError:
+                self.console.print("[red]Invalid chapter number[/red]")
 
     async def iterate_content(self, args: str):
         """Iterate content command."""
@@ -652,12 +939,89 @@ class InteractiveSession:
 
         if not args:
             # Show status by default
-            status = self.git.status()
-            self.console.print(status)
-        else:
-            # Run git command
-            result = self.git.run_command(args)
-            self.console.print(result)
+            args = "status"
+
+        parts = args.split(None, 1)
+        command = parts[0].lower()
+
+        try:
+            if command == "status":
+                result = self.git.status()
+                if result:
+                    self.console.print("[cyan]Git Status:[/cyan]")
+                    self.console.print(result)
+                else:
+                    self.console.print("[green]Working tree clean[/green]")
+
+            elif command == "log":
+                limit = 10
+                if len(parts) > 1:
+                    try:
+                        limit = int(parts[1])
+                    except ValueError:
+                        pass
+
+                result = self.git.log(limit=limit)
+                if result:
+                    self.console.print(f"[cyan]Git Log (last {limit} commits):[/cyan]")
+                    self.console.print(result)
+                else:
+                    self.console.print("[yellow]No commits yet[/yellow]")
+
+            elif command == "diff":
+                result = self.git.diff()
+                if result:
+                    self.console.print("[cyan]Git Diff:[/cyan]")
+                    self.console.print(result)
+                else:
+                    self.console.print("[green]No changes[/green]")
+
+            elif command == "add":
+                self.git.add()
+                self.console.print("[green]✓ All changes staged[/green]")
+
+            elif command == "commit":
+                if len(parts) > 1:
+                    message = parts[1]
+                    self.git.commit(message)
+                    self.console.print(f"[green]✓ Committed: {message}[/green]")
+                else:
+                    self.console.print("[yellow]Usage: /git commit <message>[/yellow]")
+
+            elif command == "rollback":
+                steps = 1
+                if len(parts) > 1:
+                    try:
+                        steps = int(parts[1])
+                    except ValueError:
+                        pass
+
+                self.git.rollback(steps=steps)
+                self.console.print(f"[green]✓ Rolled back {steps} commit(s)[/green]")
+
+            elif command == "branch":
+                if len(parts) > 1:
+                    branch_name = parts[1]
+                    self.git.create_branch(branch_name)
+                    self.console.print(f"[green]✓ Created branch: {branch_name}[/green]")
+                else:
+                    # List branches
+                    branches = self.git.list_branches()
+                    if branches:
+                        self.console.print("[cyan]Branches:[/cyan]")
+                        for branch in branches:
+                            self.console.print(f"  {branch}")
+                    else:
+                        self.console.print("[yellow]No branches found[/yellow]")
+
+            else:
+                # Fallback to generic git command
+                result = self.git.run_command(args)
+                if result:
+                    self.console.print(result)
+
+        except Exception as e:
+            self.console.print(f"[red]Git error: {e}[/red]")
 
     def show_config(self, args: str = ""):
         """Show current configuration."""
@@ -678,3 +1042,22 @@ class InteractiveSession:
     def clear_screen(self, args: str = ""):
         """Clear the screen."""
         self.console.clear()
+
+    async def show_logs(self, args: str = ""):
+        """Show log file location and recent entries."""
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d")
+        log_file = Path.home() / ".agentic" / "logs" / f"agentic_{timestamp}.log"
+
+        self.console.print(f"[cyan]Log file: {log_file}[/cyan]")
+
+        if log_file.exists():
+            # Show last 20 lines
+            with open(log_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                if lines:
+                    self.console.print("\n[dim]Recent log entries:[/dim]")
+                    for line in lines[-20:]:
+                        self.console.print(f"[dim]{line.rstrip()}[/dim]")
+        else:
+            self.console.print("[yellow]No log file found yet[/yellow]")

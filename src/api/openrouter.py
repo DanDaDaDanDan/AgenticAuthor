@@ -186,7 +186,8 @@ class OpenRouterClient:
         try:
             async with self._session.post(
                 f"{self.base_url}/chat/completions",
-                json=request_data
+                json=request_data,
+                headers=self._get_headers()
             ) as response:
                 response.raise_for_status()
 

@@ -5,7 +5,52 @@ All notable changes to AgenticAuthor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2025-09-23
+
+### Added
+- **Enhanced Premise Generation**
+  - Genre-specific taxonomy support for 11 genres (fantasy, sci-fi, romance, mystery, horror, etc.)
+  - Smart input detection (brief premise vs standard vs detailed vs treatment)
+  - History tracking to avoid repetitive generations
+  - Interactive genre selection with fallback prompts
+  - Automatic genre normalization and alias support
+  - Preservation of existing treatments (200+ words)
+- **Advanced Command Completion**
+  - Tab completion for all slash commands
+  - Genre autocomplete for `/generate premise` command
+  - Model fuzzy search and tab completion
+  - Context-aware completion suggestions
+- **Comprehensive Logging System**
+  - Debug logging to `~/.agentic/logs/agentic_YYYYMMDD.log`
+  - `/logs` command to view recent log entries
+  - Automatic daily log rotation
+  - Full error tracking and debugging support
+- **Taxonomy System** (`src/generation/taxonomies.py`)
+  - TaxonomyLoader for managing genre-specific parameters
+  - PremiseAnalyzer for input type detection
+  - PremiseHistory for tracking generations
+  - Support for base + genre-specific taxonomy merging
+- **Test Suite Expansion**
+  - 187 total tests (171 unit, 16 integration)
+  - Real API integration tests with grok-4-fast model
+  - 100% coverage attempt for core modules
+  - Tests for all new features
+
+### Changed
+- PremiseGenerator now supports multiple generation modes based on input length
+- Model parameter follows fallback chain: specified → project → settings
+- Enhanced `/generate premise` command with genre and concept parsing
+- Improved error messages and user feedback
+
+### Fixed
+- Model attribute error in PremiseGenerator instantiation
+- Tab completion not triggering on Tab key press
+- Mouse selection issues in terminal (added shift+drag support note)
+- CompleteStyle import error from prompt_toolkit
+- API key validation expecting boolean instead of exceptions
+- TokenUsageTracker import error (removed non-existent class)
+
+## [0.1.0] - 2025-09-23
 
 ### Added
 - Core infrastructure and project setup
@@ -34,20 +79,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - .env file excluded from git
 - No credentials in logs
 
-## [0.1.0] - Not Released Yet
+## Planned for Next Release (0.3.0)
 
-Initial development version with basic functionality.
-
-### Planned for 1.0.0
-- [ ] Complete generation system (premise, treatment, chapters, prose)
+### To Add
+- [ ] Complete generation system (treatment, chapters, prose)
 - [ ] Natural language iteration with intent checking
-- [ ] Story analysis system
-- [ ] Export functionality
-- [ ] 80%+ test coverage
-- [ ] Full documentation
+- [ ] Story analysis system (commercial, plot, characters, world)
+- [ ] Export functionality (md, html, epub, pdf)
+- [ ] Git branching and merging for experiments
+
+### To Improve
+- [ ] Test coverage to 100% for all modules
+- [ ] Performance optimization for large projects
+- [ ] Better error recovery and user guidance
+- [ ] Multi-model comparison for generations
 
 ## Version History
 
-- **Current**: Development (unreleased)
-- **Target 1.0.0**: Q1 2024 - Full feature release
-- **Target 0.1.0**: Alpha release with core features
+- **0.2.0** (2025-09-23): Enhanced premise generation with taxonomies, logging, and testing
+- **0.1.0** (2025-09-23): Initial release with core infrastructure
+- **Target 1.0.0**: Q1 2025 - Full feature release with complete generation pipeline

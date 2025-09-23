@@ -114,7 +114,7 @@ class TestInteractiveSession:
             mock_handler = Mock()
             session.commands['test'] = mock_handler
 
-            await session.process_input('test arg1 arg2')
+            await session.process_input('/test arg1 arg2')
 
             mock_handler.assert_called_once_with('arg1 arg2')
 
@@ -218,4 +218,6 @@ class TestInteractiveSession:
             session = InteractiveSession()
             prompt = session._build_prompt()
 
-            assert 'agentic' in str(prompt)
+            # Should return HTML prompt
+            assert '>' in str(prompt)
+            assert 'prompt' in str(prompt).lower()

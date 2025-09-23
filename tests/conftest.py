@@ -5,9 +5,16 @@ import tempfile
 from pathlib import Path
 import pytest
 from typing import Generator
+from dotenv import load_dotenv
 
-# Set dummy API key for testing
-os.environ['OPENROUTER_API_KEY'] = 'sk-or-test-key-123456789'
+# Load .env file if it exists
+env_path = Path(__file__).parent.parent / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+
+# Only set dummy key if no real key exists (for unit tests)
+if 'OPENROUTER_API_KEY' not in os.environ:
+    os.environ['OPENROUTER_API_KEY'] = 'sk-or-test-key-123456789'
 
 
 @pytest.fixture

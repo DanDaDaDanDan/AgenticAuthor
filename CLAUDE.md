@@ -43,11 +43,19 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 
 **Key Innovation**: Natural language iteration with git-backed version control. Users simply describe what they want changed, and the system handles intent checking, execution, and auto-commits.
 
+**New Features (v0.2.0)**:
+- Genre-specific taxonomy support (11 genres with autocomplete)
+- Smart input detection (brief premise vs standard vs detailed vs treatment)
+- History tracking to avoid repetitive generations
+- Comprehensive logging system (`~/.agentic/logs/`)
+- Enhanced tab completion for commands, genres, and models
+
 ## Quick Start Commands
 
 ```bash
 # Setup
 pip install -e .  # Install in development mode
+export OPENROUTER_API_KEY="sk-or-your-key-here"
 
 # Run
 agentic           # Start REPL (main interface)
@@ -57,6 +65,9 @@ agentic           # Start REPL (main interface)
 /open my-book     # Open existing project
 /status           # Check project status
 /models           # List available models
+/model grok       # Switch to grok model (fuzzy search)
+/generate premise fantasy "a magical library"  # Genre-specific generation
+/logs             # View recent log entries
 /help             # Show all commands
 ```
 
@@ -67,12 +78,20 @@ Always test these commands after making changes:
 # Unit tests
 pytest tests/unit/ -v
 
+# Integration tests (uses real API with grok-4-fast)
+OPENROUTER_API_KEY=sk-or-your-key pytest tests/integration/ -v
+
+# Full test suite with coverage
+pytest tests/ --cov=src --cov-report=html
+
 # Check the REPL starts
 agentic
 # Then in REPL:
 /help             # Should show all commands
 /models           # Should list OpenRouter models (needs API key)
 /new test-book    # Should create a project
+/generate premise # Should show genre selection
+/logs             # Should show log location
 /status           # Should show project info
 /exit             # Should exit cleanly
 ```
@@ -86,6 +105,32 @@ agentic
 5. **Smart Intent Checking**: Confidence-based routing (>0.8 execute, else clarify)
 
 ## Key Systems to Understand
+
+### Taxonomy System
+```python
+# Genre-specific generation parameters
+from src.generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
+
+# Load genre taxonomy
+loader = TaxonomyLoader()
+taxonomy = loader.load_merged_taxonomy('fantasy')
+
+# Analyze input type
+analysis = PremiseAnalyzer.analyze(user_input)
+if analysis['is_treatment']:  # 200+ words
+    # Preserve as treatment, extract taxonomy
+else:
+    # Generate or enhance premise
+```
+
+### Smart Input Detection
+```
+Input Analysis:
+- < 20 words: Brief premise → Full generation
+- 20-100 words: Standard premise → Enhancement
+- 100-200 words: Detailed premise → Structuring
+- 200+ words: Treatment → Preserve + extract taxonomy
+```
 
 ### Iteration Flow
 ```python
@@ -127,6 +172,7 @@ Based on dv-story-generator's comprehensive analysis:
 books/[project-name]/
 ├── .git/                    # Version control
 ├── premise.md              # LOD3
+├── premise_metadata.json   # Taxonomy selections
 ├── treatment.md            # LOD2
 ├── chapters.yaml           # LOD2 outlines
 ├── chapters/               # LOD0 prose
@@ -140,10 +186,14 @@ books/[project-name]/
 
 ## Key Implementation Files
 
+- `src/generation/taxonomies.py` - Genre taxonomy system and premise analysis
+- `src/generation/premise.py` - Enhanced premise generation with multiple modes
 - `src/generation/iteration.py` - Natural language feedback processing
 - `src/storage/git_manager.py` - Git operations wrapper
 - `src/generation/analysis.py` - Comprehensive story analysis
-- `src/cli/interactive.py` - REPL with prompt_toolkit
+- `src/cli/interactive.py` - REPL with prompt_toolkit and logging
+- `src/cli/command_completer.py` - Advanced tab completion with genre support
+- `src/utils/logging.py` - Comprehensive logging system
 
 ## Important Notes
 
@@ -151,6 +201,11 @@ books/[project-name]/
 - Every operation creates a git commit automatically
 - Analysis files include git SHA for reproducibility
 - Use structured JSON for intent checking responses
+- Logs are written to `~/.agentic/logs/agentic_YYYYMMDD.log`
+- Genre taxonomies are in `docs/taxonomies/` directory
+- Model parameter follows fallback chain: specified → project → settings
+- Tab completion works for commands, genres, and models
+- Test suite includes 187 tests (171 unit, 16 integration)
 
 ## Repository Structure
 

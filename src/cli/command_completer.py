@@ -8,7 +8,7 @@ from prompt_toolkit.formatted_text import HTML
 class SlashCommandCompleter(Completer):
     """Completer for slash commands with descriptions."""
 
-    def __init__(self, commands: Dict[str, Dict[str, str]], model_provider=None):
+    def __init__(self, commands: Dict[str, Dict[str, str]], model_provider=None, genre_provider=None):
         """
         Initialize the slash command completer.
 
@@ -16,9 +16,11 @@ class SlashCommandCompleter(Completer):
             commands: Dict mapping command names to their info:
                      {'command': {'description': '...', 'usage': '...'}}
             model_provider: Callable that returns list of model IDs for completion
+            genre_provider: Callable that returns list of genres for completion
         """
         self.commands = commands
         self.model_provider = model_provider
+        self.genre_provider = genre_provider
 
     def get_completions(
         self, document: Document, complete_event: CompleteEvent
@@ -38,6 +40,41 @@ class SlashCommandCompleter(Completer):
             parts = command_text.split(' ', 1)
             command = parts[0]
             arg_text = parts[1] if len(parts) > 1 else ''
+
+            # Special handling for /generate command (genre completion)
+            if command == 'generate' and self.genre_provider:
+                # Check if we're at the premise subcommand
+                remaining_parts = arg_text.split(' ')
+                if remaining_parts[0] == 'premise':
+                    # We're after "premise", provide genre completions
+                    if len(remaining_parts) == 1:
+                        # Just "premise" - show all genres
+                        genres = self.genre_provider()
+                        for genre in genres:
+                            yield Completion(
+                                text=' ' + genre,
+                                start_position=0,
+                                display=HTML(f'<b>{genre}</b>'),
+                                display_meta='Genre',
+                                style='',
+                                selected_style='reverse',
+                            )
+                    elif len(remaining_parts) == 2:
+                        # "premise <partial_genre>" - filter genres
+                        partial = remaining_parts[1]
+                        genres = self.genre_provider()
+                        for genre in genres:
+                            if genre.lower().startswith(partial.lower()):
+                                completion_text = genre[len(partial):]
+                                yield Completion(
+                                    text=completion_text,
+                                    start_position=0,
+                                    display=HTML(f'<b>{genre}</b>'),
+                                    display_meta='Genre',
+                                    style='',
+                                    selected_style='reverse',
+                                )
+                return
 
             # Special handling for /model command
             if command == 'model' and self.model_provider:
