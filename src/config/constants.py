@@ -1,0 +1,74 @@
+"""Application constants and defaults."""
+from pathlib import Path
+
+# API Configuration
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_MODEL = "anthropic/claude-opus-4.1"
+
+# Directory Structure
+DEFAULT_BOOKS_DIR = Path("./books")
+DEFAULT_TAXONOMIES_DIR = Path("./taxonomies")
+DEFAULT_CACHE_DIR = Path("./.cache")
+
+# File Names
+PROJECT_FILE = "project.yaml"
+PREMISE_FILE = "premise.md"
+TREATMENT_FILE = "treatment.md"
+CHAPTERS_FILE = "chapters.yaml"
+CHAPTERS_DIR = "chapters"
+ANALYSIS_DIR = "analysis"
+EXPORTS_DIR = "exports"
+
+# Git Configuration
+DEFAULT_COMMIT_AUTHOR = "AgenticAuthor"
+DEFAULT_COMMIT_EMAIL = "agentic@localhost"
+
+# Generation Parameters
+DEFAULT_TEMPERATURES = {
+    'premise': 0.9,      # Higher for creativity
+    'treatment': 0.7,    # Balanced
+    'chapters': 0.6,     # More structured
+    'prose': 0.8,        # Creative prose
+    'polish': 0.3,       # Low for consistency
+    'iteration': 0.5,    # Moderate for edits
+    'analysis': 0.3,     # Low for accuracy
+    'intent': 0.1        # Very low for intent checking
+}
+
+# Token Limits
+DEFAULT_MAX_TOKENS = {
+    'premise': 2000,
+    'treatment': 4000,
+    'chapters': 3000,
+    'prose': 8000,
+    'iteration': 6000,
+    'analysis': 4000,
+    'intent': 500
+}
+
+# Intent Checking
+INTENT_CONFIDENCE_THRESHOLD = 0.8  # Execute if confidence >= this
+INTENT_LOW_CONFIDENCE_THRESHOLD = 0.5  # Below this, definitely ask
+
+# Analysis Types
+ANALYSIS_TYPES = [
+    'commercial',
+    'plot',
+    'characters',
+    'elements',
+    'world_building'
+]
+
+# Supported Export Formats
+EXPORT_FORMATS = ['txt', 'md', 'html', 'epub', 'pdf']
+
+# Progress Messages
+PROGRESS_MESSAGES = {
+    'premise': 'Generating story premise...',
+    'treatment': 'Creating story treatment...',
+    'chapters': 'Outlining chapters...',
+    'prose': 'Writing prose for chapter {chapter}...',
+    'iteration': 'Processing feedback...',
+    'analysis': 'Analyzing {analysis_type}...',
+    'export': 'Exporting to {format}...'
+}

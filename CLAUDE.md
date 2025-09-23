@@ -2,6 +2,41 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL: Documentation Updates
+
+**You MUST update the following documentation files whenever making relevant changes:**
+
+1. **`docs/IMPLEMENTATION_STATUS.md`** - Update when:
+   - Completing a feature (move from In Progress to Completed)
+   - Starting new work (add to In Progress)
+   - Finding bugs (add to Known Issues)
+   - Changing test coverage
+   - Making any significant changes (add to Recent Changes with date)
+
+2. **`docs/API_REFERENCE.md`** - Update when:
+   - Adding new slash commands
+   - Adding new Python APIs
+   - Changing command syntax or behavior
+   - Adding configuration options
+
+3. **`docs/ARCHITECTURE.md`** - Update when:
+   - Changing system design
+   - Adding new components
+   - Modifying data flow
+   - Making architectural decisions
+
+4. **`docs/DEVELOPMENT.md`** - Update when:
+   - Changing development setup
+   - Adding new development workflows
+   - Updating testing approaches
+
+5. **`README.md`** - Update when:
+   - Adding user-facing features
+   - Changing installation process
+   - Updating command examples
+
+**Always check these files at the end of your work session and update them!**
+
 ## Project Summary
 
 AgenticAuthor is a Python CLI for iterative AI-powered book generation using OpenRouter API. It follows a Level of Detail (LOD) approach: premise (LOD3) → treatment/chapters (LOD2) → full prose (LOD0).
@@ -15,12 +50,31 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 pip install -e .  # Install in development mode
 
 # Run
-agentic                  # Start REPL
-agentic my-book         # Open specific project
-agentic --new fantasy   # Create new project
+agentic           # Start REPL (main interface)
 
-# Testing
-pytest tests/ --reset-fixtures  # Run with clean test book
+# In REPL - all commands use / prefix:
+/new my-book      # Create new project
+/open my-book     # Open existing project
+/status           # Check project status
+/models           # List available models
+/help             # Show all commands
+```
+
+## Testing After Changes
+
+Always test these commands after making changes:
+```bash
+# Unit tests
+pytest tests/unit/ -v
+
+# Check the REPL starts
+agentic
+# Then in REPL:
+/help             # Should show all commands
+/models           # Should list OpenRouter models (needs API key)
+/new test-book    # Should create a project
+/status           # Should show project info
+/exit             # Should exit cleanly
 ```
 
 ## Core Architecture Principles

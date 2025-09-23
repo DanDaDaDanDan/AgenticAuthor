@@ -3,7 +3,12 @@
     "allow": [
       "Read(//d/Personal/Projects/dv-story-generator/**)",
       "WebSearch",
-      "WebFetch(domain:openrouter.ai)"
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(pip install:*)",
+      "Bash(python test:*)",
+      "Bash(agentic:*)",
+      "Bash(pytest:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
