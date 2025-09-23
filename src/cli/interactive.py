@@ -7,7 +7,6 @@ from datetime import datetime
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
@@ -22,6 +21,7 @@ from ..api import OpenRouterClient
 from ..models import Project, Story
 from ..storage.git_manager import GitManager
 from .command_completer import SlashCommandCompleter, create_command_descriptions
+from .auto_suggest import SlashCommandAutoSuggest
 
 
 class InteractiveSession:
@@ -99,9 +99,13 @@ class InteractiveSession:
         history_file = Path.home() / '.agentic' / 'history'
         history_file.parent.mkdir(exist_ok=True)
 
+        # Create history and custom auto-suggest
+        history = FileHistory(str(history_file))
+        auto_suggest = SlashCommandAutoSuggest(history)
+
         return PromptSession(
-            history=FileHistory(str(history_file)),
-            auto_suggest=AutoSuggestFromHistory(),
+            history=history,
+            auto_suggest=auto_suggest,
             completer=completer,
             style=style,
             multiline=False,
@@ -140,6 +144,9 @@ class InteractiveSession:
     async def run(self):
         """Run the interactive session."""
         self.running = True
+
+        # Clear screen on startup
+        self.console.clear()
 
         # Initialize API client
         try:
@@ -181,17 +188,7 @@ class InteractiveSession:
 
     def _build_prompt(self) -> HTML:
         """Build the prompt string."""
-        parts = []
-
-        if self.project:
-            parts.append(f'<project>{self.project.name}</project>')
-
-        if self.settings.current_model:
-            model_name = self.settings.current_model.split('/')[-1][:15]
-            parts.append(f'<b>{model_name}</b>')
-
-        prompt_str = ' '.join(parts) if parts else 'agentic'
-        return HTML(f'<prompt>{prompt_str}></prompt> <b>></b> ')
+        return HTML('<prompt>></prompt> ')
 
     def _show_welcome(self):
         """Show welcome message."""
@@ -475,31 +472,62 @@ class InteractiveSession:
                 self.console.print("[yellow]No models found[/yellow]")
                 return
 
+            # Group models by provider
+            grouped = {}
+            for model in models:
+                provider = model.id.split('/')[0] if '/' in model.id else 'other'
+                if provider not in grouped:
+                    grouped[provider] = []
+                grouped[provider].append(model)
+
+            # Sort each group by price
+            for provider in grouped:
+                grouped[provider].sort(key=lambda m: m.cost_per_1k_tokens)
+
             # Create table
-            table = Table(title="Available Models")
-            table.add_column("ID", style="cyan")
-            table.add_column("Context", justify="right")
-            table.add_column("Price/1K", justify="right")
+            table = Table(title="Available Models", show_lines=True)
+            table.add_column("Provider", style="magenta", width=12)
+            table.add_column("Model", style="cyan", width=30)
+            table.add_column("Context", justify="right", width=12)
+            table.add_column("$/1M Input", justify="right", style="green", width=12)
+            table.add_column("$/1M Output", justify="right", style="yellow", width=12)
 
-            # Sort by price
-            models.sort(key=lambda m: m.cost_per_1k_tokens)
+            # Display all models grouped by provider
+            for provider in sorted(grouped.keys()):
+                provider_models = grouped[provider]
+                for i, model in enumerate(provider_models):
+                    # Show provider name only on first row
+                    provider_display = provider.capitalize() if i == 0 else ""
 
-            # Show top models
-            for model in models[:20]:
-                price = f"${model.cost_per_1k_tokens:.4f}"
-                if model.is_free:
-                    price = "Free"
+                    # Convert price from per 1K to per 1M tokens
+                    input_price = model.cost_per_1k_tokens * 1000
+                    # Assume output is 2x input price (typical for most models)
+                    output_price = model.cost_per_1k_tokens * 2000
 
-                table.add_row(
-                    model.id,
-                    f"{model.context_length:,}",
-                    price
-                )
+                    # Format prices
+                    if model.is_free:
+                        input_str = "Free"
+                        output_str = "Free"
+                    else:
+                        input_str = f"${input_price:.2f}"
+                        output_str = f"${output_price:.2f}"
+
+                    # Extract model name (remove provider prefix)
+                    model_name = model.id.split('/')[-1] if '/' in model.id else model.id
+                    # Truncate long model names
+                    if len(model_name) > 28:
+                        model_name = model_name[:25] + "..."
+
+                    table.add_row(
+                        provider_display,
+                        model_name,
+                        f"{model.context_length:,}",
+                        input_str,
+                        output_str
+                    )
 
             self.console.print(table)
-
-            if len(models) > 20:
-                self.console.print(f"[dim]... and {len(models) - 20} more[/dim]")
+            self.console.print(f"\n[dim]Total models: {len(models)}[/dim]")
 
         except Exception as e:
             self.console.print(f"[red]Error fetching models: {e}[/red]")

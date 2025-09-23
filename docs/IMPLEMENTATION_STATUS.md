@@ -125,6 +125,12 @@ Current Coverage: **49%**
 ## Recent Changes
 
 ### 2024-01-23
+- Fixed auto-suggestions to only suggest slash commands (not regular text)
+- Clear screen on application startup for cleaner experience
+- Enhanced `/models` command: grouped by provider, shows all models, $/1M pricing format
+- Simplified REPL prompt from "agentic> >" to just ">"
+- Moved test coverage reports to `tests/htmlcov/` directory
+- Reorganized documentation - all .md files now in `docs/` folder
 - Implemented slash command system with auto-completion
 - Fixed initialization order bug in InteractiveSession
 - Updated all commands to use `/` prefix
