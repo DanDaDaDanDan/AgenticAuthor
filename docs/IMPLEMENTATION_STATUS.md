@@ -125,6 +125,8 @@ Current Coverage: **49%**
 ## Recent Changes
 
 ### 2024-01-23
+- Enhanced `/model` command with fuzzy search and interactive selection
+- Added model name autocomplete for `/model` command (Tab after `/model `)
 - Fixed auto-suggestions to only suggest slash commands (not regular text)
 - Clear screen on application startup for cleaner experience
 - Enhanced `/models` command: grouped by provider, shows all models, $/1M pricing format

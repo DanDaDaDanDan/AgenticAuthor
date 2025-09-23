@@ -61,6 +61,9 @@ class InteractiveSession:
             'clear': self.clear_screen,
         }
 
+        # Cache for model IDs (populated when client is initialized)
+        self._cached_model_ids = []
+
         # Setup prompt session (after commands are defined)
         self.session = self._create_prompt_session()
 
@@ -70,9 +73,13 @@ class InteractiveSession:
 
     def _create_prompt_session(self) -> PromptSession:
         """Create configured prompt session."""
-        # Create command completer with descriptions
+        # Create command completer with descriptions and model provider
         command_descriptions = create_command_descriptions()
-        completer = SlashCommandCompleter(command_descriptions)
+
+        # Model provider lambda that returns cached model IDs
+        model_provider = lambda: self._cached_model_ids
+
+        completer = SlashCommandCompleter(command_descriptions, model_provider)
 
         # Custom style
         style = Style.from_dict({
@@ -152,6 +159,15 @@ class InteractiveSession:
         try:
             self.client = OpenRouterClient(console=self.console)
             await self.client.ensure_session()
+
+            # Populate model cache for autocomplete
+            try:
+                models = await self.client.discover_models()
+                self._cached_model_ids = [m.id for m in models]
+            except Exception:
+                # If we can't get models, just continue without autocomplete
+                pass
+
         except Exception as e:
             self.console.print(f"[red]Failed to initialize API client: {e}[/red]")
             self.console.print("[yellow]Please check your OPENROUTER_API_KEY[/yellow]")
@@ -420,35 +436,112 @@ class InteractiveSession:
             # Show current model
             current = self.settings.active_model
             self.console.print(f"Current model: [cyan]{current}[/cyan]")
+            self.console.print("[dim]Tip: Use /model <search> to change model (e.g., /model opus)[/dim]")
             return
 
-        # Validate model exists
-        if self.client:
-            models = await self.client.discover_models()
-            model_ids = [m.id for m in models]
+        # Get available models
+        if not self.client:
+            self.console.print("[red]API client not initialized[/red]")
+            return
 
-            if args not in model_ids:
-                # Try partial match
-                matches = [m for m in model_ids if args.lower() in m.lower()]
-                if matches:
-                    if len(matches) == 1:
-                        args = matches[0]
+        models = await self.client.discover_models()
+
+        # Try exact match first
+        exact_match = None
+        for model in models:
+            if model.id == args:
+                exact_match = model
+                break
+
+        if exact_match:
+            # Direct match found
+            selected_model = exact_match.id
+        else:
+            # Try fuzzy search
+            search_term = args.lower()
+            matches = []
+
+            for model in models:
+                model_lower = model.id.lower()
+                # Check if search term is in model ID
+                if search_term in model_lower:
+                    # Calculate relevance score (prefer matches at start or after /)
+                    score = 0
+                    if model_lower.startswith(search_term):
+                        score = 3
+                    elif '/' + search_term in model_lower:
+                        score = 2
                     else:
-                        self.console.print("[yellow]Multiple matches:[/yellow]")
-                        for m in matches[:5]:
-                            self.console.print(f"  - {m}")
+                        score = 1
+                    matches.append((model, score))
+
+            # Sort alphabetically by model ID
+            matches.sort(key=lambda x: x[0].id.lower())
+
+            if not matches:
+                self.console.print(f"[red]No models found matching '{args}'[/red]")
+                self.console.print("[dim]Try: /models to see all available models[/dim]")
+                return
+
+            if len(matches) == 1:
+                # Single match - use it
+                selected_model = matches[0][0].id
+                self.console.print(f"[dim]Found: {selected_model}[/dim]")
+            else:
+                # Multiple matches - show selection menu
+                self.console.print(f"\n[yellow]Multiple models found matching '{args}':[/yellow]\n")
+
+                # Show numbered list with details
+                for i, (model, _) in enumerate(matches[:9], 1):
+                    price = f"${model.cost_per_1k_tokens * 1000:.2f}/1M"
+                    if model.is_free:
+                        price = "Free"
+
+                    # Highlight current model
+                    if model.id == self.settings.active_model:
+                        self.console.print(f"  [cyan]{i}[/cyan]. [bold cyan]{model.id}[/bold cyan] [{price}] [dim]← current[/dim]")
+                    else:
+                        self.console.print(f"  [cyan]{i}[/cyan]. {model.id} [dim][{price}][/dim]")
+
+                # Get user selection
+                try:
+                    self.console.print("\n[bold]Select model[/bold] (1-{}) or [dim]Enter to cancel[/dim]: ".format(len(matches[:9])), end="")
+
+                    # Use simple input for selection
+                    import sys
+                    selection = input().strip()
+
+                    if not selection:
+                        self.console.print("[dim]Cancelled[/dim]")
                         return
-                else:
-                    self.console.print(f"[red]Model not found: {args}[/red]")
+
+                    index = int(selection) - 1
+                    if 0 <= index < len(matches[:9]):
+                        selected_model = matches[index][0].id
+                    else:
+                        self.console.print("[red]Invalid selection[/red]")
+                        return
+
+                except (ValueError, EOFError, KeyboardInterrupt):
+                    self.console.print("[dim]Cancelled[/dim]")
                     return
 
         # Update model
-        self.settings.set_model(args)
-        self.console.print(f"[green]Model changed to: {args}[/green]")
+        self.settings.set_model(selected_model)
+        self.console.print(f"[green]✓ Model changed to: {selected_model}[/green]")
+
+        # Show model details
+        for model in models:
+            if model.id == selected_model:
+                price = f"${model.cost_per_1k_tokens * 1000:.2f}/1M"
+                if model.is_free:
+                    price = "Free"
+                self.console.print(f"[dim]  Context: {model.context_length:,} tokens | Price: {price}[/dim]")
+                break
 
         # Update project metadata if loaded
         if self.project and self.project.metadata:
-            self.project.metadata.model = args
+            self.project.metadata.model = selected_model
             self.project.save_metadata()
 
     async def list_models(self, args: str = ""):

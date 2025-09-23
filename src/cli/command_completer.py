@@ -8,15 +8,17 @@ from prompt_toolkit.formatted_text import HTML
 class SlashCommandCompleter(Completer):
     """Completer for slash commands with descriptions."""
 
-    def __init__(self, commands: Dict[str, Dict[str, str]]):
+    def __init__(self, commands: Dict[str, Dict[str, str]], model_provider=None):
         """
         Initialize the slash command completer.
 
         Args:
             commands: Dict mapping command names to their info:
                      {'command': {'description': '...', 'usage': '...'}}
+            model_provider: Callable that returns list of model IDs for completion
         """
         self.commands = commands
+        self.model_provider = model_provider
 
     def get_completions(
         self, document: Document, complete_event: CompleteEvent
@@ -31,9 +33,71 @@ class SlashCommandCompleter(Completer):
         # Get the command part after /
         command_text = text[1:]
 
-        # If there's a space, we're past the command
+        # If there's a space, we're past the command - handle argument completion
         if ' ' in command_text:
-            # Could add argument completion here later
+            parts = command_text.split(' ', 1)
+            command = parts[0]
+            arg_text = parts[1] if len(parts) > 1 else ''
+
+            # Special handling for /model command
+            if command == 'model' and self.model_provider:
+                try:
+                    model_ids = self.model_provider()
+                    if model_ids:
+                        # Filter models that match the current arg text
+                        matches = []
+                        arg_lower = arg_text.lower()
+
+                        for model_id in model_ids:
+                            model_lower = model_id.lower()
+                            if arg_lower in model_lower:
+                                # Calculate relevance score
+                                score = 0
+                                if model_lower.startswith(arg_lower):
+                                    score = 3
+                                elif '/' + arg_lower in model_lower:
+                                    score = 2
+                                else:
+                                    score = 1
+
+                                # Extract provider and model name
+                                if '/' in model_id:
+                                    provider, name = model_id.split('/', 1)
+                                else:
+                                    provider = 'other'
+                                    name = model_id
+
+                                matches.append((model_id, provider, name, score))
+
+                        # Sort alphabetically by model ID
+                        matches.sort(key=lambda x: x[0].lower())
+
+                        # Yield completions for top matches
+                        for model_id, provider, name, _ in matches[:10]:
+                            # What to insert (complete from current position)
+                            if arg_text:
+                                # Complete from where we are
+                                if model_id.lower().startswith(arg_lower):
+                                    completion_text = model_id[len(arg_text):]
+                                else:
+                                    # Replace entirely
+                                    completion_text = model_id
+                                    start_pos = -len(arg_text)
+                            else:
+                                completion_text = model_id
+                                start_pos = 0
+
+                            yield Completion(
+                                text=completion_text,
+                                start_position=start_pos if arg_text else 0,
+                                display=HTML(f'<b>{model_id}</b>'),
+                                display_meta=f'{provider}',
+                                style='',
+                                selected_style='reverse',
+                            )
+                except Exception:
+                    # If model provider fails, just return
+                    pass
             return
 
         # Filter and sort commands

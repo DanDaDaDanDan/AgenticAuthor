@@ -24,10 +24,19 @@ Show current project status.
 
 ### Model Management
 
-#### `/model [name]`
+#### `/model [search]`
 Show or change the current AI model.
-- **name** (optional): Model ID to switch to. If not provided, shows current model.
-- Example: `/model openai/gpt-4`
+- **search** (optional): Model search term. If not provided, shows current model.
+- Features:
+  - Fuzzy search: `/model opus` finds `anthropic/claude-3-opus`
+  - Interactive selection when multiple matches found
+  - Tab completion: Type `/model ` then Tab to see available models
+  - Shows model price and context size after selection
+- Examples:
+  - `/model` - Show current model
+  - `/model opus` - Switch to Claude Opus
+  - `/model gpt` - Shows selection menu for GPT models
+  - `/model anthropic/claude-3-opus` - Exact match
 
 #### `/models [search]`
 List available models from OpenRouter.
