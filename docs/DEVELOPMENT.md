@@ -56,8 +56,14 @@ agentic list
 # Run all tests
 pytest
 
-# Run with coverage
-pytest --cov=src --cov-report=term-missing
+# Run with coverage (HTML report in tests/htmlcov/)
+pytest --cov=src --cov-report=term-missing --cov-report=html
+
+# Run coverage with convenience script
+python tests/run_coverage.py
+
+# View coverage report
+python -m webbrowser tests/htmlcov/index.html
 
 # Run specific test file
 pytest tests/unit/test_models.py
@@ -71,6 +77,8 @@ pytest -v
 # Run async tests
 pytest -k async
 ```
+
+**Note:** Coverage reports are generated in `tests/htmlcov/` to keep the project root clean.
 
 ### Code Quality
 
