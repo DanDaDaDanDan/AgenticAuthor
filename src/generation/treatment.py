@@ -109,6 +109,7 @@ class TreatmentGenerator:
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,  # Balanced for coherent narrative
+                display=True,  # Show streaming progress
                 # No max_tokens - let it use full available context
                 # Estimate we need roughly 1.3 tokens per word for English prose
                 min_response_tokens=int(target_words * 1.3)
@@ -181,6 +182,7 @@ Return the complete revised treatment as flowing narrative prose."""
             model=model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,  # Lower temp for controlled iteration
+            display=True,  # Show streaming progress
             # No max_tokens - let it use full available context
             # Estimate we need roughly same token count as current treatment
             min_response_tokens=int(current_words * 1.3)

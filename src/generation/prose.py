@@ -157,6 +157,7 @@ class ProseGenerator:
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.8,  # Higher for creative prose
+                display=True,  # Show streaming progress
                 # No max_tokens - let it use full available context
                 # Prose needs substantial space, estimate 1.3 tokens per word
                 min_response_tokens=int(target_words * 1.3)
