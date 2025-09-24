@@ -850,7 +850,8 @@ class InteractiveSession:
 
         else:
             # Normal premise generation
-            self.console.print(f"[cyan]Generating {genre or 'general'} premise...[/cyan]")
+            self.console.rule(style="dim")
+            self.console.print(f"[cyan]Generating {genre or 'general'} premise...[/cyan]\n")
 
             generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
             result = await generator.generate(
@@ -860,13 +861,20 @@ class InteractiveSession:
             )
 
             if result and 'premise' in result:
-                self.console.print("\n[green]✓ Premise generated:[/green]")
-                self.console.print(f"\n{result['premise']}\n")
+                # Print the premise content
+                self.console.print(result['premise'])
+                self.console.print()  # Blank line
 
+                # Print metadata
                 if 'hook' in result:
                     self.console.print(f"[dim]Hook: {result['hook']}[/dim]")
                 if 'themes' in result:
                     self.console.print(f"[dim]Themes: {', '.join(result['themes'])}[/dim]")
+
+                self.console.print()  # Blank line
+                self.console.rule(style="dim")
+                self.console.print("[green]✓ Premise generated[/green]")
+                self.console.print("[dim]Saved to premise.md[/dim]")
 
                 # Add to history
                 self.premise_history.add(
@@ -874,8 +882,6 @@ class InteractiveSession:
                     genre or 'general',
                     result.get('selections', {})
                 )
-
-                self.console.print("\n[dim]Saved to premise.md[/dim]")
             else:
                 self.console.print("[red]Failed to generate premise[/red]")
 
@@ -922,16 +928,21 @@ class InteractiveSession:
             except ValueError:
                 pass
 
-        self.console.print(f"[cyan]Generating treatment ({target_words} words)...[/cyan]")
+        # Print divider line before generation
+        self.console.rule(style="dim")
+        self.console.print(f"[cyan]Generating treatment ({target_words} words)...[/cyan]\n")
 
         generator = TreatmentGenerator(self.client, self.project)
         result = await generator.generate(target_words=target_words)
 
         if result:
             word_count = len(result.split())
-            self.console.print(f"\n[green]✓ Treatment generated ({word_count} words)[/green]")
-            self.console.print(f"\n{result[:500]}...\n")
-            self.console.print("[dim]Full treatment saved to treatment.md[/dim]")
+            # Print final result after streaming
+            self.console.print(result)
+            self.console.print()  # Blank line
+            self.console.rule(style="dim")  # Divider after content
+            self.console.print(f"[green]✓ Treatment generated: {word_count} words[/green]")
+            self.console.print("[dim]Saved to treatment.md[/dim]")
         else:
             self.console.print("[red]Failed to generate treatment[/red]")
 
@@ -956,7 +967,8 @@ class InteractiveSession:
                     else:  # Assume it's word count
                         total_words = num
 
-        self.console.print(f"[cyan]Generating chapter outlines...[/cyan]")
+        self.console.rule(style="dim")
+        self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
 
         generator = ChapterGenerator(self.client, self.project)
         chapters = await generator.generate(
@@ -965,17 +977,15 @@ class InteractiveSession:
         )
 
         if chapters:
-            self.console.print(f"\n[green]✓ Generated {len(chapters)} chapter outlines[/green]\n")
-
-            # Show first few chapters
-            for chapter in chapters[:3]:
+            # Show all chapters
+            for chapter in chapters:
                 self.console.print(f"Chapter {chapter.number}: {chapter.title}")
                 self.console.print(f"  [dim]{chapter.summary}[/dim]")
 
-            if len(chapters) > 3:
-                self.console.print(f"  [dim]... and {len(chapters) - 3} more[/dim]")
-
-            self.console.print("\n[dim]Saved to chapters.yaml[/dim]")
+            self.console.print()  # Blank line
+            self.console.rule(style="dim")
+            self.console.print(f"[green]✓ Generated {len(chapters)} chapter outlines[/green]")
+            self.console.print("[dim]Saved to chapters.yaml[/dim]")
         else:
             self.console.print("[red]Failed to generate chapters[/red]")
 
@@ -1001,20 +1011,19 @@ class InteractiveSession:
         else:
             try:
                 chapter_num = int(options.split()[0])
-                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
+                self.console.rule(style="dim")
+                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]\n")
 
                 result = await generator.generate_chapter(chapter_num)
 
                 if result:
                     word_count = len(result.split())
-                    self.console.print(f"\n[green]✓ Chapter {chapter_num} generated ({word_count} words)[/green]")
-
-                    # Show preview
-                    lines = result.split('\n')
-                    preview = '\n'.join(lines[:10])
-                    self.console.print(f"\n{preview}...")
-
-                    self.console.print(f"\n[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
+                    # Print full chapter content
+                    self.console.print(result)
+                    self.console.print()  # Blank line
+                    self.console.rule(style="dim")
+                    self.console.print(f"[green]✓ Chapter {chapter_num} generated: {word_count} words[/green]")
+                    self.console.print(f"[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
                 else:
                     self.console.print("[red]Failed to generate prose[/red]")
 

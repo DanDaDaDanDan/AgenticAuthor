@@ -244,14 +244,14 @@ class StreamHandler:
                                 on_token(token, token_count)
 
                             # Update display with status
-                            if live:
+                            if live and display:
                                 elapsed = time.time() - start_time
                                 tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                                # Create inline display like Claude Code
+                                # Create status-only display (no content to avoid scrolling issues)
                                 display_lines = []
 
-                                # Status line
+                                # Status line with token info
                                 status_text = Text()
                                 status_text.append(f"Generating with {model_name}", style="cyan")
                                 status_text.append(f" • {elapsed:.1f}s", style="dim")
@@ -260,9 +260,12 @@ class StreamHandler:
                                     status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
                                 display_lines.append(status_text)
 
-                                # Content
-                                display_lines.append("")  # Empty line
-                                display_lines.append(Text(content))
+                                # Show last few words of content as preview
+                                if content:
+                                    last_words = content.split()[-10:]  # Last 10 words
+                                    preview = "..." + " ".join(last_words) if len(content.split()) > 10 else content
+                                    display_lines.append("")  # Empty line
+                                    display_lines.append(Text(preview, style="dim"))
 
                                 # Update live display
                                 from rich.console import Group
@@ -287,9 +290,7 @@ class StreamHandler:
         finally:
             if live:
                 live.stop()
-                # Just print a blank line after streaming completes
-                if content and display:
-                    self.console.print()  # Blank line after content
+                # Don't print content here - let the caller handle it
 
         return {
             'content': content,
