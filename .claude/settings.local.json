@@ -1,6 +1,19 @@
 {
   "permissions": {
     "allow": [
+      "Read(//d/Personal/Projects/dv-story-generator/**)",
+      "WebSearch",
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(pip install:*)",
+      "Bash(python test:*)",
+      "Bash(agentic:*)",
+      "Bash(pytest:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(python:*)",
+      "Bash(awk:*)",
+      "Bash(sort:*)",
+      "Bash(dir:*)",
       "Bash(git rm:*)"
     ],
     "deny": [],
