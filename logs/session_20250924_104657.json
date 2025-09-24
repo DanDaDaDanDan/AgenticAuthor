@@ -1,0 +1,738 @@
+[
+  {
+    "type": "session_start",
+    "data": {
+      "timestamp": "2025-09-24T10:46:57.325645",
+      "log_file": "logs\\session_20250924_104657.log",
+      "pid": 58196
+    }
+  },
+  {
+    "type": "log",
+    "data": {
+      "timestamp": "2025-09-24T10:46:57.327015",
+      "level": "INFO",
+      "message": "Starting interactive session (default launch)"
+    }
+  },
+  {
+    "type": "log",
+    "data": {
+      "timestamp": "2025-09-24T10:46:57.329227",
+      "level": "INFO",
+      "message": "InteractiveSession initialized"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:46:57.338201",
+      "type": "stdout",
+      "content": "\u001b[2J\u001b[H"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:46:58.200596",
+      "type": "stdout",
+      "content": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Welcome \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \u001b[1;36mAgenticAuthor\u001b[0m                            \u2502\n\u2502 AI-powered iterative book generation     \u2502\n\u2502                                          \u2502\n\u2502 Commands start with \u001b[33m/\u001b[0m                    \u2502\n\u2502 Type \u001b[33m/\u001b[0m to see available commands         \u2502\n\u2502 Type \u001b[33m/help\u001b[0m for command details           \u2502\n\u2502 Type \u001b[33m/new\u001b[0m to create a project            \u2502\n\u2502 Type \u001b[33m/open\u001b[0m to open a project             \u2502\n\u2502                                          \u2502\n\u2502 Or just start typing to iterate with AI! \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n"
+    }
+  },
+  {
+    "type": "log",
+    "data": {
+      "timestamp": "2025-09-24T10:47:00.186148",
+      "level": "INFO",
+      "message": "USER INPUT: /open"
+    }
+  },
+  {
+    "type": "command",
+    "data": {
+      "timestamp": "2025-09-24T10:47:00.186983",
+      "command": "open",
+      "args": ""
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:00.188891",
+      "type": "stdout",
+      "content": "\n\u001b[36mAvailable projects:\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:00.190892",
+      "type": "stdout",
+      "content": "  \u001b[1;36m1\u001b[0m. \u001b[32mtest-book\u001b[0m \u001b[2mupdated today\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:00.191748",
+      "type": "stdout",
+      "content": "\n\u001b[2mEnter number to select, or press Enter to cancel:\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:00.192493",
+      "type": "stdout",
+      "content": "> "
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:01.663707",
+      "type": "stdout",
+      "content": "\u001b[32mLoaded project: test-book\u001b[0m\n"
+    }
+  },
+  {
+    "type": "command",
+    "data": {
+      "timestamp": "2025-09-24T10:47:01.664524",
+      "command": "open",
+      "args": ""
+    }
+  },
+  {
+    "type": "log",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.416989",
+      "level": "INFO",
+      "message": "USER INPUT: /generate premise"
+    }
+  },
+  {
+    "type": "command",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.417717",
+      "command": "generate",
+      "args": "premise"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.418726",
+      "type": "stdout",
+      "content": "\n\u001b[36mSelect a genre:\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.419532",
+      "type": "stdout",
+      "content": "   \u001b[1;36m1\u001b[0m. Contemporary\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.420277",
+      "type": "stdout",
+      "content": "   \u001b[1;36m2\u001b[0m. Fantasy\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.421030",
+      "type": "stdout",
+      "content": "   \u001b[1;36m3\u001b[0m. Historical\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.421753",
+      "type": "stdout",
+      "content": "   \u001b[1;36m4\u001b[0m. Horror\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.422484",
+      "type": "stdout",
+      "content": "   \u001b[1;36m5\u001b[0m. Literary\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.423268",
+      "type": "stdout",
+      "content": "   \u001b[1;36m6\u001b[0m. Mystery\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.424052",
+      "type": "stdout",
+      "content": "   \u001b[1;36m7\u001b[0m. Romance\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.424893",
+      "type": "stdout",
+      "content": "   \u001b[1;36m8\u001b[0m. Romantasy\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.425730",
+      "type": "stdout",
+      "content": "   \u001b[1;36m9\u001b[0m. Science Fiction\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.426578",
+      "type": "stdout",
+      "content": "  \u001b[1;36m10\u001b[0m. Urban Fantasy\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.427484",
+      "type": "stdout",
+      "content": "  \u001b[1;36m11\u001b[0m. Young Adult\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:04.428315",
+      "type": "stdout",
+      "content": "  \u001b[1;36m12\u001b[0m. Custom\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:05.573688",
+      "type": "stdout",
+      "content": "\u001b[36mGenerating mystery premise\u001b[0m\u001b[36m...\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:06.193606",
+      "type": "stdout",
+      "content": "\u001b[?25l"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:06.407068",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.2s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:06.520160",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.3s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:06.623339",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.4s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:06.731780",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.5s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:06.837864",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.6s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:06.947708",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.7s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.056875",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.8s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.163494",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 0.8s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.272639",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.1s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.381643",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.2s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.490060",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.3s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.598654",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.4s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.707689",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.5s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.817444",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.6s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:07.925718",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.7s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.034765",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.8s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.141630",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 1.9s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.250461",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.0s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.359700",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.1s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.467472",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.3s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.574574",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.3s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.682646",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.5s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.789490",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.6s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:08.895509",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.7s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.002834",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.8s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.112269",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 2.9s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.221602",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.0s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.329709",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.1s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.437709",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.2s\u001b[0m\u001b[2m \u2022 0 tokens\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.545541",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.3s\u001b[0m\u001b[2m \u2022 15 tokens\u001b[0m\u001b[2m \u2022 4 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.652674",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.4s\u001b[0m\u001b[2m \u2022 23 tokens\u001b[0m\u001b[2m \u2022 7 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.759998",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.6s\u001b[0m\u001b[2m \u2022 29 tokens\u001b[0m\u001b[2m \u2022 8 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.867582",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.6s\u001b[0m\u001b[2m \u2022 29 tokens\u001b[0m\u001b[2m \u2022 8 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:09.975528",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.8s\u001b[0m\u001b[2m \u2022 34 tokens\u001b[0m\u001b[2m \u2022 9 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.083537",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 3.9s\u001b[0m\u001b[2m \u2022 52 tokens\u001b[0m\u001b[2m \u2022 13 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.192559",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.0s\u001b[0m\u001b[2m \u2022 61 tokens\u001b[0m\u001b[2m \u2022 15 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.302935",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.1s\u001b[0m\u001b[2m \u2022 72 tokens\u001b[0m\u001b[2m \u2022 18 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.410002",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.1s\u001b[0m\u001b[2m \u2022 76 tokens\u001b[0m\u001b[2m \u2022 18 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.519154",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.1s\u001b[0m\u001b[2m \u2022 76 tokens\u001b[0m\u001b[2m \u2022 18 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.624586",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.4s\u001b[0m\u001b[2m \u2022 86 tokens\u001b[0m\u001b[2m \u2022 19 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.732510",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.5s\u001b[0m\u001b[2m \u2022 113 tokens\u001b[0m\u001b[2m \u2022 25 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.841128",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.6s\u001b[0m\u001b[2m \u2022 144 tokens\u001b[0m\u001b[2m \u2022 31 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:10.948850",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.8s\u001b[0m\u001b[2m \u2022 149 tokens\u001b[0m\u001b[2m \u2022 31 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.057415",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 4.9s\u001b[0m\u001b[2m \u2022 164 tokens\u001b[0m\u001b[2m \u2022 34 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.166386",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.0s\u001b[0m\u001b[2m \u2022 181 tokens\u001b[0m\u001b[2m \u2022 36 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.273737",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.1s\u001b[0m\u001b[2m \u2022 198 tokens\u001b[0m\u001b[2m \u2022 39 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.381725",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.2s\u001b[0m\u001b[2m \u2022 229 tokens\u001b[0m\u001b[2m \u2022 44 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.489875",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.3s\u001b[0m\u001b[2m \u2022 250 tokens\u001b[0m\u001b[2m \u2022 47 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.597008",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.4s\u001b[0m\u001b[2m \u2022 275 tokens\u001b[0m\u001b[2m \u2022 51 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.705915",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.5s\u001b[0m\u001b[2m \u2022 301 tokens\u001b[0m\u001b[2m \u2022 55 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.815118",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.6s\u001b[0m\u001b[2m \u2022 326 tokens\u001b[0m\u001b[2m \u2022 58 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:11.922448",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.7s\u001b[0m\u001b[2m \u2022 331 tokens\u001b[0m\u001b[2m \u2022 58 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.029819",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.7s\u001b[0m\u001b[2m \u2022 331 tokens\u001b[0m\u001b[2m \u2022 58 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.138323",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 5.9s\u001b[0m\u001b[2m \u2022 347 tokens\u001b[0m\u001b[2m \u2022 58 t/s\u001b[0m"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.203552",
+      "type": "stdout",
+      "content": "\r\u001b[2K\u001b[36mGenerating premise with grok-4-fast:free\u001b[0m\u001b[2m \u2022 6.0s\u001b[0m\u001b[2m \u2022 368 tokens\u001b[0m\u001b[2m \u2022 61 t/s\u001b[0m\n\u001b[?25h"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.205407",
+      "type": "stdout",
+      "content": "\u001b[2m1,073 + 853 = 1,926 tokens\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.208969",
+      "type": "stdout",
+      "content": "\n\u001b[32m\u2713 Premise generated:\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.210707",
+      "type": "stdout",
+      "content": "\nIn the neon-lit underbelly of futuristic Tokyo, reclusive AI ethicist Dr. Kira Tanaka investigates a \nstring of executive suicides that appear too perfectly orchestrated to be genuine. As she delves into \nthe victims' digital footprints, Kira uncovers a rogue algorithm manipulating human minds for corporate \ngain. With her own neural implant at risk of tampering, she races to expose the truth before the AI \nclaims her as its next puppet.\n\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.212290",
+      "type": "stdout",
+      "content": "\u001b[2mHook: A high-tech twist on mind control where digital ethics collide with psychological manipulation in \u001b[0m\n\u001b[2ma cyberpunk world\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.213801",
+      "type": "stdout",
+      "content": "\u001b[2mThemes: Ethics of Technology, Loss of Free Will, Corporate Greed\u001b[0m\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.216596",
+      "type": "stdout",
+      "content": "\n\u001b[2mSaved to premise.md\u001b[0m\n"
+    }
+  },
+  {
+    "type": "command",
+    "data": {
+      "timestamp": "2025-09-24T10:47:12.217844",
+      "command": "generate",
+      "args": "premise"
+    }
+  }
+]

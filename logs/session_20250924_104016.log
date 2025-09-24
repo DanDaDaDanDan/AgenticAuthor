@@ -68,3 +68,70 @@ hidden ties, Nora must race to expose the conspiracy before she's erased from th
 [2mSaved to premise.md[0m
 
 [10:40:36] COMMAND: generate premise
+[10:46:40.329] [INFO] USER INPUT: /reload
+
+[10:46:40] COMMAND: reload
+[33mReloading modules[0m[33m...[0m
+[32mReloaded [0m[1;32m11[0m[32m modules:[0m
+  • src.generation.premise
+  • src.generation.treatment
+  • src.generation.chapters
+  • src.generation.prose
+  • src.generation.taxonomies
+  • src.cli.command_completer
+  • src.cli.auto_suggest
+  • src.models
+  • src.api.openrouter
+  • src.config
+  • src.storage.git_manager
+[33mNote: Some changes may require restart for full effect[0m
+[2mFor complete reload, use [0m[2;35m/[0m[2;95mexit[0m[2m and restart[0m
+
+[10:46:40] COMMAND: reload
+[10:46:44.121] [INFO] USER INPUT: /generate premise
+
+[10:46:44] COMMAND: generate premise
+
+[36mSelect a genre:[0m
+   [1;36m1[0m. Contemporary
+   [1;36m2[0m. Fantasy
+   [1;36m3[0m. Historical
+   [1;36m4[0m. Horror
+   [1;36m5[0m. Literary
+   [1;36m6[0m. Mystery
+   [1;36m7[0m. Romance
+   [1;36m8[0m. Romantasy
+   [1;36m9[0m. Science Fiction
+  [1;36m10[0m. Urban Fantasy
+  [1;36m11[0m. Young Adult
+  [1;36m12[0m. Custom
+[36mGenerating mystery premise[0m[36m...[0m
+[?25l[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 0.2s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 0.3s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 0.4s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 0.5s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 0.6s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 0.8s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 0.9s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.0s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.1s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.2s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.3s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.4s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.5s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.6s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.7s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.8s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 1.8s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.0s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.1s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.3s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.4s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.5s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.6s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.7s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.8s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 2.9s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.0s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.1s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.3s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.3s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.5s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.6s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.7s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.8s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 3.9s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.0s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.1s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.2s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.3s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.4s[0m[2m • 0 tokens[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.5s[0m[2m • 14 tokens[0m[2m • 3 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.6s[0m[2m • 16 tokens[0m[2m • 4 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.8s[0m[2m • 24 tokens[0m[2m • 5 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 4.9s[0m[2m • 40 tokens[0m[2m • 8 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.0s[0m[2m • 62 tokens[0m[2m • 12 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.0s[0m[2m • 67 tokens[0m[2m • 13 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.2s[0m[2m • 77 tokens[0m[2m • 15 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.3s[0m[2m • 92 tokens[0m[2m • 17 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.4s[0m[2m • 110 tokens[0m[2m • 20 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.5s[0m[2m • 123 tokens[0m[2m • 22 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.6s[0m[2m • 131 tokens[0m[2m • 23 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.6s[0m[2m • 131 tokens[0m[2m • 23 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.9s[0m[2m • 132 tokens[0m[2m • 23 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 5.9s[0m[2m • 137 tokens[0m[2m • 23 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.0s[0m[2m • 143 tokens[0m[2m • 24 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.0s[0m[2m • 143 tokens[0m[2m • 24 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.3s[0m[2m • 145 tokens[0m[2m • 23 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.3s[0m[2m • 151 tokens[0m[2m • 24 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.5s[0m[2m • 167 tokens[0m[2m • 26 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.6s[0m[2m • 193 tokens[0m[2m • 29 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.7s[0m[2m • 216 tokens[0m[2m • 32 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.8s[0m[2m • 317 tokens[0m[2m • 47 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 6.9s[0m[2m • 356 tokens[0m[2m • 51 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 7.1s[0m[2m • 388 tokens[0m[2m • 55 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 7.1s[0m[2m • 411 tokens[0m[2m • 58 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 7.3s[0m[2m • 414 tokens[0m[2m • 57 t/s[0m[2K[36mGenerating premise with grok-4-fast:free[0m[2m • 7.3s[0m[2m • 414 tokens[0m[2m • 57 t/s[0m
+[?25h[2m1,069 + 1,041 = 2,110 tokens[0m
+
+[32m✓ Premise generated:[0m
+
+Sharp-witted defense attorney Elena Vasquez defends a street artist accused of stealing a priceless 
+painting from a high-society gala, only to uncover a sophisticated extortion ring preying on New York's 
+elite art collectors. As Elena delves into the shadows of the art world, she realizes the theft was 
+orchestrated to cover up a larger blackmail scheme that threatens her client's life and her own career. 
+With the trial days away, Elena races to expose the culprits before they silence her permanently.
+
+[2mHook: The fusion of courtroom drama and the cutthroat underbelly of the modern art market creates a [0m
+[2mhigh-stakes puzzle where every brushstroke hides a secret.[0m
+[2mThemes: Justice versus corruption, The illusion of high society, Personal sacrifice for truth[0m
+
+[2mSaved to premise.md[0m
+
+[10:46:53] COMMAND: generate premise
+[10:46:55.808] [INFO] USER INPUT: /exit
+
+[10:46:55] COMMAND: exit
+[2mSaving test-book[0m[2;33m...[0m
+[36mGoodbye![0m
+
+[10:46:55] COMMAND: exit
+
+==================================================
+Session ended: 2025-09-24T10:46:55.821255
+Duration: 0:06:38.831015

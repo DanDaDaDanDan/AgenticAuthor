@@ -81,10 +81,15 @@ class StreamHandler:
                             if token and not field_found:
                                 # Check if we now have the field pattern
                                 field_pattern = f'"{display_field}":'
-                                if field_pattern in full_content:
+                                # Also check for field pattern with spaces
+                                field_pattern_spaced = f'"{display_field}" :'
+                                if field_pattern in full_content or field_pattern_spaced in full_content:
                                     field_found = True
-                                    # Find where the value starts
+                                    # Find where the value starts (try both patterns)
                                     field_idx = full_content.find(field_pattern)
+                                    if field_idx == -1:
+                                        field_idx = full_content.find(field_pattern_spaced)
+                                        field_pattern = field_pattern_spaced
                                     after_field = full_content[field_idx + len(field_pattern):]
                                     # Skip whitespace and find opening quote
                                     after_field = after_field.lstrip()
