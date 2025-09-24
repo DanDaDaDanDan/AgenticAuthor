@@ -1,11 +1,12 @@
 """Unit tests for the interactive REPL session."""
 import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch, AsyncMock, MagicMock
 import asyncio
+from datetime import datetime, timezone
 
 from src.cli.interactive import InteractiveSession
-from src.models import Project
+from src.models import Project, ProjectMetadata
 from src.config import get_settings
 
 
@@ -221,3 +222,88 @@ class TestInteractiveSession:
             # Should return HTML prompt
             assert '>' in str(prompt)
             assert 'prompt' in str(prompt).lower()
+
+    def test_open_project_interactive_selection(self, mock_api_key, temp_dir):
+        """Test interactive project selection with arrow keys."""
+        # Create test projects
+        project1 = Project.create(
+            temp_dir / "test-project-1",
+            name="Test Project 1",
+            genre="fantasy"
+        )
+        project1.metadata.word_count = 5000
+        project1.metadata.updated_at = datetime.now(timezone.utc)
+        project1.save_metadata()
+
+        project2 = Project.create(
+            temp_dir / "test-project-2",
+            name="Test Project 2",
+            genre="sci-fi"
+        )
+        project2.metadata.word_count = 10000
+        project2.metadata.updated_at = datetime.now(timezone.utc)
+        project2.save_metadata()
+
+        with patch.object(InteractiveSession, '_create_prompt_session', return_value=Mock()):
+            session = InteractiveSession()
+            session.settings.books_dir = temp_dir
+
+            # Mock radiolist_dialog to simulate user selection
+            with patch('src.cli.interactive.radiolist_dialog') as mock_dialog:
+                mock_run = Mock(return_value=temp_dir / "test-project-1")
+                mock_dialog.return_value.run = mock_run
+
+                # Call open_project without args to trigger interactive selection
+                session.open_project("")
+
+                # Verify dialog was called
+                mock_dialog.assert_called_once()
+                call_kwargs = mock_dialog.call_args.kwargs
+
+                # Check dialog configuration
+                assert call_kwargs['title'] == "Select Project"
+                assert 'arrow keys' in call_kwargs['text'].lower()
+
+                # Check that projects are in values
+                values = call_kwargs['values']
+                assert len(values) == 2
+
+                # Check project display names include metadata
+                display_names = [v[1] for v in values]
+                assert any('fantasy' in name and '5,000 words' in name for name in display_names)
+                assert any('sci-fi' in name and '10,000 words' in name for name in display_names)
+
+                # Verify project was loaded
+                assert session.project is not None
+                assert session.project.name == "test-project-1"
+
+    def test_open_project_with_direct_name(self, mock_api_key, temp_dir):
+        """Test opening project with direct name argument."""
+        project = Project.create(
+            temp_dir / "direct-project",
+            name="Direct Project"
+        )
+
+        with patch.object(InteractiveSession, '_create_prompt_session', return_value=Mock()):
+            session = InteractiveSession()
+            session.settings.books_dir = temp_dir
+
+            # Open with direct name
+            session.open_project("direct-project")
+
+            # Should load without dialog
+            assert session.project is not None
+            assert session.project.name == "direct-project"
+
+    def test_open_project_no_projects(self, mock_api_key, temp_dir):
+        """Test open_project when no projects exist."""
+        with patch.object(InteractiveSession, '_create_prompt_session', return_value=Mock()):
+            session = InteractiveSession()
+            session.settings.books_dir = temp_dir
+
+            with patch.object(session.console, 'print') as mock_print:
+                session.open_project("")
+
+                # Should show warning
+                mock_print.assert_any_call("[yellow]No projects found[/yellow]")
+                mock_print.assert_any_call("[dim]Create one with /new[/dim]")

@@ -3,13 +3,14 @@ import asyncio
 import re
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.shortcuts import radiolist_dialog
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
@@ -112,18 +113,36 @@ class InteractiveSession:
 
         @kb.add('/')
         def _(event):
-            """Auto-show completions when / is typed."""
+            """Just insert / without starting completion (since complete_while_typing=False)."""
             event.current_buffer.insert_text('/')
-            event.current_buffer.start_completion()
 
         @kb.add('tab')
         def _(event):
-            """Handle tab completion."""
+            """Handle tab completion - accept suggestion or complete."""
             buff = event.current_buffer
+
+            # If there's an auto-suggestion, accept it
+            if buff.suggestion and buff.suggestion.text:
+                buff.insert_text(buff.suggestion.text)
+                return
+
+            # If we're already in completion state, cycle through
             if buff.complete_state:
                 buff.complete_next()
             else:
+                # Get current text to check for completions
+                text = buff.text
+
+                # Start completion to get the list
                 buff.start_completion()
+
+                # If there's only one completion, insert it directly and cancel menu
+                if buff.complete_state and len(buff.complete_state.completions) == 1:
+                    completion = buff.complete_state.completions[0]
+                    # Insert the completion text
+                    buff.insert_text(completion.text)
+                    # Cancel the completion menu
+                    buff.cancel_completion()
 
         # Create session
         history_file = Path.home() / '.agentic' / 'history'
@@ -140,7 +159,7 @@ class InteractiveSession:
             style=style,
             multiline=False,
             mouse_support=True,
-            complete_while_typing=True,
+            complete_while_typing=False,  # Only complete on Tab
             key_bindings=kb,
             enable_history_search=True
         )
@@ -398,24 +417,75 @@ class InteractiveSession:
         """Open an existing project."""
         if not args:
             # List available projects
-            projects = list(self.settings.books_dir.glob("*"))
+            projects = []
+            for p in self.settings.books_dir.glob("*"):
+                if (p / "project.yaml").exists():
+                    projects.append(p)
+
             if not projects:
                 self.console.print("[yellow]No projects found[/yellow]")
                 self.console.print("[dim]Create one with /new[/dim]")
                 return
 
-            self.console.print("[cyan]Available projects:[/cyan]")
+            # Create list of project choices with metadata
+            choices = []
             for p in projects:
-                if (p / "project.yaml").exists():
-                    self.console.print(f"  - {p.name}")
+                try:
+                    project = Project(p)
+                    # Get basic info for display
+                    info_parts = []
+                    if project.metadata:
+                        if project.metadata.genre:
+                            info_parts.append(project.metadata.genre)
+                        if project.metadata.word_count:
+                            info_parts.append(f"{project.metadata.word_count:,} words")
+                        if project.metadata.updated_at:
+                            days_ago = (datetime.now(timezone.utc) - project.metadata.updated_at).days
+                            if days_ago == 0:
+                                info_parts.append("updated today")
+                            elif days_ago == 1:
+                                info_parts.append("updated yesterday")
+                            else:
+                                info_parts.append(f"updated {days_ago} days ago")
 
-            name = self.console.input("Project name: ")
-            if not name:
+                    description = " - ".join(info_parts) if info_parts else ""
+                    display_name = f"{p.name}"
+                    if description:
+                        display_name += f" ({description})"
+
+                    choices.append((p, display_name))
+                except:
+                    # If we can't load the project, just show the name
+                    choices.append((p, p.name))
+
+            # Use radiolist dialog for interactive selection
+            try:
+                selected = radiolist_dialog(
+                    title="Select Project",
+                    text="Use arrow keys to navigate, Enter to select, Esc to cancel:",
+                    values=choices,
+                    style=Style.from_dict({
+                        'dialog': 'bg:#282828',
+                        'dialog.body': 'bg:#282828 fg:#ffffff',
+                        'dialog.title': 'fg:#00aaff bold',
+                        'radio-list': 'bg:#282828',
+                        'radio-checked': 'fg:#00ff00 bold',
+                        'radio-selected': 'fg:#ffff00 bold reverse',
+                    })
+                ).run()
+
+                if selected:
+                    path = selected
+                else:
+                    return
+            except (KeyboardInterrupt, EOFError):
                 return
-
-            path = self.settings.books_dir / name
         else:
-            path = Path(args).expanduser().resolve()
+            # If argument provided, use it directly
+            if (self.settings.books_dir / args).exists():
+                path = self.settings.books_dir / args
+            else:
+                path = Path(args).expanduser().resolve()
 
         self.load_project(path)
 

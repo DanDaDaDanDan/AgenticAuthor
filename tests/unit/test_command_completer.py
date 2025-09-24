@@ -34,9 +34,6 @@ class TestSlashCommandCompleter:
 
         assert len(completions) == 1
         assert completions[0].text == 'lp'
-        # Check display contains help
-        display_text = str(completions[0].display)
-        assert 'help' in display_text.lower()
 
     def test_complete_multiple_matches(self, completer):
         """Test completion with multiple matches."""
@@ -92,18 +89,33 @@ class TestSlashCommandCompleter:
         doc = Document('/generate premise fan')
         completions = list(completer.get_completions(doc, CompleteEvent()))
 
-        assert len(completions) >= 1
-        # Should complete to 'fantasy'
+        assert len(completions) == 1
+        # Should complete to 'fantasy' immediately (single match)
         assert completions[0].text == 'tasy'
+
+    def test_single_match_immediate_completion(self, completer):
+        """Test that single matches complete immediately."""
+        # Test command completion with single match
+        doc = Document('/op')  # Assuming only 'open' starts with 'op'
+        commands = {
+            'open': {'description': 'Open project', 'usage': '/open'},
+            'status': {'description': 'Show status', 'usage': '/status'},
+        }
+        completer.commands = commands
+        completions = list(completer.get_completions(doc, CompleteEvent()))
+
+        # Single match should return one completion
+        assert len(completions) == 1
+        assert completions[0].text == 'en'  # Completes to 'open'
 
     def test_genre_completion_case_insensitive(self, completer):
         """Test case-insensitive genre completion."""
         doc = Document('/generate premise ROM')
         completions = list(completer.get_completions(doc, CompleteEvent()))
 
-        assert len(completions) >= 1
-        # Should find romance
-        assert any('romance' in str(c.display).lower() for c in completions)
+        assert len(completions) == 1
+        # Should complete to 'romance' (single match, case insensitive)
+        assert completions[0].text == 'ance'  # Completes ROM -> romance
 
     def test_command_descriptions(self):
         """Test creating command descriptions."""

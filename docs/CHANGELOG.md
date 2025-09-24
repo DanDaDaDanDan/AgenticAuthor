@@ -5,6 +5,21 @@ All notable changes to AgenticAuthor will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Interactive Project Selection**
+  - `/open` command now shows interactive menu with arrow key navigation
+  - Displays project metadata (genre, word count, last updated)
+  - Navigate with ↑/↓ arrows, select with Enter, cancel with Esc
+  - Can still provide project name directly as argument
+
+### Fixed
+- **Tab Completion**
+  - Tab now immediately completes when there's only one match instead of showing a menu
+  - Changed `complete_while_typing` to `False` so completions only show on Tab press
+  - Example: `/op` + Tab → immediately completes to `/open` (no menu needed)
+
 ## [0.2.0] - 2025-09-23
 
 ### Added

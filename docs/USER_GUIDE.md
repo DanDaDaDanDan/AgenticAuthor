@@ -98,6 +98,11 @@ Press Tab to complete:
 - Genres: `/generate premise fan` → `/generate premise fantasy`
 - Models: `/model clau` → `/model anthropic/claude-3-opus`
 
+**Behavior:**
+- Single match: Completes immediately when Tab is pressed
+- Multiple matches: Shows selection menu to choose from
+- Example: `/op` + Tab → `/open` (instant completion)
+
 ## Configuration
 
 ### Environment Variables
@@ -253,7 +258,12 @@ Create a new book project.
 
 #### `/open [path]`
 Open an existing project.
-- **path** (optional): Path to project. If not provided, shows list of available projects.
+- **path** (optional): Path to project. If not provided, opens an interactive selection menu.
+- Features:
+  - Interactive selection with arrow keys (↑/↓)
+  - Shows project metadata (genre, word count, last updated)
+  - Press Enter to select, Esc to cancel
+  - Can also type project name directly as argument
 
 #### `/status`
 Show current project status.
