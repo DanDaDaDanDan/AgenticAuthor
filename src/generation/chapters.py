@@ -163,10 +163,7 @@ class ChapterGenerator:
                 with open(chapters_file, 'w') as f:
                     yaml.dump(chapters_data, f, default_flow_style=False, sort_keys=False)
 
-                # Git commit
-                if self.project.git:
-                    self.project.git.add()
-                    self.project.git.commit(f"Generate chapter outlines ({chapter_count} chapters)")
+                # Git commit handled by caller if needed
 
                 return chapters
 

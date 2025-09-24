@@ -334,7 +334,8 @@ class LoggingWriter:
         self.original = original
         self.logger = logger
         self.stream_type = stream_type
-        self.buffer = StringIO()
+        # Provide buffer attribute that prompt_toolkit expects
+        self.buffer = getattr(original, 'buffer', original)
 
     def write(self, text):
         """Write to both original stream and logger."""

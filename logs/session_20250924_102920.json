@@ -1,0 +1,51 @@
+[
+  {
+    "type": "session_start",
+    "data": {
+      "timestamp": "2025-09-24T10:29:20.232643",
+      "log_file": "logs\\session_20250924_102920.log",
+      "pid": 24708
+    }
+  },
+  {
+    "type": "log",
+    "data": {
+      "timestamp": "2025-09-24T10:29:20.233679",
+      "level": "INFO",
+      "message": "Starting interactive session (default launch)"
+    }
+  },
+  {
+    "type": "log",
+    "data": {
+      "timestamp": "2025-09-24T10:29:20.236105",
+      "level": "INFO",
+      "message": "InteractiveSession initialized"
+    }
+  },
+  {
+    "type": "error",
+    "data": {
+      "timestamp": "2025-09-24T10:29:20.244038",
+      "context": "Unhandled exception in default launch",
+      "error": "string argument expected, got 'bytes'",
+      "type": "TypeError",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\Personal\\Projects\\AgenticAuthor\\src\\cli\\main.py\", line 363, in main\n    session = InteractiveSession(None, logger=logger)\n  File \"D:\\Personal\\Projects\\AgenticAuthor\\src\\cli\\interactive.py\", line 89, in __init__\n    self.session = self._create_prompt_session()\n                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"D:\\Personal\\Projects\\AgenticAuthor\\src\\cli\\interactive.py\", line 164, in _create_prompt_session\n    return PromptSession(\n        history=history,\n    ...<7 lines>...\n        enable_history_search=True\n    )\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\shortcuts\\prompt.py\", line 483, in __init__\n    self.app = self._create_application(editing_mode, erase_when_done)\n               ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\shortcuts\\prompt.py\", line 744, in _create_application\n    application: Application[_T] = Application(\n                                   ~~~~~~~~~~~^\n        layout=self.layout,\n        ^^^^^^^^^^^^^^^^^^^\n    ...<36 lines>...\n        output=self._output,\n        ^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\application\\application.py\", line 307, in __init__\n    self.renderer = Renderer(\n                    ~~~~~~~~^\n        self._merged_style,\n        ^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n        cpr_not_supported_callback=self.cpr_not_supported_callback,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\renderer.py\", line 380, in __init__\n    self.reset(_scroll=True)\n    ~~~~~~~~~~^^^^^^^^^^^^^^\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\renderer.py\", line 429, in reset\n    self.output.flush()\n    ~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\output\\windows10.py\", line 59, in flush\n    self.vt100_output.flush()\n    ~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\output\\vt100.py\", line 706, in flush\n    flush_stdout(self.stdout, data)\n    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\daniel.vogel\\AppData\\Roaming\\Python\\Python313\\site-packages\\prompt_toolkit\\output\\flush_stdout.py\", line 33, in flush_stdout\n    stdout.buffer.write(data.encode(stdout.encoding or \"utf-8\", \"replace\"))\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: string argument expected, got 'bytes'\n"
+    }
+  },
+  {
+    "type": "console",
+    "data": {
+      "timestamp": "2025-09-24T10:29:20.255343",
+      "type": "stdout",
+      "content": "\u001b[31mError: string argument expected, got \u001b[0m\u001b[31m'bytes'\u001b[0m\n"
+    }
+  },
+  {
+    "type": "session_end",
+    "data": {
+      "timestamp": "2025-09-24T10:29:20.256240",
+      "duration": "0:00:00.023599"
+    }
+  }
+]

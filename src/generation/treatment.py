@@ -121,9 +121,6 @@ class TreatmentGenerator:
                 # Save treatment
                 self.project.save_treatment(content)
 
-                # Extract content from response
-                content = result.get('content', result) if isinstance(result, dict) else result
-
                 # Save metadata
                 treatment_metadata = {
                     'word_count': len(content.split()),
@@ -134,12 +131,11 @@ class TreatmentGenerator:
                 with open(metadata_file, 'w') as f:
                     json.dump(treatment_metadata, f, indent=2)
 
-                # Git commit
-                if self.project.git:
-                    self.project.git.add()
-                    self.project.git.commit(f"Generate treatment from premise ({target_words} words)")
+                # Git commit handled by caller if needed
 
-            return result
+                return content
+
+            return None
 
         except Exception as e:
             raise Exception(f"Failed to generate treatment: {e}")

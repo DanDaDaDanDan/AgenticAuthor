@@ -193,10 +193,7 @@ class ProseGenerator:
                 with open(chapters_file, 'w') as f:
                     yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
 
-                # Git commit
-                if self.project.git:
-                    self.project.git.add()
-                    self.project.git.commit(f"Generate chapter {chapter_number} prose: {chapter_data['title']}")
+                # Git commit handled by caller if needed
 
                 return formatted_content
 
@@ -277,10 +274,7 @@ Return the complete revised chapter prose (including the chapter title header)."
             with open(chapters_file, 'w') as f:
                 yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
 
-            # Git commit
-            if self.project.git:
-                self.project.git.add()
-                self.project.git.commit(f"Iterate chapter {chapter_number}: {feedback[:50]}")
+            # Git commit handled by caller if needed
 
             return result
 

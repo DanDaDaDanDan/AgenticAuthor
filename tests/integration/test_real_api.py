@@ -152,7 +152,7 @@ class TestRealAPIIntegration:
         # First create a premise
         test_project.save_premise("A young mage discovers ancient powers")
 
-        real_client.settings.active_model = TEST_MODEL
+        real_client.settings.set_model(TEST_MODEL)
         generator = TreatmentGenerator(real_client, test_project)
 
         result = await generator.generate(target_words=500)  # Short for testing
@@ -168,7 +168,7 @@ class TestRealAPIIntegration:
         test_project.save_premise("A hero's journey")
         test_project.save_treatment("Act 1: Beginning\nAct 2: Middle\nAct 3: End")
 
-        real_client.settings.active_model = TEST_MODEL
+        real_client.settings.set_model(TEST_MODEL)
         generator = ChapterGenerator(real_client, test_project)
 
         result = await generator.generate(num_chapters=3)  # Just 3 for testing
@@ -194,7 +194,7 @@ class TestRealAPIIntegration:
         }
         test_project.save_chapter_outlines(outline)
 
-        real_client.settings.active_model = TEST_MODEL
+        real_client.settings.set_model(TEST_MODEL)
         generator = ProseGenerator(real_client, test_project)
 
         result = await generator.generate(chapter_num=1, target_words=300)
@@ -256,7 +256,7 @@ class TestRealAPIIntegration:
         assert "premise" in premise_result
 
         # 2. Generate treatment
-        real_client.settings.active_model = TEST_MODEL
+        real_client.settings.set_model(TEST_MODEL)
         treatment_gen = TreatmentGenerator(real_client, test_project)
         treatment_result = await treatment_gen.generate(target_words=300)
         assert treatment_result is not None
