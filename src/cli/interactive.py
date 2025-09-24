@@ -861,7 +861,7 @@ class InteractiveSession:
             )
 
             if result and 'premise' in result:
-                # Print the premise content
+                # For premise, we need to print since JSON completion doesn't show during streaming
                 self.console.print(result['premise'])
                 self.console.print()  # Blank line
 
@@ -937,8 +937,6 @@ class InteractiveSession:
 
         if result:
             word_count = len(result.split())
-            # Print final result after streaming
-            self.console.print(result)
             self.console.print()  # Blank line
             self.console.rule(style="dim")  # Divider after content
             self.console.print(f"[green]✓ Treatment generated: {word_count} words[/green]")
@@ -1018,8 +1016,6 @@ class InteractiveSession:
 
                 if result:
                     word_count = len(result.split())
-                    # Print full chapter content
-                    self.console.print(result)
                     self.console.print()  # Blank line
                     self.console.rule(style="dim")
                     self.console.print(f"[green]✓ Chapter {chapter_num} generated: {word_count} words[/green]")

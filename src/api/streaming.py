@@ -50,7 +50,8 @@ class StreamHandler:
         usage = {}  # Track usage info from stream
 
         # Create live display - don't use transient to avoid clearing screen
-        live = Live(console=self.console, refresh_per_second=10, transient=False)
+        # Use vertical_overflow="visible" to allow scrolling
+        live = Live(console=self.console, refresh_per_second=10, transient=False, vertical_overflow="visible")
         live.start()
 
         try:
@@ -207,7 +208,8 @@ class StreamHandler:
 
         if display:
             # Create live display - don't use transient to avoid clearing screen
-            live = Live(console=self.console, refresh_per_second=10, transient=False)
+            # Use vertical_overflow="visible" to allow scrolling
+            live = Live(console=self.console, refresh_per_second=10, transient=False, vertical_overflow="visible")
             live.start()
         else:
             live = None
@@ -244,14 +246,14 @@ class StreamHandler:
                                 on_token(token, token_count)
 
                             # Update display with status
-                            if live and display:
+                            if live:
                                 elapsed = time.time() - start_time
                                 tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                                # Create status-only display (no content to avoid scrolling issues)
+                                # Create inline display like Claude Code
                                 display_lines = []
 
-                                # Status line with token info
+                                # Status line
                                 status_text = Text()
                                 status_text.append(f"Generating with {model_name}", style="cyan")
                                 status_text.append(f" • {elapsed:.1f}s", style="dim")
@@ -260,12 +262,9 @@ class StreamHandler:
                                     status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
                                 display_lines.append(status_text)
 
-                                # Show last few words of content as preview
-                                if content:
-                                    last_words = content.split()[-10:]  # Last 10 words
-                                    preview = "..." + " ".join(last_words) if len(content.split()) > 10 else content
-                                    display_lines.append("")  # Empty line
-                                    display_lines.append(Text(preview, style="dim"))
+                                # Content - show full content as it streams
+                                display_lines.append("")  # Empty line
+                                display_lines.append(Text(content))
 
                                 # Update live display
                                 from rich.console import Group
