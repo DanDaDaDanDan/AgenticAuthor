@@ -1,6 +1,8 @@
 """Interactive REPL interface using prompt_toolkit."""
 import asyncio
 import re
+import importlib
+import sys
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
@@ -30,12 +32,13 @@ from ..utils.logging import setup_logging, get_logger
 class InteractiveSession:
     """Interactive REPL session for AgenticAuthor."""
 
-    def __init__(self, project_path: Optional[Path] = None):
+    def __init__(self, project_path: Optional[Path] = None, logger=None):
         """
         Initialize interactive session.
 
         Args:
             project_path: Optional path to existing project
+            logger: Optional SessionLogger instance
         """
         self.settings = get_settings()
         self.console = Console()
@@ -45,9 +48,14 @@ class InteractiveSession:
         self.git: Optional[GitManager] = None
         self.running = False
 
-        # Setup logging
+        # Use provided logger or setup basic logging
+        self.session_logger = logger
         self.logger = setup_logging(level="DEBUG")
         self.logger.info("InteractiveSession initialized")
+
+        # Log initialization
+        if self.session_logger:
+            self.session_logger.log("InteractiveSession initialized", "INFO")
 
         # Command handlers - initialize before prompt session
         self.commands = {
@@ -66,6 +74,8 @@ class InteractiveSession:
             'git': self.git_command,
             'config': self.show_config,
             'clear': self.clear_screen,
+            'reload': self.reload_modules,
+            'logs': self.show_logs,
         }
 
         # Cache for model IDs (populated when client is initialized)
@@ -277,6 +287,10 @@ class InteractiveSession:
         """
         self.logger.debug(f"Processing input: {user_input}")
 
+        # Log user input
+        if self.session_logger:
+            self.session_logger.log(f"USER INPUT: {user_input}", "INFO")
+
         # Check if it's a slash command
         if user_input.startswith('/'):
             # Command format: /command args
@@ -288,15 +302,19 @@ class InteractiveSession:
             if command in self.commands:
                 await self._run_command(command, args)
             else:
-                self.console.print(f"[red]Unknown command: /{command}[/red]")
+                error_msg = f"Unknown command: /{command}"
+                if self.session_logger:
+                    self.session_logger.log(error_msg, "WARNING")
+                self.console.print(f"[red]{error_msg}[/red]")
                 self.console.print("[dim]Type /help for available commands[/dim]")
 
         else:
             # Natural language feedback - send to iteration system
             if not self.project:
-                self.console.print(
-                    "[yellow]No project loaded. Use /new or /open first.[/yellow]"
-                )
+                msg = "No project loaded. Use /new or /open first."
+                if self.session_logger:
+                    self.session_logger.log(msg, "WARNING")
+                self.console.print(f"[yellow]{msg}[/yellow]")
             else:
                 await self.process_feedback(user_input)
 
@@ -304,11 +322,27 @@ class InteractiveSession:
         """Run a command handler."""
         handler = self.commands[command]
 
-        # Check if handler is async
-        if asyncio.iscoroutinefunction(handler):
-            await handler(args)
-        else:
-            handler(args)
+        # Log command execution
+        if self.session_logger:
+            self.session_logger.log_command(command, args)
+
+        try:
+            # Check if handler is async
+            if asyncio.iscoroutinefunction(handler):
+                result = await handler(args)
+            else:
+                result = handler(args)
+
+            # Log successful command
+            if self.session_logger:
+                self.session_logger.log_command(command, args, result=result)
+
+        except Exception as e:
+            # Log command error
+            if self.session_logger:
+                self.session_logger.log_command(command, args, error=str(e))
+                self.session_logger.log_error(e, f"Command failed: /{command}")
+            raise
 
     async def process_feedback(self, feedback: str):
         """
@@ -356,6 +390,7 @@ class InteractiveSession:
             ("/git <command>", "Run git command"),
             ("/config", "Show configuration"),
             ("/clear", "Clear screen"),
+            ("/reload", "Reload modules (development)"),
             ("/exit or /quit", "Exit the session"),
         ]
 
@@ -1112,21 +1147,125 @@ class InteractiveSession:
         """Clear the screen."""
         self.console.clear()
 
+    def reload_modules(self, args: str = ""):
+        """Reload Python modules for development (experimental)."""
+        self.console.print("[yellow]Reloading modules...[/yellow]")
+
+        # List of modules to reload
+        modules_to_reload = [
+            'src.generation.premise',
+            'src.generation.treatment',
+            'src.generation.chapters',
+            'src.generation.prose',
+            'src.generation.taxonomies',
+            'src.cli.command_completer',
+            'src.cli.auto_suggest',
+            'src.models',
+            'src.api.openrouter',
+            'src.config',
+            'src.storage.git_manager',
+        ]
+
+        reloaded = []
+        for module_name in modules_to_reload:
+            if module_name in sys.modules:
+                try:
+                    importlib.reload(sys.modules[module_name])
+                    reloaded.append(module_name)
+                except Exception as e:
+                    self.console.print(f"[red]Failed to reload {module_name}: {e}[/red]")
+
+        if reloaded:
+            self.console.print(f"[green]Reloaded {len(reloaded)} modules:[/green]")
+            for module in reloaded:
+                self.console.print(f"  • {module}")
+
+            # Re-initialize command completer with reloaded modules
+            try:
+                from src.cli.command_completer import create_command_descriptions
+                command_descriptions = create_command_descriptions()
+                # Note: Can't easily update the existing completer, would need to recreate prompt session
+                self.console.print("[yellow]Note: Some changes may require restart for full effect[/yellow]")
+            except Exception as e:
+                self.console.print(f"[red]Error reinitializing components: {e}[/red]")
+        else:
+            self.console.print("[yellow]No modules were reloaded[/yellow]")
+
+        self.console.print("[dim]For complete reload, use /exit and restart[/dim]")
+
     async def show_logs(self, args: str = ""):
-        """Show log file location and recent entries."""
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d")
-        log_file = Path.home() / ".agentic" / "logs" / f"agentic_{timestamp}.log"
+        """Show recent log entries from session log."""
+        # Parse arguments
+        parts = args.split() if args else []
+        lines_to_show = 50  # Default
+        show_errors = False
 
-        self.console.print(f"[cyan]Log file: {log_file}[/cyan]")
+        if parts:
+            if parts[0] == "errors":
+                show_errors = True
+            else:
+                try:
+                    lines_to_show = int(parts[0])
+                except ValueError:
+                    pass
 
-        if log_file.exists():
-            # Show last 20 lines
+        # Get log file - prefer current session log
+        if self.session_logger and self.session_logger.log_file_path:
+            log_file = self.session_logger.log_file_path
+        else:
+            # Fall back to latest log in logs directory
+            logs_dir = Path("./logs")
+            if logs_dir.exists():
+                log_files = sorted(
+                    logs_dir.glob("session_*.log"),
+                    key=lambda f: f.stat().st_mtime,
+                    reverse=True
+                )
+                log_file = log_files[0] if log_files else None
+            else:
+                # Try old location
+                from datetime import datetime
+                timestamp = datetime.now().strftime("%Y%m%d")
+                log_file = Path.home() / ".agentic" / "logs" / f"agentic_{timestamp}.log"
+
+        if not log_file or not log_file.exists():
+            self.console.print("[yellow]No log file found[/yellow]")
+            return
+
+        self.console.print(f"[cyan]Log: {log_file.name}[/cyan]\n")
+
+        try:
             with open(log_file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
-                if lines:
-                    self.console.print("\n[dim]Recent log entries:[/dim]")
-                    for line in lines[-20:]:
-                        self.console.print(f"[dim]{line.rstrip()}[/dim]")
-        else:
-            self.console.print("[yellow]No log file found yet[/yellow]")
+
+            if show_errors:
+                # Show only error lines
+                error_lines = [l for l in lines if "[ERROR]" in l or "ERROR:" in l or "Error:" in l]
+                if error_lines:
+                    self.console.print(f"[red]Errors found: {len(error_lines)}[/red]\n")
+                    for line in error_lines[-20:]:  # Last 20 errors
+                        self.console.print(line.rstrip())
+                else:
+                    self.console.print("[green]No errors found in log[/green]")
+            else:
+                # Show last N lines
+                self.console.print(f"[dim]Last {min(lines_to_show, len(lines))} lines:[/dim]\n")
+                for line in lines[-lines_to_show:]:
+                    # Color-code by log level
+                    line_str = line.rstrip()
+                    if "[ERROR]" in line_str or "ERROR:" in line_str:
+                        self.console.print(f"[red]{line_str}[/red]")
+                    elif "[WARNING]" in line_str or "WARNING:" in line_str:
+                        self.console.print(f"[yellow]{line_str}[/yellow]")
+                    elif "[INFO]" in line_str:
+                        self.console.print(f"[cyan]{line_str}[/cyan]")
+                    elif "[DEBUG]" in line_str:
+                        self.console.print(f"[dim]{line_str}[/dim]")
+                    else:
+                        self.console.print(line_str)
+
+            self.console.print(f"\n[dim]Full log: {log_file}[/dim]")
+            self.console.print("[dim]Usage: /logs [lines] or /logs errors[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]Error reading log: {e}[/red]")

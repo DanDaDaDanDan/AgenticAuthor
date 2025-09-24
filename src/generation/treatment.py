@@ -93,26 +93,42 @@ class TreatmentGenerator:
             target_words=target_words
         )
 
-        # Calculate max tokens (roughly 1 token per 0.75 words, plus buffer)
-        max_tokens = int(target_words * 1.5) + 500
-
         # Generate with API
         try:
-            result = await self.client.completion(
-                prompt=prompt,
+            # Get model from project settings or default
+            model = None
+            if self.project.metadata and self.project.metadata.model:
+                model = self.project.metadata.model
+            if not model:
+                from ..config import get_settings
+                settings = get_settings()
+                model = settings.active_model
+
+            # Use streaming_completion with dynamic token calculation
+            result = await self.client.streaming_completion(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,  # Balanced for coherent narrative
-                max_tokens=max_tokens
+                # No max_tokens - let it use full available context
+                # Estimate we need roughly 1.3 tokens per word for English prose
+                min_response_tokens=int(target_words * 1.3)
             )
 
             if result:
+                # Extract content from response
+                content = result.get('content', result) if isinstance(result, dict) else result
+
                 # Save treatment
-                self.project.save_treatment(result)
+                self.project.save_treatment(content)
+
+                # Extract content from response
+                content = result.get('content', result) if isinstance(result, dict) else result
 
                 # Save metadata
                 treatment_metadata = {
-                    'word_count': len(result.split()),
+                    'word_count': len(content.split()),
                     'target_words': target_words,
-                    'model': self.client.model or 'default'
+                    'model': model
                 }
                 metadata_file = self.project.path / "treatment_metadata.json"
                 with open(metadata_file, 'w') as f:
@@ -154,18 +170,32 @@ Return the complete revised treatment as flowing narrative prose."""
 
         # Get current word count
         current_words = len(current_treatment.split())
-        max_tokens = int(current_words * 1.5) + 500
 
-        # Generate revision
-        result = await self.client.completion(
-            prompt=prompt,
+        # Get model from project settings or default
+        model = None
+        if self.project.metadata and self.project.metadata.model:
+            model = self.project.metadata.model
+        if not model:
+            from ..config import get_settings
+            settings = get_settings()
+            model = settings.active_model
+
+        # Generate revision with dynamic token calculation
+        result = await self.client.streaming_completion(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.5,  # Lower temp for controlled iteration
-            max_tokens=max_tokens
+            # No max_tokens - let it use full available context
+            # Estimate we need roughly same token count as current treatment
+            min_response_tokens=int(current_words * 1.3)
         )
 
         if result:
+            # Extract content from response
+            content = result.get('content', result) if isinstance(result, dict) else result
+
             # Save updated treatment
-            self.project.save_treatment(result)
+            self.project.save_treatment(content)
 
             # Update metadata
             metadata_file = self.project.path / "treatment_metadata.json"

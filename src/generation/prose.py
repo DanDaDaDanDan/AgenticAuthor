@@ -139,32 +139,46 @@ class ProseGenerator:
             treatment=treatment
         )
 
-        # Calculate max tokens (roughly 1 token per 0.75 words, plus buffer)
-        target_words = chapter_data.get('word_count_target', 3000)
-        max_tokens = int(target_words * 1.5) + 1000
-
         # Generate with API
+        target_words = chapter_data.get('word_count_target', 3000)
+
         try:
-            result = await self.client.completion(
-                prompt=prompt,
+            # Get model from project settings or default
+            model = None
+            if self.project.metadata and self.project.metadata.model:
+                model = self.project.metadata.model
+            if not model:
+                from ..config import get_settings
+                settings = get_settings()
+                model = settings.active_model
+
+            # Use streaming_completion with dynamic token calculation
+            result = await self.client.streaming_completion(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
                 temperature=0.8,  # Higher for creative prose
-                max_tokens=max_tokens
+                # No max_tokens - let it use full available context
+                # Prose needs substantial space, estimate 1.3 tokens per word
+                min_response_tokens=int(target_words * 1.3)
             )
 
             if result:
+                # Extract content from response
+                content = result.get('content', result) if isinstance(result, dict) else result
+
                 # Save chapter
                 chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
                 chapter_file.parent.mkdir(exist_ok=True)
 
                 # Format with title
-                formatted_content = f"# Chapter {chapter_number}: {chapter_data['title']}\n\n{result}"
+                formatted_content = f"# Chapter {chapter_number}: {chapter_data['title']}\n\n{content}"
 
                 with open(chapter_file, 'w') as f:
                     f.write(formatted_content)
 
                 # Update chapter metadata
                 chapter_data['prose_generated'] = True
-                chapter_data['actual_word_count'] = len(result.split())
+                chapter_data['actual_word_count'] = len(content.split())
 
                 # Save updated chapters.yaml
                 chapters_file = self.project.path / "chapters.yaml"
@@ -219,21 +233,35 @@ User feedback: {feedback}
 Please revise this chapter based on the feedback. Maintain the same overall structure and approximate length.
 Return the complete revised chapter prose (including the chapter title header)."""
 
-        # Get word count for max tokens
+        # Get word count for dynamic token calculation
         current_words = len(current_prose.split())
-        max_tokens = int(current_words * 1.5) + 1000
 
-        # Generate revision
-        result = await self.client.completion(
-            prompt=prompt,
+        # Get model from project settings or default
+        model = None
+        if self.project.metadata and self.project.metadata.model:
+            model = self.project.metadata.model
+        if not model:
+            from ..config import get_settings
+            settings = get_settings()
+            model = settings.active_model
+
+        # Generate revision with dynamic token calculation
+        result = await self.client.streaming_completion(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.6,  # Lower temp for controlled iteration
-            max_tokens=max_tokens
+            # No max_tokens - let it use full available context
+            # Estimate we need roughly same token count as current chapter
+            min_response_tokens=int(current_words * 1.3)
         )
 
         if result:
+            # Extract content from response
+            content = result.get('content', result) if isinstance(result, dict) else result
+
             # Save updated chapter
             with open(chapter_file, 'w') as f:
-                f.write(result)
+                f.write(content)
 
             # Update metadata
             chapters_file = self.project.path / "chapters.yaml"
@@ -242,7 +270,7 @@ Return the complete revised chapter prose (including the chapter title header)."
 
             for i, ch in enumerate(all_chapters):
                 if ch['number'] == chapter_number:
-                    all_chapters[i]['actual_word_count'] = len(result.split())
+                    all_chapters[i]['actual_word_count'] = len(content.split())
                     all_chapters[i]['last_iteration'] = feedback[:100]
                     break
 

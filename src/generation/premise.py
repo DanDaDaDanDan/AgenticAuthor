@@ -145,7 +145,10 @@ Return JSON with this structure:
                 model=model,
                 prompt=prompt,
                 temperature=0.9,  # Higher temp for creativity
-                max_tokens=1000
+                display_field="premise",
+                display_label="Generating premise",
+                # No max_tokens - let it use full available context
+                min_response_tokens=800  # Premises need substantial space
             )
 
             # Save to project
@@ -221,7 +224,10 @@ Return JSON with only the selections:
                 model=model,
                 prompt=prompt,
                 temperature=0.5,  # Lower temp for analysis
-                max_tokens=1000
+                display_field="selections",
+                display_label="Analyzing taxonomy",
+                # No max_tokens - let it use full available context
+                min_response_tokens=500  # Taxonomy analysis needs moderate space
             )
 
             # Save metadata
@@ -305,7 +311,10 @@ Please revise the premise based on this feedback. Maintain the same JSON structu
             model=model,
             prompt=prompt,
             temperature=0.5,  # Lower temp for controlled iteration
-            max_tokens=1000
+            display_field="premise",
+            display_label="Revising premise",
+            # No max_tokens - let it use full available context
+            min_response_tokens=800  # Premises need substantial space
         )
 
         # Save updated premise

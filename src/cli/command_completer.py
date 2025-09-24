@@ -222,6 +222,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Clear the screen',
             'usage': '/clear'
         },
+        'reload': {
+            'description': 'Reload modules (for development)',
+            'usage': '/reload'
+        },
         'exit': {
             'description': 'Exit the application',
             'usage': '/exit'

@@ -9,6 +9,7 @@ from rich import print as rprint
 
 from ..config import get_settings, Settings
 from .interactive import InteractiveSession
+from ..utils.session_logger import init_session_logger, get_session_logger
 
 
 app = typer.Typer(
@@ -29,7 +30,13 @@ def repl(
     )
 ):
     """Start interactive REPL session."""
+    # Initialize session logger
+    logger = init_session_logger()
+    logger.intercept_output()  # Start capturing all output
+
     try:
+        logger.log("Starting interactive session", "INFO")
+
         # Resolve project path if provided
         project_path = None
         if project:
@@ -38,24 +45,32 @@ def repl(
             potential_path = settings.books_dir / project
             if potential_path.exists():
                 project_path = potential_path
+                logger.log(f"Opening project: {project_path}", "INFO")
             else:
                 # Try as direct path
                 direct_path = Path(project).expanduser().resolve()
                 if direct_path.exists():
                     project_path = direct_path
+                    logger.log(f"Opening project: {project_path}", "INFO")
                 else:
-                    console.print(f"[red]Project not found: {project}[/red]")
+                    error_msg = f"Project not found: {project}"
+                    logger.log(error_msg, "ERROR")
+                    console.print(f"[red]{error_msg}[/red]")
                     raise typer.Exit(1)
 
         # Create and run session
-        session = InteractiveSession(project_path)
+        session = InteractiveSession(project_path, logger=logger)
         asyncio.run(session.run())
 
     except KeyboardInterrupt:
+        logger.log("Session interrupted by user", "WARNING")
         console.print("\n[yellow]Interrupted[/yellow]")
     except Exception as e:
+        logger.log_error(e, "Unhandled exception in REPL")
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1)
+    finally:
+        logger.close()
 
 
 @app.command(help="Create a new book project")
@@ -339,8 +354,23 @@ def main(
 
     # If no command provided, start REPL immediately
     if ctx.invoked_subcommand is None:
-        # Start REPL without project - user can create/open projects from within REPL
-        repl(None)
+        # Initialize session logger for default launch
+        logger = init_session_logger()
+        logger.intercept_output()  # Start capturing all output
+        try:
+            logger.log("Starting interactive session (default launch)", "INFO")
+            # Start REPL without project - user can create/open projects from within REPL
+            session = InteractiveSession(None, logger=logger)
+            asyncio.run(session.run())
+        except KeyboardInterrupt:
+            logger.log("Session interrupted by user", "WARNING")
+            console.print("\n[yellow]Interrupted[/yellow]")
+        except Exception as e:
+            logger.log_error(e, "Unhandled exception in default launch")
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+        finally:
+            logger.close()
 
 
 if __name__ == "__main__":

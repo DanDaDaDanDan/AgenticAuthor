@@ -11,6 +11,8 @@ from ..config import get_settings
 from .models import Model, ModelList, ModelPricing
 from .streaming import StreamHandler, TokenCounter
 from .auth import validate_api_key
+from ..utils.tokens import estimate_messages_tokens, calculate_max_tokens
+from ..utils.session_logger import get_session_logger
 
 
 class OpenRouterClient:
@@ -95,11 +97,12 @@ class OpenRouterClient:
 
                 models = []
                 for model_data in data.get('data', []):
-                    # Parse pricing
+                    # Parse pricing - OpenRouter returns price per token in dollars
+                    # We want price per 1k tokens
                     pricing_data = model_data.get('pricing', {})
                     pricing = ModelPricing(
-                        prompt=float(pricing_data.get('prompt', 0)) * 1000000,  # Convert to per 1k
-                        completion=float(pricing_data.get('completion', 0)) * 1000000,
+                        prompt=float(pricing_data.get('prompt', 0)) * 1000,  # Convert to per 1k tokens
+                        completion=float(pricing_data.get('completion', 0)) * 1000,  # Convert to per 1k tokens
                         request=float(pricing_data.get('request', 0)) if 'request' in pricing_data else None
                     )
 
@@ -151,6 +154,7 @@ class OpenRouterClient:
         on_token: Optional[Callable[[str, int], None]] = None,
         stream: bool = True,
         display: bool = True,
+        min_response_tokens: int = 100,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -160,10 +164,11 @@ class OpenRouterClient:
             model: Model ID to use
             messages: List of message dicts with 'role' and 'content'
             temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
+            max_tokens: Maximum tokens to generate (auto-calculated if None)
             on_token: Optional callback for each token
             stream: Whether to stream the response
             display: Whether to display output in console
+            min_response_tokens: Minimum tokens to reserve for response
             **kwargs: Additional API parameters
 
         Returns:
@@ -171,17 +176,44 @@ class OpenRouterClient:
         """
         await self.ensure_session()
 
+        # If max_tokens not specified, calculate based on model's context window
+        if max_tokens is None:
+            # Get model info to know context window
+            model_obj = await self.get_model(model)
+            if model_obj:
+                # Estimate prompt tokens
+                prompt_tokens = estimate_messages_tokens(messages)
+
+                # Calculate optimal max_tokens
+                # Use model's context window, leave room for prompt + buffer
+                max_tokens = calculate_max_tokens(
+                    context_window=model_obj.context_length,
+                    prompt_tokens=prompt_tokens,
+                    min_response_tokens=min_response_tokens,
+                    max_response_tokens=None,  # No artificial cap
+                    buffer_percentage=0.05  # 5% buffer for safety
+                )
+            else:
+                # Fallback if model not found - use a reasonable default
+                # But still calculate based on prompt size
+                prompt_tokens = estimate_messages_tokens(messages)
+                # Assume 8k context window as reasonable default
+                max_tokens = calculate_max_tokens(
+                    context_window=8192,
+                    prompt_tokens=prompt_tokens,
+                    min_response_tokens=min_response_tokens,
+                    buffer_percentage=0.05
+                )
+
         # Prepare request data
         request_data = {
             "model": model,
             "messages": messages,
             "temperature": temperature,
             "stream": stream,
+            "max_tokens": max_tokens,
             **kwargs
         }
-
-        if max_tokens:
-            request_data["max_tokens"] = max_tokens
 
         try:
             async with self._session.post(
@@ -192,9 +224,11 @@ class OpenRouterClient:
                 response.raise_for_status()
 
                 if stream:
-                    # Handle streaming response
-                    result = await self.stream_handler.handle_sse_stream(
+                    # Handle streaming response with live status
+                    model_display = model.split('/')[-1] if '/' in model else model
+                    result = await self.stream_handler.handle_sse_stream_with_status(
                         response,
+                        model_name=model_display,
                         on_token=on_token,
                         display=display
                     )
@@ -209,6 +243,19 @@ class OpenRouterClient:
                     }
                     if display:
                         self.console.print(result['content'])
+
+                # Log API call
+                logger = get_session_logger()
+                if logger:
+                    # Extract prompt from messages
+                    prompt_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+                    logger.log_api_call(
+                        model=model,
+                        prompt=prompt_text,
+                        response=result.get('content', ''),
+                        tokens=result.get('usage', {}),
+                        error=None
+                    )
 
                 # Update token counter
                 if result.get('usage'):
@@ -239,6 +286,8 @@ class OpenRouterClient:
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
+        display: bool = True,
+        min_response_tokens: int = 100,
         **kwargs
     ) -> str:
         """
@@ -249,7 +298,9 @@ class OpenRouterClient:
             prompt: User prompt
             system_prompt: Optional system prompt
             temperature: Sampling temperature
-            max_tokens: Maximum tokens to generate
+            max_tokens: Maximum tokens to generate (auto-calculated if None)
+            display: Whether to display output in console
+            min_response_tokens: Minimum tokens to reserve for response
             **kwargs: Additional API parameters
 
         Returns:
@@ -265,7 +316,8 @@ class OpenRouterClient:
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            display=False,
+            display=display,
+            min_response_tokens=min_response_tokens,
             **kwargs
         )
         return result['content']
@@ -277,6 +329,9 @@ class OpenRouterClient:
         system_prompt: Optional[str] = None,
         temperature: float = 0.3,
         max_tokens: Optional[int] = None,
+        display_field: Optional[str] = None,
+        display_label: Optional[str] = None,
+        min_response_tokens: int = 100,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -287,7 +342,10 @@ class OpenRouterClient:
             prompt: User prompt
             system_prompt: Optional system prompt
             temperature: Sampling temperature (lower for more consistent JSON)
-            max_tokens: Maximum tokens to generate
+            max_tokens: Maximum tokens to generate (auto-calculated if None)
+            display_field: Optional field to display while streaming (e.g., "premise")
+            display_label: Optional label for what's being generated
+            min_response_tokens: Minimum tokens to reserve for response
             **kwargs: Additional API parameters
 
         Returns:
@@ -300,40 +358,130 @@ class OpenRouterClient:
         else:
             system_prompt = json_instruction
 
-        response = await self.completion(
-            model=model,
-            prompt=prompt,
-            system_prompt=system_prompt,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            **kwargs
-        )
+        await self.ensure_session()
 
-        # Try to extract JSON from response
-        response = response.strip()
-        if response.startswith("```json"):
-            response = response[7:]
-        if response.startswith("```"):
-            response = response[3:]
-        if response.endswith("```"):
-            response = response[:-3]
-        response = response.strip()
+        # Prepare messages
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        # If max_tokens not specified, calculate based on model's context window
+        if max_tokens is None:
+            # Get model info to know context window
+            model_obj = await self.get_model(model)
+            if model_obj:
+                # Estimate prompt tokens
+                prompt_tokens = estimate_messages_tokens(messages)
+
+                # For JSON, we often need more space for structured output
+                # So we use a higher min_response_tokens default
+                effective_min_response = max(min_response_tokens, 500)
+
+                # Calculate optimal max_tokens
+                max_tokens = calculate_max_tokens(
+                    context_window=model_obj.context_length,
+                    prompt_tokens=prompt_tokens,
+                    min_response_tokens=effective_min_response,
+                    max_response_tokens=None,  # No artificial cap
+                    buffer_percentage=0.05  # 5% buffer
+                )
+            else:
+                # Fallback if model not found
+                prompt_tokens = estimate_messages_tokens(messages)
+                max_tokens = calculate_max_tokens(
+                    context_window=8192,
+                    prompt_tokens=prompt_tokens,
+                    min_response_tokens=max(min_response_tokens, 500),
+                    buffer_percentage=0.05
+                )
+
+        request_data = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "stream": True,  # Always stream for JSON to show progress
+            "max_tokens": max_tokens,
+            **kwargs
+        }
 
         try:
-            return json.loads(response)
+            async with self._session.post(
+                f"{self.base_url}/chat/completions",
+                json=request_data,
+                headers=self._get_headers()
+            ) as response:
+                response.raise_for_status()
+
+                # Use the JSON stream handler if we have a display field
+                if display_field:
+                    model_display = model.split('/')[-1] if '/' in model else model
+                    result = await self.stream_handler.handle_json_stream_with_display(
+                        response,
+                        model_name=model_display,
+                        display_field=display_field,
+                        display_label=display_label or f"Generating {display_field}"
+                    )
+                else:
+                    # Use regular streaming without display
+                    result = await self.stream_handler.handle_sse_stream_with_status(
+                        response,
+                        model_name=model.split('/')[-1] if '/' in model else model,
+                        display=False  # Don't show raw JSON
+                    )
+
+                    # Parse the JSON from content
+                    content = result['content'].strip()
+                    if content.startswith("```json"):
+                        content = content[7:]
+                    if content.startswith("```"):
+                        content = content[3:]
+                    if content.endswith("```"):
+                        content = content[:-3]
+                    result = json.loads(content.strip())
+
+                # Update token counter if we have usage info
+                if 'usage' in result:
+                    # We have full usage info from the stream
+                    usage = result['usage']
+
+                    # Calculate cost if model info is available
+                    model_obj = await self.get_model(model)
+                    cost = 0.0
+                    if model_obj:
+                        cost = model_obj.estimate_cost(
+                            usage.get('prompt_tokens', 0),
+                            usage.get('completion_tokens', 0)
+                        )
+                    self.token_counter.update(usage, cost)
+
+                    # Show usage if enabled
+                    if self.settings.show_token_usage:
+                        self._display_usage(usage, cost)
+
+                return result
+
         except json.JSONDecodeError as e:
             self.console.print(f"[red]Failed to parse JSON response: {e}[/red]")
-            self.console.print(f"[dim]Response: {response[:200]}...[/dim]")
+            raise
+        except aiohttp.ClientError as e:
+            self.console.print(f"[red]API Error: {e}[/red]")
             raise
 
     def _display_usage(self, usage: Dict[str, int], cost: float = 0.0):
-        """Display token usage information."""
-        self.console.print(
-            f"[dim]Tokens - Prompt: {usage.get('prompt_tokens', 0)}, "
-            f"Completion: {usage.get('completion_tokens', 0)}, "
-            f"Total: {usage.get('total_tokens', 0)}"
-            f"{f', Cost: ${cost:.4f}' if cost > 0 else ''}[/dim]"
-        )
+        """Display token usage information in a compact format."""
+        prompt = usage.get('prompt_tokens', 0)
+        completion = usage.get('completion_tokens', 0)
+        total = usage.get('total_tokens', 0)
+
+        # Create inline status display like Claude Code
+        from rich.text import Text
+        status = Text()
+        status.append(f"{prompt:,} + {completion:,} = {total:,} tokens", style="dim")
+        if cost > 0:
+            status.append(f" | ${cost:.4f}", style="yellow dim")
+
+        self.console.print(status)
 
     def get_usage_summary(self) -> Dict[str, Any]:
         """Get token usage summary for the session."""

@@ -14,15 +14,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Type number to select, Enter to cancel
   - Can still provide project name directly as argument
   - Follows Claude Code UI patterns - everything inline
+- **Development `/reload` Command**
+  - Reloads Python modules without restarting the app
+  - Useful for testing changes during development
+  - Note: Some changes still require full restart
+
+### Improved
+- **LLM Streaming Display**
+  - Added enhanced streaming display with live status updates
+  - Shows: model name, elapsed time, token count, tokens/sec
+  - Cleaner inline display without distracting elements
+  - Compact token usage after completion: `1,234 + 567 = 1,801 tokens | $0.0234`
 
 ### Fixed
+- **Cost Calculation**
+  - Fixed pricing calculation (was multiplying by 1,000,000 instead of 1,000)
+  - Now correctly shows cost per 1k tokens
 - **Tab Completion**
   - Tab now immediately completes when there's only one match instead of showing a menu
   - Changed `complete_while_typing` to `False` so completions only show on Tab press
   - Example: `/op` + Tab → immediately completes to `/open` (no menu needed)
 - **Async Error in `/open` Command**
   - Fixed "asyncio.run() cannot be called from a running event loop" error
-  - Changed `open_project` to async and use `run_async()` for radiolist dialog
+  - Changed back to sync with inline selection (no modal)
 
 ## [0.2.0] - 2025-09-23
 

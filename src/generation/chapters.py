@@ -105,10 +105,23 @@ class ChapterGenerator:
 
         # Generate with API
         try:
+            # Get model from project settings or default
+            model = None
+            if self.project.metadata and self.project.metadata.model:
+                model = self.project.metadata.model
+            if not model:
+                from ..config import get_settings
+                settings = get_settings()
+                model = settings.active_model
+
             result = await self.client.json_completion(
+                model=model,
                 prompt=prompt,
                 temperature=0.6,  # Balanced for structure
-                max_tokens=4000
+                display_field="0",  # Display first chapter as it generates
+                display_label="Generating chapter outlines",
+                # No max_tokens - let it use full available context
+                min_response_tokens=3000  # Chapter outlines need lots of space
             )
 
             if result and isinstance(result, list):
@@ -202,10 +215,23 @@ User feedback: {feedback}
 Please revise this chapter outline based on the feedback. Return the updated chapter in the same JSON format."""
 
         # Generate revision
+        # Get model from project settings or default
+        model = None
+        if self.project.metadata and self.project.metadata.model:
+            model = self.project.metadata.model
+        if not model:
+            from ..config import get_settings
+            settings = get_settings()
+            model = settings.active_model
+
         result = await self.client.json_completion(
+            model=model,
             prompt=prompt,
             temperature=0.5,
-            max_tokens=1000
+            display_field="summary",  # Display the updated summary
+            display_label=f"Revising chapter {chapter_number}",
+            # No max_tokens - let it use full available context
+            min_response_tokens=800  # Single chapter outline needs moderate space
         )
 
         if result:
