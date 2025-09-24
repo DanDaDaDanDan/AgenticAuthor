@@ -38,8 +38,8 @@ class TaxonomyLoader:
         if taxonomy_dir:
             self.taxonomy_dir = Path(taxonomy_dir)
         else:
-            # Default to docs/taxonomies
-            self.taxonomy_dir = Path(__file__).parent.parent.parent / "docs" / "taxonomies"
+            # Default to root taxonomies directory
+            self.taxonomy_dir = Path(__file__).parent.parent.parent / "taxonomies"
 
     def get_available_genres(self) -> List[str]:
         """Get list of available genres."""
