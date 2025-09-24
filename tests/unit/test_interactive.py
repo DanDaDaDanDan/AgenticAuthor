@@ -248,30 +248,21 @@ class TestInteractiveSession:
             session = InteractiveSession()
             session.settings.books_dir = temp_dir
 
-            # Mock radiolist_dialog to simulate user selection
-            with patch('src.cli.interactive.radiolist_dialog') as mock_dialog:
-                mock_run = Mock(return_value=temp_dir / "test-project-1")
-                mock_dialog.return_value.run = mock_run
+            # Mock console input to simulate user selection
+            with patch.object(session.console, 'input', return_value='1'):
+                with patch.object(session.console, 'print') as mock_print:
+                    # Call open_project without args to trigger interactive selection
+                    session.open_project("")
 
-                # Call open_project without args to trigger interactive selection
-                session.open_project("")
+                    # Verify projects were displayed
+                    calls = [str(call) for call in mock_print.call_args_list]
 
-                # Verify dialog was called
-                mock_dialog.assert_called_once()
-                call_kwargs = mock_dialog.call_args.kwargs
+                    # Check that "Available projects" was shown
+                    assert any("Available projects" in str(call) for call in calls)
 
-                # Check dialog configuration
-                assert call_kwargs['title'] == "Select Project"
-                assert 'arrow keys' in call_kwargs['text'].lower()
-
-                # Check that projects are in values
-                values = call_kwargs['values']
-                assert len(values) == 2
-
-                # Check project display names include metadata
-                display_names = [v[1] for v in values]
-                assert any('fantasy' in name and '5,000 words' in name for name in display_names)
-                assert any('sci-fi' in name and '10,000 words' in name for name in display_names)
+                    # Check that project names were displayed
+                    assert any("test-project-1" in str(call) for call in calls)
+                    assert any("test-project-2" in str(call) for call in calls)
 
                 # Verify project was loaded
                 assert session.project is not None

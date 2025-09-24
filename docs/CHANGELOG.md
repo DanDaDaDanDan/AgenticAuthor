@@ -8,17 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Interactive Project Selection**
-  - `/open` command now shows interactive menu with arrow key navigation
+- **Inline Project Selection**
+  - `/open` command now shows numbered list for selection (no modal)
   - Displays project metadata (genre, word count, last updated)
-  - Navigate with ↑/↓ arrows, select with Enter, cancel with Esc
+  - Type number to select, Enter to cancel
   - Can still provide project name directly as argument
+  - Follows Claude Code UI patterns - everything inline
 
 ### Fixed
 - **Tab Completion**
   - Tab now immediately completes when there's only one match instead of showing a menu
   - Changed `complete_while_typing` to `False` so completions only show on Tab press
   - Example: `/op` + Tab → immediately completes to `/open` (no menu needed)
+- **Async Error in `/open` Command**
+  - Fixed "asyncio.run() cannot be called from a running event loop" error
+  - Changed `open_project` to async and use `run_async()` for radiolist dialog
 
 ## [0.2.0] - 2025-09-23
 

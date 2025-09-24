@@ -10,7 +10,6 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.shortcuts import radiolist_dialog
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
@@ -427,57 +426,57 @@ class InteractiveSession:
                 self.console.print("[dim]Create one with /new[/dim]")
                 return
 
-            # Create list of project choices with metadata
-            choices = []
-            for p in projects:
+            # Display projects with inline selection
+            self.console.print("\n[cyan]Available projects:[/cyan]")
+
+            # Collect project info
+            project_list = []
+            for i, p in enumerate(projects, 1):
                 try:
                     project = Project(p)
-                    # Get basic info for display
                     info_parts = []
                     if project.metadata:
                         if project.metadata.genre:
-                            info_parts.append(project.metadata.genre)
+                            info_parts.append(f"[dim]{project.metadata.genre}[/dim]")
                         if project.metadata.word_count:
-                            info_parts.append(f"{project.metadata.word_count:,} words")
+                            info_parts.append(f"[dim]{project.metadata.word_count:,} words[/dim]")
                         if project.metadata.updated_at:
                             days_ago = (datetime.now(timezone.utc) - project.metadata.updated_at).days
                             if days_ago == 0:
-                                info_parts.append("updated today")
+                                info_parts.append("[dim]updated today[/dim]")
                             elif days_ago == 1:
-                                info_parts.append("updated yesterday")
+                                info_parts.append("[dim]updated yesterday[/dim]")
                             else:
-                                info_parts.append(f"updated {days_ago} days ago")
+                                info_parts.append(f"[dim]updated {days_ago} days ago[/dim]")
 
-                    description = " - ".join(info_parts) if info_parts else ""
-                    display_name = f"{p.name}"
-                    if description:
-                        display_name += f" ({description})"
-
-                    choices.append((p, display_name))
+                    description = " • ".join(info_parts) if info_parts else ""
+                    project_list.append((p, description))
                 except:
-                    # If we can't load the project, just show the name
-                    choices.append((p, p.name))
+                    project_list.append((p, ""))
 
-            # Use radiolist dialog for interactive selection
-            try:
-                selected = radiolist_dialog(
-                    title="Select Project",
-                    text="Use arrow keys to navigate, Enter to select, Esc to cancel:",
-                    values=choices,
-                    style=Style.from_dict({
-                        'dialog': 'bg:#282828',
-                        'dialog.body': 'bg:#282828 fg:#ffffff',
-                        'dialog.title': 'fg:#00aaff bold',
-                        'radio-list': 'bg:#282828',
-                        'radio-checked': 'fg:#00ff00 bold',
-                        'radio-selected': 'fg:#ffff00 bold reverse',
-                    })
-                ).run()
-
-                if selected:
-                    path = selected
+            # Display numbered list
+            for i, (project_path, description) in enumerate(project_list, 1):
+                if description:
+                    self.console.print(f"  {i}. [green]{project_path.name}[/green] {description}")
                 else:
+                    self.console.print(f"  {i}. [green]{project_path.name}[/green]")
+
+            # Prompt for selection
+            self.console.print("\n[dim]Enter number to select, or press Enter to cancel:[/dim]")
+            try:
+                choice = self.console.input("> ")
+                if not choice:
                     return
+
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(project_list):
+                    path = project_list[choice_num - 1][0]
+                else:
+                    self.console.print("[red]Invalid selection[/red]")
+                    return
+            except ValueError:
+                self.console.print("[red]Please enter a number[/red]")
+                return
             except (KeyboardInterrupt, EOFError):
                 return
         else:

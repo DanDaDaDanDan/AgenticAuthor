@@ -258,11 +258,11 @@ Create a new book project.
 
 #### `/open [path]`
 Open an existing project.
-- **path** (optional): Path to project. If not provided, opens an interactive selection menu.
+- **path** (optional): Path to project. If not provided, shows numbered list for selection.
 - Features:
-  - Interactive selection with arrow keys (↑/↓)
+  - Inline numbered list selection (no popup)
   - Shows project metadata (genre, word count, last updated)
-  - Press Enter to select, Esc to cancel
+  - Type number to select, Enter to cancel
   - Can also type project name directly as argument
 
 #### `/status`

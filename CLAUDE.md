@@ -103,6 +103,33 @@ agentic
 3. **Single Active Model**: One model at a time for all operations (switchable)
 4. **File-Based Storage**: Human-readable markdown/YAML files
 5. **Smart Intent Checking**: Confidence-based routing (>0.8 execute, else clarify)
+6. **No Modal Dialogs**: All interactions are inline in the CLI, never modal popups
+
+## UI/UX Principles (Following Claude Code)
+
+### Inline Everything
+- **No modal dialogs or popup windows** - everything happens in the terminal flow
+- Use numbered lists for selection (e.g., "1. project-a  2. project-b")
+- Simple prompts for user input ("> Enter choice: ")
+- Progressive disclosure - show information as needed
+- Maintain context in the terminal scrollback
+
+### Selection Patterns
+```
+Available projects:
+  1. my-fantasy-novel • fantasy • 5,000 words • updated today
+  2. sci-fi-story • science-fiction • 10,000 words • updated yesterday
+  3. romance-draft • romance • 2,500 words • updated 5 days ago
+
+Enter number to select, or press Enter to cancel:
+>
+```
+
+### Feedback and Progress
+- Use Rich for colored, formatted output
+- Show progress inline with status updates
+- Keep responses concise and actionable
+- Errors and warnings inline, not in popups
 
 ## Key Systems to Understand
 
