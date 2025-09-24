@@ -35,8 +35,9 @@ agentic_author.egg-info/
 
 # Project specific
 .cache/
-books/*/exports/*.tmp
+books/  # Each book has its own git repository
 test_project_tmp/
+logs/  # Session logs for debugging
 
 # Testing
 tests/htmlcov/
