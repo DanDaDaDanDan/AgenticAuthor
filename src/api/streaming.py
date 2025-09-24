@@ -282,12 +282,8 @@ class StreamHandler:
         finally:
             if live:
                 live.stop()
-                # Print final content if we were displaying
+                # Just print a blank line after streaming completes
                 if content and display:
-                    # Print final stats
-                    elapsed = time.time() - start_time
-                    self.console.print()  # Blank line
-                    self.console.print(content)
                     self.console.print()  # Blank line after content
 
         return {
