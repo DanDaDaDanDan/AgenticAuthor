@@ -46,6 +46,76 @@ def cleanup_old_logs(log_dir: Path = None, days_to_keep: int = 1) -> int:
     return files_deleted
 
 
+def cleanup_test_artifacts(project_root: Path = None, days_to_keep: int = 1) -> int:
+    """
+    Clean up test screenshots and debug files older than specified days.
+
+    Args:
+        project_root: Project root directory (defaults to current working directory)
+        days_to_keep: Number of days to keep test artifacts (default 1)
+
+    Returns:
+        Number of files deleted
+    """
+    if project_root is None:
+        project_root = Path.cwd()
+
+    files_deleted = 0
+    cutoff_time = datetime.now() - timedelta(days=days_to_keep)
+
+    # Clean up test screenshots
+    screenshots_dir = project_root / "tests" / "screenshots"
+    if screenshots_dir.exists():
+        for screenshot in screenshots_dir.glob("*.png"):
+            try:
+                file_mtime = datetime.fromtimestamp(screenshot.stat().st_mtime)
+                if file_mtime < cutoff_time:
+                    screenshot.unlink()
+                    files_deleted += 1
+            except Exception:
+                pass
+
+    # Clean up test baseline files
+    baselines_dir = project_root / "tests" / "baselines"
+    if baselines_dir.exists():
+        for baseline in baselines_dir.glob("*.json"):
+            try:
+                file_mtime = datetime.fromtimestamp(baseline.stat().st_mtime)
+                if file_mtime < cutoff_time:
+                    baseline.unlink()
+                    files_deleted += 1
+            except Exception:
+                pass
+
+    # Clean up root-level test files
+    for pattern in ["test_*.py", "*_tui.py"]:
+        for test_file in project_root.glob(pattern):
+            try:
+                file_mtime = datetime.fromtimestamp(test_file.stat().st_mtime)
+                if file_mtime < cutoff_time:
+                    test_file.unlink()
+                    files_deleted += 1
+            except Exception:
+                pass
+
+    # Clean up TUI development files
+    tui_files = [
+        project_root / "src" / "api" / "streaming_tui.py",
+        project_root / "src" / "cli" / "agentic_tui.py"
+    ]
+    for tui_file in tui_files:
+        if tui_file.exists():
+            try:
+                file_mtime = datetime.fromtimestamp(tui_file.stat().st_mtime)
+                if file_mtime < cutoff_time:
+                    tui_file.unlink()
+                    files_deleted += 1
+            except Exception:
+                pass
+
+    return files_deleted
+
+
 def setup_logging(
     log_file: Optional[Path] = None,
     level: str = "INFO",
@@ -77,6 +147,9 @@ def setup_logging(
         # Clean up old logs at startup
         files_deleted = cleanup_old_logs(log_dir, days_to_keep=1)
 
+        # Also clean up test artifacts
+        test_files_deleted = cleanup_test_artifacts(days_to_keep=1)
+
         # Create timestamped log file
         timestamp = datetime.now().strftime("%Y%m%d")
         log_file = log_dir / f"agentic_{timestamp}.log"
@@ -106,6 +179,8 @@ def setup_logging(
     logger.info(f"Log file: {log_file}")
     if 'files_deleted' in locals() and files_deleted > 0:
         logger.info(f"Cleaned up {files_deleted} old log files")
+    if 'test_files_deleted' in locals() and test_files_deleted > 0:
+        logger.info(f"Cleaned up {test_files_deleted} test artifacts")
     logger.info("=" * 60)
 
     return logger
