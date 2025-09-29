@@ -988,31 +988,73 @@ class InteractiveSession:
             self.console.print("[red]Failed to generate chapters[/red]")
 
     async def _generate_prose(self, options: str = ""):
-        """Generate prose for chapters."""
+        """Generate prose for chapters with sequential context."""
         # Check for chapter outlines
         chapters_file = self.project.path / "chapters.yaml"
         if not chapters_file.exists():
             self.console.print("[yellow]No chapter outlines found. Generate chapters first with /generate chapters[/yellow]")
             return
 
-        # Parse chapter number or "all"
+        # Parse options: chapter number, "all", or "all --isolated"
         if not options:
-            self.console.print("[yellow]Usage: /generate prose <chapter_number|all>[/yellow]")
+            self.console.print("[yellow]Usage: /generate prose <chapter_number|all> [--isolated][/yellow]")
+            self.console.print("[dim]  Examples:[/dim]")
+            self.console.print("[dim]    /generate prose 1        - Generate chapter 1 with full context[/dim]")
+            self.console.print("[dim]    /generate prose all      - Generate all chapters sequentially[/dim]")
+            self.console.print("[dim]    /generate prose 3 --isolated - Generate chapter 3 without context[/dim]")
             return
+
+        # Check for --isolated flag
+        sequential = "--isolated" not in options
+        options = options.replace("--isolated", "").strip()
 
         generator = ProseGenerator(self.client, self.project)
 
         if options.lower() == "all":
-            self.console.print("[cyan]Generating prose for all chapters...[/cyan]")
-            # This would generate all chapters
-            self.console.print("[yellow]Batch generation not yet fully implemented. Generate individual chapters.[/yellow]")
+            # Generate all chapters sequentially
+            self.console.print(f"[cyan]Generating all chapters {'sequentially' if sequential else 'in isolation'}...[/cyan]")
+
+            try:
+                results = await generator.generate_all_chapters(sequential=sequential)
+
+                if results:
+                    # Git commit
+                    if self.project.git:
+                        self.project.git.add()
+                        self.project.git.commit(f"Generate prose for {len(results)} chapters")
+
+                    self.console.print(f"\n[green]✅ Successfully generated {len(results)} chapters[/green]")
+                    total_words = sum(len(p.split()) for p in results.values())
+                    self.console.print(f"[dim]Total word count: {total_words:,}[/dim]")
+                else:
+                    self.console.print("[red]No chapters were generated[/red]")
+
+            except Exception as e:
+                self.console.print(f"[red]Error generating chapters: {e}[/red]")
+
         else:
+            # Generate single chapter
             try:
                 chapter_num = int(options.split()[0])
-                self.console.rule(style="dim")
-                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]\n")
 
-                result = await generator.generate_chapter(chapter_num)
+                # Show token analysis first
+                token_calc = generator.calculate_prose_context_tokens(chapter_num)
+
+                self.console.rule(style="dim")
+                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
+                self.console.print(f"[dim]Mode: {'Sequential (Full Context)' if sequential else 'Isolated'}[/dim]")
+
+                if sequential:
+                    self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
+                    self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
+                    self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
+
+                self.console.print()
+
+                result = await generator.generate_chapter(
+                    chapter_number=chapter_num,
+                    sequential=sequential
+                )
 
                 if result:
                     word_count = len(result.split())
@@ -1020,11 +1062,19 @@ class InteractiveSession:
                     self.console.rule(style="dim")
                     self.console.print(f"[green]✓ Chapter {chapter_num} generated: {word_count} words[/green]")
                     self.console.print(f"[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
+
+                    # Git commit
+                    if self.project.git:
+                        self.project.git.add()
+                        mode = "sequential" if sequential else "isolated"
+                        self.project.git.commit(f"Generate prose for chapter {chapter_num} ({mode})")
                 else:
                     self.console.print("[red]Failed to generate prose[/red]")
 
             except ValueError:
                 self.console.print("[red]Invalid chapter number[/red]")
+            except Exception as e:
+                self.console.print(f"[red]Error: {e}[/red]")
 
     async def iterate_content(self, args: str):
         """Iterate content command."""
