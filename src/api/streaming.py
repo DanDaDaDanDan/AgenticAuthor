@@ -123,28 +123,29 @@ class StreamHandler:
                                         display_content += char
                                 last_processed_idx = len(full_content)
 
-                            # Update live display
-                            elapsed = time.time() - start_time
-                            tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
+                            # Update live display only if we have tokens
+                            if token:
+                                elapsed = time.time() - start_time
+                                tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                            display_lines = []
+                                display_lines = []
 
-                            # Status line
-                            status_text = Text()
-                            status_text.append(f"{display_label} with {model_name}", style="cyan")
-                            status_text.append(f" • {elapsed:.1f}s", style="dim")
-                            status_text.append(f" • {token_count} tokens", style="dim")
-                            if tokens_per_sec > 0:
-                                status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
-                            display_lines.append(status_text)
+                                # Status line
+                                status_text = Text()
+                                status_text.append(f"{display_label} with {model_name}", style="cyan")
+                                status_text.append(f" • {elapsed:.1f}s", style="dim")
+                                status_text.append(f" • {token_count} tokens", style="dim")
+                                if tokens_per_sec > 0:
+                                    status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
+                                display_lines.append(status_text)
 
-                            # Show the content we're extracting
-                            if display_content:
-                                display_lines.append("")
-                                display_lines.append(Text(display_content))
+                                # Show the content we're extracting
+                                if display_content:
+                                    display_lines.append("")
+                                    display_lines.append(Text(display_content))
 
-                            from rich.console import Group
-                            live.update(Group(*display_lines))
+                                from rich.console import Group
+                                live.update(Group(*display_lines))
 
                             if on_token:
                                 on_token(token, token_count)
@@ -163,7 +164,7 @@ class StreamHandler:
 
         # Parse the complete JSON
         try:
-            result = json.loads(full_content)
+            parsed_json = json.loads(full_content)
         except json.JSONDecodeError:
             # Try to extract JSON from markdown
             content = full_content.strip()
@@ -173,15 +174,25 @@ class StreamHandler:
                 content = content[3:]
             if content.endswith("```"):
                 content = content[:-3]
-            result = json.loads(content.strip())
+            parsed_json = json.loads(content.strip())
 
-        # Add metadata
-        result['token_count'] = token_count
-        result['elapsed_time'] = time.time() - start_time
-        # Include usage if we got it from the stream
-        if usage:
-            result['usage'] = usage
-        return result
+        # Return result with metadata in a wrapper if parsed_json is not a dict
+        if isinstance(parsed_json, dict):
+            # If it's already a dict, we can add metadata directly
+            parsed_json['token_count'] = token_count
+            parsed_json['elapsed_time'] = time.time() - start_time
+            # Include usage if we got it from the stream
+            if usage:
+                parsed_json['usage'] = usage
+            return parsed_json
+        else:
+            # If it's an array or other type, wrap it with metadata
+            return {
+                'data': parsed_json,
+                'token_count': token_count,
+                'elapsed_time': time.time() - start_time,
+                'usage': usage if usage else {}
+            }
 
     async def handle_sse_stream_with_status(
         self,
@@ -264,7 +275,7 @@ class StreamHandler:
                                 on_token(token, token_count)
 
                             # Update display based on mode
-                            if display:
+                            if display and token:  # Only update display when we have actual tokens
                                 elapsed = time.time() - start_time
                                 tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
@@ -276,8 +287,7 @@ class StreamHandler:
                                     status_context.update(status_text)
 
                                     # Stream content to console (normal scrollable output)
-                                    if token:
-                                        self.console.print(token, end="", highlight=False)
+                                    self.console.print(token, end="", highlight=False)
 
                                 elif display_mode == "live" and live:
                                     # Original Live display behavior
@@ -302,8 +312,7 @@ class StreamHandler:
 
                                 elif display_mode == "simple":
                                     # Simple mode - just print tokens as they come
-                                    if token:
-                                        self.console.print(token, end="", highlight=False)
+                                    self.console.print(token, end="", highlight=False)
 
                         # Check for finish reason
                         if 'finish_reason' in choice and choice['finish_reason']:

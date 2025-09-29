@@ -417,12 +417,21 @@ class OpenRouterClient:
                 # Use the JSON stream handler if we have a display field
                 if display_field:
                     model_display = model.split('/')[-1] if '/' in model else model
-                    result = await self.stream_handler.handle_json_stream_with_display(
+                    stream_result = await self.stream_handler.handle_json_stream_with_display(
                         response,
                         model_name=model_display,
                         display_field=display_field,
                         display_label=display_label or f"Generating {display_field}"
                     )
+                    # Extract the actual data from the wrapper if needed
+                    if isinstance(stream_result, dict) and 'data' in stream_result:
+                        result = stream_result['data']
+                        # Store usage info for later
+                        if 'usage' in stream_result:
+                            usage_info = stream_result['usage']
+                    else:
+                        result = stream_result
+                        usage_info = stream_result.get('usage', {}) if isinstance(stream_result, dict) else {}
                 else:
                     # Use regular streaming without display
                     result = await self.stream_handler.handle_sse_stream_with_status(
@@ -443,10 +452,14 @@ class OpenRouterClient:
                     result = json.loads(content.strip())
 
                 # Update token counter if we have usage info
-                if 'usage' in result:
-                    # We have full usage info from the stream
+                # Check for usage info from stream_result (if using display_field) or result
+                usage = None
+                if display_field and 'usage_info' in locals():
+                    usage = usage_info
+                elif isinstance(result, dict) and 'usage' in result:
                     usage = result['usage']
 
+                if usage:
                     # Calculate cost if model info is available
                     model_obj = await self.get_model(model)
                     cost = 0.0
