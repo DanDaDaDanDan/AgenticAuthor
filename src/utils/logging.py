@@ -3,8 +3,48 @@
 import logging
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
+import json
+import os
+
+def cleanup_old_logs(log_dir: Path = None, days_to_keep: int = 1) -> int:
+    """
+    Clean up log files older than specified days.
+
+    Args:
+        log_dir: Directory containing logs (defaults to ~/.agentic/logs)
+        days_to_keep: Number of days to keep logs (default 1)
+
+    Returns:
+        Number of files deleted
+    """
+    if log_dir is None:
+        log_dir = Path.home() / ".agentic" / "logs"
+
+    if not log_dir.exists():
+        return 0
+
+    cutoff_time = datetime.now() - timedelta(days=days_to_keep)
+    files_deleted = 0
+
+    # Clean up both .log and .json files
+    for pattern in ["*.log", "*.json"]:
+        for log_file in log_dir.glob(pattern):
+            try:
+                # Get file modification time
+                file_mtime = datetime.fromtimestamp(log_file.stat().st_mtime)
+
+                # Delete if older than cutoff
+                if file_mtime < cutoff_time:
+                    log_file.unlink()
+                    files_deleted += 1
+            except Exception:
+                # Silently ignore errors for individual files
+                pass
+
+    return files_deleted
+
 
 def setup_logging(
     log_file: Optional[Path] = None,
@@ -34,6 +74,9 @@ def setup_logging(
         log_dir = Path.home() / ".agentic" / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
 
+        # Clean up old logs at startup
+        files_deleted = cleanup_old_logs(log_dir, days_to_keep=1)
+
         # Create timestamped log file
         timestamp = datetime.now().strftime("%Y%m%d")
         log_file = log_dir / f"agentic_{timestamp}.log"
@@ -61,6 +104,8 @@ def setup_logging(
     logger.info("=" * 60)
     logger.info(f"AgenticAuthor logging started - Level: {level}")
     logger.info(f"Log file: {log_file}")
+    if 'files_deleted' in locals() and files_deleted > 0:
+        logger.info(f"Cleaned up {files_deleted} old log files")
     logger.info("=" * 60)
 
     return logger
