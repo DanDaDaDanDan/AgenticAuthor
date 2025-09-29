@@ -20,6 +20,12 @@ class ChapterOutline(BaseModel):
     act: Optional[str] = Field(None, description="Act (I, II, or III)")
     character_developments: List[str] = Field(default_factory=list, description="Character development beats")
 
+    # New fields for richer chapter outlines matching professional standards
+    relationship_beats: List[str] = Field(default_factory=list, description="How relationships change in this chapter")
+    tension_points: List[str] = Field(default_factory=list, description="What raises stakes or creates urgency")
+    sensory_details: List[str] = Field(default_factory=list, description="Key sensory/atmospheric elements")
+    subplot_threads: List[str] = Field(default_factory=list, description="Subplot progressions in this chapter")
+
     @classmethod
     def from_api_response(cls, data: Dict[str, Any]) -> "ChapterOutline":
         """Create ChapterOutline from API response, handling missing/extra fields gracefully."""

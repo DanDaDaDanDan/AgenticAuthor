@@ -15,36 +15,80 @@ DEFAULT_CHAPTERS_TEMPLATE = """Based on this treatment:
 
 Generate detailed chapter outlines that break down the story into {{ chapter_count }} chapters.
 
+IMPORTANT: Create comprehensive, professional-quality outlines with 15-20 total beats per chapter.
+
 For each chapter, provide:
 1. Chapter number
-2. Title (evocative, not generic)
-3. POV character (if applicable)
-4. Summary (2-3 sentences)
-5. Key events (3-5 bullet points)
-6. Character developments
-7. Word count target (distribute {{ total_words }} words across chapters)
+2. Title (evocative, specific, not generic)
+3. POV character (whose perspective we follow)
+4. Summary (3-4 sentences capturing the essence)
+5. Key events (8-10 specific plot beats showing what happens)
+6. Character developments (3-4 internal changes/realizations)
+7. Relationship beats (2-3 how relationships evolve)
+8. Tension points (2-3 what raises stakes/urgency)
+9. Sensory details (2-3 atmospheric/sensory elements)
+10. Subplot threads (1-2 if applicable)
+11. Word count target (distribute {{ total_words }} words across chapters)
+12. Act designation
 
 Return as JSON array with this structure:
 [
   {
     "number": 1,
-    "title": "Chapter Title",
+    "title": "Specific Evocative Title",
     "pov": "Character Name",
-    "summary": "What happens in this chapter",
-    "key_events": ["Event 1", "Event 2", "Event 3"],
-    "character_developments": ["Development 1", "Development 2"],
-    "word_count_target": 3000,
-    "act": "Act I"
+    "act": "Act I",
+    "summary": "3-4 sentences describing what happens, the emotional journey, and why it matters to the story.",
+    "key_events": [
+      "Opening hook/scene that draws reader in",
+      "Inciting incident or triggering event",
+      "First obstacle or complication",
+      "Discovery or revelation moment",
+      "Conflict escalation or confrontation",
+      "Attempt that succeeds or fails",
+      "New information that changes things",
+      "Climactic moment of the scene",
+      "Consequence or transition to next scene"
+    ],
+    "character_developments": [
+      "Internal conflict or desire revealed",
+      "Key realization or decision point",
+      "Emotional shift or growth moment",
+      "Change in beliefs or perspective"
+    ],
+    "relationship_beats": [
+      "How protagonist relates to another character",
+      "Shift in power dynamic or trust",
+      "Bond strengthened or tested"
+    ],
+    "tension_points": [
+      "What deadline or threat looms",
+      "Stakes raised or consequences revealed"
+    ],
+    "sensory_details": [
+      "Key visual or atmospheric element",
+      "Sound, smell, or texture that matters"
+    ],
+    "subplot_threads": ["Secondary storyline progression"],
+    "word_count_target": 3000
   },
   ...
 ]
 
-Ensure good pacing:
-- Act I: ~25% of chapters (setup)
-- Act II: ~50% of chapters (development)
-- Act III: ~25% of chapters (resolution)
-- Each chapter should end with momentum
-- Vary chapter lengths for rhythm"""
+Guidelines for rich outlines:
+- Each key_event should be a complete story beat, not just "Clara talks to Amos"
+- Character developments show internal change, not just actions
+- Relationship beats track evolving dynamics between specific characters
+- Tension points identify what creates urgency or raises stakes
+- Sensory details ground the reader in the scene
+- Be specific: names, places, emotions, not generic descriptions
+
+Pacing structure:
+- Act I: ~25% of chapters (setup, inciting incident, establishing stakes)
+- Act II: ~50% of chapters (rising action, complications, midpoint shift)
+- Act III: ~25% of chapters (climax, resolution, denouement)
+- Each chapter ends with momentum (cliffhanger, revelation, or decision)
+- Vary chapter lengths between 2500-4000 words for rhythm"""
 
 
 class ChapterGenerator:
@@ -117,11 +161,11 @@ class ChapterGenerator:
             result = await self.client.json_completion(
                 model=model,
                 prompt=prompt,
-                temperature=0.6,  # Balanced for structure
+                temperature=0.7,  # Slightly higher for more creative variety
                 display_field="0",  # Display first chapter as it generates
                 display_label="Generating chapter outlines",
                 # No max_tokens - let it use full available context
-                min_response_tokens=3000  # Chapter outlines need lots of space
+                min_response_tokens=5000  # Increased for richer, more detailed outlines
             )
 
             if result and isinstance(result, list):
