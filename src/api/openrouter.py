@@ -230,7 +230,8 @@ class OpenRouterClient:
                         response,
                         model_name=model_display,
                         on_token=on_token,
-                        display=display
+                        display=display,
+                        display_mode=self.settings.streaming_display_mode
                     )
                 else:
                     # Handle non-streaming response
@@ -427,7 +428,8 @@ class OpenRouterClient:
                     result = await self.stream_handler.handle_sse_stream_with_status(
                         response,
                         model_name=model.split('/')[-1] if '/' in model else model,
-                        display=False  # Don't show raw JSON
+                        display=False,  # Don't show raw JSON
+                        display_mode=self.settings.streaming_display_mode
                     )
 
                     # Parse the JSON from content

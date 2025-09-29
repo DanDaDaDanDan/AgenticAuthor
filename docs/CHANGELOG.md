@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Compact token usage after completion: `1,234 + 567 = 1,801 tokens | $0.0234`
 
 ### Fixed
+- **Mouse Scrolling During Generation**
+  - Fixed issue where scrolling with mouse during streaming would corrupt the display
+  - Added new `console.status()` display mode that keeps status bar fixed at bottom
+  - Content now streams to scrollable area without cursor positioning conflicts
+  - Configurable via `streaming_display_mode` setting (status/live/simple)
 - **Cost Calculation**
   - Fixed pricing calculation (was multiplying by 1,000,000 instead of 1,000)
   - Now correctly shows cost per 1k tokens

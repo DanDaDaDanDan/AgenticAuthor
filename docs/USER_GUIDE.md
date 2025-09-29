@@ -120,12 +120,21 @@ default_model: anthropic/claude-3-opus
 auto_commit: true
 show_token_usage: true
 streaming_output: true
+streaming_display_mode: status  # Options: status, live, simple
 temperature:
   premise: 0.9
   treatment: 0.7
   chapters: 0.6
   prose: 0.8
 ```
+
+#### Streaming Display Modes
+
+The `streaming_display_mode` setting controls how content is displayed during generation:
+
+- **`status`** (default): Fixed status bar at bottom with scrollable content. Best for long generations where you want to scroll up to read earlier content while generation continues.
+- **`live`**: Original in-place updating display. More visually dynamic but may have issues when scrolling with mouse during generation.
+- **`simple`**: Plain text output without status display. Most compatible but less informative.
 
 ## Project Structure
 

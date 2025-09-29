@@ -86,6 +86,10 @@ class Settings(BaseSettings):
         default=True,
         description="Stream API responses to terminal"
     )
+    streaming_display_mode: str = Field(
+        default="status",
+        description="Display mode for streaming: 'status' (fixed bar), 'live' (original), or 'simple' (plain)"
+    )
     verbose: bool = Field(
         default=False,
         description="Enable verbose logging"
@@ -97,6 +101,15 @@ class Settings(BaseSettings):
         """Validate that API key has correct format."""
         if not v.startswith('sk-or-'):
             raise ValueError("OpenRouter API key must start with 'sk-or-'")
+        return v
+
+    @field_validator('streaming_display_mode')
+    @classmethod
+    def validate_display_mode(cls, v: str) -> str:
+        """Validate streaming display mode."""
+        valid_modes = {'status', 'live', 'simple'}
+        if v not in valid_modes:
+            raise ValueError(f"Display mode must be one of: {', '.join(valid_modes)}")
         return v
 
     @field_validator('books_dir', 'taxonomies_dir', 'cache_dir')
@@ -144,6 +157,7 @@ class Settings(BaseSettings):
             'auto_commit': self.auto_commit,
             'show_token_usage': self.show_token_usage,
             'streaming_output': self.streaming_output,
+            'streaming_display_mode': self.streaming_display_mode,
             'verbose': self.verbose
         }
 

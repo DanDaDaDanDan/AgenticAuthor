@@ -188,16 +188,24 @@ class StreamHandler:
         response,
         model_name: str = "Model",
         on_token: Optional[Callable[[str, int], None]] = None,
-        display: bool = True
+        display: bool = True,
+        display_mode: str = "status"  # New parameter: "status", "live", or "simple"
     ) -> Dict[str, Any]:
         """
-        Handle SSE stream with Claude Code-style status display.
+        Handle SSE stream with status display.
 
         Shows live updates of:
         - Elapsed time
         - Token count
         - Tokens per second
         - Content as it streams
+
+        Args:
+            response: The SSE response stream
+            model_name: Name of the model for display
+            on_token: Optional callback for each token
+            display: Whether to display output
+            display_mode: Display mode - "status" (console.status), "live" (Live display), or "simple" (plain)
         """
         content = ""
         usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -205,14 +213,24 @@ class StreamHandler:
         model = None
         token_count = 0
         start_time = time.time()
+        status_context = None
+        live = None
 
+        # Initialize display based on mode
         if display:
-            # Create live display - don't use transient to avoid clearing screen
-            # Use vertical_overflow="visible" to allow scrolling
-            live = Live(console=self.console, refresh_per_second=10, transient=False, vertical_overflow="visible")
-            live.start()
-        else:
-            live = None
+            if display_mode == "status":
+                # Use console.status for fixed status bar that doesn't interfere with scrolling
+                status_context = self.console.status(
+                    f"Starting generation with {model_name}...",
+                    spinner="dots",
+                    spinner_style="cyan"
+                )
+                status_context.__enter__()
+            elif display_mode == "live":
+                # Keep original Live display for backwards compatibility
+                live = Live(console=self.console, refresh_per_second=10, transient=False, vertical_overflow="visible")
+                live.start()
+            # For "simple" mode, we don't need any special display setup
 
         try:
             async for line in response.content:
@@ -245,30 +263,47 @@ class StreamHandler:
                             if on_token:
                                 on_token(token, token_count)
 
-                            # Update display with status
-                            if live:
+                            # Update display based on mode
+                            if display:
                                 elapsed = time.time() - start_time
                                 tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                                # Create inline display like Claude Code
-                                display_lines = []
+                                if display_mode == "status" and status_context:
+                                    # Update status bar (stays at bottom, doesn't interfere with scrolling)
+                                    status_text = f"Generating with {model_name} • {elapsed:.1f}s • {token_count} tokens"
+                                    if tokens_per_sec > 0:
+                                        status_text += f" • {tokens_per_sec:.0f} t/s"
+                                    status_context.update(status_text)
 
-                                # Status line
-                                status_text = Text()
-                                status_text.append(f"Generating with {model_name}", style="cyan")
-                                status_text.append(f" • {elapsed:.1f}s", style="dim")
-                                status_text.append(f" • {token_count} tokens", style="dim")
-                                if tokens_per_sec > 0:
-                                    status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
-                                display_lines.append(status_text)
+                                    # Stream content to console (normal scrollable output)
+                                    if token:
+                                        self.console.print(token, end="", highlight=False)
 
-                                # Content - show full content as it streams
-                                display_lines.append("")  # Empty line
-                                display_lines.append(Text(content))
+                                elif display_mode == "live" and live:
+                                    # Original Live display behavior
+                                    display_lines = []
 
-                                # Update live display
-                                from rich.console import Group
-                                live.update(Group(*display_lines))
+                                    # Status line
+                                    status_text = Text()
+                                    status_text.append(f"Generating with {model_name}", style="cyan")
+                                    status_text.append(f" • {elapsed:.1f}s", style="dim")
+                                    status_text.append(f" • {token_count} tokens", style="dim")
+                                    if tokens_per_sec > 0:
+                                        status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
+                                    display_lines.append(status_text)
+
+                                    # Content - show full content as it streams
+                                    display_lines.append("")  # Empty line
+                                    display_lines.append(Text(content))
+
+                                    # Update live display
+                                    from rich.console import Group
+                                    live.update(Group(*display_lines))
+
+                                elif display_mode == "simple":
+                                    # Simple mode - just print tokens as they come
+                                    if token:
+                                        self.console.print(token, end="", highlight=False)
 
                         # Check for finish reason
                         if 'finish_reason' in choice and choice['finish_reason']:
@@ -287,6 +322,12 @@ class StreamHandler:
                     continue
 
         finally:
+            # Clean up display
+            if status_context:
+                status_context.__exit__(None, None, None)
+                # Print newline after streaming completes when using status mode
+                if display_mode == "status":
+                    self.console.print()  # Add newline at end
             if live:
                 live.stop()
                 # Don't print content here - let the caller handle it
