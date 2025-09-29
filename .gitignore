@@ -35,9 +35,9 @@ agentic_author.egg-info/
 
 # Project specific
 .cache/
-books/  # Each book has its own git repository
+books/
 test_project_tmp/
-logs/  # Session logs for debugging
+logs/
 
 # Development/Debug files
 test_basictui*.py
