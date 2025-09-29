@@ -12,46 +12,6 @@ from ..models import Project
 from ..utils.tokens import estimate_tokens
 
 
-DEFAULT_PROSE_TEMPLATE = """Based on this chapter outline:
-
-Chapter {{ chapter_number }}: {{ chapter_title }}
-
-Summary: {{ chapter_summary }}
-
-Key Events:
-{% for event in key_events %}
-- {{ event }}
-{% endfor %}
-
-{% if character_developments %}
-Character Developments:
-{% for dev in character_developments %}
-- {{ dev }}
-{% endfor %}
-{% endif %}
-
-{% if previous_chapter %}
-Previous chapter ended with:
-{{ previous_chapter_ending }}
-{% endif %}
-
-{% if treatment %}
-Overall story context:
-{{ treatment[:1000] }}...
-{% endif %}
-
-Write the full prose for this chapter:
-- Target length: {{ word_count_target }} words
-- Write in {{ narrative_style }} style
-- Use vivid, engaging prose
-- Show don't tell
-- Include dialogue where appropriate
-- End with momentum/hook for next chapter
-- Maintain consistent voice and tone
-
-Begin the chapter now:"""
-
-
 SEQUENTIAL_PROSE_TEMPLATE = """## Story Foundation:
 
 ### Premise:
@@ -153,35 +113,6 @@ class ProseGenerator:
         self.client = client
         self.project = project
 
-    def _get_chapter_data(self, chapter_number: int) -> Dict[str, Any]:
-        """Get chapter outline data."""
-        chapters_file = self.project.path / "chapters.yaml"
-        if not chapters_file.exists():
-            raise Exception("No chapter outlines found. Generate chapters first with /generate chapters")
-
-        with open(chapters_file, 'r') as f:
-            chapters_data = yaml.safe_load(f)
-
-        for chapter in chapters_data:
-            if chapter['number'] == chapter_number:
-                return chapter
-
-        raise Exception(f"Chapter {chapter_number} not found")
-
-    def _get_previous_chapter_ending(self, chapter_number: int) -> Optional[str]:
-        """Get the ending of the previous chapter if it exists."""
-        if chapter_number <= 1:
-            return None
-
-        prev_chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number - 1:02d}.md"
-        if not prev_chapter_file.exists():
-            return None
-
-        with open(prev_chapter_file, 'r') as f:
-            content = f.read()
-
-        # Get last 500 characters for context
-        return content[-500:] if len(content) > 500 else content
 
     def load_all_chapters_with_prose(self) -> List[Dict[str, Any]]:
         """Load all chapter outlines and merge with any existing prose."""
@@ -293,8 +224,7 @@ class ProseGenerator:
     async def generate_chapter_sequential(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited",
-        use_sequential: bool = True
+        narrative_style: str = "third person limited"
     ) -> str:
         """
         Generate full prose for a chapter with complete story context.
@@ -302,7 +232,6 @@ class ProseGenerator:
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
-            use_sequential: Whether to use sequential mode with full context
 
         Returns:
             Chapter prose text
@@ -412,121 +341,22 @@ class ProseGenerator:
     async def generate_chapter(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited",
-        template: Optional[str] = None,
-        sequential: bool = True
+        narrative_style: str = "third person limited"
     ) -> str:
         """
-        Generate full prose for a chapter.
+        Generate full prose for a chapter with complete story context.
 
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
-            template: Optional custom template
-            sequential: Use sequential mode with full context (default True)
 
         Returns:
             Chapter prose text
         """
-        # Use sequential mode by default for better consistency
-        if sequential:
-            return await self.generate_chapter_sequential(
-                chapter_number=chapter_number,
-                narrative_style=narrative_style
-            )
-
-        # Original isolated generation (kept for backward compatibility)
-        # Get chapter outline
-        chapter_data = self._get_chapter_data(chapter_number)
-
-        # Get treatment for context (first 1000 chars)
-        treatment = self.project.get_treatment()
-        if treatment and len(treatment) > 1000:
-            treatment = treatment[:1000]
-
-        # Get previous chapter ending for continuity
-        previous_ending = self._get_previous_chapter_ending(chapter_number)
-
-        # Prepare template
-        template_str = template or DEFAULT_PROSE_TEMPLATE
-        jinja_template = Template(template_str)
-
-        # Render prompt
-        prompt = jinja_template.render(
+        return await self.generate_chapter_sequential(
             chapter_number=chapter_number,
-            chapter_title=chapter_data['title'],
-            chapter_summary=chapter_data['summary'],
-            key_events=chapter_data.get('key_events', []),
-            character_developments=chapter_data.get('character_developments', []),
-            word_count_target=chapter_data.get('word_count_target', 3000),
-            narrative_style=narrative_style,
-            previous_chapter_ending=previous_ending,
-            treatment=treatment
+            narrative_style=narrative_style
         )
-
-        # Generate with API
-        target_words = chapter_data.get('word_count_target', 3000)
-
-        try:
-            # Get model from project settings or default
-            model = None
-            if self.project.metadata and self.project.metadata.model:
-                model = self.project.metadata.model
-            if not model:
-                from ..config import get_settings
-                settings = get_settings()
-                model = settings.active_model
-
-            # Use streaming_completion with dynamic token calculation
-            result = await self.client.streaming_completion(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.8,  # Higher for creative prose
-                display=True,  # Show streaming progress
-                # No max_tokens - let it use full available context
-                # Prose needs substantial space, estimate 1.3 tokens per word
-                min_response_tokens=int(target_words * 1.3)
-            )
-
-            if result:
-                # Extract content from response
-                content = result.get('content', result) if isinstance(result, dict) else result
-
-                # Save chapter
-                chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
-                chapter_file.parent.mkdir(exist_ok=True)
-
-                # Format with title
-                formatted_content = f"# Chapter {chapter_number}: {chapter_data['title']}\n\n{content}"
-
-                with open(chapter_file, 'w') as f:
-                    f.write(formatted_content)
-
-                # Update chapter metadata
-                chapter_data['prose_generated'] = True
-                chapter_data['actual_word_count'] = len(content.split())
-
-                # Save updated chapters.yaml
-                chapters_file = self.project.path / "chapters.yaml"
-                with open(chapters_file, 'r') as f:
-                    all_chapters = yaml.safe_load(f)
-
-                for i, ch in enumerate(all_chapters):
-                    if ch['number'] == chapter_number:
-                        all_chapters[i] = chapter_data
-                        break
-
-                with open(chapters_file, 'w') as f:
-                    yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
-
-                # Git commit handled by caller if needed
-
-                return formatted_content
-
-            raise Exception("No content generated")
-
-        except Exception as e:
-            raise Exception(f"Failed to generate prose: {e}")
 
     async def iterate_prose(self, chapter_number: int, feedback: str) -> str:
         """
@@ -610,17 +440,15 @@ Return the complete revised chapter prose (including the chapter title header)."
         self,
         narrative_style: str = "third person limited",
         start_chapter: int = 1,
-        end_chapter: Optional[int] = None,
-        sequential: bool = True
+        end_chapter: Optional[int] = None
     ) -> Dict[int, str]:
         """
-        Generate prose for multiple chapters sequentially.
+        Generate prose for all chapters sequentially with full context.
 
         Args:
             narrative_style: Narrative voice/style
             start_chapter: First chapter to generate
             end_chapter: Last chapter (None for all)
-            sequential: Use sequential mode with full context (default True)
 
         Returns:
             Dict mapping chapter numbers to prose
@@ -640,7 +468,7 @@ Return the complete revised chapter prose (including the chapter title header)."
 
         print(f"\n{'='*60}")
         print(f"📚 Generating Chapters {start_chapter} to {end_chapter}")
-        print(f"   Mode: {'Sequential (Full Context)' if sequential else 'Isolated'}")
+        print(f"   Mode: Sequential (Full Context)")
         print(f"   Narrative Style: {narrative_style}")
         print(f"{'='*60}\n")
 
@@ -652,28 +480,23 @@ Return the complete revised chapter prose (including the chapter title header)."
 
                 prose = await self.generate_chapter(
                     chapter_number=chapter_num,
-                    narrative_style=narrative_style,
-                    sequential=sequential
+                    narrative_style=narrative_style
                 )
                 results[chapter_num] = prose
 
                 # Show progress
                 print(f"✓ Chapter {chapter_num} complete")
 
-                # In sequential mode, each chapter adds to context for next
-                if sequential and chapter_num < end_chapter:
+                # Each chapter adds to context for next
+                if chapter_num < end_chapter:
                     print(f"   Context updated for Chapter {chapter_num + 1}")
 
             except Exception as e:
                 print(f"❌ Failed to generate Chapter {chapter_num}: {e}")
-                # In sequential mode, we should stop if a chapter fails
+                # We should stop if a chapter fails
                 # as later chapters depend on earlier ones
-                if sequential:
-                    print("   Stopping sequential generation due to error")
-                    break
-                # In isolated mode, we can continue
-                else:
-                    continue
+                print("   Stopping sequential generation due to error")
+                break
 
         print(f"\n{'='*60}")
         print(f"📊 Generation Summary:")
