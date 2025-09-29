@@ -125,39 +125,19 @@ class ChapterGenerator:
             )
 
             if result and isinstance(result, list):
-                # Convert to ChapterOutline objects
+                # Convert to ChapterOutline objects using robust from_api_response method
                 chapters = []
                 for chapter_data in result:
-                    chapter = ChapterOutline(
-                        number=chapter_data['number'],
-                        title=chapter_data['title'],
-                        summary=chapter_data['summary'],
-                        key_events=chapter_data.get('key_events', []),
-                        word_count_target=chapter_data.get('word_count_target', 3000)
-                    )
-                    # Store additional data
-                    chapter.pov = chapter_data.get('pov')
-                    chapter.act = chapter_data.get('act')
-                    chapter.character_developments = chapter_data.get('character_developments', [])
+                    # Use the model's from_api_response method which handles missing/extra fields
+                    chapter = ChapterOutline.from_api_response(chapter_data)
                     chapters.append(chapter)
 
                 # Save to project
                 chapters_file = self.project.path / "chapters.yaml"
                 chapters_data = []
                 for chapter in chapters:
-                    chapter_dict = {
-                        'number': chapter.number,
-                        'title': chapter.title,
-                        'summary': chapter.summary,
-                        'key_events': chapter.key_events,
-                        'word_count_target': chapter.word_count_target
-                    }
-                    if hasattr(chapter, 'pov') and chapter.pov:
-                        chapter_dict['pov'] = chapter.pov
-                    if hasattr(chapter, 'act') and chapter.act:
-                        chapter_dict['act'] = chapter.act
-                    if hasattr(chapter, 'character_developments'):
-                        chapter_dict['character_developments'] = chapter.character_developments
+                    # Use Pydantic's model_dump to get all fields, excluding None values
+                    chapter_dict = chapter.model_dump(exclude_none=True)
                     chapters_data.append(chapter_dict)
 
                 with open(chapters_file, 'w') as f:
@@ -244,13 +224,7 @@ Please revise this chapter outline based on the feedback. Return the updated cha
                 self.project.git.add()
                 self.project.git.commit(f"Iterate chapter {chapter_number}: {feedback[:50]}")
 
-            # Return as ChapterOutline
-            return ChapterOutline(
-                number=result['number'],
-                title=result['title'],
-                summary=result['summary'],
-                key_events=result.get('key_events', []),
-                word_count_target=result.get('word_count_target', 3000)
-            )
+            # Return as ChapterOutline using robust from_api_response method
+            return ChapterOutline.from_api_response(result)
 
         raise Exception("Failed to iterate chapter")
