@@ -8,6 +8,7 @@ from jinja2 import Template
 
 from ..api import OpenRouterClient
 from ..models import Project, ChapterOutline
+from rich.console import Console
 
 
 DEFAULT_CHAPTERS_TEMPLATE = """Based on this treatment:
@@ -104,6 +105,7 @@ class ChapterGenerator:
         """
         self.client = client
         self.project = project
+        self.console = Console()
 
     def _calculate_chapter_count(self, total_words: int) -> int:
         """Calculate recommended chapter count based on word count."""
@@ -158,12 +160,18 @@ class ChapterGenerator:
                 settings = get_settings()
                 model = settings.active_model
 
-            # Adjust min_response_tokens for free/limited models
+            # Adjust expectations for free/limited models
             min_tokens = 5000  # Default for rich outlines
-            if model and ('free' in model.lower() or 'grok' in model.lower()):
-                # Grok free tier may have smaller limits
-                min_tokens = 3000
-                print(f"Note: Using {model} with reduced token allocation for compatibility")
+            if model and ('free' in model.lower() or 'grok-4-fast' in model.lower()):
+                # Free tier models often have output limits
+                min_tokens = 2500  # Further reduced for reliability
+
+                self.console.print(f"\n[yellow]⚠️  Using {model}[/yellow]")
+                self.console.print(f"[dim]This model may have output limitations.[/dim]")
+                self.console.print(f"[dim]Consider:[/dim]")
+                self.console.print(f"[dim]  • Generating fewer chapters at once (8-12 instead of 16+)[/dim]")
+                self.console.print(f"[dim]  • Using a paid model for better results[/dim]")
+                self.console.print()
 
             result = await self.client.json_completion(
                 model=model,

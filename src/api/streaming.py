@@ -22,79 +22,43 @@ class StreamHandler:
         self.buffer = ""
         self.total_tokens = 0
 
-    def _attempt_json_repair(self, json_str: str, error: json.JSONDecodeError) -> Optional[Dict]:
+    def _extract_json_from_markdown(self, content: str) -> Optional[str]:
         """
-        Attempt to repair incomplete or malformed JSON.
+        Extract JSON from markdown code blocks or other formatting.
+        Only handles known formatting patterns, does NOT repair truncated content.
 
         Args:
-            json_str: The malformed JSON string
-            error: The JSON decode error
+            content: The content that might contain JSON in markdown
 
         Returns:
-            Repaired JSON object or None if repair failed
+            Extracted JSON string or None if no known pattern found
         """
-        try:
-            # Common issue: Unterminated string at end of array
-            if "Unterminated string" in str(error):
-                # Try to close any open strings and arrays/objects
-                repaired = json_str
+        # Pattern 1: ```json ... ```
+        if content.startswith("```json"):
+            content = content[7:]
+            if "```" in content:
+                content = content[:content.index("```")]
+                return content.strip()
 
-                # Count open brackets and quotes
-                open_brackets = repaired.count('[') - repaired.count(']')
-                open_braces = repaired.count('{') - repaired.count('}')
+        # Pattern 2: ``` ... ```
+        elif content.startswith("```"):
+            content = content[3:]
+            if "```" in content:
+                content = content[:content.index("```")]
+                return content.strip()
 
-                # Check if we're in a string
-                # Simple check: odd number of unescaped quotes
-                quotes = 0
-                escaped = False
-                for char in repaired:
-                    if char == '\\' and not escaped:
-                        escaped = True
-                        continue
-                    if char == '"' and not escaped:
-                        quotes += 1
-                    escaped = False
+        # Pattern 3: Ends with ``` (complete markdown block)
+        elif content.endswith("```") and "```" in content[:-3]:
+            # Find the first ``` and extract content between
+            start = content.index("```")
+            # Check if it's ```json
+            if content[start:].startswith("```json"):
+                content = content[start+7:-3]
+            else:
+                content = content[start+3:-3]
+            return content.strip()
 
-                # If odd number of quotes, close the string
-                if quotes % 2 == 1:
-                    repaired += '"'
-
-                # Close any arrays/objects in current context
-                # Look for the last comma or opening bracket to understand context
-                last_chars = repaired.rstrip()[-20:] if len(repaired) > 20 else repaired
-                if ',' in last_chars or '[' in last_chars:
-                    # We might be in an array, close the item
-                    if quotes % 2 == 0:  # Make sure string is closed first
-                        # Add closing brackets as needed
-                        repaired += ']' * open_brackets
-                        repaired += '}' * open_braces
-
-                # Try to parse the repaired JSON
-                return json.loads(repaired)
-
-            # Common issue: Truncated array
-            elif "Expecting value" in str(error) or "Expecting ',' delimiter" in str(error):
-                # Try closing arrays and objects
-                repaired = json_str.rstrip()
-
-                # Remove trailing comma if present
-                if repaired.endswith(','):
-                    repaired = repaired[:-1]
-
-                # Count brackets
-                open_brackets = repaired.count('[') - repaired.count(']')
-                open_braces = repaired.count('{') - repaired.count('}')
-
-                # Add closing brackets
-                repaired += ']' * open_brackets
-                repaired += '}' * open_braces
-
-                return json.loads(repaired)
-
-        except:
-            # If repair fails, return None
-            pass
-
+        # No known formatting pattern found
         return None
 
     async def handle_json_stream_with_display(
@@ -242,45 +206,91 @@ class StreamHandler:
         try:
             parsed_json = json.loads(full_content)
         except json.JSONDecodeError as e:
-            # Try to extract JSON from markdown
-            content = full_content.strip()
-            if content.startswith("```json"):
-                content = content[7:]
-            if content.startswith("```"):
-                content = content[3:]
-            if content.endswith("```"):
-                content = content[:-3]
+            # First try to extract JSON from known formatting patterns
+            extracted = self._extract_json_from_markdown(full_content.strip())
 
-            # Try parsing cleaned content
-            try:
-                parsed_json = json.loads(content.strip())
-            except json.JSONDecodeError as e2:
-                # Try to repair incomplete JSON
-                repaired = self._attempt_json_repair(content.strip(), e2)
-                if repaired:
-                    self.console.print(f"[green]✓ Successfully repaired incomplete JSON response[/green]")
-                    parsed_json = repaired
-                else:
-                    # Log the error and save problematic content for debugging
-                    self.console.print(f"[red]Error: JSON parsing failed: {e2}[/red]")
-                    self.console.print(f"[yellow]Content length: {len(content)} chars[/yellow]")
+            if extracted:
+                # Try parsing the extracted JSON
+                try:
+                    parsed_json = json.loads(extracted)
+                except json.JSONDecodeError as e2:
+                    # Even extracted JSON failed - likely truncated
+                    self._handle_truncated_json(extracted, e2)
+            else:
+                # No known formatting pattern - check for truncation
+                self._handle_truncated_json(full_content.strip(), e)
 
-                    # Save problematic JSON for debugging
-                    import tempfile
-                    import os
-                    from pathlib import Path
-                    debug_dir = Path.home() / ".agentic" / "debug"
-                    debug_dir.mkdir(parents=True, exist_ok=True)
-                    debug_file = debug_dir / f"json_error_{int(time.time())}.json"
+    def _handle_truncated_json(self, content: str, error: json.JSONDecodeError):
+        """
+        Handle truncated or malformed JSON by failing fast with clear error.
 
-                    with open(debug_file, 'w', encoding='utf-8') as f:
-                        f.write(content)
+        Args:
+            content: The problematic JSON content
+            error: The JSON decode error
 
-                    self.console.print(f"[dim]Saved problematic JSON to: {debug_file}[/dim]")
-                    self.console.print(f"[yellow]Tip: The response may have been truncated. Try using a model with larger context window.[/yellow]")
+        Raises:
+            json.JSONDecodeError with helpful context
+        """
+        # Clear indicators of truncation
+        truncation_indicators = [
+            "Unterminated string",
+            "Expecting value",
+            "Expecting ',' delimiter",
+            "Expecting property name",
+            "Expecting ':' delimiter"
+        ]
 
-                    # Re-raise the original error
-                    raise e2
+        is_likely_truncated = any(indicator in str(error) for indicator in truncation_indicators)
+
+        if is_likely_truncated:
+            self.console.print(f"\n[red]❌ Response appears to be truncated[/red]")
+            self.console.print(f"[yellow]Error: {error}[/yellow]")
+            self.console.print(f"[dim]Response length: {len(content)} characters[/dim]")
+
+            # Check for obvious truncation at token limits
+            common_limits = [2048, 3000, 4000, 4096, 8192]
+            for limit in common_limits:
+                if abs(len(content) - limit) < 100:  # Within 100 chars of limit
+                    self.console.print(f"[yellow]⚠️  Response is near {limit} character limit - likely hit model's max output[/yellow]")
+                    break
+
+            # Save for debugging
+            from pathlib import Path
+            debug_dir = Path.home() / ".agentic" / "debug"
+            debug_dir.mkdir(parents=True, exist_ok=True)
+            debug_file = debug_dir / f"truncated_json_{int(time.time())}.json"
+
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            self.console.print(f"[dim]Saved truncated response to: {debug_file}[/dim]")
+            self.console.print(f"\n[yellow]Suggestions:[/yellow]")
+            self.console.print(f"  • Use a model with larger output capacity")
+            self.console.print(f"  • Reduce the number of chapters requested")
+            self.console.print(f"  • Simplify the generation requirements")
+
+            # Fail fast with clear error
+            raise json.JSONDecodeError(
+                f"Response truncated at ~{len(content)} chars. {error.msg}",
+                error.doc,
+                error.pos
+            )
+        else:
+            # Other JSON error - still fail but with different message
+            self.console.print(f"\n[red]❌ Invalid JSON response[/red]")
+            self.console.print(f"[yellow]Error: {error}[/yellow]")
+
+            # Save for debugging
+            from pathlib import Path
+            debug_dir = Path.home() / ".agentic" / "debug"
+            debug_dir.mkdir(parents=True, exist_ok=True)
+            debug_file = debug_dir / f"invalid_json_{int(time.time())}.json"
+
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            self.console.print(f"[dim]Saved invalid JSON to: {debug_file}[/dim]")
+            raise error
 
         # Return result with metadata in a wrapper if parsed_json is not a dict
         if isinstance(parsed_json, dict):
