@@ -158,6 +158,13 @@ class ChapterGenerator:
                 settings = get_settings()
                 model = settings.active_model
 
+            # Adjust min_response_tokens for free/limited models
+            min_tokens = 5000  # Default for rich outlines
+            if model and ('free' in model.lower() or 'grok' in model.lower()):
+                # Grok free tier may have smaller limits
+                min_tokens = 3000
+                print(f"Note: Using {model} with reduced token allocation for compatibility")
+
             result = await self.client.json_completion(
                 model=model,
                 prompt=prompt,
@@ -165,7 +172,7 @@ class ChapterGenerator:
                 display_field="0",  # Display first chapter as it generates
                 display_label="Generating chapter outlines",
                 # No max_tokens - let it use full available context
-                min_response_tokens=5000  # Increased for richer, more detailed outlines
+                min_response_tokens=min_tokens
             )
 
             if result and isinstance(result, list):
