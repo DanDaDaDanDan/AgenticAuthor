@@ -244,7 +244,7 @@ class StreamHandler:
         is_likely_truncated = any(indicator in str(error) for indicator in truncation_indicators)
 
         if is_likely_truncated:
-            self.console.print(f"\n[red]❌ Response appears to be truncated[/red]")
+            self.console.print(f"\n[red]❌  Response appears to be truncated[/red]")
             self.console.print(f"[yellow]Error: {error}[/yellow]")
             self.console.print(f"[dim]Response length: {len(content)} characters[/dim]")
 
@@ -257,7 +257,7 @@ class StreamHandler:
                 # Convert tokens to approximate character count (rough estimate: 1 token ≈ 4 chars)
                 max_chars = max_output * 4
                 if abs(len(content) - max_chars) < 500:  # Within 500 chars of estimated limit
-                    self.console.print(f"[yellow]⚠️  Response appears to have hit model's {max_output} token output limit[/yellow]")
+                    self.console.print(f"[yellow]⚠️   Response appears to have hit model's {max_output} token output limit[/yellow]")
                     self.console.print(f"[dim]Model: {model_obj.id}[/dim]")
 
             # Save for debugging
@@ -283,7 +283,7 @@ class StreamHandler:
             )
         else:
             # Other JSON error - still fail but with different message
-            self.console.print(f"\n[red]❌ Invalid JSON response[/red]")
+            self.console.print(f"\n[red]❌  Invalid JSON response[/red]")
             self.console.print(f"[yellow]Error: {error}[/yellow]")
 
             # Save for debugging

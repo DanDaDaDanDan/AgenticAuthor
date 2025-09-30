@@ -105,16 +105,17 @@ class InteractiveSession:
 
         completer = SlashCommandCompleter(command_descriptions, model_provider, genre_provider)
 
-        # Custom style
+        # Custom style - Claude Code aesthetic
+        # Using muted, professional colors similar to Claude Code
         style = Style.from_dict({
-            'prompt': '#00aa00 bold',
-            'project': '#0088ff',
-            # Completion menu styling
-            'completion-menu': 'bg:#1a1a1a #ffffff',
+            'prompt': '#8b9bb3',  # Muted blue-gray for prompt
+            'project': '#7c8ba3',  # Slightly darker blue-gray for project name
+            # Completion menu styling - darker, more sophisticated
+            'completion-menu': 'bg:#1c1e26 #c5cdd9',
             'completion-menu.completion': '',
-            'completion-menu.completion.current': 'bg:#003d7a #ffffff',
-            'completion-menu.meta': '#999999',
-            'completion-menu.meta.current': '#ffffff',
+            'completion-menu.completion.current': 'bg:#2d3748 #e2e8f0',
+            'completion-menu.meta': '#6b7280',
+            'completion-menu.meta.current': '#9ca3af',
         })
 
         # Key bindings
@@ -194,10 +195,10 @@ class InteractiveSession:
             if not self.project.is_git_repo:
                 self.git.init()
 
-            self.console.print(f"[green]Loaded project: {self.project.name}[/green]")
+            self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
 
         except Exception as e:
-            self.console.print(f"[red]Error loading project: {e}[/red]")
+            self._print(f"[bold red]Error loading project:[/bold red] {e}")
             self.project = None
 
     async def run(self):
@@ -218,13 +219,13 @@ class InteractiveSession:
                 self._cached_model_ids = [m.id for m in models]
             except Exception as e:
                 # Warn user but continue without autocomplete
-                self.console.print(f"[yellow]Warning: Failed to fetch models: {e}[/yellow]")
-                self.console.print("[dim]Model autocomplete will not be available[/dim]")
+                self._print(f"[dim]⚠  Warning:[/dim] Failed to fetch models: {e}")
+                self._print("[dim]Model autocomplete will not be available[/dim]")
                 self._cached_model_ids = []
 
         except Exception as e:
-            self.console.print(f"[red]Failed to initialize API client: {e}[/red]")
-            self.console.print("[yellow]Please check your OPENROUTER_API_KEY[/yellow]")
+            self._print(f"[bold red]Failed to initialize API client:[/bold red] {e}")
+            self._print("[dim]Please check your OPENROUTER_API_KEY[/dim]")
             return
 
         # Show welcome message
@@ -254,7 +255,7 @@ class InteractiveSession:
                 break
             except Exception as e:
                 self.logger.error(f"Error in main loop: {e}", exc_info=True)
-                self.console.print(f"[red]Error: {e}[/red]")
+                self._print(f"[bold red]Error:[/bold red] {e}")
 
         # Cleanup
         if self.client:
@@ -264,21 +265,31 @@ class InteractiveSession:
         """Build the prompt string."""
         return HTML('<prompt>></prompt> ')
 
+    def _print(self, *args, **kwargs):
+        """Print with 2-space left margin (Claude Code style)."""
+        # Get the message
+        if args:
+            message = args[0]
+            # Add 2-space indent if not already present and not empty line
+            if message and not message.startswith('  '):
+                message = '  ' + message
+            self.console.print(message, *args[1:], **kwargs)
+        else:
+            self.console.print(*args, **kwargs)
+
     def _show_welcome(self):
         """Show welcome message."""
-        panel = Panel(
-            "[bold cyan]AgenticAuthor[/bold cyan]\n"
-            "AI-powered iterative book generation\n\n"
-            "Commands start with [yellow]/[/yellow]\n"
-            "Type [yellow]/[/yellow] to see available commands\n"
-            "Type [yellow]/help[/yellow] for command details\n"
-            "Type [yellow]/new[/yellow] to create a project\n"
-            "Type [yellow]/open[/yellow] to open a project\n\n"
-            "Or just start typing to iterate with AI!",
-            title="Welcome",
-            expand=False
-        )
-        self.console.print(panel)
+        self._print()
+        self._print("[bold]AgenticAuthor[/bold]")
+        self._print("[dim]AI-powered iterative book generation[/dim]")
+        self._print()
+        self._print("Quick start:")
+        self._print("  [bold]/new[/bold] [dim]my-book[/dim]     Create a new project")
+        self._print("  [bold]/open[/bold]              Open an existing project")
+        self._print("  [bold]/help[/bold]              Show all commands")
+        self._print()
+        self._print("[dim]Type [bold]/[/bold] to see available commands[/dim]")
+        self._print()
 
     async def process_input(self, user_input: str):
         """
@@ -307,8 +318,8 @@ class InteractiveSession:
                 error_msg = f"Unknown command: /{command}"
                 if self.session_logger:
                     self.session_logger.log(error_msg, "WARNING")
-                self.console.print(f"[red]{error_msg}[/red]")
-                self.console.print("[dim]Type /help for available commands[/dim]")
+                self._print(f"[bold red]{error_msg}[/bold red]")
+                self._print("[dim]Type /help for available commands[/dim]")
 
         else:
             # Natural language feedback - send to iteration system
@@ -316,7 +327,7 @@ class InteractiveSession:
                 msg = "No project loaded. Use /new or /open first."
                 if self.session_logger:
                     self.session_logger.log(msg, "WARNING")
-                self.console.print(f"[yellow]{msg}[/yellow]")
+                self._print(f"[dim]⚠  {msg}[/dim]")
             else:
                 await self.process_feedback(user_input)
 
@@ -353,12 +364,12 @@ class InteractiveSession:
         Args:
             feedback: User's feedback text
         """
-        self.console.print("[cyan]Processing your feedback...[/cyan]")
+        self._print("[dim]Processing your feedback...[/dim]")
 
         # This will be implemented with the iteration system
         # For now, just echo
-        self.console.print(f"[dim]Feedback: {feedback}[/dim]")
-        self.console.print("[yellow]Iteration system not yet implemented[/yellow]")
+        self._print(f"[dim]Feedback: {feedback}[/dim]")
+        self._print("[dim]⚠  Iteration system not yet implemented[/dim]")
 
     def show_help(self, args: str = ""):
         """Show help information."""
@@ -366,11 +377,11 @@ class InteractiveSession:
             # Show help for specific command
             if args in self.commands:
                 cmd_info = create_command_descriptions().get(args, {})
-                self.console.print(f"\n[cyan]/{args}[/cyan]")
-                self.console.print(f"  {cmd_info.get('description', 'No description')}")
-                self.console.print(f"  [dim]Usage: {cmd_info.get('usage', '/' + args)}[/dim]\n")
+                self._print(f"\n[bold]/{args}[/bold]")
+                self._print(f"  {cmd_info.get('description', 'No description')}")
+                self._print(f"  [dim]Usage: {cmd_info.get('usage', '/' + args)}[/dim]\n")
             else:
-                self.console.print(f"[red]Unknown command: /{args}[/red]")
+                self._print(f"[bold red]Unknown command: /{args}[/bold red]")
             return
 
         # Show all commands
@@ -399,18 +410,18 @@ class InteractiveSession:
         for cmd, desc in commands:
             table.add_row(cmd, desc)
 
-        self.console.print(table)
-        self.console.print("\n[dim]Type / to see command completions[/dim]")
-        self.console.print("[dim]Or just type natural language to iterate with AI![/dim]")
+        self._print(table)
+        self._print("\n[dim]Type / to see command completions[/dim]")
+        self._print("[dim]Or just type natural language to iterate with AI![/dim]")
 
     def exit_session(self, args: str = ""):
         """Exit the interactive session."""
         if self.project:
-            self.console.print(f"[dim]Saving {self.project.name}...[/dim]")
+            self._print(f"[dim]Saving {self.project.name}...[/dim]")
             if self.project.metadata:
                 self.project.save_metadata()
 
-        self.console.print("[cyan]Goodbye![/cyan]")
+        self._print("[dim]Goodbye![/dim]")
         self.running = False
 
     def new_project(self, args: str = ""):
@@ -418,13 +429,13 @@ class InteractiveSession:
         name = args.strip() or self.console.input("Project name: ")
 
         if not name:
-            self.console.print("[red]Project name required[/red]")
+            self._print("[bold red]Project name required[/bold red]")
             return
 
         # Create project directory
         project_dir = self.settings.books_dir / name
         if project_dir.exists():
-            self.console.print(f"[red]Project '{name}' already exists[/red]")
+            self._print(f"[bold red]Project '{name}' already exists[/bold red]")
             return
 
         try:
@@ -443,11 +454,11 @@ class InteractiveSession:
             # Initialize story
             self.story = Story()
 
-            self.console.print(f"[green]Created project: {name}[/green]")
-            self.console.print(f"[dim]Location: {project_dir}[/dim]")
+            self._print(f"[dim]Created project:[/dim] [bold]{name}[/bold]")
+            self._print(f"[dim]Location: {project_dir}[/dim]")
 
         except Exception as e:
-            self.console.print(f"[red]Failed to create project: {e}[/red]")
+            self._print(f"[bold red]Failed to create project:[/bold red] {e}")
 
     def open_project(self, args: str = ""):
         """Open an existing project."""
@@ -459,12 +470,12 @@ class InteractiveSession:
                     projects.append(p)
 
             if not projects:
-                self.console.print("[yellow]No projects found[/yellow]")
-                self.console.print("[dim]Create one with /new[/dim]")
+                self._print("[dim]No projects found[/dim]")
+                self._print("[dim]Create one with /new[/dim]")
                 return
 
             # Display projects with inline selection
-            self.console.print("\n[cyan]Available projects:[/cyan]")
+            self._print("\n[bold]Available projects:[/bold]")
 
             # Collect project info
             project_list = []
@@ -553,9 +564,9 @@ class InteractiveSession:
         num_chapters = len(self.project.list_chapters())
 
         table.add_row("", "")  # Separator
-        table.add_row("Premise", "✓" if has_premise else "✗")
-        table.add_row("Treatment", "✓" if has_treatment else "✗")
-        table.add_row("Outlines", "✓" if has_outlines else "✗")
+        table.add_row("Premise", "✓ " if has_premise else "✗ ")
+        table.add_row("Treatment", "✓ " if has_treatment else "✗ ")
+        table.add_row("Outlines", "✓ " if has_outlines else "✗ ")
         table.add_row("Prose Chapters", str(num_chapters))
 
         self.console.print(table)
@@ -665,7 +676,7 @@ class InteractiveSession:
 
         # Update model
         self.settings.set_model(selected_model)
-        self.console.print(f"[green]✓ Model changed to: {selected_model}[/green]")
+        self.console.print(f"[green]✓  Model changed to: {selected_model}[/green]")
 
         # Show model details
         for model in models:
@@ -837,7 +848,7 @@ class InteractiveSession:
             )
 
             if result:
-                self.console.print("[green]✓ Treatment preserved with generated parameters[/green]")
+                self.console.print("[green]✓  Treatment preserved with generated parameters[/green]")
                 self.console.print(f"\n{analysis['text'][:500]}...\n")
 
                 if 'selections' in result:
@@ -875,7 +886,7 @@ class InteractiveSession:
 
                 self.console.print()  # Blank line
                 self.console.rule(style="dim")
-                self.console.print("[green]✓ Premise generated[/green]")
+                self.console.print("[green]✓  Premise generated[/green]")
                 self.console.print("[dim]Saved to premise.md[/dim]")
 
                 # Add to history
@@ -941,7 +952,7 @@ class InteractiveSession:
             word_count = len(result.split())
             self.console.print()  # Blank line
             self.console.rule(style="dim")  # Divider after content
-            self.console.print(f"[green]✓ Treatment generated: {word_count} words[/green]")
+            self.console.print(f"[green]✓  Treatment generated: {word_count} words[/green]")
             self.console.print("[dim]Saved to treatment.md[/dim]")
         else:
             self.console.print("[red]Failed to generate treatment[/red]")
@@ -984,7 +995,7 @@ class InteractiveSession:
 
             self.console.print()  # Blank line
             self.console.rule(style="dim")
-            self.console.print(f"[green]✓ Generated {len(chapters)} chapter outlines[/green]")
+            self.console.print(f"[green]✓  Generated {len(chapters)} chapter outlines[/green]")
             self.console.print("[dim]Saved to chapters.yaml[/dim]")
         else:
             self.console.print("[red]Failed to generate chapters[/red]")
@@ -1020,7 +1031,7 @@ class InteractiveSession:
                         self.project.git.add()
                         self.project.git.commit(f"Generate prose for {len(results)} chapters (sequential)")
 
-                    self.console.print(f"\n[green]✅ Successfully generated {len(results)} chapters[/green]")
+                    self.console.print(f"\n[green]✅  Successfully generated {len(results)} chapters[/green]")
                     total_words = sum(len(p.split()) for p in results.values())
                     self.console.print(f"[dim]Total word count: {total_words:,}[/dim]")
                 else:
@@ -1052,7 +1063,7 @@ class InteractiveSession:
                     word_count = len(result.split())
                     self.console.print()  # Blank line
                     self.console.rule(style="dim")
-                    self.console.print(f"[green]✓ Chapter {chapter_num} generated: {word_count} words[/green]")
+                    self.console.print(f"[green]✓  Chapter {chapter_num} generated: {word_count} words[/green]")
                     self.console.print(f"[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
 
                     # Git commit
@@ -1128,13 +1139,13 @@ class InteractiveSession:
 
             elif command == "add":
                 self.git.add()
-                self.console.print("[green]✓ All changes staged[/green]")
+                self.console.print("[green]✓  All changes staged[/green]")
 
             elif command == "commit":
                 if len(parts) > 1:
                     message = parts[1]
                     self.git.commit(message)
-                    self.console.print(f"[green]✓ Committed: {message}[/green]")
+                    self.console.print(f"[green]✓  Committed: {message}[/green]")
                 else:
                     self.console.print("[yellow]Usage: /git commit <message>[/yellow]")
 
@@ -1147,13 +1158,13 @@ class InteractiveSession:
                         pass
 
                 self.git.rollback(steps=steps)
-                self.console.print(f"[green]✓ Rolled back {steps} commit(s)[/green]")
+                self.console.print(f"[green]✓  Rolled back {steps} commit(s)[/green]")
 
             elif command == "branch":
                 if len(parts) > 1:
                     branch_name = parts[1]
                     self.git.create_branch(branch_name)
-                    self.console.print(f"[green]✓ Created branch: {branch_name}[/green]")
+                    self.console.print(f"[green]✓  Created branch: {branch_name}[/green]")
                 else:
                     # List branches
                     branches = self.git.list_branches()
