@@ -140,44 +140,123 @@ class SessionLogger:
 
         self._write_json_event("command", event_data)
 
-    def log_api_call(self, model: str, prompt: str, response: str, tokens: dict, error: Optional[str] = None):
-        """Log an API call.
+    def log_api_call(self, model: str, prompt: str, response: str, tokens: dict, error: Optional[str] = None, full_messages: list = None, request_params: dict = None):
+        """Log an API call with FULL request and response details.
 
         Args:
             model: Model name
-            prompt: Prompt sent (will be truncated if too long)
-            response: Response received (will be truncated if too long)
+            prompt: Prompt sent (converted from messages for backward compatibility)
+            response: Response received
             tokens: Token usage dict
             error: Error message if call failed
+            full_messages: Complete messages array sent to API (list of dicts)
+            request_params: Full request parameters (temperature, max_tokens, etc.)
         """
         timestamp = datetime.now()
 
-        # Truncate long content for text log
-        prompt_preview = prompt[:200] + "..." if len(prompt) > 200 else prompt
-        response_preview = response[:500] + "..." if len(response) > 500 else response
-
-        # Text log
+        # Text log - write FULL details
         if self.log_file:
-            self.log_file.write(f"\n[{timestamp.strftime('%H:%M:%S')}] API CALL: {model}\n")
-            self.log_file.write(f"  PROMPT: {prompt_preview}\n")
+            self.log_file.write(f"\n{'='*80}\n")
+            self.log_file.write(f"[{timestamp.strftime('%H:%M:%S')}] API CALL: {model}\n")
+            self.log_file.write(f"{'='*80}\n")
 
-            if error:
-                self.log_file.write(f"  ERROR: {error}\n")
+            # Log full request parameters
+            if request_params:
+                self.log_file.write(f"\nREQUEST PARAMETERS:\n")
+                for key, value in request_params.items():
+                    self.log_file.write(f"  {key}: {value}\n")
+
+            # Log full messages array
+            if full_messages:
+                self.log_file.write(f"\nFULL MESSAGES ({len(full_messages)} messages):\n")
+                for i, msg in enumerate(full_messages, 1):
+                    role = msg.get('role', 'unknown')
+                    content = msg.get('content', '')
+                    self.log_file.write(f"\n  Message {i} [{role}]:\n")
+                    # Write full content with indentation
+                    for line in content.split('\n'):
+                        self.log_file.write(f"    {line}\n")
             else:
-                self.log_file.write(f"  RESPONSE: {response_preview}\n")
-                if tokens:
-                    self.log_file.write(f"  TOKENS: {tokens}\n")
+                # Fallback to simple prompt if messages not provided
+                self.log_file.write(f"\nPROMPT:\n")
+                for line in prompt.split('\n'):
+                    self.log_file.write(f"  {line}\n")
 
+            # Log response or error
+            if error:
+                self.log_file.write(f"\nERROR: {error}\n")
+            else:
+                self.log_file.write(f"\nFULL RESPONSE ({len(response)} chars):\n")
+                for line in response.split('\n'):
+                    self.log_file.write(f"  {line}\n")
+
+                if tokens:
+                    self.log_file.write(f"\nTOKENS: {tokens}\n")
+
+            self.log_file.write(f"{'='*80}\n")
             self.log_file.flush()
 
-        # JSON log (full content)
+        # JSON log (full content) - preserve all data
         self._write_json_event("api_call", {
             "timestamp": timestamp.isoformat(),
             "model": model,
-            "prompt": prompt,
+            "request_params": request_params or {},
+            "messages": full_messages or [],
+            "prompt": prompt,  # Keep for backward compatibility
             "response": response if not error else None,
-            "tokens": tokens,
+            "response_length": len(response) if response else 0,
+            "tokens": tokens or {},
             "error": error
+        })
+
+    def log_api_error(self, model: str, error: Exception, request_params: dict = None, full_messages: list = None):
+        """Log an API call that failed with FULL request details.
+
+        Args:
+            model: Model name that was being used
+            error: Exception that occurred
+            request_params: Optional dict of request parameters (temperature, max_tokens, etc.)
+            full_messages: Complete messages array that was sent to API
+        """
+        timestamp = datetime.now()
+        error_str = str(error)
+
+        # Text log - write FULL details
+        if self.log_file:
+            self.log_file.write(f"\n{'='*80}\n")
+            self.log_file.write(f"[{timestamp.strftime('%H:%M:%S')}] API ERROR: {model}\n")
+            self.log_file.write(f"{'='*80}\n")
+            self.log_file.write(f"\nERROR: {error_str}\n")
+            self.log_file.write(f"TYPE: {type(error).__name__}\n")
+
+            # Log full request parameters
+            if request_params:
+                self.log_file.write(f"\nREQUEST PARAMETERS:\n")
+                for key, value in request_params.items():
+                    self.log_file.write(f"  {key}: {value}\n")
+
+            # Log full messages array
+            if full_messages:
+                self.log_file.write(f"\nFULL MESSAGES ({len(full_messages)} messages):\n")
+                for i, msg in enumerate(full_messages, 1):
+                    role = msg.get('role', 'unknown')
+                    content = msg.get('content', '')
+                    self.log_file.write(f"\n  Message {i} [{role}]:\n")
+                    # Write full content with indentation
+                    for line in content.split('\n'):
+                        self.log_file.write(f"    {line}\n")
+
+            self.log_file.write(f"{'='*80}\n")
+            self.log_file.flush()
+
+        # JSON log
+        self._write_json_event("api_error", {
+            "timestamp": timestamp.isoformat(),
+            "model": model,
+            "error": error_str,
+            "error_type": type(error).__name__,
+            "request_params": request_params or {},
+            "messages": full_messages or []
         })
 
     def log_error(self, error: Exception, context: str = ""):

@@ -3,7 +3,7 @@ from pathlib import Path
 
 # API Configuration
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = "x-ai/grok-4-fast:free"
+DEFAULT_MODEL = "x-ai/grok-4-fast"
 
 # Directory Structure
 DEFAULT_BOOKS_DIR = Path("./books")

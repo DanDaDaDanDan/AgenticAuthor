@@ -126,8 +126,18 @@ class Settings(BaseSettings):
         return self.current_model or self.default_model
 
     def set_model(self, model: str) -> None:
-        """Set the current model."""
+        """Set the current model and save to config."""
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
         self.current_model = model
+
+        # Auto-save to user config
+        user_config = Path.home() / '.agentic' / 'config.yaml'
+        self.save_config_file(user_config)
+
+        if logger:
+            logger.debug(f"Model set to '{model}' and saved to {user_config}")
 
     def get_temperature(self, generation_type: str) -> float:
         """Get temperature for a specific generation type."""
@@ -152,6 +162,7 @@ class Settings(BaseSettings):
         """Save current settings to a YAML config file."""
         config_data = {
             'default_model': self.default_model,
+            'current_model': self.current_model,  # Save current model selection
             'temperature': self.temperature,
             'max_tokens': self.max_tokens,
             'auto_commit': self.auto_commit,
@@ -161,6 +172,9 @@ class Settings(BaseSettings):
             'verbose': self.verbose
         }
 
+        # Ensure parent directory exists
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
         with open(config_path, 'w') as f:
             yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
 
@@ -168,16 +182,27 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance."""
+    from ..utils.logging import get_logger
+    logger = get_logger()
+
     settings = Settings()
 
     # Load user config if it exists
     user_config = Path.home() / '.agentic' / 'config.yaml'
     if user_config.exists():
         settings.load_config_file(user_config)
+        if logger:
+            logger.debug(f"Loaded user config from {user_config}")
+            logger.debug(f"Config values: current_model={settings.current_model}, default_model={settings.default_model}")
 
     # Load project config if it exists
     project_config = Path('config.yaml')
     if project_config.exists():
         settings.load_config_file(project_config)
+        if logger:
+            logger.debug(f"Loaded project config from {project_config}")
+
+    if logger:
+        logger.debug(f"Active model: {settings.active_model}")
 
     return settings

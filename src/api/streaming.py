@@ -68,7 +68,8 @@ class StreamHandler:
         display_field: str = "premise",
         display_label: str = "Generating",
         on_token: Optional[Callable[[str, int], None]] = None,
-        model_obj: Any = None  # Required: actual model object for capability checking
+        model_obj: Any = None,  # Required: actual model object for capability checking
+        mode: str = "field"  # "field", "array_first", or "full"
     ) -> Dict[str, Any]:
         """
         Handle SSE stream for JSON responses, displaying specific fields as they stream.
@@ -76,9 +77,13 @@ class StreamHandler:
         Args:
             response: The streaming response
             model_name: Name of the model for display
-            display_field: The JSON field to display as it streams (e.g., "premise", "treatment")
+            display_field: The JSON field to display as it streams (e.g., "premise", "summary")
             display_label: Label for what's being generated
             on_token: Optional callback for each token
+            model_obj: Model object for capability checking
+            mode: Display mode - "field" (extract field from object),
+                  "array_first" (show first element of array),
+                  "full" (show entire JSON)
         """
         full_content = ""
         display_content = ""
@@ -90,6 +95,27 @@ class StreamHandler:
         last_processed_idx = 0  # Track what we've already processed
         usage = {}  # Track usage info from stream
 
+        # Additional state for array_first mode
+        array_started = False
+        first_object_depth = 0
+        current_depth = 0
+        in_first_object = False
+
+        # Track displayed content for incremental printing
+        self._last_displayed_length = 0
+
+        # Debug logging - use BOTH loggers for comprehensive coverage
+        from ..utils.logging import get_logger
+        from ..utils.session_logger import get_session_logger
+
+        logger = get_logger()  # Global logger -> ~/.agentic/logs/
+        session_logger = get_session_logger()  # Session logger -> ./logs/
+
+        if logger:
+            logger.debug(f"=== Stream handler START ===")
+            logger.debug(f"Stream handler: mode={mode}, display_field={display_field}, display_label={display_label}")
+            logger.debug(f"Stream handler: model_name={model_name}, model_obj provided={'YES' if model_obj else 'NO'}")
+
         # Use console.status for fixed bottom status bar (Claude Code style)
         status_context = self.console.status(
             f"{display_label}...",
@@ -99,7 +125,11 @@ class StreamHandler:
         status_context.__enter__()
 
         try:
+            event_count = 0
             async for line in response.content:
+                event_count += 1
+                if event_count == 1 and logger:
+                    logger.debug(f"Stream: First SSE event received, starting to parse")
                 line = line.decode('utf-8').strip()
 
                 if not line or not line.startswith('data: '):
@@ -122,25 +152,78 @@ class StreamHandler:
                                 full_content += token
                                 token_count += 1
 
-                            # Simple approach: Look for field and extract value
+                            # Mode-specific field detection
                             if token and not field_found:
-                                # Check if we now have the field pattern
-                                field_pattern = f'"{display_field}":'
-                                # Also check for field pattern with spaces
-                                field_pattern_spaced = f'"{display_field}" :'
-                                if field_pattern in full_content or field_pattern_spaced in full_content:
+                                if mode == "array_first":
+                                    # Look for array start and first object
+                                    if not array_started and '[' in full_content:
+                                        array_started = True
+                                        array_idx = full_content.find('[')
+                                        if logger:
+                                            logger.debug(f"Array detected at position {array_idx}")
+                                        # Look for first { after [
+                                        after_bracket = full_content[array_idx + 1:]
+                                        if '{' in after_bracket:
+                                            first_object_depth = 0
+                                            in_first_object = True
+                                            # DON'T set field_found yet - we need to find the actual field!
+                                            # Find the { position
+                                            obj_start = full_content.find('{', array_idx)
+                                            last_processed_idx = obj_start
+                                            if logger:
+                                                logger.debug(f"First object detected at position {obj_start}")
+
+                                            # Now look for the display_field within first object
+                                            # This will be extracted in the next iteration
+
+                                    # If we're in the first object, look for the field
+                                    if in_first_object and not in_value and not field_found:
+                                        field_pattern = f'"{display_field}":'
+                                        field_pattern_spaced = f'"{display_field}" :'
+                                        if field_pattern in full_content or field_pattern_spaced in full_content:
+                                            # Find where the value starts (try both patterns)
+                                            field_idx = full_content.find(field_pattern, last_processed_idx)
+                                            if field_idx == -1:
+                                                field_idx = full_content.find(field_pattern_spaced, last_processed_idx)
+                                                field_pattern = field_pattern_spaced
+                                            if field_idx != -1:
+                                                if logger:
+                                                    logger.debug(f"Field '{display_field}' found at position {field_idx}")
+                                                after_field = full_content[field_idx + len(field_pattern):]
+                                                # Skip whitespace and find opening quote
+                                                after_field = after_field.lstrip()
+                                                if after_field.startswith('"'):
+                                                    field_found = True  # NOW set field_found
+                                                    in_value = True
+                                                    last_processed_idx = len(full_content) - len(after_field) + 1
+                                                    if logger:
+                                                        logger.debug(f"Starting to stream field value")
+
+                                elif mode == "full":
+                                    # Show entire JSON as it streams
                                     field_found = True
-                                    # Find where the value starts (try both patterns)
-                                    field_idx = full_content.find(field_pattern)
-                                    if field_idx == -1:
-                                        field_idx = full_content.find(field_pattern_spaced)
-                                        field_pattern = field_pattern_spaced
-                                    after_field = full_content[field_idx + len(field_pattern):]
-                                    # Skip whitespace and find opening quote
-                                    after_field = after_field.lstrip()
-                                    if after_field.startswith('"'):
-                                        in_value = True
-                                        last_processed_idx = len(full_content) - len(after_field) + 1
+                                    in_value = True
+                                    last_processed_idx = 0
+                                    display_content = full_content
+
+                                else:  # mode == "field" (default)
+                                    # Check if we now have the field pattern
+                                    field_pattern = f'"{display_field}":'
+                                    # Also check for field pattern with spaces
+                                    field_pattern_spaced = f'"{display_field}" :'
+                                    if field_pattern in full_content or field_pattern_spaced in full_content:
+                                        field_found = True
+                                        # Find where the value starts (try both patterns)
+                                        field_idx = full_content.find(field_pattern)
+                                        if field_idx == -1:
+                                            field_idx = full_content.find(field_pattern_spaced)
+                                            field_pattern = field_pattern_spaced
+                                        after_field = full_content[field_idx + len(field_pattern):]
+                                        # Skip whitespace and find opening quote
+                                        after_field = after_field.lstrip()
+                                        if after_field.startswith('"'):
+                                            in_value = True
+                                            last_processed_idx = len(full_content) - len(after_field) + 1
 
                             # If we're tracking a value, extract only new content
                             if in_value and token:
@@ -167,25 +250,32 @@ class StreamHandler:
                                         display_content += char
                                 last_processed_idx = len(full_content)
 
-                            # Update status bar and stream content
-                            if token:
-                                elapsed = time.time() - start_time
-                                tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
+                            # Update status bar (always, not just when token exists)
+                            elapsed = time.time() - start_time
+                            tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                                # Update status bar (stays at bottom)
-                                status_text = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
-                                if tokens_per_sec > 0:
-                                    status_text += f" • {tokens_per_sec:.0f} t/s"
-                                status_context.update(status_text)
+                            # Update status bar (stays at bottom)
+                            status_text = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
+                            if tokens_per_sec > 0:
+                                status_text += f" • {tokens_per_sec:.0f} t/s"
+                            status_context.update(status_text)
 
-                                # Stream content to console (scrollable)
-                                if display_content and last_processed_idx > 0:
-                                    # Print only new content since last update
-                                    new_content_start = len(display_content) - (len(full_content) - last_processed_idx)
-                                    if new_content_start >= 0:
-                                        new_text = display_content[new_content_start:]
-                                        if new_text:
-                                            self.console.print(new_text, end="", highlight=False)
+                            # Stream content to console (scrollable)
+                            # Only print if we have new content extracted
+                            if token and display_content:
+                                # Track what we've already printed
+                                displayed_length = self._last_displayed_length
+                                new_content = display_content[displayed_length:]
+                                if new_content:
+                                    self.console.print(new_content, end="", highlight=False)
+                                    self._last_displayed_length = len(display_content)
+                                    if logger and displayed_length == 0:
+                                        logger.debug(f"Started printing content to console")
+                            elif token and not display_content:
+                                # Log periodically if we're getting tokens but no display content
+                                if logger and token_count % 50 == 0:  # Log every 50 tokens to avoid spam
+                                    logger.warning(f"NO DISPLAY CONTENT: {token_count} tokens, display_content={len(display_content)} chars, field_found={field_found}, in_value={in_value}, array_started={array_started if mode=='array_first' else 'N/A'}")
+                                    logger.warning(f"Full content sample (first 500 chars): {full_content[:500]}")
 
                             if on_token:
                                 on_token(token, token_count)
@@ -193,6 +283,15 @@ class StreamHandler:
                     # Extract usage info if present
                     if 'usage' in data:
                         usage = data['usage']
+
+                    # Check for finish reason
+                    finish_reason = None
+                    if 'finish_reason' in choice and choice['finish_reason']:
+                        finish_reason = choice['finish_reason']
+                        if logger:
+                            logger.debug(f"Stream finish_reason: {finish_reason}")
+                            if finish_reason == "length":
+                                logger.warning(f"Response truncated due to max_tokens limit")
 
                 except json.JSONDecodeError:
                     continue
@@ -203,31 +302,96 @@ class StreamHandler:
             if display_content:
                 self.console.print()
 
-        # Parse the complete JSON
+            # Log streaming completion
+            if logger:
+                elapsed = time.time() - start_time
+                logger.debug(f"=== Stream handler COMPLETE ===")
+                logger.debug(f"Streaming completed: {token_count} tokens, {len(full_content)} chars in {elapsed:.1f}s")
+                logger.debug(f"Events processed: {event_count}, field_found={field_found}, in_value={in_value}")
+                logger.debug(f"Display content length: {len(display_content)} chars")
+                logger.debug(f"Full content preview: {full_content[:200]}...")
+                if model_obj:
+                    max_out = model_obj.get_max_output_tokens()
+                    if max_out:
+                        logger.debug(f"Model output limit: {max_out} tokens, received: {token_count} tokens ({token_count/max_out*100:.1f}%)")
+
+        # Log final finish_reason prominently
+        if logger:
+            if finish_reason:
+                logger.warning(f"=== STREAM FINISHED: finish_reason='{finish_reason}' ===")
+                if finish_reason == "length":
+                    logger.error(f"TRUNCATION: Response stopped due to max_tokens limit!")
+                elif finish_reason == "stop":
+                    logger.info(f"Response completed normally (stop token reached)")
+            else:
+                logger.warning(f"=== STREAM FINISHED: NO finish_reason provided by API ===")
+
+        # Parse the complete JSON - try markdown extraction first, then fail fast
         try:
             parsed_json = json.loads(full_content)
+            if logger:
+                json_type = type(parsed_json).__name__
+                json_len = len(parsed_json) if isinstance(parsed_json, (list, dict)) else 0
+                logger.debug(f"JSON parsed successfully: type={json_type}, length={json_len}")
         except json.JSONDecodeError as e:
-            # First try to extract JSON from known formatting patterns
+            # EXCEPTION TO FAIL-FAST: Try to extract JSON from markdown blocks first
+            if logger:
+                logger.warning(f"JSON parsing failed, attempting markdown extraction: {e}")
+
             extracted = self._extract_json_from_markdown(full_content.strip())
 
             if extracted:
                 # Try parsing the extracted JSON
                 try:
                     parsed_json = json.loads(extracted)
+                    if logger:
+                        logger.info(f"Successfully extracted and parsed JSON from markdown block")
                 except json.JSONDecodeError as e2:
-                    # Even extracted JSON failed - likely truncated
-                    self._handle_truncated_json(extracted, e2, model_obj, model_name)
+                    # Even extracted JSON failed - NOW fail fast
+                    if logger:
+                        logger.error(f"Markdown-extracted JSON also failed: {e2}")
+                        logger.error(f"Full content length: {len(extracted)} chars")
+                        logger.error(f"Finish reason was: {finish_reason}")
+                    self._handle_truncated_json(extracted, e2, model_obj, model_name, finish_reason)
             else:
-                # No known formatting pattern - check for truncation
-                self._handle_truncated_json(full_content.strip(), e, model_obj, model_name)
+                # No markdown blocks found - fail fast on original error
+                if logger:
+                    logger.error(f"No markdown blocks found, failing on original error")
+                    logger.error(f"Full content length: {len(full_content)} chars")
+                    logger.error(f"Finish reason was: {finish_reason}")
+                    logger.error(f"Content preview: {full_content[:500]}")
+                self._handle_truncated_json(full_content.strip(), e, model_obj, model_name, finish_reason)
 
-    def _handle_truncated_json(self, content: str, error: json.JSONDecodeError, model_obj: Any, model_name: str = "Model"):
+        # Return result with metadata in a wrapper if parsed_json is not a dict
+        if isinstance(parsed_json, dict):
+            # If it's already a dict, we can add metadata directly
+            parsed_json['token_count'] = token_count
+            parsed_json['elapsed_time'] = time.time() - start_time
+            parsed_json['finish_reason'] = finish_reason  # IMPORTANT: include finish_reason
+            # Include usage if we got it from the stream
+            if usage:
+                parsed_json['usage'] = usage
+            return parsed_json
+        else:
+            # If it's an array or other type, wrap it with metadata
+            return {
+                'data': parsed_json,
+                'token_count': token_count,
+                'elapsed_time': time.time() - start_time,
+                'finish_reason': finish_reason,  # IMPORTANT: include finish_reason
+                'usage': usage if usage else {}
+            }
+
+    def _handle_truncated_json(self, content: str, error: json.JSONDecodeError, model_obj: Any, model_name: str = "Model", finish_reason: str = None):
         """
         Handle truncated or malformed JSON by failing fast with clear error.
 
         Args:
             content: The problematic JSON content
             error: The JSON decode error
+            model_obj: Model object for capability checking
+            model_name: Model display name
+            finish_reason: The finish_reason from the API (length, stop, etc.)
 
         Raises:
             json.JSONDecodeError with helpful context
@@ -248,6 +412,18 @@ class StreamHandler:
             self.console.print(f"[yellow]Error: {error}[/yellow]")
             self.console.print(f"[dim]Response length: {len(content)} characters (~{len(content)//4} tokens)[/dim]")
 
+            # Display finish_reason prominently
+            if finish_reason:
+                self.console.print(f"\n[bold yellow]API finish_reason: '{finish_reason}'[/bold yellow]")
+                if finish_reason == "length":
+                    self.console.print(f"[red]→ Response was TRUNCATED by the model's max_tokens limit[/red]")
+                elif finish_reason == "stop":
+                    self.console.print(f"[yellow]→ Response ended normally but JSON is invalid/incomplete[/yellow]")
+                else:
+                    self.console.print(f"[yellow]→ Response ended with reason: {finish_reason}[/yellow]")
+            else:
+                self.console.print(f"\n[yellow]⚠️  No finish_reason provided by API (connection issue?)[/yellow]")
+
             # Check if we hit model's actual output limit
             if not model_obj:
                 raise ValueError("Model object required for truncation detection - cannot determine output limits")
@@ -257,10 +433,13 @@ class StreamHandler:
                 # Convert tokens to approximate character count (rough estimate: 1 token ≈ 4 chars)
                 max_chars = max_output * 4
                 estimated_tokens = len(content) // 4
+                self.console.print(f"\n[dim]Model: {model_obj.id}[/dim]")
+                self.console.print(f"[dim]Max output: {max_output} tokens • Received: ~{estimated_tokens} tokens ({len(content)} chars)[/dim]")
+
                 if abs(estimated_tokens - max_output) < 200:  # Within 200 tokens of limit
-                    self.console.print(f"[yellow]⚠️   Model output limit reached[/yellow]")
-                    self.console.print(f"[dim]Model: {model_obj.id}[/dim]")
-                    self.console.print(f"[dim]Max output: {max_output} tokens • Received: ~{estimated_tokens} tokens ({len(content)} chars)[/dim]")
+                    self.console.print(f"[yellow]⚠️   Near model output limit (within 200 tokens)[/yellow]")
+                elif finish_reason == "length":
+                    self.console.print(f"[red]⚠️   Stopped by max_tokens parameter or model limit[/red]")
 
             # Save for debugging
             from pathlib import Path
@@ -300,24 +479,6 @@ class StreamHandler:
 
             self.console.print(f"[dim]Saved invalid JSON to: {debug_file}[/dim]")
             raise error
-
-        # Return result with metadata in a wrapper if parsed_json is not a dict
-        if isinstance(parsed_json, dict):
-            # If it's already a dict, we can add metadata directly
-            parsed_json['token_count'] = token_count
-            parsed_json['elapsed_time'] = time.time() - start_time
-            # Include usage if we got it from the stream
-            if usage:
-                parsed_json['usage'] = usage
-            return parsed_json
-        else:
-            # If it's an array or other type, wrap it with metadata
-            return {
-                'data': parsed_json,
-                'token_count': token_count,
-                'elapsed_time': time.time() - start_time,
-                'usage': usage if usage else {}
-            }
 
     async def handle_sse_stream_with_status(
         self,

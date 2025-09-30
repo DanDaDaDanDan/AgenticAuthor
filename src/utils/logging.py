@@ -188,7 +188,7 @@ def setup_logging(
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
-    Get a logger instance.
+    Get a logger instance. If the logger hasn't been set up yet, sets it up with default configuration.
 
     Args:
         name: Logger name (defaults to 'agentic')
@@ -196,6 +196,13 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     Returns:
         Logger instance
     """
-    if name:
-        return logging.getLogger(f"agentic.{name}")
-    return logging.getLogger("agentic")
+    logger_name = f"agentic.{name}" if name else "agentic"
+    logger = logging.getLogger(logger_name)
+
+    # If the root logger has no handlers, it hasn't been set up yet
+    root_logger = logging.getLogger("agentic")
+    if not root_logger.handlers:
+        # Auto-setup with default configuration
+        setup_logging(level="DEBUG")
+
+    return logger

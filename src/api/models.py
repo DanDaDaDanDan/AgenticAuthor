@@ -57,13 +57,21 @@ class Model(BaseModel):
 
     def get_max_output_tokens(self) -> Optional[int]:
         """
-        Get maximum output tokens from per_request_limits.
+        Get maximum output tokens from per_request_limits or top_provider.
 
         Returns:
             Maximum completion tokens or None if not specified
         """
+        # First check per_request_limits (most specific)
         if self.per_request_limits:
-            return self.per_request_limits.get('completion_tokens')
+            limit = self.per_request_limits.get('completion_tokens')
+            if limit:
+                return limit
+
+        # Fallback to top_provider.max_completion_tokens
+        if self.top_provider:
+            return self.top_provider.get('max_completion_tokens')
+
         return None
 
     def get_max_prompt_tokens(self) -> Optional[int]:

@@ -80,6 +80,14 @@ class SlashCommandCompleter(Completer):
             if command == 'model' and self.model_provider:
                 try:
                     model_ids = self.model_provider()
+
+                    # Debug logging
+                    from ..utils.logging import get_logger
+                    logger = get_logger()
+                    if logger:
+                        logger.debug(f"Autocomplete: got {len(model_ids) if model_ids else 0} models from provider")
+                        logger.debug(f"Autocomplete: arg_text='{arg_text}'")
+
                     if model_ids:
                         # Filter models that match the current arg text
                         matches = []
@@ -109,6 +117,13 @@ class SlashCommandCompleter(Completer):
                         # Sort alphabetically by model ID
                         matches.sort(key=lambda x: x[0].lower())
 
+                        # Debug logging
+                        if logger:
+                            logger.debug(f"Autocomplete: {len(matches)} total matches")
+                            if matches:
+                                logger.debug(f"First 5 matches: {[m[0] for m in matches[:5]]}")
+                                logger.debug(f"Yielding first {min(10, len(matches))} completions")
+
                         # Yield completions for top matches
                         for model_id, provider, name, _ in matches[:10]:
                             # What to insert (complete from current position)
@@ -132,10 +147,12 @@ class SlashCommandCompleter(Completer):
                                 style='',
                                 selected_style='reverse',
                             )
-                except Exception:
-                    # If model provider fails during autocomplete, silently skip
-                    # (Don't spam user during typing - they'll see warning on startup)
-                    pass
+                except Exception as e:
+                    # Log error instead of silently failing
+                    from ..utils.logging import get_logger
+                    logger = get_logger()
+                    if logger:
+                        logger.error(f"Autocomplete error for /model: {e}", exc_info=True)
             return
 
         # Filter and sort commands

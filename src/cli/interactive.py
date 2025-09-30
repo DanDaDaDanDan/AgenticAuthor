@@ -677,6 +677,7 @@ class InteractiveSession:
         # Update model
         self.settings.set_model(selected_model)
         self.console.print(f"[green]✓  Model changed to: {selected_model}[/green]")
+        self.console.print(f"[dim]   Saved to ~/.agentic/config.yaml[/dim]")
 
         # Show model details
         for model in models:
@@ -1046,7 +1047,7 @@ class InteractiveSession:
                 chapter_num = int(options.split()[0])
 
                 # Show token analysis first
-                token_calc = generator.calculate_prose_context_tokens(chapter_num)
+                token_calc = await generator.calculate_prose_context_tokens(chapter_num)
 
                 self.console.rule(style="dim")
                 self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")

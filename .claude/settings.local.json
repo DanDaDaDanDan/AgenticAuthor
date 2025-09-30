@@ -3,7 +3,10 @@
     "allow": [
       "Read(//c/Users/daniel.vogel/.agentic/logs/**)",
       "Bash(winpty python:*)",
-      "Read(//c/Users/daniel.vogel/.agentic/debug/**)"
+      "Read(//c/Users/daniel.vogel/.agentic/debug/**)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

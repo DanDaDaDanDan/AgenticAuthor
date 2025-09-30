@@ -49,11 +49,19 @@ class OpenRouterClient:
         await self.close()
 
     async def ensure_session(self):
-        """Ensure aiohttp session is created."""
+        """Ensure aiohttp session is created with appropriate timeouts for long-running streams."""
         if not self._session:
+            # Configure timeouts optimized for long-running streaming requests
+            # - sock_connect: 30s max to establish connection
+            # - sock_read: 120s per chunk (model can take time between tokens)
+            # - total: None (no limit on total request time for long generations)
             self._session = aiohttp.ClientSession(
                 headers=self._get_headers(),
-                timeout=aiohttp.ClientTimeout(total=300)
+                timeout=aiohttp.ClientTimeout(
+                    total=None,          # No total timeout - allow long generations
+                    connect=30,          # 30s to establish connection
+                    sock_read=120        # 120s between chunks (generous for slow models)
+                )
             )
 
     async def close(self):
@@ -180,31 +188,49 @@ class OpenRouterClient:
 
         # If max_tokens not specified, calculate based on model's context window
         if max_tokens is None:
-            # Get model info to know context window
+            # Get model info to know context window and output limits
             model_obj = await self.get_model(model)
-            if model_obj:
-                # Estimate prompt tokens
-                prompt_tokens = estimate_messages_tokens(messages)
-
-                # Calculate optimal max_tokens
-                # Use model's context window, leave room for prompt + buffer
-                max_tokens = calculate_max_tokens(
-                    context_window=model_obj.context_length,
-                    prompt_tokens=prompt_tokens,
-                    min_response_tokens=min_response_tokens,
-                    max_response_tokens=None,  # No artificial cap
-                    buffer_percentage=0.05  # 5% buffer for safety
+            if not model_obj:
+                raise ValueError(
+                    f"Model '{model}' not found in OpenRouter model list. "
+                    f"Use /models to see available models, or check model ID spelling."
                 )
-            else:
-                # Fallback if model not found - use a reasonable default
-                # But still calculate based on prompt size
-                prompt_tokens = estimate_messages_tokens(messages)
-                # Assume 8k context window as reasonable default
-                max_tokens = calculate_max_tokens(
-                    context_window=8192,
-                    prompt_tokens=prompt_tokens,
-                    min_response_tokens=min_response_tokens,
-                    buffer_percentage=0.05
+
+            # Estimate prompt tokens
+            prompt_tokens = estimate_messages_tokens(messages)
+
+            # Get model's max output tokens (if specified)
+            max_output_tokens = model_obj.get_max_output_tokens()
+
+            # Debug log
+            from ..utils.logging import get_logger
+            debug_logger = get_logger()
+            if debug_logger:
+                debug_logger.debug(f"Model {model}: max_output_tokens from get_max_output_tokens() = {max_output_tokens}")
+                debug_logger.debug(f"Model {model}: per_request_limits = {model_obj.per_request_limits}")
+                debug_logger.debug(f"Model {model}: top_provider = {model_obj.top_provider}")
+
+            # Calculate optimal max_tokens
+            # Use model's context window, leave room for prompt + buffer
+            # Cap at model's output limit if specified
+            max_tokens = calculate_max_tokens(
+                context_window=model_obj.context_length,
+                prompt_tokens=prompt_tokens,
+                min_response_tokens=min_response_tokens,
+                max_response_tokens=max_output_tokens,  # Cap at model's output limit
+                buffer_percentage=0.05  # 5% buffer for safety
+            )
+
+            # Log calculation for debugging
+            from ..utils.logging import get_logger
+            logger = get_logger()
+            if logger:
+                logger.debug(
+                    f"Token calculation for {model}: "
+                    f"context={model_obj.context_length}, "
+                    f"prompt={prompt_tokens}, "
+                    f"max_output={max_output_tokens}, "
+                    f"calculated_max={max_tokens}"
                 )
 
         # Prepare request data
@@ -216,6 +242,17 @@ class OpenRouterClient:
             "max_tokens": max_tokens,
             **kwargs
         }
+
+        # Log request BEFORE making the call
+        from ..utils.logging import get_logger
+        logger = get_logger()
+        if logger:
+            prompt_tokens_est = estimate_messages_tokens(messages)
+            logger.debug(
+                f"API Request: model={model}, temp={temperature}, "
+                f"max_tokens={max_tokens}, stream={stream}, "
+                f"prompt_tokens_est={prompt_tokens_est}"
+            )
 
         try:
             async with self._session.post(
@@ -247,17 +284,24 @@ class OpenRouterClient:
                     if display:
                         self.console.print(result['content'])
 
-                # Log API call
+                # Log API call with FULL details
                 logger = get_session_logger()
                 if logger:
-                    # Extract prompt from messages
+                    # Extract prompt from messages for backward compatibility
                     prompt_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
                     logger.log_api_call(
                         model=model,
                         prompt=prompt_text,
                         response=result.get('content', ''),
                         tokens=result.get('usage', {}),
-                        error=None
+                        error=None,
+                        full_messages=messages,  # Log complete messages array
+                        request_params={
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "stream": stream,
+                            **kwargs
+                        }
                     )
 
                 # Update token counter
@@ -280,6 +324,23 @@ class OpenRouterClient:
 
         except aiohttp.ClientError as e:
             self.console.print(f"[red]API Error: {e}[/red]")
+
+            # Log the error with FULL request details
+            from ..utils.session_logger import get_session_logger
+            session_logger = get_session_logger()
+            if session_logger:
+                session_logger.log_api_error(
+                    model=model,
+                    error=e,
+                    request_params={
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                        "stream": stream,
+                        **kwargs
+                    },
+                    full_messages=messages  # Log complete messages array
+                )
+
             raise
 
     async def completion(
@@ -334,6 +395,7 @@ class OpenRouterClient:
         max_tokens: Optional[int] = None,
         display_field: Optional[str] = None,
         display_label: Optional[str] = None,
+        display_mode: str = "field",  # "field", "array_first", or "full"
         min_response_tokens: int = 100,
         **kwargs
     ) -> Dict[str, Any]:
@@ -346,8 +408,10 @@ class OpenRouterClient:
             system_prompt: Optional system prompt
             temperature: Sampling temperature (lower for more consistent JSON)
             max_tokens: Maximum tokens to generate (auto-calculated if None)
-            display_field: Optional field to display while streaming (e.g., "premise")
+            display_field: Optional field to display while streaming (e.g., "premise", "summary")
             display_label: Optional label for what's being generated
+            display_mode: Display mode - "field" (extract field from object),
+                         "array_first" (show first element of array), "full" (show all)
             min_response_tokens: Minimum tokens to reserve for response
             **kwargs: Additional API parameters
 
@@ -408,39 +472,72 @@ class OpenRouterClient:
             **kwargs
         }
 
+        # Log request details
+        from ..utils.logging import get_logger
+        logger = get_logger()
+        if logger:
+            prompt_chars = sum(len(m.get('content', '')) for m in messages)
+            logger.debug(f"=== JSON API Request START ===")
+            logger.debug(f"JSON API Request: model={model}, max_tokens={max_tokens}, temp={temperature}")
+            logger.debug(f"JSON API Request: prompt_length={prompt_chars} chars")
+            logger.debug(f"JSON API Request: display_field={display_field}, display_label={display_label}, display_mode={display_mode}")
+            logger.debug(f"JSON API Request: stream=True (always streams for JSON)")
+            logger.debug(f"JSON API Request: will_use_display={'YES' if display_field else 'NO (no display_field)'}")
+
         try:
             async with self._session.post(
                 f"{self.base_url}/chat/completions",
                 json=request_data,
                 headers=self._get_headers()
             ) as response:
+                # Log response status
+                if logger:
+                    logger.debug(f"JSON API Response: status={response.status}, content_type={response.content_type}")
+
                 response.raise_for_status()
 
                 # Use the JSON stream handler if we have a display field
                 if display_field:
+                    if logger:
+                        logger.debug(f"JSON API: Using handle_json_stream_with_display (display_field={display_field})")
+
                     model_display = model.split('/')[-1] if '/' in model else model
                     # Get model object for capability checking - required, not optional
                     model_obj = await self.get_model(model)
                     if not model_obj:
                         raise Exception(f"Failed to fetch model capabilities for {model}")
 
+                    if logger:
+                        logger.debug(f"JSON API: Calling handle_json_stream_with_display with model_display={model_display}")
+
                     stream_result = await self.stream_handler.handle_json_stream_with_display(
                         response,
                         model_name=model_display,
                         display_field=display_field,
                         display_label=display_label or f"Generating {display_field}",
-                        model_obj=model_obj
+                        model_obj=model_obj,
+                        mode=display_mode
                     )
+                    if logger:
+                        logger.debug(f"JSON API: handle_json_stream_with_display returned, type={type(stream_result)}")
+
                     # Extract the actual data from the wrapper if needed
                     if isinstance(stream_result, dict) and 'data' in stream_result:
                         result = stream_result['data']
                         # Store usage info for later
                         if 'usage' in stream_result:
                             usage_info = stream_result['usage']
+                        if logger:
+                            logger.debug(f"JSON API: Extracted data from wrapper, result type={type(result)}")
                     else:
                         result = stream_result
                         usage_info = stream_result.get('usage', {}) if isinstance(stream_result, dict) else {}
+                        if logger:
+                            logger.debug(f"JSON API: Using stream_result directly")
                 else:
+                    if logger:
+                        logger.debug(f"JSON API: No display_field, using handle_sse_stream_with_status")
+
                     # Use regular streaming without display
                     result = await self.stream_handler.handle_sse_stream_with_status(
                         response,
@@ -486,9 +583,45 @@ class OpenRouterClient:
 
         except json.JSONDecodeError as e:
             self.console.print(f"[red]Failed to parse JSON response: {e}[/red]")
+
+            # Log the JSON parse error with FULL request details
+            from ..utils.session_logger import get_session_logger
+            session_logger = get_session_logger()
+            if session_logger:
+                session_logger.log_api_error(
+                    model=model,
+                    error=e,
+                    request_params={
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                        "display_field": display_field,
+                        "display_mode": display_mode,
+                        **kwargs
+                    },
+                    full_messages=messages  # Log complete messages array
+                )
+
             raise
         except aiohttp.ClientError as e:
             self.console.print(f"[red]API Error: {e}[/red]")
+
+            # Log the error with FULL request details
+            from ..utils.session_logger import get_session_logger
+            session_logger = get_session_logger()
+            if session_logger:
+                session_logger.log_api_error(
+                    model=model,
+                    error=e,
+                    request_params={
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                        "display_field": display_field,
+                        "display_mode": display_mode,
+                        **kwargs
+                    },
+                    full_messages=messages  # Log complete messages array
+                )
+
             raise
 
     def _display_usage(self, usage: Dict[str, int], cost: float = 0.0):
