@@ -90,10 +90,13 @@ class StreamHandler:
         last_processed_idx = 0  # Track what we've already processed
         usage = {}  # Track usage info from stream
 
-        # Create live display - don't use transient to avoid clearing screen
-        # Use vertical_overflow="visible" to allow scrolling
-        live = Live(console=self.console, refresh_per_second=10, transient=False, vertical_overflow="visible")
-        live.start()
+        # Use console.status for fixed bottom status bar (Claude Code style)
+        status_context = self.console.status(
+            f"{display_label}...",
+            spinner="dots",
+            spinner_style="cyan"
+        )
+        status_context.__enter__()
 
         try:
             async for line in response.content:
@@ -164,29 +167,25 @@ class StreamHandler:
                                         display_content += char
                                 last_processed_idx = len(full_content)
 
-                            # Update live display only if we have tokens
+                            # Update status bar and stream content
                             if token:
                                 elapsed = time.time() - start_time
                                 tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                                display_lines = []
-
-                                # Status line
-                                status_text = Text()
-                                status_text.append(f"{display_label} with {model_name}", style="cyan")
-                                status_text.append(f" • {elapsed:.1f}s", style="dim")
-                                status_text.append(f" • {token_count} tokens", style="dim")
+                                # Update status bar (stays at bottom)
+                                status_text = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
                                 if tokens_per_sec > 0:
-                                    status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
-                                display_lines.append(status_text)
+                                    status_text += f" • {tokens_per_sec:.0f} t/s"
+                                status_context.update(status_text)
 
-                                # Show the content we're extracting
-                                if display_content:
-                                    display_lines.append("")
-                                    display_lines.append(Text(display_content))
-
-                                from rich.console import Group
-                                live.update(Group(*display_lines))
+                                # Stream content to console (scrollable)
+                                if display_content and last_processed_idx > 0:
+                                    # Print only new content since last update
+                                    new_content_start = len(display_content) - (len(full_content) - last_processed_idx)
+                                    if new_content_start >= 0:
+                                        new_text = display_content[new_content_start:]
+                                        if new_text:
+                                            self.console.print(new_text, end="", highlight=False)
 
                             if on_token:
                                 on_token(token, token_count)
@@ -199,7 +198,8 @@ class StreamHandler:
                     continue
 
         finally:
-            live.stop()
+            status_context.__exit__(None, None, None)
+            # Add newline after streaming content
             if display_content:
                 self.console.print()
 
@@ -246,7 +246,7 @@ class StreamHandler:
         if is_likely_truncated:
             self.console.print(f"\n[red]❌  Response appears to be truncated[/red]")
             self.console.print(f"[yellow]Error: {error}[/yellow]")
-            self.console.print(f"[dim]Response length: {len(content)} characters[/dim]")
+            self.console.print(f"[dim]Response length: {len(content)} characters (~{len(content)//4} tokens)[/dim]")
 
             # Check if we hit model's actual output limit
             if not model_obj:
@@ -256,9 +256,11 @@ class StreamHandler:
             if max_output:
                 # Convert tokens to approximate character count (rough estimate: 1 token ≈ 4 chars)
                 max_chars = max_output * 4
-                if abs(len(content) - max_chars) < 500:  # Within 500 chars of estimated limit
-                    self.console.print(f"[yellow]⚠️   Response appears to have hit model's {max_output} token output limit[/yellow]")
+                estimated_tokens = len(content) // 4
+                if abs(estimated_tokens - max_output) < 200:  # Within 200 tokens of limit
+                    self.console.print(f"[yellow]⚠️   Model output limit reached[/yellow]")
                     self.console.print(f"[dim]Model: {model_obj.id}[/dim]")
+                    self.console.print(f"[dim]Max output: {max_output} tokens • Received: ~{estimated_tokens} tokens ({len(content)} chars)[/dim]")
 
             # Save for debugging
             from pathlib import Path
@@ -274,6 +276,7 @@ class StreamHandler:
             self.console.print(f"  • Use a model with larger output capacity")
             self.console.print(f"  • Reduce the number of chapters requested")
             self.console.print(f"  • Simplify the generation requirements")
+            self.console.print(f"\n[dim]Note: Tokens ≠ characters. ~1 token = 4 characters for English text.[/dim]")
 
             # Fail fast with clear error
             raise json.JSONDecodeError(

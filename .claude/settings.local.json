@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Read(//c/Users/daniel.vogel/.agentic/logs/**)",
-      "Bash(winpty python:*)"
+      "Bash(winpty python:*)",
+      "Read(//c/Users/daniel.vogel/.agentic/debug/**)"
     ],
     "deny": [],
     "ask": []
