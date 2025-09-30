@@ -55,6 +55,55 @@ class Model(BaseModel):
         completion_cost = (completion_tokens / 1000) * self.pricing.completion
         return prompt_cost + completion_cost
 
+    def get_max_output_tokens(self) -> Optional[int]:
+        """
+        Get maximum output tokens from per_request_limits.
+
+        Returns:
+            Maximum completion tokens or None if not specified
+        """
+        if self.per_request_limits:
+            return self.per_request_limits.get('completion_tokens')
+        return None
+
+    def get_max_prompt_tokens(self) -> Optional[int]:
+        """
+        Get maximum prompt tokens from per_request_limits.
+
+        Returns:
+            Maximum prompt tokens or None if not specified
+        """
+        if self.per_request_limits:
+            return self.per_request_limits.get('prompt_tokens')
+        return None
+
+    def has_sufficient_output_capacity(self, required_tokens: int) -> bool:
+        """
+        Check if model can generate required number of tokens.
+
+        Args:
+            required_tokens: Number of output tokens needed
+
+        Returns:
+            True if model can handle it, False if definitely can't, True if unknown
+        """
+        max_output = self.get_max_output_tokens()
+        if max_output is None:
+            return True  # Unknown, assume yes
+        return max_output >= required_tokens
+
+    def has_sufficient_context(self, required_tokens: int) -> bool:
+        """
+        Check if model has sufficient context window.
+
+        Args:
+            required_tokens: Total tokens needed (prompt + completion)
+
+        Returns:
+            True if model can handle it, False otherwise
+        """
+        return self.context_length >= required_tokens
+
 
 class ModelInfo(BaseModel):
     """Extended model information for caching."""
@@ -113,3 +162,49 @@ class ModelList(BaseModel):
             key=lambda m: m.cost_per_1k_tokens,
             reverse=not ascending
         )
+
+    def select_by_requirements(
+        self,
+        min_context: Optional[int] = None,
+        min_output_tokens: Optional[int] = None,
+        prefer_free: bool = False,
+        exclude_models: Optional[List[str]] = None
+    ) -> Optional[Model]:
+        """
+        Select best model based on requirements.
+
+        Args:
+            min_context: Minimum context window needed
+            min_output_tokens: Minimum output tokens needed
+            prefer_free: Prefer free models if available
+            exclude_models: List of model IDs to exclude
+
+        Returns:
+            Best matching model or None if no suitable model found
+        """
+        candidates = self.models.copy()
+        exclude_models = exclude_models or []
+
+        # Filter by exclusions
+        candidates = [m for m in candidates if m.id not in exclude_models]
+
+        # Filter by context requirement
+        if min_context:
+            candidates = [m for m in candidates if m.has_sufficient_context(min_context)]
+
+        # Filter by output requirement
+        if min_output_tokens:
+            candidates = [m for m in candidates if m.has_sufficient_output_capacity(min_output_tokens)]
+
+        if not candidates:
+            return None
+
+        # If prefer_free, try to get a free model
+        if prefer_free:
+            free_models = [m for m in candidates if m.is_free]
+            if free_models:
+                candidates = free_models
+
+        # Sort by price and return cheapest
+        candidates = sorted(candidates, key=lambda m: m.cost_per_1k_tokens)
+        return candidates[0] if candidates else None

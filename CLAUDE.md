@@ -104,6 +104,7 @@ agentic
 4. **File-Based Storage**: Human-readable markdown/YAML files
 5. **Smart Intent Checking**: Confidence-based routing (>0.8 execute, else clarify)
 6. **No Modal Dialogs**: All interactions are inline in the CLI, never modal popups
+7. **Fail Early, No Fallbacks**: Use actual facts (API data), never assumptions or fallbacks
 
 ## UI/UX Principles (Following Claude Code)
 
@@ -132,6 +133,22 @@ Enter number to select, or press Enter to cancel:
 - Errors and warnings inline, not in popups
 
 ## Key Systems to Understand
+
+### Model Capability Detection
+```python
+# ALWAYS use actual model capabilities from API
+model_obj = await client.get_model(model)
+if not model_obj:
+    raise Exception(f"Failed to fetch model capabilities for {model}")
+
+# Use actual limits, not assumptions
+max_output = model_obj.get_max_output_tokens()
+context_length = model_obj.context_length
+
+# Check capabilities
+if not model_obj.has_sufficient_context(required_tokens):
+    raise Exception(f"Model has insufficient context: {context_length} < {required_tokens}")
+```
 
 ### Taxonomy System
 ```python
@@ -222,6 +239,60 @@ books/[project-name]/
 - `src/cli/command_completer.py` - Advanced tab completion with genre support
 - `src/utils/logging.py` - Comprehensive logging system
 
+## Fail-Early Paradigm
+
+**CRITICAL: Never implement fallbacks. Always fail early with clear error messages.**
+
+### Error Handling Philosophy
+
+1. **No Silent Failures**: Never use `or ""`, `or []`, `or {}` to mask missing data
+2. **No Fallback Values**: Don't hardcode fallback model names, token limits, or defaults
+3. **Use Actual Facts**: Get capabilities from OpenRouter API, not assumptions
+4. **Clear Error Messages**: Tell user exactly what's missing and how to fix it
+
+### Examples
+
+**❌ BAD - Silent fallback:**
+```python
+premise = self.project.get_premise() or ""  # Masks missing premise
+if model and 'grok' in model.lower():  # Assumes based on name
+    min_tokens = 2500  # Hardcoded assumption
+```
+
+**✅ GOOD - Fail early:**
+```python
+premise = self.project.get_premise()
+if not premise:
+    raise Exception("No premise found. Generate premise first with /generate premise")
+
+model_obj = await self.client.get_model(model)
+if not model_obj:
+    raise Exception(f"Failed to fetch model capabilities for {model}")
+
+max_output = model_obj.get_max_output_tokens()  # Use actual API data
+```
+
+### When Fallbacks ARE Acceptable
+
+1. **Caching**: Return cached data when API fails (with warning)
+2. **Optional Features**: Taxonomy, genre selection (truly optional)
+3. **Query Operations**: Git operations that legitimately return None/False
+4. **User Experience**: Silent autocomplete failures (warn on startup, not during typing)
+
+### Implementation Pattern
+
+```python
+# 1. Fetch required data
+data = await get_required_data()
+
+# 2. Check immediately
+if not data:
+    raise Exception("Clear message: what's missing and what to do")
+
+# 3. Use the data
+process(data)  # No conditionals needed
+```
+
 ## Important Notes
 
 - OpenRouter API key must start with 'sk-or-'
@@ -230,9 +301,10 @@ books/[project-name]/
 - Use structured JSON for intent checking responses
 - Logs are written to `~/.agentic/logs/agentic_YYYYMMDD.log`
 - Genre taxonomies are in `docs/taxonomies/` directory
-- Model parameter follows fallback chain: specified → project → settings
+- Model selection: use specified model or project default or settings default (NOT a fallback chain)
 - Tab completion works for commands, genres, and models
 - Test suite includes 187 tests (171 unit, 16 integration)
+- **All generation requires:** premise → treatment → chapters → prose (fail if missing)
 
 ## Repository Structure
 

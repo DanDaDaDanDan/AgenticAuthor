@@ -216,9 +216,11 @@ class InteractiveSession:
             try:
                 models = await self.client.discover_models()
                 self._cached_model_ids = [m.id for m in models]
-            except Exception:
-                # If we can't get models, just continue without autocomplete
-                pass
+            except Exception as e:
+                # Warn user but continue without autocomplete
+                self.console.print(f"[yellow]Warning: Failed to fetch models: {e}[/yellow]")
+                self.console.print("[dim]Model autocomplete will not be available[/dim]")
+                self._cached_model_ids = []
 
         except Exception as e:
             self.console.print(f"[red]Failed to initialize API client: {e}[/red]")

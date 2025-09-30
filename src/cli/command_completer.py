@@ -133,7 +133,8 @@ class SlashCommandCompleter(Completer):
                                 selected_style='reverse',
                             )
                 except Exception:
-                    # If model provider fails, just return
+                    # If model provider fails during autocomplete, silently skip
+                    # (Don't spam user during typing - they'll see warning on startup)
                     pass
             return
 

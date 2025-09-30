@@ -67,7 +67,8 @@ class StreamHandler:
         model_name: str = "Model",
         display_field: str = "premise",
         display_label: str = "Generating",
-        on_token: Optional[Callable[[str, int], None]] = None
+        on_token: Optional[Callable[[str, int], None]] = None,
+        model_obj: Any = None  # Required: actual model object for capability checking
     ) -> Dict[str, Any]:
         """
         Handle SSE stream for JSON responses, displaying specific fields as they stream.
@@ -215,12 +216,12 @@ class StreamHandler:
                     parsed_json = json.loads(extracted)
                 except json.JSONDecodeError as e2:
                     # Even extracted JSON failed - likely truncated
-                    self._handle_truncated_json(extracted, e2)
+                    self._handle_truncated_json(extracted, e2, model_obj, model_name)
             else:
                 # No known formatting pattern - check for truncation
-                self._handle_truncated_json(full_content.strip(), e)
+                self._handle_truncated_json(full_content.strip(), e, model_obj, model_name)
 
-    def _handle_truncated_json(self, content: str, error: json.JSONDecodeError):
+    def _handle_truncated_json(self, content: str, error: json.JSONDecodeError, model_obj: Any, model_name: str = "Model"):
         """
         Handle truncated or malformed JSON by failing fast with clear error.
 
@@ -247,12 +248,17 @@ class StreamHandler:
             self.console.print(f"[yellow]Error: {error}[/yellow]")
             self.console.print(f"[dim]Response length: {len(content)} characters[/dim]")
 
-            # Check for obvious truncation at token limits
-            common_limits = [2048, 3000, 4000, 4096, 8192]
-            for limit in common_limits:
-                if abs(len(content) - limit) < 100:  # Within 100 chars of limit
-                    self.console.print(f"[yellow]⚠️  Response is near {limit} character limit - likely hit model's max output[/yellow]")
-                    break
+            # Check if we hit model's actual output limit
+            if not model_obj:
+                raise ValueError("Model object required for truncation detection - cannot determine output limits")
+
+            max_output = model_obj.get_max_output_tokens()
+            if max_output:
+                # Convert tokens to approximate character count (rough estimate: 1 token ≈ 4 chars)
+                max_chars = max_output * 4
+                if abs(len(content) - max_chars) < 500:  # Within 500 chars of estimated limit
+                    self.console.print(f"[yellow]⚠️  Response appears to have hit model's {max_output} token output limit[/yellow]")
+                    self.console.print(f"[dim]Model: {model_obj.id}[/dim]")
 
             # Save for debugging
             from pathlib import Path

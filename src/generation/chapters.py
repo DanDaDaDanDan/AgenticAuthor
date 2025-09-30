@@ -160,18 +160,37 @@ class ChapterGenerator:
                 settings = get_settings()
                 model = settings.active_model
 
-            # Adjust expectations for free/limited models
+            # Get model capabilities to determine appropriate token allocation
             min_tokens = 5000  # Default for rich outlines
-            if model and ('free' in model.lower() or 'grok-4-fast' in model.lower()):
-                # Free tier models often have output limits
-                min_tokens = 2500  # Further reduced for reliability
+            model_obj = await self.client.get_model(model)
 
-                self.console.print(f"\n[yellow]⚠️  Using {model}[/yellow]")
-                self.console.print(f"[dim]This model may have output limitations.[/dim]")
-                self.console.print(f"[dim]Consider:[/dim]")
-                self.console.print(f"[dim]  • Generating fewer chapters at once (8-12 instead of 16+)[/dim]")
-                self.console.print(f"[dim]  • Using a paid model for better results[/dim]")
-                self.console.print()
+            if not model_obj:
+                raise Exception(f"Failed to fetch model capabilities for {model}")
+
+            if model_obj:
+                max_output = model_obj.get_max_output_tokens()
+
+                # Adjust based on actual model capabilities
+                if max_output and max_output < min_tokens:
+                    # Use 80% of available output capacity to avoid hitting limits
+                    min_tokens = int(max_output * 0.8)
+
+                    self.console.print(f"\n[yellow]⚠️  Model output capacity: {max_output} tokens[/yellow]")
+                    self.console.print(f"[dim]Adjusting generation to use {min_tokens} tokens[/dim]")
+                    self.console.print(f"[dim]Consider:[/dim]")
+                    self.console.print(f"[dim]  • Generating fewer chapters at once[/dim]")
+                    self.console.print(f"[dim]  • Using a model with higher output capacity[/dim]")
+
+                    # Suggest alternatives if output is very limited
+                    if max_output < 3000:
+                        models_list = await self.client.discover_models()
+                        alternative = models_list.select_by_requirements(
+                            min_output_tokens=5000,
+                            exclude_models=[model]
+                        )
+                        if alternative:
+                            self.console.print(f"[dim]  • Try: {alternative.id} (supports {alternative.get_max_output_tokens() or 'unlimited'} tokens)[/dim]")
+                    self.console.print()
 
             result = await self.client.json_completion(
                 model=model,

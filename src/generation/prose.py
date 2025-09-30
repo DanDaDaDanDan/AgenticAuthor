@@ -120,7 +120,7 @@ class ProseGenerator:
         # Load chapter outlines
         chapters_file = self.project.path / "chapters.yaml"
         if not chapters_file.exists():
-            return []
+            raise Exception("No chapter outlines found. Generate chapters first with /generate chapters")
 
         with open(chapters_file, 'r') as f:
             chapters = yaml.safe_load(f) or []
@@ -157,13 +157,19 @@ class ProseGenerator:
             return f"Genre: {self.project.metadata.genre}"
         return None
 
-    def calculate_prose_context_tokens(self, chapter_number: int) -> Dict[str, Any]:
+    async def calculate_prose_context_tokens(self, chapter_number: int) -> Dict[str, Any]:
         """Calculate tokens needed for sequential generation with full context."""
 
-        # Get all content
-        premise = self.project.get_premise() or ""
-        treatment = self.project.get_treatment() or ""
-        taxonomy = self.get_taxonomy_selections() or ""
+        # Get all content - fail early if required content missing
+        premise = self.project.get_premise()
+        if not premise:
+            raise Exception("No premise found. Generate premise first with /generate premise")
+
+        treatment = self.project.get_treatment()
+        if not treatment:
+            raise Exception("No treatment found. Generate treatment first with /generate treatment")
+
+        taxonomy = self.get_taxonomy_selections() or ""  # Optional
 
         # Calculate base tokens
         premise_tokens = estimate_tokens(premise)
@@ -201,13 +207,20 @@ class ProseGenerator:
         # Total needed with buffer
         total_needed = total_context + response_needed + 1000
 
-        # Recommend model based on size
-        if total_needed > 100000:
-            recommended_model = "claude-3-opus-20240229"  # 200k context
-        elif total_needed > 32000:
-            recommended_model = "gpt-4-turbo-preview"  # 128k context
-        else:
-            recommended_model = "claude-3-sonnet-20240229"  # Good for smaller contexts
+        # Get available models to recommend best option
+        models_list = await self.client.discover_models()
+        recommended = models_list.select_by_requirements(
+            min_context=total_needed,
+            min_output_tokens=response_needed
+        )
+
+        if not recommended:
+            raise Exception(
+                f"No model found with sufficient capacity. "
+                f"Required: {total_needed:,} context tokens and {response_needed:,} output tokens"
+            )
+
+        recommended_model = recommended.id
 
         return {
             "premise_tokens": premise_tokens,
@@ -237,7 +250,7 @@ class ProseGenerator:
             Chapter prose text
         """
         # Check token requirements first
-        token_calc = self.calculate_prose_context_tokens(chapter_number)
+        token_calc = await self.calculate_prose_context_tokens(chapter_number)
 
         print(f"\n📊 Token Analysis for Chapter {chapter_number}:")
         print(f"  Premise: {token_calc['premise_tokens']:,} tokens")
@@ -249,11 +262,17 @@ class ProseGenerator:
         print(f"  Total Required: {token_calc['total_needed']:,} tokens")
         print(f"  Recommended Model: {token_calc['recommended_model']}\n")
 
-        # Get all content
+        # Get all content - fail early if required content missing
         premise = self.project.get_premise()
+        if not premise:
+            raise Exception("No premise found. Generate premise first with /generate premise")
+
         treatment = self.project.get_treatment()
-        taxonomy_selections = self.get_taxonomy_selections()
-        all_chapters = self.load_all_chapters_with_prose()
+        if not treatment:
+            raise Exception("No treatment found. Generate treatment first with /generate treatment")
+
+        taxonomy_selections = self.get_taxonomy_selections()  # Optional
+        all_chapters = self.load_all_chapters_with_prose()  # Will fail if no chapters exist
 
         # Find current chapter data
         current_chapter = None
@@ -290,10 +309,24 @@ class ProseGenerator:
                 settings = get_settings()
                 model = settings.active_model
 
-            # Warn if model might not have enough context
-            if token_calc['total_needed'] > 32000 and 'gpt-3.5' in model:
-                print(f"⚠️  Warning: {model} may not have sufficient context window")
-                print(f"   Consider using: {token_calc['recommended_model']}")
+            # Check if model has sufficient context
+            model_obj = await self.client.get_model(model)
+            if not model_obj:
+                raise Exception(f"Failed to fetch model capabilities for {model}")
+
+            if not model_obj.has_sufficient_context(token_calc['total_needed']):
+                print(f"⚠️  Warning: {model} has insufficient context window")
+                print(f"   Model context: {model_obj.context_length:,} tokens")
+                print(f"   Required: {token_calc['total_needed']:,} tokens")
+                if token_calc['recommended_model']:
+                    print(f"   Consider using: {token_calc['recommended_model']}")
+
+            # Also check output capacity
+            max_output = model_obj.get_max_output_tokens()
+            if max_output and max_output < token_calc['response_tokens']:
+                print(f"⚠️  Warning: {model} may have insufficient output capacity")
+                print(f"   Model max output: {max_output:,} tokens")
+                print(f"   Required: {token_calc['response_tokens']:,} tokens")
 
             # Use streaming_completion with calculated tokens
             result = await self.client.streaming_completion(

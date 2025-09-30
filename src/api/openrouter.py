@@ -126,8 +126,10 @@ class OpenRouterClient:
             self.console.print(f"[red]Error fetching models: {e}[/red]")
             # Return cached models if available
             if self._model_cache:
+                self.console.print("[yellow]Using cached model list[/yellow]")
                 return self._model_cache.models
-            return []
+            # No cache available - fail early
+            raise Exception(f"Failed to fetch models from OpenRouter and no cache available: {e}")
 
     async def get_model(self, model_id: str) -> Optional[Model]:
         """
@@ -417,11 +419,17 @@ class OpenRouterClient:
                 # Use the JSON stream handler if we have a display field
                 if display_field:
                     model_display = model.split('/')[-1] if '/' in model else model
+                    # Get model object for capability checking - required, not optional
+                    model_obj = await self.get_model(model)
+                    if not model_obj:
+                        raise Exception(f"Failed to fetch model capabilities for {model}")
+
                     stream_result = await self.stream_handler.handle_json_stream_with_display(
                         response,
                         model_name=model_display,
                         display_field=display_field,
-                        display_label=display_label or f"Generating {display_field}"
+                        display_label=display_label or f"Generating {display_field}",
+                        model_obj=model_obj
                     )
                     # Extract the actual data from the wrapper if needed
                     if isinstance(stream_result, dict) and 'data' in stream_result:
