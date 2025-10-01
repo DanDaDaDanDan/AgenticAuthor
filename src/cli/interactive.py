@@ -190,10 +190,12 @@ class InteractiveSession:
             if treatment := self.project.get_treatment():
                 self.story.treatment = treatment
 
-            # Initialize git manager
-            self.git = GitManager(self.project.path)
+            # Initialize git if not already initialized
             if not self.project.is_git_repo:
-                self.git.init()
+                self.project.init_git()
+
+            # Keep reference for backward compatibility
+            self.git = self.project.git
 
             self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
 
@@ -447,9 +449,11 @@ class InteractiveSession:
             )
 
             # Initialize git
-            self.git = GitManager(self.project.path)
-            self.git.init()
-            self.git.commit("Initial project creation")
+            self.project.init_git()
+            if self.project.git:
+                self.project.git.commit("Initial project creation")
+                # Keep reference for backward compatibility
+                self.git = self.project.git
 
             # Initialize story
             self.story = Story()

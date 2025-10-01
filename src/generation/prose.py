@@ -208,7 +208,9 @@ class ProseGenerator:
         total_needed = total_context + response_needed + 1000
 
         # Get available models to recommend best option
-        models_list = await self.client.discover_models()
+        from ..api.models import ModelList
+        models = await self.client.discover_models()
+        models_list = ModelList(models=models)
         recommended = models_list.select_by_requirements(
             min_context=total_needed,
             min_output_tokens=response_needed

@@ -326,7 +326,6 @@ class OpenRouterClient:
             self.console.print(f"[red]API Error: {e}[/red]")
 
             # Log the error with FULL request details
-            from ..utils.session_logger import get_session_logger
             session_logger = get_session_logger()
             if session_logger:
                 session_logger.log_api_error(
@@ -585,7 +584,6 @@ class OpenRouterClient:
             self.console.print(f"[red]Failed to parse JSON response: {e}[/red]")
 
             # Log the JSON parse error with FULL request details
-            from ..utils.session_logger import get_session_logger
             session_logger = get_session_logger()
             if session_logger:
                 session_logger.log_api_error(
@@ -606,7 +604,6 @@ class OpenRouterClient:
             self.console.print(f"[red]API Error: {e}[/red]")
 
             # Log the error with FULL request details
-            from ..utils.session_logger import get_session_logger
             session_logger = get_session_logger()
             if session_logger:
                 session_logger.log_api_error(

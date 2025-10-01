@@ -5,6 +5,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 import yaml
 
+from ..storage.git_manager import GitManager
+
 
 class ProjectMetadata(BaseModel):
     """Project metadata and configuration."""
@@ -40,7 +42,9 @@ class Project:
         self.path = Path(path).resolve()
         self.name = self.path.name
         self.metadata: Optional[ProjectMetadata] = None
+        self.git: Optional[GitManager] = None
         self._load_metadata()
+        self._init_git()
 
     @property
     def project_file(self) -> Path:
@@ -98,6 +102,22 @@ class Project:
             with open(self.project_file) as f:
                 data = yaml.safe_load(f)
                 self.metadata = ProjectMetadata(**data)
+
+    def _init_git(self):
+        """Initialize git manager if project is a git repo."""
+        if self.is_git_repo:
+            self.git = GitManager(self.path)
+
+    def init_git(self) -> bool:
+        """
+        Initialize git repository for this project.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.git:
+            self.git = GitManager(self.path)
+        return self.git.init()
 
     def save_metadata(self):
         """Save project metadata to project.yaml."""

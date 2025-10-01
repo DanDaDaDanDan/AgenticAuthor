@@ -6,7 +6,13 @@
       "Read(//c/Users/daniel.vogel/.agentic/debug/**)",
       "Bash(curl:*)",
       "Bash(cat:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "WebFetch(domain:rich.readthedocs.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(ls:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Read(//c/Users/daniel.vogel/.agentic//**)"
     ],
     "deny": [],
     "ask": []

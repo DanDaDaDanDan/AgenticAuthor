@@ -116,13 +116,15 @@ class StreamHandler:
             logger.debug(f"Stream handler: mode={mode}, display_field={display_field}, display_label={display_label}")
             logger.debug(f"Stream handler: model_name={model_name}, model_obj provided={'YES' if model_obj else 'NO'}")
 
-        # Use console.status for fixed bottom status bar (Claude Code style)
-        status_context = self.console.status(
-            f"{display_label}...",
-            spinner="dots",
-            spinner_style="cyan"
+        # Use Live display for non-interfering status updates
+        status_text_obj = Text(f"{display_label}...", style="cyan")
+        live_display = Live(
+            status_text_obj,
+            console=self.console,
+            refresh_per_second=4,  # Reasonable refresh rate
+            transient=True  # Disappears when done
         )
-        status_context.__enter__()
+        live_display.__enter__()
 
         try:
             event_count = 0
@@ -176,15 +178,16 @@ class StreamHandler:
                                             # Now look for the display_field within first object
                                             # This will be extracted in the next iteration
 
-                                    # If we're in the first object, look for the field
+                                    # If we're in the first object, look for the field (search from start, not last_processed_idx)
                                     if in_first_object and not in_value and not field_found:
                                         field_pattern = f'"{display_field}":'
                                         field_pattern_spaced = f'"{display_field}" :'
+                                        # CRITICAL FIX: Search from beginning of full_content, not from last_processed_idx
                                         if field_pattern in full_content or field_pattern_spaced in full_content:
                                             # Find where the value starts (try both patterns)
-                                            field_idx = full_content.find(field_pattern, last_processed_idx)
+                                            field_idx = full_content.find(field_pattern)
                                             if field_idx == -1:
-                                                field_idx = full_content.find(field_pattern_spaced, last_processed_idx)
+                                                field_idx = full_content.find(field_pattern_spaced)
                                                 field_pattern = field_pattern_spaced
                                             if field_idx != -1:
                                                 if logger:
@@ -197,7 +200,7 @@ class StreamHandler:
                                                     in_value = True
                                                     last_processed_idx = len(full_content) - len(after_field) + 1
                                                     if logger:
-                                                        logger.debug(f"Starting to stream field value")
+                                                        logger.debug(f"Starting to stream field value from position {last_processed_idx}")
 
                                 elif mode == "full":
                                     # Show entire JSON as it streams
@@ -250,15 +253,16 @@ class StreamHandler:
                                         display_content += char
                                 last_processed_idx = len(full_content)
 
-                            # Update status bar (always, not just when token exists)
+                            # Update status display (always, not just when token exists)
                             elapsed = time.time() - start_time
                             tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                            # Update status bar (stays at bottom)
-                            status_text = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
+                            # Update Live display with new Text object
+                            status_msg = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
                             if tokens_per_sec > 0:
-                                status_text += f" • {tokens_per_sec:.0f} t/s"
-                            status_context.update(status_text)
+                                status_msg += f" • {tokens_per_sec:.0f} t/s"
+                            status_text_obj.plain = status_msg  # Update text in-place
+                            live_display.update(status_text_obj)
 
                             # Stream content to console (scrollable)
                             # Only print if we have new content extracted
@@ -297,7 +301,7 @@ class StreamHandler:
                     continue
 
         finally:
-            status_context.__exit__(None, None, None)
+            live_display.__exit__(None, None, None)
             # Add newline after streaming content
             if display_content:
                 self.console.print()
