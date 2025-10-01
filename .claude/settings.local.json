@@ -12,7 +12,8 @@
       "Bash(ls:*)",
       "Bash(tail:*)",
       "Bash(grep:*)",
-      "Read(//c/Users/daniel.vogel/.agentic//**)"
+      "Read(//c/Users/daniel.vogel/.agentic//**)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
