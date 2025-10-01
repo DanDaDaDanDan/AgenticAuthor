@@ -22,7 +22,7 @@ AI-powered iterative book generation with natural language feedback and git-back
   - Genre autocomplete for `/generate premise`
   - Model fuzzy search and completion
 - **Comprehensive Logging**
-  - Debug logging to `~/.agentic/logs/`
+  - Debug logging to `./logs/`
   - `/logs` command to view recent entries
   - Full error tracking and debugging support
 - **Improved User Experience**
@@ -158,7 +158,7 @@ books/[project-name]/
 
 ## Logging and Debugging
 
-Logs are automatically saved to `~/.agentic/logs/agentic_YYYYMMDD.log`
+Logs are automatically saved to `./logs/agentic_YYYYMMDD.log`
 
 View logs in the REPL:
 ```bash
@@ -171,7 +171,7 @@ View logs directly:
 type %USERPROFILE%\.agentic\logs\agentic_20250923.log
 
 # Mac/Linux
-cat ~/.agentic/logs/agentic_20250923.log
+cat ./logs/agentic_20250923.log
 ```
 
 ## Testing
@@ -394,7 +394,7 @@ Clear the terminal screen.
 View recent log entries.
 - Shows log file location
 - Displays last 20 lines of current log
-- Logs stored in `~/.agentic/logs/agentic_YYYYMMDD.log`
+- Logs stored in `./logs/agentic_YYYYMMDD.log`
 - Automatic rotation daily
 
 #### `/help [command]`

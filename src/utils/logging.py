@@ -13,14 +13,14 @@ def cleanup_old_logs(log_dir: Path = None, days_to_keep: int = 1) -> int:
     Clean up log files older than specified days.
 
     Args:
-        log_dir: Directory containing logs (defaults to ~/.agentic/logs)
+        log_dir: Directory containing logs (defaults to ./logs)
         days_to_keep: Number of days to keep logs (default 1)
 
     Returns:
         Number of files deleted
     """
     if log_dir is None:
-        log_dir = Path.home() / ".agentic" / "logs"
+        log_dir = Path("./logs")
 
     if not log_dir.exists():
         return 0
@@ -125,7 +125,7 @@ def setup_logging(
     Setup logging configuration.
 
     Args:
-        log_file: Path to log file (defaults to .agentic/logs/agentic.log)
+        log_file: Path to log file (defaults to ./logs/agentic.log)
         level: Logging level (DEBUG, INFO, WARNING, ERROR)
         console_output: Whether to also output to console
 
@@ -141,7 +141,7 @@ def setup_logging(
 
     # Setup log file
     if log_file is None:
-        log_dir = Path.home() / ".agentic" / "logs"
+        log_dir = Path("./logs")
         log_dir.mkdir(parents=True, exist_ok=True)
 
         # Clean up old logs at startup

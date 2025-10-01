@@ -217,9 +217,9 @@ class ChapterGenerator:
                 model=model,
                 prompt=prompt,
                 temperature=0.7,  # Slightly higher for more creative variety
-                display_field="summary",  # Display first chapter's summary as it generates
+                display_field="summary",  # Display summaries as they complete
                 display_label="Generating chapter outlines",
-                display_mode="array_first",  # Show first element of array
+                display_mode="array_progressive",  # Show all chapter summaries as they complete
                 # No max_tokens - let it use full available context
                 min_response_tokens=min_tokens
             )

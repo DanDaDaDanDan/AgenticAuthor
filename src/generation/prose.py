@@ -207,22 +207,46 @@ class ProseGenerator:
         # Total needed with buffer
         total_needed = total_context + response_needed + 1000
 
-        # Get available models to recommend best option
-        from ..api.models import ModelList
-        models = await self.client.discover_models()
-        models_list = ModelList(models=models)
-        recommended = models_list.select_by_requirements(
-            min_context=total_needed,
-            min_output_tokens=response_needed
-        )
+        # Check if configured model is sufficient
+        configured_model = self.project.metadata.model if self.project.metadata else None
+        if not configured_model:
+            from ..config import Settings
+            settings = Settings()
+            configured_model = settings.active_model
 
-        if not recommended:
-            raise Exception(
-                f"No model found with sufficient capacity. "
-                f"Required: {total_needed:,} context tokens and {response_needed:,} output tokens"
+        recommended_model = None
+        is_sufficient = False
+
+        if configured_model:
+            # Check if configured model has sufficient capacity
+            from ..api.models import ModelList
+            models = await self.client.discover_models()
+            models_list = ModelList(models=models)
+            configured_model_obj = models_list.find_by_id(configured_model)
+
+            if configured_model_obj:
+                is_sufficient = (
+                    configured_model_obj.context_length >= total_needed and
+                    configured_model_obj.get_max_output_tokens() >= response_needed
+                )
+
+        # Only recommend if configured model is insufficient or missing
+        if not is_sufficient:
+            from ..api.models import ModelList
+            models = await self.client.discover_models()
+            models_list = ModelList(models=models)
+            recommended = models_list.select_by_requirements(
+                min_context=total_needed,
+                min_output_tokens=response_needed
             )
 
-        recommended_model = recommended.id
+            if not recommended:
+                raise Exception(
+                    f"No model found with sufficient capacity. "
+                    f"Required: {total_needed:,} context tokens and {response_needed:,} output tokens"
+                )
+
+            recommended_model = recommended.id
 
         return {
             "premise_tokens": premise_tokens,
@@ -262,7 +286,9 @@ class ProseGenerator:
         print(f"  Total Context: {token_calc['total_context_tokens']:,} tokens")
         print(f"  Response Needed: {token_calc['response_tokens']:,} tokens")
         print(f"  Total Required: {token_calc['total_needed']:,} tokens")
-        print(f"  Recommended Model: {token_calc['recommended_model']}\n")
+        if token_calc['recommended_model']:
+            print(f"  ⚠️  Recommended Model: {token_calc['recommended_model']}")
+        print()
 
         # Get all content - fail early if required content missing
         premise = self.project.get_premise()

@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Model fuzzy search and tab completion
   - Context-aware completion suggestions
 - **Comprehensive Logging System**
-  - Debug logging to `~/.agentic/logs/agentic_YYYYMMDD.log`
+  - Debug logging to `./logs/agentic_YYYYMMDD.log`
   - `/logs` command to view recent log entries
   - Automatic daily log rotation
   - Full error tracking and debugging support
@@ -165,7 +165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [x] Comprehensive debug logging
 - [x] Daily log rotation
 - [x] `/logs` command implementation
-- [x] Log file location: `~/.agentic/logs/`
+- [x] Log file location: `./logs/`
 
 ### Generation System
 - [x] Premise generation with multiple modes

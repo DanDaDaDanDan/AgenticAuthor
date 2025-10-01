@@ -1278,17 +1278,15 @@ class InteractiveSession:
             # Fall back to latest log in logs directory
             logs_dir = Path("./logs")
             if logs_dir.exists():
+                # Look for both session logs and agentic logs
                 log_files = sorted(
-                    logs_dir.glob("session_*.log"),
+                    list(logs_dir.glob("session_*.jsonl")) + list(logs_dir.glob("agentic_*.log")),
                     key=lambda f: f.stat().st_mtime,
                     reverse=True
                 )
                 log_file = log_files[0] if log_files else None
             else:
-                # Try old location
-                from datetime import datetime
-                timestamp = datetime.now().strftime("%Y%m%d")
-                log_file = Path.home() / ".agentic" / "logs" / f"agentic_{timestamp}.log"
+                log_file = None
 
         if not log_file or not log_file.exists():
             self.console.print("[yellow]No log file found[/yellow]")

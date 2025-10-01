@@ -87,8 +87,8 @@ class Settings(BaseSettings):
         description="Stream API responses to terminal"
     )
     streaming_display_mode: str = Field(
-        default="status",
-        description="Display mode for streaming: 'status' (fixed bar), 'live' (original), or 'simple' (plain)"
+        default="silent",
+        description="Display mode for streaming: 'status' (with status bar), 'live' (original), 'simple' (plain), or 'silent' (no status, cleanest)"
     )
     verbose: bool = Field(
         default=False,
@@ -107,7 +107,7 @@ class Settings(BaseSettings):
     @classmethod
     def validate_display_mode(cls, v: str) -> str:
         """Validate streaming display mode."""
-        valid_modes = {'status', 'live', 'simple'}
+        valid_modes = {'status', 'live', 'simple', 'silent'}
         if v not in valid_modes:
             raise ValueError(f"Display mode must be one of: {', '.join(valid_modes)}")
         return v

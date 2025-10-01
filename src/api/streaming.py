@@ -83,6 +83,7 @@ class StreamHandler:
             model_obj: Model object for capability checking
             mode: Display mode - "field" (extract field from object),
                   "array_first" (show first element of array),
+                  "array_progressive" (show display_field from all array elements as they complete),
                   "full" (show entire JSON)
         """
         full_content = ""
@@ -101,6 +102,10 @@ class StreamHandler:
         current_depth = 0
         in_first_object = False
 
+        # Additional state for array_progressive mode
+        last_field_search_idx = 0  # Where we last searched for fields
+        completed_fields = []  # Track which field values we've already shown
+
         # Track displayed content for incremental printing
         self._last_displayed_length = 0
 
@@ -108,8 +113,8 @@ class StreamHandler:
         from ..utils.logging import get_logger
         from ..utils.session_logger import get_session_logger
 
-        logger = get_logger()  # Global logger -> ~/.agentic/logs/
-        session_logger = get_session_logger()  # Session logger -> ./logs/
+        logger = get_logger()  # Global logger -> ./logs/agentic_YYYYMMDD.log
+        session_logger = get_session_logger()  # Session logger -> ./logs/session_*.jsonl
 
         if logger:
             logger.debug(f"=== Stream handler START ===")
@@ -202,6 +207,71 @@ class StreamHandler:
                                                     if logger:
                                                         logger.debug(f"Starting to stream field value from position {last_processed_idx}")
 
+                                elif mode == "array_progressive":
+                                    # Show each occurrence of display_field as it completes
+                                    # Search for completed field values from where we last looked
+                                    field_pattern = f'"{display_field}":'
+                                    field_pattern_spaced = f'"{display_field}" :'
+
+                                    # Search from last position
+                                    search_idx = last_field_search_idx
+                                    while True:
+                                        # Find next field occurrence
+                                        field_idx = full_content.find(field_pattern, search_idx)
+                                        if field_idx == -1:
+                                            field_idx = full_content.find(field_pattern_spaced, search_idx)
+                                            pattern_used = field_pattern_spaced if field_idx != -1 else field_pattern
+                                        else:
+                                            pattern_used = field_pattern
+
+                                        if field_idx == -1:
+                                            # No more fields found yet
+                                            break
+
+                                        # Find the value (should be a string)
+                                        value_start_pos = field_idx + len(pattern_used)
+                                        after_field = full_content[value_start_pos:].lstrip()
+
+                                        if after_field.startswith('"'):
+                                            # Find closing quote
+                                            value_start = value_start_pos + (len(full_content[value_start_pos:]) - len(after_field)) + 1
+                                            value_end = full_content.find('"', value_start)
+
+                                            # Check if string is complete (not escaped quote)
+                                            while value_end != -1 and value_end > 0 and full_content[value_end - 1] == '\\':
+                                                value_end = full_content.find('"', value_end + 1)
+
+                                            if value_end != -1:
+                                                # Complete field value found
+                                                field_value = full_content[value_start:value_end]
+                                                # Decode escape sequences
+                                                field_value = field_value.replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '\r')
+                                                field_value = field_value.replace('\\"', '"').replace('\\\\', '\\')
+
+                                                # Check if we've already displayed this one
+                                                if field_idx not in [f[0] for f in completed_fields]:
+                                                    # New complete field - display it
+                                                    chapter_num = len(completed_fields) + 1
+                                                    self.console.print(f"\n[bold green]Chapter {chapter_num}:[/bold green]")
+                                                    self.console.print(f"[dim]{field_value}[/dim]\n")
+                                                    self.console.file.flush()
+                                                    completed_fields.append((field_idx, field_value))
+                                                    if logger:
+                                                        logger.debug(f"array_progressive: Displayed chapter {chapter_num}")
+
+                                                # Continue searching from after this field
+                                                search_idx = value_end + 1
+                                                last_field_search_idx = search_idx
+                                            else:
+                                                # Value not complete yet
+                                                break
+                                        else:
+                                            # Not a string value, skip
+                                            search_idx = field_idx + len(pattern_used)
+
+                                    # For array_progressive, display_content is not used (we print directly)
+                                    field_found = True  # Mark as found to avoid other mode logic
+
                                 elif mode == "full":
                                     # Show entire JSON as it streams
                                     field_found = True
@@ -253,16 +323,17 @@ class StreamHandler:
                                         display_content += char
                                 last_processed_idx = len(full_content)
 
-                            # Update status display (always, not just when token exists)
-                            elapsed = time.time() - start_time
-                            tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
+                            # Update status display (batched - only every 10 tokens to reduce interference)
+                            if token_count % 10 == 0 or token_count == 1:
+                                elapsed = time.time() - start_time
+                                tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                            # Update Live display with new Text object
-                            status_msg = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
-                            if tokens_per_sec > 0:
-                                status_msg += f" • {tokens_per_sec:.0f} t/s"
-                            status_text_obj.plain = status_msg  # Update text in-place
-                            live_display.update(status_text_obj)
+                                # Update Live display with new Text object
+                                status_msg = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
+                                if tokens_per_sec > 0:
+                                    status_msg += f" • {tokens_per_sec:.0f} t/s"
+                                status_text_obj.plain = status_msg  # Update text in-place
+                                live_display.update(status_text_obj)
 
                             # Stream content to console (scrollable)
                             # Only print if we have new content extracted
@@ -272,6 +343,7 @@ class StreamHandler:
                                 new_content = display_content[displayed_length:]
                                 if new_content:
                                     self.console.print(new_content, end="", highlight=False)
+                                    self.console.file.flush()  # Force flush to prevent buffering issues
                                     self._last_displayed_length = len(display_content)
                                     if logger and displayed_length == 0:
                                         logger.debug(f"Started printing content to console")
@@ -506,7 +578,7 @@ class StreamHandler:
             model_name: Name of the model for display
             on_token: Optional callback for each token
             display: Whether to display output
-            display_mode: Display mode - "status" (console.status), "live" (Live display), or "simple" (plain)
+            display_mode: Display mode - "status" (console.status), "live" (Live display), "simple" (plain), or "silent" (no status, just content)
         """
         content = ""
         usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -570,14 +642,18 @@ class StreamHandler:
                                 tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
                                 if display_mode == "status" and status_context:
-                                    # Update status bar (stays at bottom, doesn't interfere with scrolling)
-                                    status_text = f"Generating with {model_name} • {elapsed:.1f}s • {token_count} tokens"
-                                    if tokens_per_sec > 0:
-                                        status_text += f" • {tokens_per_sec:.0f} t/s"
-                                    status_context.update(status_text)
+                                    # Batch status updates - only every 20 tokens to prevent flicker
+                                    if token_count % 20 == 0 or token_count == 1:
+                                        status_text = f"Generating with {model_name} • {elapsed:.1f}s • {token_count} tokens"
+                                        if tokens_per_sec > 0:
+                                            status_text += f" • {tokens_per_sec:.0f} t/s"
+                                        status_context.update(status_text)
 
                                     # Stream content to console (normal scrollable output)
                                     self.console.print(token, end="", highlight=False)
+                                    # Flush every 10 tokens to reduce buffering but not overdo it
+                                    if token_count % 10 == 0:
+                                        self.console.file.flush()
 
                                 elif display_mode == "live" and live:
                                     # Original Live display behavior
@@ -603,6 +679,15 @@ class StreamHandler:
                                 elif display_mode == "simple":
                                     # Simple mode - just print tokens as they come
                                     self.console.print(token, end="", highlight=False)
+                                    # Flush periodically to prevent buffering issues
+                                    if token_count % 10 == 0:
+                                        self.console.file.flush()
+
+                                elif display_mode == "silent":
+                                    # Silent mode - no status, just print content
+                                    # Use file.write directly for maximum compatibility
+                                    self.console.file.write(token)
+                                    self.console.file.flush()  # Flush every token for immediate display
 
                         # Check for finish reason
                         if 'finish_reason' in choice and choice['finish_reason']:
@@ -624,12 +709,26 @@ class StreamHandler:
             # Clean up display
             if status_context:
                 status_context.__exit__(None, None, None)
-                # Print newline after streaming completes when using status mode
-                if display_mode == "status":
-                    self.console.print()  # Add newline at end
+
             if live:
                 live.stop()
-                # Don't print content here - let the caller handle it
+
+            # Print newline after streaming completes for all modes
+            if display and display_mode in ["status", "simple", "silent"]:
+                self.console.file.flush()  # Final flush
+                self.console.file.write("\n")  # Add newline at end
+                self.console.file.flush()
+
+                # For silent mode, show summary stats at the end
+                if display_mode == "silent" and token_count > 0:
+                    elapsed = time.time() - start_time
+                    tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
+                    word_count = len(content.split()) if content else 0
+
+                    self.console.print(
+                        f"\n[dim]✓ Generated {word_count:,} words in {elapsed:.1f}s "
+                        f"({token_count} tokens • {tokens_per_sec:.0f} t/s)[/dim]"
+                    )
 
         return {
             'content': content,

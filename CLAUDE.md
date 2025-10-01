@@ -47,7 +47,7 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 - Genre-specific taxonomy support (11 genres with autocomplete)
 - Smart input detection (brief premise vs standard vs detailed vs treatment)
 - History tracking to avoid repetitive generations
-- Comprehensive logging system (`~/.agentic/logs/`)
+- Comprehensive logging system (`./logs/`)
 - Enhanced tab completion for commands, genres, and models
 
 ## Quick Start Commands
@@ -299,7 +299,7 @@ process(data)  # No conditionals needed
 - Every operation creates a git commit automatically
 - Analysis files include git SHA for reproducibility
 - Use structured JSON for intent checking responses
-- Logs are written to `~/.agentic/logs/agentic_YYYYMMDD.log`
+- Logs are written to `./logs/agentic_YYYYMMDD.log`
 - Genre taxonomies are in `docs/taxonomies/` directory
 - Model selection: use specified model or project default or settings default (NOT a fallback chain)
 - Tab completion works for commands, genres, and models
