@@ -26,6 +26,7 @@ from .command_completer import SlashCommandCompleter, create_command_description
 from .auto_suggest import SlashCommandAutoSuggest
 from ..generation import PremiseGenerator, TreatmentGenerator, ChapterGenerator, ProseGenerator
 from ..generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
+from ..generation.iteration import IterationCoordinator
 from ..utils.logging import setup_logging, get_logger
 
 
@@ -366,12 +367,102 @@ class InteractiveSession:
         Args:
             feedback: User's feedback text
         """
-        self._print("[dim]Processing your feedback...[/dim]")
+        if not self.project:
+            self._print("[yellow]⚠  No project loaded[/yellow]")
+            return
 
-        # This will be implemented with the iteration system
-        # For now, just echo
-        self._print(f"[dim]Feedback: {feedback}[/dim]")
-        self._print("[dim]⚠  Iteration system not yet implemented[/dim]")
+        if not self.client:
+            self._print("[yellow]⚠  API client not initialized[/yellow]")
+            return
+
+        try:
+            # Initialize iteration coordinator
+            coordinator = IterationCoordinator(
+                client=self.client,
+                project=self.project,
+                model=self.settings.active_model
+            )
+
+            # Show processing message
+            self._print("\n[dim]📝 Analyzing feedback...[/dim]")
+
+            # Process feedback
+            result = await coordinator.process_feedback(
+                feedback=feedback,
+                auto_commit=True,
+                show_preview=False
+            )
+
+            # Display results
+            if result['success']:
+                self._display_iteration_success(result)
+            elif result.get('needs_clarification'):
+                self._display_clarification_request(result)
+            else:
+                error_msg = result.get('error', 'Unknown error')
+                self._print(f"\n[red]✗ Error:[/red] {error_msg}")
+
+        except Exception as e:
+            self._print(f"\n[red]✗ Error processing feedback:[/red] {str(e)}")
+            if self.session_logger:
+                self.session_logger.log_error(e, "Iteration failed")
+
+    def _display_iteration_success(self, result: Dict[str, Any]):
+        """Display successful iteration results."""
+        intent = result.get('intent', {})
+        scale = result.get('scale', 'unknown')
+        changes = result.get('changes', [])
+
+        # Show intent summary
+        action = intent.get('action', 'unknown').replace('_', ' ')
+        target = intent.get('target_type', 'content')
+        if intent.get('target_id'):
+            target = f"{target} {intent['target_id']}"
+
+        self._print(f"\n[green]✓ Intent:[/green] {action} ({target})")
+        self._print(f"[dim]  Confidence: {intent.get('confidence', 0):.0%}[/dim]")
+        self._print(f"[dim]  Scale: {scale}[/dim]")
+
+        # Show changes
+        if changes:
+            self._print(f"\n[green]🔧 Changes applied:[/green]")
+            for change in changes:
+                change_type = change.get('type', 'unknown')
+                file_path = change.get('file', 'unknown')
+
+                if change_type == 'patch':
+                    old_len = change.get('original_length', 0)
+                    new_len = change.get('modified_length', 0)
+                    diff_words = new_len - old_len
+                    sign = '+' if diff_words >= 0 else ''
+                    self._print(f"   • Patched [cyan]{file_path}[/cyan] ({sign}{diff_words} words)")
+
+                elif change_type == 'regenerate':
+                    word_count = change.get('word_count', 0)
+                    self._print(f"   • Regenerated [cyan]{file_path}[/cyan] ({word_count:,} words)")
+
+        # Show commit info
+        commit = result.get('commit')
+        if commit:
+            self._print(f"\n[green]📦 Committed:[/green] {commit.get('message', 'unknown')}")
+
+        self._print()
+
+    def _display_clarification_request(self, result: Dict[str, Any]):
+        """Display clarification request."""
+        clarification = result.get('clarification_needed', {})
+        reason = clarification.get('reason', 'Intent unclear')
+        suggestions = clarification.get('suggestions', [])
+
+        self._print(f"\n[yellow]⚠  Need more information:[/yellow]")
+        self._print(f"   {reason}")
+
+        if suggestions:
+            self._print(f"\n[dim]Suggestions:[/dim]")
+            for suggestion in suggestions:
+                self._print(f"   • {suggestion}")
+
+        self._print()
 
     def show_help(self, args: str = ""):
         """Show help information."""

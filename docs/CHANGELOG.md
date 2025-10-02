@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Natural Language Iteration System** ⭐ MAJOR FEATURE
+  - Process feedback with natural language (no explicit commands needed)
+  - Smart intent analysis with confidence scoring
+  - Automatic patch vs regenerate detection
+  - Unified diff format for precise, reviewable changes
+  - Components:
+    * `IntentAnalyzer`: Parses natural language to structured JSON
+    * `ScaleDetector`: Determines patch (<30% change) vs regenerate (>30%)
+    * `DiffGenerator`: Creates and applies unified diffs
+    * `IterationCoordinator`: Orchestrates the full iteration flow
+  - Auto-commit with descriptive messages
+  - Confidence-based routing (>0.8 execute, <0.8 clarify)
+  - Full documentation in `docs/ITERATION.md`
+  - Examples:
+    * "Add more dialogue to chapter 3" → Generates patch
+    * "Rewrite premise to be darker" → Full regeneration
 - **Inline Project Selection**
   - `/open` command now shows numbered list for selection (no modal)
   - Displays project metadata (genre, word count, last updated)
@@ -174,14 +190,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [x] Prose generation
 - [x] Jinja2 templates integrated
 
-## 🚧 In Progress
+## ✅ Recently Completed (Unreleased)
 
 ### Iteration System
-- [ ] Natural language intent checking
-- [ ] Confidence-based routing
-- [ ] Feedback processing
-- [ ] Content modification
-- [ ] Auto-commit with descriptive messages
+- [x] Natural language intent checking
+- [x] Confidence-based routing
+- [x] Feedback processing (patch and regenerate)
+- [x] Content modification via unified diffs
+- [x] Auto-commit with descriptive messages
+- [x] Scale detection (patch vs regenerate)
+- [x] IntentAnalyzer, ScaleDetector, DiffGenerator, IterationCoordinator
+- [x] Integration with interactive REPL
+
+## 🚧 In Progress
 
 ### Analysis System
 - [ ] Commercial viability analysis
