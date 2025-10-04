@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Comprehensive Story Analysis System** ⭐ MAJOR FEATURE
+  - Multi-dimensional analysis across 8 critical axes
+  - `/analyze` command with multiple targets (premise, treatment, chapters, prose)
+  - Analysis dimensions:
+    * Plot & Structure: plot holes, pacing, cause/effect, foreshadowing
+    * Character Consistency: voice, motivation, arcs, relationships
+    * World-Building: logic, geography, timeline, systems
+    * Dialogue Quality: naturalism, subtext, character voice
+    * Prose & Style: clarity, repetition, active voice, clichés
+    * Thematic Coherence: theme clarity, symbols, integration
+    * Narrative Technique: POV, tense, distance, hooks
+    * Commercial Viability: market fit, hook strength, target audience
+  - Structured markdown reports saved to `analysis/` directory
+  - Executive summary with overall grade (A-F) and scores
+  - Issue severity classification (CRITICAL/HIGH/MEDIUM/LOW)
+  - Specific location references for all issues
+  - Concrete fix suggestions for each problem
+  - Positive highlights alongside issues
+  - Git SHA tracking for reproducibility
+  - Uses Claude 3.5 Sonnet for quality analysis
 - **Natural Language Iteration System** ⭐ MAJOR FEATURE
   - Process feedback with natural language (no explicit commands needed)
   - Smart intent analysis with confidence scoring
@@ -192,6 +212,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## ✅ Recently Completed (Unreleased)
 
+### Analysis System
+- [x] Plot & Structure analysis (plot holes, pacing, foreshadowing)
+- [x] Character Consistency analysis (voice, motivation, arcs)
+- [x] World-Building Coherence analysis (logic, geography, systems)
+- [x] Dialogue Quality analysis (naturalism, subtext, voice)
+- [x] Prose & Style analysis (clarity, repetition, clichés)
+- [x] Thematic Coherence analysis (theme clarity, symbols)
+- [x] Narrative Technique analysis (POV, tense, hooks)
+- [x] Commercial Viability analysis (market fit, target audience)
+- [x] AnalysisCoordinator orchestrating all analyzers
+- [x] Markdown report generation with git SHA tracking
+- [x] `/analyze` command integration with interactive REPL
+- [x] Rich CLI display with scores, issues, and highlights
+
 ### Iteration System
 - [x] Natural language intent checking
 - [x] Confidence-based routing
@@ -203,13 +237,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [x] Integration with interactive REPL
 
 ## 🚧 In Progress
-
-### Analysis System
-- [ ] Commercial viability analysis
-- [ ] Plot hole detection
-- [ ] Character consistency checking
-- [ ] World-building analysis
-- [ ] Element tracking
 
 ## 📋 Not Started
 

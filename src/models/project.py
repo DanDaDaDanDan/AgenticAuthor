@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 from pathlib import Path
 from pydantic import BaseModel, Field
+import json
 import yaml
 
 from ..storage.git_manager import GitManager
@@ -55,6 +56,11 @@ class Project:
     def premise_file(self) -> Path:
         """Get path to premise.md file."""
         return self.path / "premise.md"
+
+    @property
+    def premise_metadata_file(self) -> Path:
+        """Get path to premise_metadata.json file."""
+        return self.path / "premise_metadata.json"
 
     @property
     def treatment_file(self) -> Path:
@@ -169,6 +175,22 @@ class Project:
         if self.chapters_file.exists():
             with open(self.chapters_file) as f:
                 return yaml.safe_load(f)
+        return None
+
+    def get_chapters(self) -> Optional[List[Dict[str, Any]]]:
+        """Load chapters list from chapter outlines."""
+        outlines = self.get_chapter_outlines()
+        # chapters.yaml contains a direct list of chapter dicts
+        if outlines and isinstance(outlines, list):
+            return outlines
+        return None
+
+    def get_taxonomy(self) -> Optional[Dict[str, Any]]:
+        """Load taxonomy from premise metadata."""
+        if self.premise_metadata_file.exists():
+            with open(self.premise_metadata_file) as f:
+                data = json.load(f)
+                return data.get('taxonomy')
         return None
 
     def save_chapter_outlines(self, outlines: Dict[str, Any]):

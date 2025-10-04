@@ -27,6 +27,7 @@ from .auto_suggest import SlashCommandAutoSuggest
 from ..generation import PremiseGenerator, TreatmentGenerator, ChapterGenerator, ProseGenerator
 from ..generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
 from ..generation.iteration import IterationCoordinator
+from ..generation.analysis import AnalysisCoordinator
 from ..utils.logging import setup_logging, get_logger
 
 
@@ -1180,8 +1181,138 @@ class InteractiveSession:
 
     async def analyze_story(self, args: str):
         """Run story analysis."""
-        self.console.print(f"[cyan]Analyze: {args or 'all'}[/cyan]")
-        self.console.print("[yellow]Analysis system not yet implemented[/yellow]")
+        if not self.project:
+            self.console.print("[yellow]⚠  No project loaded[/yellow]")
+            return
+
+        if not self.client:
+            self.console.print("[yellow]⚠  API client not initialized[/yellow]")
+            return
+
+        # Parse args: premise / treatment / chapters / chapter N / prose / prose N / all
+        parts = args.strip().split() if args else []
+
+        if not parts:
+            content_type = "all"
+            target_id = None
+        elif parts[0] in ['premise', 'treatment', 'chapters']:
+            content_type = parts[0]
+            target_id = None
+        elif parts[0] == 'chapter' and len(parts) > 1:
+            content_type = 'chapter'
+            target_id = parts[1]
+        elif parts[0] == 'prose' and len(parts) > 1:
+            content_type = 'prose'
+            target_id = parts[1]
+        elif parts[0] == 'prose':
+            # Default to analyzing all prose chapters
+            content_type = 'prose'
+            target_id = "1"  # Start with chapter 1
+        else:
+            self.console.print("[red]Invalid analysis target[/red]")
+            self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all]")
+            return
+
+        try:
+            # Initialize coordinator
+            coordinator = AnalysisCoordinator(
+                client=self.client,
+                project=self.project,
+                model=self.settings.active_model
+            )
+
+            # Show progress
+            content_desc = content_type
+            if target_id:
+                content_desc += f" {target_id}"
+
+            self.console.print(f"\n[bold cyan]📊 Analyzing {content_desc}...[/bold cyan]\n")
+
+            # Track progress for each dimension
+            dimensions = []
+            if content_type in ['premise']:
+                dimensions = ['plot', 'theme', 'commercial']
+            elif content_type in ['treatment']:
+                dimensions = ['plot', 'character', 'worldbuilding', 'theme', 'commercial']
+            elif content_type in ['chapters', 'chapter']:
+                dimensions = ['plot', 'character', 'worldbuilding', 'theme']
+            elif content_type in ['prose']:
+                dimensions = ['plot', 'character', 'worldbuilding', 'dialogue', 'prose', 'theme', 'narrative']
+
+            for i, dim in enumerate(dimensions, 1):
+                self.console.print(f"   ⏳ {dim.title()}...")
+
+            # Run analysis
+            result = await coordinator.analyze(content_type, target_id)
+
+            # Display results
+            self._display_analysis_results(result)
+
+        except Exception as e:
+            self.console.print(f"\n[red]✗ Analysis failed:[/red] {str(e)}")
+            if self.session_logger:
+                self.session_logger.log_error(e, "Analysis failed")
+
+    def _display_analysis_results(self, result: Dict[str, Any]):
+        """Display analysis results."""
+        self.console.print()
+        self.console.rule(style="cyan")
+
+        # Executive Summary
+        content_desc = result['content_type'].title()
+        if result.get('target_id'):
+            content_desc += f" {result['target_id']}"
+
+        self.console.print(f"\n[bold]📊 Analysis Complete: {content_desc}[/bold]\n")
+
+        self.console.print(f"[bold]Overall Grade:[/bold] {result['overall_grade']}")
+        self.console.print(f"[bold]Overall Score:[/bold] {result['overall_score']:.1f}/10\n")
+
+        # Issue Summary
+        if result['total_issues'] > 0:
+            self.console.print(f"⚠️  [bold]Issues Found:[/bold] {result['total_issues']} total")
+            if result['critical_issues'] > 0:
+                self.console.print(f"   • Critical: {result['critical_issues']}")
+            if result['high_issues'] > 0:
+                self.console.print(f"   • High: {result['high_issues']}")
+            self.console.print()
+
+        # Dimension Scores
+        self.console.print("[bold]Dimension Scores:[/bold]")
+        for dim in result['dimension_results']:
+            score = dim['score']
+            bar = '█' * int(score) + '░' * (10 - int(score))
+            self.console.print(f"  {dim['dimension']:25} [{bar}] {score:.1f}/10")
+        self.console.print()
+
+        # Top Issues
+        if result['priority_issues']:
+            self.console.print("[bold]Top Priority Issues:[/bold]")
+            for i, issue in enumerate(result['priority_issues'][:3], 1):
+                severity_color = {
+                    'CRITICAL': 'red',
+                    'HIGH': 'yellow',
+                    'MEDIUM': 'cyan',
+                    'LOW': 'dim'
+                }.get(issue['severity'], 'white')
+
+                self.console.print(f"  {i}. [{severity_color}][{issue['severity']}][/{severity_color}] {issue['category']}")
+                self.console.print(f"     Location: [dim]{issue['location']}[/dim]")
+                self.console.print(f"     Issue: {issue['description']}")
+                self.console.print(f"     Fix: [green]{issue['suggestion']}[/green]")
+                self.console.print()
+
+        # Highlights
+        if result['highlights']:
+            self.console.print("[bold]✓ Positive Highlights:[/bold]")
+            for strength in result['highlights'][:3]:
+                self.console.print(f"  • {strength['description']}")
+            self.console.print()
+
+        # Report saved
+        self.console.rule(style="cyan")
+        self.console.print(f"\n[green]Full report saved:[/green] {result['report_path']}")
+        self.console.print()
 
     async def export_story(self, args: str):
         """Export story to different format."""

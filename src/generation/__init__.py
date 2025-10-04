@@ -5,6 +5,7 @@ from .treatment import TreatmentGenerator
 from .chapters import ChapterGenerator
 from .prose import ProseGenerator
 from .iteration import IterationCoordinator, IntentAnalyzer, ScaleDetector, DiffGenerator
+from .analysis import AnalysisCoordinator
 
 __all__ = [
     'PremiseGenerator',
@@ -15,4 +16,5 @@ __all__ = [
     'IntentAnalyzer',
     'ScaleDetector',
     'DiffGenerator',
+    'AnalysisCoordinator',
 ]
