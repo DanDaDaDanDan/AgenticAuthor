@@ -229,8 +229,8 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/export [format]'
         },
         'git': {
-            'description': 'Run git commands',
-            'usage': '/git <command>'
+            'description': 'View git history and version control status',
+            'usage': '/git <status|log|diff|show>'
         },
         'config': {
             'description': 'Show or set configuration',
@@ -240,9 +240,9 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Clear the screen',
             'usage': '/clear'
         },
-        'reload': {
-            'description': 'Reload modules (for development)',
-            'usage': '/reload'
+        'logs': {
+            'description': 'Show recent log entries',
+            'usage': '/logs'
         },
         'exit': {
             'description': 'Exit the application',

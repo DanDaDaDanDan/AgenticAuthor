@@ -76,7 +76,6 @@ class InteractiveSession:
             'git': self.git_command,
             'config': self.show_config,
             'clear': self.clear_screen,
-            'reload': self.reload_modules,
             'logs': self.show_logs,
         }
 
@@ -376,6 +375,9 @@ class InteractiveSession:
             self._print("[yellow]⚠  API client not initialized[/yellow]")
             return
 
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
         try:
             # Initialize iteration coordinator
             coordinator = IterationCoordinator(
@@ -449,6 +451,18 @@ class InteractiveSession:
 
         self._print()
 
+    def _ensure_git_repo(self):
+        """Ensure project has a git repository initialized."""
+        if not self.project:
+            return
+
+        if not self.project.is_git_repo:
+            self.console.print("[dim]Initializing git repository...[/dim]")
+            self.project.init_git()
+            if self.project.git:
+                self.project.git.commit("Initialize git repository")
+                self.git = self.project.git
+
     def _display_clarification_request(self, result: Dict[str, Any]):
         """Display clarification request."""
         clarification = result.get('clarification_needed', {})
@@ -494,10 +508,10 @@ class InteractiveSession:
             ("/iterate <text>", "Iterate with feedback"),
             ("/analyze [type]", "Run story analysis"),
             ("/export [format]", "Export story"),
-            ("/git <command>", "Run git command"),
+            ("/git <command>", "View git history (status/log/diff/show)"),
             ("/config", "Show configuration"),
             ("/clear", "Clear screen"),
-            ("/reload", "Reload modules (development)"),
+            ("/logs", "Show recent log entries"),
             ("/exit or /quit", "Exit the session"),
         ]
 
@@ -906,6 +920,9 @@ class InteractiveSession:
 
     async def _generate_premise(self, user_input: str = ""):
         """Generate story premise with enhanced genre and taxonomy support."""
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
         # Parse input for genre and concept
         parts = user_input.strip().split(None, 1)
         genre = None
@@ -986,6 +1003,11 @@ class InteractiveSession:
                 self.console.print("[green]✓  Premise generated[/green]")
                 self.console.print("[dim]Saved to premise.md[/dim]")
 
+                # Git commit
+                if self.project.git:
+                    self.project.git.add()
+                    self.project.git.commit(f"Generate premise: {genre or 'general'}")
+
                 # Add to history
                 self.premise_history.add(
                     result['premise'],
@@ -1025,6 +1047,9 @@ class InteractiveSession:
 
     async def _generate_treatment(self, options: str = ""):
         """Generate story treatment."""
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
         # Check for premise
         if not self.project.get_premise():
             self.console.print("[yellow]No premise found. Generating premise first...[/yellow]")
@@ -1051,11 +1076,19 @@ class InteractiveSession:
             self.console.rule(style="dim")  # Divider after content
             self.console.print(f"[green]✓  Treatment generated: {word_count} words[/green]")
             self.console.print("[dim]Saved to treatment.md[/dim]")
+
+            # Git commit
+            if self.project.git:
+                self.project.git.add()
+                self.project.git.commit(f"Generate treatment: {word_count} words")
         else:
             self.console.print("[red]Failed to generate treatment[/red]")
 
     async def _generate_chapters(self, options: str = ""):
         """Generate chapter outlines."""
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
         # Check for treatment
         if not self.project.get_treatment():
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
@@ -1094,11 +1127,19 @@ class InteractiveSession:
             self.console.rule(style="dim")
             self.console.print(f"[green]✓  Generated {len(chapters)} chapter outlines[/green]")
             self.console.print("[dim]Saved to chapters.yaml[/dim]")
+
+            # Git commit
+            if self.project.git:
+                self.project.git.add()
+                self.project.git.commit(f"Generate {len(chapters)} chapter outlines")
         else:
             self.console.print("[red]Failed to generate chapters[/red]")
 
     async def _generate_prose(self, options: str = ""):
         """Generate prose for chapters with full sequential context."""
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
         # Check for chapter outlines
         chapters_file = self.project.path / "chapters.yaml"
         if not chapters_file.exists():
@@ -1242,11 +1283,22 @@ class InteractiveSession:
             for i, dim in enumerate(dimensions, 1):
                 self.console.print(f"   ⏳ {dim.title()}...")
 
+            # Ensure git repo exists
+            self._ensure_git_repo()
+
             # Run analysis
             result = await coordinator.analyze(content_type, target_id)
 
             # Display results
             self._display_analysis_results(result)
+
+            # Git commit
+            if self.project.git and result.get('success', True):
+                self.project.git.add()
+                content_desc = result.get('content_type', content_type)
+                if result.get('target_id'):
+                    content_desc += f" {result['target_id']}"
+                self.project.git.commit(f"Analyze {content_desc}")
 
         except Exception as e:
             self.console.print(f"\n[red]✗ Analysis failed:[/red] {str(e)}")

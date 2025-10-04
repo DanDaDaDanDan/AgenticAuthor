@@ -13,7 +13,9 @@
       "Bash(tail:*)",
       "Bash(grep:*)",
       "Read(//c/Users/daniel.vogel/.agentic//**)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(pip install:*)",
+      "Bash(python3 src/utils/import_converter.py:*)"
     ],
     "deny": [],
     "ask": []
