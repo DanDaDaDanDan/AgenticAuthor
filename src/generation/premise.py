@@ -1,7 +1,7 @@
 """Premise generation (LOD3) for AgenticAuthor."""
 
 import json
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 
 from jinja2 import Template
@@ -57,6 +57,196 @@ class PremiseGenerator:
         self.project = project
         self.taxonomy_loader = TaxonomyLoader()
         self.model = model
+
+    async def iterate_taxonomy(
+        self,
+        current_taxonomy: Dict[str, Any],
+        feedback: str,
+        current_premise: str
+    ) -> Dict[str, Any]:
+        """
+        Modify taxonomy selections based on natural language feedback.
+
+        Args:
+            current_taxonomy: Current taxonomy selections
+            feedback: Natural language description of desired changes
+            current_premise: Current premise text
+
+        Returns:
+            Updated taxonomy selections and optionally new premise
+        """
+        # Get genre from current taxonomy or project
+        genre = self.project.metadata.genre if self.project.metadata else 'general'
+
+        # Load full taxonomy to show available options
+        full_taxonomy = self.taxonomy_loader.load_merged_taxonomy(genre)
+        category_options = self.taxonomy_loader.get_category_options(full_taxonomy)
+
+        prompt = f"""You are updating taxonomy selections for a story premise based on user feedback.
+
+CURRENT PREMISE:
+"{current_premise}"
+
+CURRENT TAXONOMY SELECTIONS:
+{json.dumps(current_taxonomy, indent=2)}
+
+AVAILABLE OPTIONS BY CATEGORY:
+{json.dumps(category_options, indent=2)}
+
+USER FEEDBACK:
+"{feedback}"
+
+Based on the feedback, update the taxonomy selections. Keep unchanged categories as-is.
+
+Return a JSON object with:
+{{
+    "updated_taxonomy": {{
+        "category_name": ["selected", "values"],
+        ...
+    }},
+    "changes_made": ["description of what changed"],
+    "regenerate_premise": true/false,
+    "reasoning": "why these changes were made"
+}}
+
+Set regenerate_premise to true if the changes are significant enough to warrant regenerating the premise."""
+
+        try:
+            result = await self.client.json_completion(
+                model=self.model,
+                prompt=prompt,
+                temperature=0.4,
+                display_label="Analyzing taxonomy changes"
+            )
+
+            if not result or not isinstance(result, dict):
+                raise ValueError("Invalid response from model")
+
+            return result
+
+        except Exception as e:
+            raise ValueError(f"Failed to iterate taxonomy: {str(e)}")
+
+    async def regenerate_with_taxonomy(
+        self,
+        user_input: str,
+        taxonomy_selections: Dict[str, Any],
+        genre: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Regenerate premise using specific taxonomy selections.
+
+        Args:
+            user_input: Original concept/premise
+            taxonomy_selections: Specific taxonomy selections to use
+            genre: Genre (optional)
+
+        Returns:
+            Generated premise with taxonomy
+        """
+        # Use provided genre or project genre
+        if not genre and self.project.metadata:
+            genre = self.project.metadata.genre
+        if not genre:
+            genre = "general"
+
+        # Load taxonomy
+        normalized_genre = self.taxonomy_loader.normalize_genre(genre)
+        taxonomy = self.taxonomy_loader.load_merged_taxonomy(normalized_genre)
+
+        # Build prompt with enforced taxonomy
+        prompt = f"""Generate a compelling fiction premise for the {genre} genre.
+
+Build upon this concept: {user_input}
+
+REQUIRED TAXONOMY SELECTIONS (must incorporate these elements):
+{json.dumps(taxonomy_selections, indent=2)}
+
+REQUIREMENTS:
+1. 2-3 sentences that capture the core conflict
+2. Clear protagonist and stakes
+3. Unique hook that sets it apart
+4. Must naturally incorporate the specified taxonomy elements
+5. Should feel fresh and engaging
+
+Return a JSON object with this structure:
+{{
+    "premise": "The 2-3 sentence premise text",
+    "protagonist": "Brief description of main character",
+    "antagonist": "Brief description of opposing force",
+    "stakes": "What the protagonist stands to gain/lose",
+    "hook": "What makes this story unique",
+    "themes": ["theme1", "theme2", "theme3"]
+}}"""
+
+        try:
+            result = await self.client.json_completion(
+                model=self.model,
+                prompt=prompt,
+                temperature=0.7,
+                display_label="Regenerating premise with updated taxonomy",
+                min_response_tokens=500
+            )
+
+            if result and isinstance(result, dict):
+                return {
+                    'premise': result.get('premise', ''),
+                    'metadata': result,
+                    'taxonomy': taxonomy_selections
+                }
+
+            raise ValueError("Invalid response format")
+
+        except Exception as e:
+            raise ValueError(f"Failed to regenerate premise: {str(e)}")
+
+    async def detect_genre(self, concept: str) -> str:
+        """
+        Detect the most appropriate genre for a given concept.
+
+        Args:
+            concept: User's story concept
+
+        Returns:
+            Detected genre name
+        """
+        available_genres = list(self.taxonomy_loader.GENRES.keys())
+
+        prompt = f"""Analyze this story concept and determine the most appropriate genre.
+
+CONCEPT: "{concept}"
+
+AVAILABLE GENRES:
+{', '.join(available_genres)}
+
+Return ONLY a JSON object with this structure:
+{{
+    "genre": "detected_genre_name",
+    "confidence": 0.95,
+    "reasoning": "Brief explanation of why this genre fits"
+}}
+
+Choose the single best-fitting genre from the available list. If the concept could fit multiple genres, pick the primary one."""
+
+        try:
+            result = await self.client.json_completion(
+                model=self.model,
+                prompt=prompt,
+                temperature=0.3,  # Low temperature for consistent detection
+                display_label="Detecting genre"
+            )
+
+            if result and isinstance(result, dict):
+                detected = result.get('genre', 'general')
+                # Validate it's a known genre
+                normalized = self.taxonomy_loader.normalize_genre(detected)
+                return normalized
+
+            return 'general'
+
+        except Exception:
+            # Fallback to general on any error
+            return 'general'
 
     async def generate(
         self,

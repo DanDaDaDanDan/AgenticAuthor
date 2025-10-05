@@ -391,6 +391,11 @@ class InteractiveSession:
         # Ensure git repo exists
         self._ensure_git_repo()
 
+        # Special handling for taxonomy iteration
+        if self.iteration_target == 'taxonomy':
+            await self._process_taxonomy_feedback(feedback)
+            return
+
         try:
             # Initialize iteration coordinator
             coordinator = IterationCoordinator(
@@ -475,6 +480,213 @@ class InteractiveSession:
         # Closing rule
         self._print()
         self.console.rule(style="dim")
+
+    async def _process_taxonomy_feedback(self, feedback: str):
+        """Process feedback for taxonomy iteration."""
+        from ..generation.premise import PremiseGenerator
+        from .taxonomy_editor import run_taxonomy_editor
+        from ..generation.taxonomies import TaxonomyLoader
+        import json
+
+        # Load current premise and taxonomy
+        premise = self.project.get_premise()
+        if not premise:
+            self._print("[red]No premise found.[/red] Generate a premise first with /generate premise")
+            return
+
+        premise_metadata_file = self.project.premise_metadata_file
+        if not premise_metadata_file.exists():
+            self._print("[red]No taxonomy metadata found.[/red]")
+            self._print("[dim]Generate a new premise with taxonomy: /generate premise[/dim]")
+            return
+
+        with open(premise_metadata_file) as f:
+            current_taxonomy = json.load(f)
+
+        # If no feedback provided, launch interactive editor
+        if not feedback or feedback.strip() == "":
+            # Get genre from project
+            genre = self.project.metadata.genre if self.project.metadata else 'general'
+
+            # Load taxonomy and options
+            taxonomy_loader = TaxonomyLoader()
+            taxonomy = taxonomy_loader.load_merged_taxonomy(genre)
+            category_options = taxonomy_loader.get_category_options(taxonomy)
+
+            # Run interactive editor
+            try:
+                updated_taxonomy = run_taxonomy_editor(
+                    taxonomy=taxonomy,
+                    current_selections=current_taxonomy,
+                    category_options=category_options
+                )
+
+                if updated_taxonomy is None:
+                    self._print("\n[yellow]Taxonomy editing cancelled[/yellow]")
+                    return
+
+                # Check what changed
+                changes = []
+                for category, new_values in updated_taxonomy.items():
+                    old_values = current_taxonomy.get(category, [])
+                    if new_values != old_values:
+                        changes.append(f"Changed {category.replace('_', ' ')}: {old_values} → {new_values}")
+
+                if not changes:
+                    self._print("\n[yellow]No changes made[/yellow]")
+                    return
+
+                # Ask if should regenerate premise
+                self._print("\n[cyan]Changes made:[/cyan]")
+                for change in changes:
+                    self._print(f"  • {change}")
+                self._print()
+
+                regenerate = await self._confirm("Regenerate premise with new taxonomy?")
+
+                if regenerate:
+                    # Regenerate premise
+                    generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+
+                    self._print("[cyan]Regenerating premise...[/cyan]")
+                    self._print()
+
+                    regen_result = await generator.regenerate_with_taxonomy(
+                        user_input=premise,
+                        taxonomy_selections=updated_taxonomy,
+                        genre=genre
+                    )
+
+                    if regen_result and 'premise' in regen_result:
+                        new_premise = regen_result['premise']
+
+                        # Save new premise
+                        self.project.save_premise(new_premise)
+
+                        # Save updated taxonomy
+                        with open(premise_metadata_file, 'w') as f:
+                            json.dump(updated_taxonomy, f, indent=2)
+
+                        self._print("[green]✓ Premise regenerated[/green]")
+                        self._print()
+                        self._print(f"[bold]{new_premise}[/bold]")
+
+                        # Git commit
+                        if self.project.git:
+                            self.project.git.add()
+                            self.project.git.commit("Update taxonomy and regenerate premise")
+                            self._print("\n[green]✓ Committed to git[/green]")
+
+                else:
+                    # Just update taxonomy
+                    with open(premise_metadata_file, 'w') as f:
+                        json.dump(updated_taxonomy, f, indent=2)
+
+                    self._print("[green]✓ Taxonomy updated[/green]")
+
+                    # Git commit
+                    if self.project.git:
+                        self.project.git.add()
+                        self.project.git.commit("Update taxonomy selections")
+                        self._print("[green]✓ Committed to git[/green]")
+
+                return
+
+            except Exception as e:
+                self._print(f"\n[red]Error in interactive editor:[/red] {str(e)}")
+                return
+
+        # Show header
+        self.console.rule("[bold cyan]Taxonomy Iteration[/bold cyan]", style="cyan")
+        self._print()
+
+        # Initialize generator
+        generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+
+        try:
+            # Get taxonomy updates
+            result = await generator.iterate_taxonomy(
+                current_taxonomy=current_taxonomy,
+                feedback=feedback,
+                current_premise=premise
+            )
+
+            if not result:
+                self._print("[red]Failed to process taxonomy changes[/red]")
+                return
+
+            # Show what changed
+            changes = result.get('changes_made', [])
+            if changes:
+                self._print("[green]✓ Taxonomy Changes:[/green]")
+                for change in changes:
+                    self._print(f"  • {change}")
+                self._print()
+
+            reasoning = result.get('reasoning', '')
+            if reasoning:
+                self._print(f"[dim]{reasoning}[/dim]")
+                self._print()
+
+            # Get updated taxonomy
+            updated_taxonomy = result.get('updated_taxonomy', {})
+
+            # Check if we should regenerate premise
+            should_regenerate = result.get('regenerate_premise', False)
+
+            if should_regenerate:
+                self._print("[cyan]Regenerating premise with updated taxonomy...[/cyan]")
+                self._print()
+
+                # Regenerate premise
+                regen_result = await generator.regenerate_with_taxonomy(
+                    user_input=premise,
+                    taxonomy_selections=updated_taxonomy,
+                    genre=self.project.metadata.genre if self.project.metadata else None
+                )
+
+                if regen_result and 'premise' in regen_result:
+                    new_premise = regen_result['premise']
+
+                    # Save new premise
+                    self.project.save_premise(new_premise)
+
+                    # Save updated taxonomy
+                    with open(premise_metadata_file, 'w') as f:
+                        json.dump(updated_taxonomy, f, indent=2)
+
+                    self._print("[green]✓ Premise regenerated with new taxonomy[/green]")
+                    self._print()
+                    self._print(f"[bold]{new_premise}[/bold]")
+                    self._print()
+
+                    # Git commit
+                    if self.project.git:
+                        self.project.git.add()
+                        self.project.git.commit(f"Iterate taxonomy: {feedback[:50]}")
+                        self._print("[green]✓ Changes committed to git[/green]")
+
+            else:
+                # Just update taxonomy without regenerating
+                with open(premise_metadata_file, 'w') as f:
+                    json.dump(updated_taxonomy, f, indent=2)
+
+                self._print("[green]✓ Taxonomy updated[/green]")
+                self._print("[dim]Premise unchanged - changes don't require regeneration[/dim]")
+
+                # Git commit
+                if self.project.git:
+                    self.project.git.add()
+                    self.project.git.commit(f"Update taxonomy: {feedback[:50]}")
+                    self._print("[green]✓ Changes committed to git[/green]")
+
+            self._print()
+            self.console.rule(style="dim")
+
+        except Exception as e:
+            self._print(f"[red]✗ Error:[/red] {str(e)}")
+            if self.session_logger:
+                self.session_logger.log_error(e, "Taxonomy iteration failed")
 
     def _display_diff(self, diff: str):
         """Display a unified diff with syntax highlighting."""
@@ -986,11 +1198,19 @@ class InteractiveSession:
                 # First part is not a genre, treat all as concept
                 concept = user_input
 
-        # If no genre specified, try interactive selection
-        if not genre and not concept:
-            genre = await self._select_genre_interactive()
-            if not genre:
-                return  # User cancelled
+        # If no genre specified
+        if not genre:
+            if concept:
+                # Auto-detect genre from concept
+                self.console.print("[dim]Detecting genre from concept...[/dim]")
+                generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+                genre = await generator.detect_genre(concept)
+                self.console.print(f"[cyan]→ Detected genre: {genre}[/cyan]\n")
+            else:
+                # Interactive selection
+                genre = await self._select_genre_interactive()
+                if not genre:
+                    return  # User cancelled
 
         # Analyze the input to see if it's already a treatment
         analysis = PremiseAnalyzer.analyze(concept)
@@ -1064,6 +1284,14 @@ class InteractiveSession:
                 )
             else:
                 self.console.print("[red]Failed to generate premise[/red]")
+
+    async def _confirm(self, message: str) -> bool:
+        """Ask user for yes/no confirmation."""
+        try:
+            response = input(f"{message} (y/N): ").strip().lower()
+            return response in ['y', 'yes']
+        except (KeyboardInterrupt, EOFError):
+            return False
 
     async def _select_genre_interactive(self):
         """Interactive genre selection."""
@@ -1292,7 +1520,7 @@ class InteractiveSession:
 
         # Parse target
         target = args.strip().lower()
-        valid_targets = ['premise', 'treatment', 'chapters', 'prose']
+        valid_targets = ['premise', 'treatment', 'chapters', 'prose', 'taxonomy']
 
         if target not in valid_targets:
             self._print(f"[red]Invalid target:[/red] {target}")

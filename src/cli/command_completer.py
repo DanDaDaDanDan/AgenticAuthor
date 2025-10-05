@@ -217,7 +217,7 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/generate <type> [options]'
         },
         'iterate': {
-            'description': 'Set iteration target (premise/treatment/chapters/prose)',
+            'description': 'Set iteration target (premise/treatment/chapters/prose/taxonomy)',
             'usage': '/iterate <target>'
         },
         'analyze': {
