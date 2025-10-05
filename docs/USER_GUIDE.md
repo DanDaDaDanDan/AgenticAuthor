@@ -346,6 +346,28 @@ Generate story premise (LOD3) with genre-specific support.
   - `/generate premise fantasy "a world where magic is illegal"` - Specific concept
   - `/generate premise "a detective story"` - Auto-detects genre (NEW)
 
+#### `/generate premises <count> [genre] [concept]`
+Generate multiple premise options and select one (batch generation).
+- **count** (required): Number of premises to generate (1-30)
+- **genre** (optional): Genre for the stories (same as `/generate premise`)
+  - Auto-detection works with concept
+  - Interactive selection if neither provided
+- **concept** (optional): Concept to incorporate into all premises
+- Features:
+  - **Single LLM call** generates all premises for efficiency
+  - Each premise is unique and diverse
+  - Interactive numbered selection after generation
+  - All candidates saved to `premises_candidates.json` for reference
+  - Selected premise saved to `premise.md`
+  - Shows premise text (truncated) and hook for each option
+  - Auto-commits to git with selection noted
+- Examples:
+  - `/generate premises 5` - Generate 5 premises with genre selection
+  - `/generate premises 3 fantasy` - 3 fantasy premises
+  - `/generate premises 5 fantasy "a magical library"` - 5 premises based on concept
+  - `/generate premises 10 "space detective"` - Auto-detect genre, 10 premises
+  - `/generate premises 30 fantasy` - Maximum 30 fantasy premises
+
 #### `/generate treatment [words]`
 Generate story treatment from premise (LOD2).
 - **words** (optional): Target word count (default: 2500)

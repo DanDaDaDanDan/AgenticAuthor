@@ -521,3 +521,119 @@ Please revise the premise based on this feedback. Maintain the same JSON structu
             # Note: Git integration would be handled by the CLI layer
 
         return result
+
+    async def generate_batch(
+        self,
+        count: int,
+        user_input: Optional[str] = None,
+        genre: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate multiple premise options in a single API call.
+
+        Args:
+            count: Number of premises to generate (1-10)
+            user_input: Optional user concept to build upon
+            genre: Story genre (defaults to project genre)
+
+        Returns:
+            List of premise dicts, each containing premise, metadata, and taxonomy selections
+        """
+        # Validate count
+        if count < 1:
+            raise ValueError("Count must be at least 1")
+        if count > 30:
+            raise ValueError("Count cannot exceed 30 (to stay within output token limits)")
+
+        # Use project genre if not specified
+        if not genre and self.project.metadata:
+            genre = self.project.metadata.genre
+        if not genre:
+            genre = "general"
+
+        # Normalize and load taxonomy
+        normalized_genre = self.taxonomy_loader.normalize_genre(genre)
+        taxonomy = self.taxonomy_loader.load_merged_taxonomy(normalized_genre)
+        category_options = self.taxonomy_loader.get_category_options(taxonomy)
+
+        # Build guidance context
+        guidance_context = ""
+        if user_input and user_input.strip():
+            guidance_context = f'USER GUIDANCE: "{user_input}"\nIncorporate this concept into each premise.\n\n'
+
+        # Build category JSON example
+        json_structure = "{\n"
+        for i, category in enumerate(category_options.keys()):
+            json_structure += f'    "{category}": ["selected values"]'
+            if i < len(category_options) - 1:
+                json_structure += ","
+            json_structure += "\n"
+        json_structure += "  }"
+
+        # Build taxonomy options display
+        taxonomy_display = "\n".join([
+            f'{cat}: {", ".join(opts[:10])}{"..." if len(opts) > 10 else ""}'
+            for cat, opts in category_options.items()
+        ])
+
+        prompt = f"""Generate {count} diverse, compelling fiction premises for the {genre} genre.
+
+{guidance_context}REQUIREMENTS FOR EACH PREMISE:
+1. 2-3 sentences that capture the core conflict
+2. Clear protagonist and stakes
+3. Unique hook that sets it apart from the other premises
+4. Must be substantially different from the other {count-1} premise{"s" if count > 2 else ""}
+5. Ensure variety across all {count} options
+
+TAXONOMY OPTIONS (select appropriate values for each premise):
+{taxonomy_display}
+
+Return JSON with this EXACT structure:
+{{
+  "premises": [
+    {{
+      "premise": "The 2-3 sentence premise text",
+      "protagonist": "Brief protagonist description",
+      "antagonist": "Brief antagonist/conflict description",
+      "stakes": "What the protagonist stands to gain/lose",
+      "hook": "What makes this unique",
+      "themes": ["theme1", "theme2", "theme3"],
+      "selections": {json_structure}
+    }}
+    // ... {count-1} more unique premises (total of {count})
+  ]
+}}
+
+CRITICAL: Generate exactly {count} distinct premises. Each must be substantially different from the others in concept, conflict, and hook."""
+
+        try:
+            result = await self.client.json_completion(
+                model=self.model,
+                prompt=prompt,
+                temperature=0.9,  # High temp for creative diversity
+                display_label=f"Generating {count} premise options",
+                min_response_tokens=500 * count  # Estimate ~500 tokens per premise
+            )
+
+            if not result or 'premises' not in result:
+                raise ValueError("Invalid response format - missing 'premises' array")
+
+            premises = result['premises']
+            if not isinstance(premises, list):
+                raise ValueError("Invalid response format - 'premises' is not an array")
+
+            if len(premises) < count:
+                # LLM returned fewer than requested - inform but accept
+                from ..utils.logging import get_logger
+                logger = get_logger()
+                if logger:
+                    logger.warning(f"LLM returned {len(premises)} premises instead of requested {count}")
+
+            # Add number field to each premise for reference
+            for i, premise in enumerate(premises, 1):
+                premise['number'] = i
+
+            return premises
+
+        except Exception as e:
+            raise Exception(f"Failed to generate premise batch: {e}")

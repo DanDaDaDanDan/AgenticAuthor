@@ -64,6 +64,11 @@ class Project:
         return self.path / "premise_metadata.json"
 
     @property
+    def premises_file(self) -> Path:
+        """Get path to premises_candidates.json file (for batch generation)."""
+        return self.path / "premises_candidates.json"
+
+    @property
     def treatment_file(self) -> Path:
         """Get path to treatment.md file."""
         return self.path / "treatment.md"

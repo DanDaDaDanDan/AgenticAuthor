@@ -1175,7 +1175,7 @@ class InteractiveSession:
         # Parse generation type
         parts = args.strip().split(None, 1)
         if not parts:
-            self.console.print("[yellow]Usage: /generate <premise|treatment|chapters|prose> [options][/yellow]")
+            self.console.print("[yellow]Usage: /generate <premise|premises|treatment|chapters|prose> [options][/yellow]")
             return
 
         gen_type = parts[0].lower()
@@ -1184,6 +1184,9 @@ class InteractiveSession:
         try:
             if gen_type == "premise":
                 await self._generate_premise(options)
+            elif gen_type == "premises":
+                # Batch premise generation
+                await self._generate_premises_batch(options)
             elif gen_type == "treatment":
                 await self._generate_treatment(options)
             elif gen_type == "chapters":
@@ -1192,7 +1195,7 @@ class InteractiveSession:
                 await self._generate_prose(options)
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
-                self.console.print("[dim]Valid types: premise, treatment, chapters, prose[/dim]")
+                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose[/dim]")
         except Exception as e:
             self.console.print(f"[red]Generation failed: {e}[/red]")
 
@@ -1302,6 +1305,170 @@ class InteractiveSession:
                 )
             else:
                 self.console.print("[red]Failed to generate premise[/red]")
+
+    async def _generate_premises_batch(self, args: str = ""):
+        """Generate multiple premise options and let user select one."""
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
+        # Parse arguments: count [genre] [concept]
+        parts = args.strip().split(None, 2)
+
+        # Extract count
+        try:
+            count = int(parts[0]) if parts else 5
+        except ValueError:
+            self.console.print("[red]Invalid count. Usage: /generate premises <count> [genre] [concept][/red]")
+            return
+
+        if count < 1 or count > 30:
+            self.console.print("[yellow]Count must be between 1 and 30[/yellow]")
+            return
+
+        # Parse genre and concept from remaining args
+        remaining = " ".join(parts[1:]) if len(parts) > 1 else ""
+        genre = None
+        concept = ""
+
+        if remaining:
+            # Check if first part is a genre
+            remaining_parts = remaining.split(None, 1)
+            normalized = self.taxonomy_loader.normalize_genre(remaining_parts[0])
+            if normalized != 'general' or remaining_parts[0].lower() in ['custom', 'general']:
+                genre = remaining_parts[0]
+                concept = remaining_parts[1] if len(remaining_parts) > 1 else ""
+            else:
+                # First part is not a genre, treat all as concept
+                concept = remaining
+
+        # If no genre specified and we have a concept, auto-detect
+        if not genre and concept:
+            self.console.print("[dim]Detecting genre from concept...[/dim]")
+            generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+            genre = await generator.detect_genre(concept)
+            self.console.print(f"[cyan]→ Detected genre: {genre}[/cyan]\n")
+        elif not genre:
+            # Interactive selection
+            genre = await self._select_genre_interactive()
+            if not genre:
+                return  # User cancelled
+
+        # Generate batch
+        self.console.rule(style="dim")
+        self.console.print(f"[cyan]Generating {count} {genre or 'general'} premise options...[/cyan]\n")
+
+        generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+        try:
+            premises = await generator.generate_batch(
+                count=count,
+                user_input=concept if concept else None,
+                genre=genre
+            )
+
+            if not premises:
+                self.console.print("[red]Failed to generate premises[/red]")
+                return
+
+            actual_count = len(premises)
+
+            # Save all candidates to file
+            from datetime import datetime, timezone
+            candidates_data = {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "genre": genre or "general",
+                "concept": concept,
+                "count": count,
+                "actual_count": actual_count,
+                "selected": None,
+                "premises": premises
+            }
+
+            with open(self.project.premises_file, 'w') as f:
+                json.dump(candidates_data, f, indent=2)
+
+            # Display premises in numbered list
+            self.console.rule(style="dim")
+            self.console.print("[bold]Generated Premises:[/bold]\n")
+
+            for i, p in enumerate(premises, 1):
+                # Truncate premise text to ~150 chars for display
+                premise_text = p.get('premise', '')
+                if len(premise_text) > 150:
+                    premise_text = premise_text[:147] + "..."
+
+                hook = p.get('hook', 'N/A')
+
+                self.console.print(f"  [cyan]{i}[/cyan]. {premise_text}")
+                self.console.print(f"     [dim]Hook: {hook}[/dim]\n")
+
+            self.console.rule(style="dim")
+
+            # Get user selection
+            try:
+                self.console.print(f"\n[bold]Select premise[/bold] (1-{actual_count}) or [dim]Enter to cancel[/dim]: ", end="")
+
+                import sys
+                selection = input().strip()
+
+                if not selection:
+                    self.console.print("[yellow]Selection cancelled[/yellow]")
+                    return
+
+                selected_num = int(selection)
+                if selected_num < 1 or selected_num > actual_count:
+                    self.console.print(f"[red]Invalid selection. Must be between 1 and {actual_count}[/red]")
+                    return
+
+            except (ValueError, KeyboardInterrupt, EOFError):
+                self.console.print("\n[yellow]Selection cancelled[/yellow]")
+                return
+
+            # Get the selected premise
+            selected_premise = premises[selected_num - 1]
+
+            # Update candidates file with selection
+            candidates_data['selected'] = selected_num
+            with open(self.project.premises_file, 'w') as f:
+                json.dump(candidates_data, f, indent=2)
+
+            # Save selected premise to premise.md
+            self.project.save_premise(selected_premise['premise'])
+
+            # Save metadata
+            with open(self.project.premise_metadata_file, 'w') as f:
+                json.dump(selected_premise, f, indent=2)
+
+            # Display selected premise
+            self.console.print(f"\n[green]✓ Premise #{selected_num} selected[/green]\n")
+            self.console.print(selected_premise['premise'])
+            self.console.print()
+
+            # Print metadata
+            if 'hook' in selected_premise:
+                self.console.print(f"[dim]Hook: {selected_premise['hook']}[/dim]")
+            if 'themes' in selected_premise:
+                self.console.print(f"[dim]Themes: {', '.join(selected_premise['themes'])}[/dim]")
+
+            self.console.print()
+            self.console.rule(style="dim")
+            self.console.print(f"[green]✓ Premise generated and saved[/green]")
+            self.console.print(f"[dim]Selected premise saved to premise.md[/dim]")
+            self.console.print(f"[dim]All {actual_count} candidates saved to premises_candidates.json[/dim]")
+
+            # Git commit
+            if self.project.git:
+                self.project.git.add()
+                self.project.git.commit(f"Generate premise (selected #{selected_num} of {actual_count}): {genre or 'general'}")
+
+            # Add to history
+            self.premise_history.add(
+                selected_premise['premise'],
+                genre or 'general',
+                selected_premise.get('selections', {})
+            )
+
+        except Exception as e:
+            self.console.print(f"[red]Failed to generate premises: {e}[/red]")
 
     async def _confirm(self, message: str) -> bool:
         """Ask user for yes/no confirmation."""

@@ -75,6 +75,7 @@ agentic           # Start REPL (main interface)
 /model            # Interactive model selector (live filtering)
 /model grok       # Or use fuzzy search directly
 /generate premise "a magical library"  # Auto-detects genre (fantasy)
+/generate premises 5 fantasy "a magical library"  # Generate 5 options to choose from
 /iterate taxonomy # Interactive taxonomy editor
 /logs             # View recent log entries
 /help             # Show all commands
