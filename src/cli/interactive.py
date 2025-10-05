@@ -950,19 +950,37 @@ class InteractiveSession:
 
     async def change_model(self, args: str = ""):
         """Change the current model."""
-        if not args:
-            # Show current model
-            current = self.settings.active_model
-            self.console.print(f"Current model: [cyan]{current}[/cyan]")
-            self.console.print("[dim]Tip: Use /model <search> to change model (e.g., /model opus)[/dim]")
-            return
-
         # Get available models
         if not self.client:
             self.console.print("[red]API client not initialized[/red]")
             return
 
         models = await self.client.discover_models()
+
+        if not args:
+            # Launch interactive selector
+            from .model_selector import select_model_interactive
+
+            try:
+                selected = select_model_interactive(models, self.settings.active_model)
+
+                if selected:
+                    # Update settings
+                    self.settings.current_model = selected
+                    self.settings.save()
+
+                    self.console.print(f"\n[green]✓ Model changed to:[/green] [cyan]{selected}[/cyan]")
+                else:
+                    self.console.print("\n[yellow]Model selection cancelled[/yellow]")
+
+            except Exception as e:
+                self.console.print(f"\n[red]Error in model selector:[/red] {str(e)}")
+                # Fall back to showing current model
+                current = self.settings.active_model
+                self.console.print(f"Current model: [cyan]{current}[/cyan]")
+                self.console.print("[dim]Tip: Use /model <search> to change model (e.g., /model opus)[/dim]")
+
+            return
 
         # Try exact match first
         exact_match = None

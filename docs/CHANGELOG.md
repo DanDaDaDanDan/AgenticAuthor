@@ -7,7 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [0.3.0] - 2025-10-05
+
+### Added ⭐ MAJOR RELEASE
+- **Interactive Model Selector** 🎯
+  - Full-screen model selection with live fuzzy search
+  - Type to filter models instantly - no menus needed
+  - Shows pricing ($X/1M tokens) and provider for each model
+  - Current model marked with "← current" indicator
+  - Keyboard navigation: ↑↓ to navigate, ENTER to select, ESC to cancel
+  - Displays up to 15 models at once with relevance scoring
+  - Access with `/model` (no arguments)
+  - Replaces old numbered list selection
+- **Interactive Taxonomy Editor** 🎯
+  - Full-screen checkbox interface for precise taxonomy control
+  - All taxonomy categories in navigable tabs (pacing, themes, POV, etc.)
+  - Multi-select checkboxes with visual indication (✓)
+  - Keyboard controls:
+    * ↑↓ - Navigate options in current category
+    * Space - Toggle selected option
+    * Tab/Shift+Tab - Switch between categories
+    * Enter - Save changes
+    * Esc - Cancel
+  - Access with `/iterate taxonomy` (no feedback text)
+  - Works alongside natural language taxonomy iteration
+- **Automatic Genre Detection** 🤖
+  - LLM auto-detects genre from story concept
+  - No manual genre selection needed for `/generate premise`
+  - High accuracy with confidence scoring
+  - Temperature 0.3 for consistent detection
+  - Example: "a detective story" → auto-detects "mystery-thriller"
+  - Example: "magical library" → auto-detects "fantasy"
+- **Taxonomy Iteration System** 🔄
+  - Modify story parameters and regenerate premise
+  - Two modes:
+    1. **Natural language**: Describe changes in plain English
+       - Example: `make it standalone and change pacing to fast`
+       - LLM analyzes feedback and updates selections
+       - Optionally regenerates premise if changes are significant
+    2. **Interactive editor**: Checkbox UI for precise control
+       - Visual selection of all taxonomy options
+       - Real-time preview of selections
+  - Returns structured response with reasoning
+  - Auto-commits changes with descriptive messages
+- **Strict Model Enforcement** 🔒
+  - Single user-selected model for ALL LLM operations
+  - No hardcoded model names in generation code
+  - No fallback models - raises clear error if model not selected
+  - Ensures consistent cost and quality across all operations
+  - Applies to: premise, treatment, chapters, prose, intent analysis, diff generation, scale detection
+  - Error message: "No model selected. Use /model <model-name> to select a model."
+
+### Added (Earlier Features)
 - **Comprehensive Story Analysis System** ⭐ MAJOR FEATURE
   - Multi-dimensional analysis across 8 critical axes
   - `/analyze` command with multiple targets (premise, treatment, chapters, prose)
@@ -153,28 +204,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - .env file excluded from git
 - No credentials in logs
 
-## Planned for Next Release (0.3.0)
+## Planned for Next Release (0.4.0)
 
 ### To Add
-- [ ] Complete generation system (treatment, chapters, prose)
-- [ ] Natural language iteration with intent checking
-- [ ] Story analysis system (commercial, plot, characters, world)
 - [ ] Export functionality (md, html, epub, pdf)
 - [ ] Git branching and merging for experiments
+- [ ] Multi-model comparison for generations
+- [ ] Character sheets and tracking
+- [ ] World-building wiki
 
 ### To Improve
 - [ ] Test coverage to 100% for all modules
 - [ ] Performance optimization for large projects
 - [ ] Better error recovery and user guidance
-- [ ] Multi-model comparison for generations
+- [ ] Batch generation for multiple chapters
 
 ## Version History
 
+- **0.3.0** (2025-10-05): Interactive editors, auto genre detection, taxonomy iteration, strict model enforcement
 - **0.2.0** (2025-09-23): Enhanced premise generation with taxonomies, logging, and testing
 - **0.1.0** (2025-09-23): Initial release with core infrastructure
 - **Target 1.0.0**: Q1 2025 - Full feature release with complete generation pipeline
 
 ## Current Implementation Status
+
+## ✅ Recently Completed (v0.3.0)
+
+### Interactive Editors
+- [x] Model selector with live fuzzy search
+- [x] Taxonomy editor with checkbox interface
+- [x] Full-screen UI using prompt_toolkit
+- [x] Keyboard navigation (↑↓, SPACE, TAB, ENTER, ESC)
+- [x] Real-time filtering and visual feedback
+
+### Automatic Genre Detection
+- [x] LLM-based genre detection from concepts
+- [x] Confidence scoring and validation
+- [x] Integration with premise generation
+- [x] Support for all 11 genres
+
+### Taxonomy Iteration
+- [x] Natural language taxonomy modification
+- [x] Interactive checkbox editor fallback
+- [x] Premise regeneration based on taxonomy changes
+- [x] Structured response with reasoning
+
+### Model Enforcement
+- [x] Removed all hardcoded models from generators
+- [x] Removed all fallback model logic
+- [x] Required model parameter in all generators
+- [x] Clear error messages when model not selected
+- [x] Applied to all LLM operations (premise, treatment, chapters, prose, iteration)
 
 ## ✅ Recently Completed (v0.2.0)
 
@@ -284,6 +364,18 @@ Current Coverage: **~85%** (estimated)
 - Integration Tests: 16 tests with real API ✅
 
 ## Recent Changes
+
+### 2025-10-05 (v0.3.0)
+- **MAJOR**: Interactive editors for model selection and taxonomy editing
+- **MAJOR**: Automatic genre detection from story concepts
+- **MAJOR**: Taxonomy iteration with natural language and interactive UI
+- **MAJOR**: Strict model enforcement across all operations (no fallbacks)
+- Added `src/cli/model_selector.py` - Live fuzzy search model selector
+- Added `src/cli/taxonomy_editor.py` - Full-screen checkbox taxonomy editor
+- Enhanced `src/generation/premise.py` with `detect_genre()`, `iterate_taxonomy()`, `regenerate_with_taxonomy()`
+- Fixed model enforcement in all generators (premise, treatment, chapters, prose, iteration)
+- Updated `/model` command to launch interactive selector when no args provided
+- Updated `/iterate taxonomy` to support both natural language and interactive editing
 
 ### 2025-09-23 (v0.2.0)
 - **MAJOR**: Enhanced premise generation with genre taxonomies

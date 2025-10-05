@@ -11,12 +11,29 @@ AI-powered iterative book generation with natural language feedback and git-back
 - **Smart Genre System**: Genre-specific taxonomies and parameters
 - **Model Flexibility**: Switch between AI models on the fly
 
-### ✨ New Features (v0.2.0)
+### ✨ New Features (v0.3.0)
+- **Interactive Editors**
+  - Full-screen model selector with live fuzzy search
+  - Interactive taxonomy editor with checkbox selection
+  - Keyboard navigation (↑↓, SPACE, TAB, ENTER, ESC)
+- **Automatic Genre Detection**
+  - LLM auto-detects genre from concept
+  - No manual selection needed
+  - High accuracy with confidence scoring
+- **Taxonomy Iteration**
+  - Modify story parameters and regenerate premise
+  - Natural language feedback for taxonomy changes
+  - Interactive checkbox editor for precise control
+- **Strict Model Enforcement**
+  - Single user-selected model for ALL operations
+  - No fallback models - clear error messages
+  - Ensures consistent cost and quality
+
+### Previous Features (v0.2.0)
 - **Enhanced Premise Generation**
   - Genre-specific taxonomy support
   - Smart input detection (brief premise vs full treatment)
   - History tracking to avoid repetition
-  - Interactive genre selection
 - **Advanced Command Completion**
   - Tab completion for all commands
   - Genre autocomplete for `/generate premise`
@@ -25,10 +42,6 @@ AI-powered iterative book generation with natural language feedback and git-back
   - Debug logging to `./logs/`
   - `/logs` command to view recent entries
   - Full error tracking and debugging support
-- **Improved User Experience**
-  - Better error messages
-  - Mouse support for text selection
-  - Command history with smart suggestions
 
 ## Installation
 
@@ -284,16 +297,20 @@ Show current project status.
 
 #### `/model [search]`
 Show or change the current AI model.
-- **search** (optional): Model search term. If not provided, shows current model.
+- **search** (optional): Model search term. If not provided, launches interactive selector.
 - Features:
-  - Fuzzy search: `/model opus` finds `anthropic/claude-3-opus`
-  - Interactive selection when multiple matches found
+  - **Interactive mode** (no args): Full-screen model selector with:
+    - Live fuzzy search - type to filter models instantly
+    - Shows pricing and provider for each model
+    - Keyboard navigation: ↑↓ to navigate, ENTER to select, ESC to cancel
+    - Displays current model with "← current" marker
+  - **Direct search**: `/model opus` finds `anthropic/claude-3-opus`
   - Tab completion: Type `/model ` then Tab to see available models
   - Shows model price and context size after selection
 - Examples:
-  - `/model` - Show current model
-  - `/model opus` - Switch to Claude Opus
-  - `/model gpt` - Shows selection menu for GPT models
+  - `/model` - Launch interactive selector (NEW)
+  - `/model opus` - Direct fuzzy search
+  - `/model gpt` - Shows all GPT models in selector
   - `/model anthropic/claude-3-opus` - Exact match
 
 #### `/models [search]`
@@ -307,8 +324,9 @@ List available models from OpenRouter.
 #### `/generate premise [genre] [concept]`
 Generate story premise (LOD3) with genre-specific support.
 - **genre** (optional): Genre for the story (fantasy, sci-fi, romance, etc.)
+  - **Auto-detection** (NEW): If concept provided without genre, LLM auto-detects it
   - Tab completion available: `/generate premise fan` → `fantasy`
-  - Interactive selection if not provided
+  - Interactive selection if neither provided
   - Aliases supported: `sci-fi` → `science-fiction`, `ya` → `young-adult`
 - **concept** (optional): Initial idea to build upon
   - Can be brief (< 20 words) for full generation
@@ -316,6 +334,7 @@ Generate story premise (LOD3) with genre-specific support.
   - Detailed (100-200 words) for structuring
   - Treatment (200+ words) preserved with taxonomy extraction
 - Features:
+  - **Automatic genre detection** - no manual selection needed
   - Genre-specific taxonomies and parameters
   - Smart input detection (premise vs treatment)
   - History tracking to avoid repetition
@@ -325,7 +344,7 @@ Generate story premise (LOD3) with genre-specific support.
   - `/generate premise` - Interactive genre selection
   - `/generate premise fantasy` - Fantasy premise with random concept
   - `/generate premise fantasy "a world where magic is illegal"` - Specific concept
-  - `/generate premise "a detective story"` - Auto-detects genre from concept
+  - `/generate premise "a detective story"` - Auto-detects genre (NEW)
 
 #### `/generate treatment [words]`
 Generate story treatment from premise (LOD2).
@@ -346,10 +365,25 @@ Generate full prose for a chapter (LOD0).
 - Maintains continuity with previous chapters
 - Saves to chapters/chapter-NN.md
 
-#### `/iterate <feedback>`
-Apply natural language feedback to existing content.
-- Automatically determines intent
-- Creates git commit with changes
+#### `/iterate <target> [feedback]`
+Apply natural language feedback to existing content or taxonomy.
+- **target**: What to iterate on (premise, treatment, chapters, prose, taxonomy)
+- **feedback** (optional): Natural language description of desired changes
+  - For taxonomy: If no feedback provided, launches interactive checkbox editor
+- Features:
+  - **Interactive taxonomy editor** (NEW): Full-screen UI when `/iterate taxonomy` has no feedback
+    - Checkbox interface for all taxonomy categories
+    - Keyboard navigation: ↑↓ to move, SPACE to toggle, TAB to switch category
+    - Visual indication of current selections
+    - ENTER to save, ESC to cancel
+  - **Natural language taxonomy changes** (NEW): Describe changes in plain English
+  - Automatically determines intent and scale
+  - Creates git commit with changes
+- Examples:
+  - `/iterate taxonomy` - Launch interactive editor (NEW)
+  - `/iterate taxonomy make it standalone and change pacing to fast` - Natural language (NEW)
+  - `/iterate premise add more tension`
+  - `/iterate chapter 3 add more dialogue`
 
 #### `/analyze [type]`
 Analyze story for quality and issues.
@@ -404,6 +438,64 @@ Show help information.
 
 #### `/exit` or `/quit`
 Exit the application.
+
+## Interactive Editors (v0.3.0)
+
+### Model Selector (`/model` with no arguments)
+
+Full-screen model selection with live fuzzy search:
+
+**Features:**
+- Type to filter models instantly (fuzzy matching)
+- Shows pricing and provider for each model
+- Current model marked with "← current"
+- Up to 15 models displayed at once
+
+**Keyboard Controls:**
+- `Type any character` - Add to search filter
+- `Backspace` - Remove character from search
+- `↑/↓` - Navigate through models
+- `Enter` - Select highlighted model
+- `Esc` - Cancel and keep current model
+
+**Example:**
+```
+/model
+[Full-screen selector appears]
+Search: grok
+→ x-ai/grok-4-fast [$0.0010/1M] ← current
+  x-ai/grok-beta [$0.0020/1M]
+```
+
+### Taxonomy Editor (`/iterate taxonomy` with no feedback)
+
+Full-screen checkbox interface for precise taxonomy control:
+
+**Features:**
+- All taxonomy categories in tabs (pacing, themes, POV, etc.)
+- Multi-select checkboxes for each option
+- Visual indication of current selections (✓)
+- Navigate between categories with TAB
+
+**Keyboard Controls:**
+- `↑/↓` - Navigate options in current category
+- `Space` - Toggle selected option
+- `Tab` - Next category
+- `Shift+Tab` - Previous category
+- `Enter` - Save changes
+- `Esc` - Cancel
+
+**Example:**
+```
+/iterate taxonomy
+[Full-screen editor appears]
+═══════════════════════════════════════════
+ [Pacing]  Themes  POV  Story Structure
+═══════════════════════════════════════════
+→ [✓] Fast-paced
+  [ ] Medium-paced
+  [✓] Slow-burn
+```
 
 ## Keybindings (REPL)
 

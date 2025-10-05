@@ -360,11 +360,15 @@ graph TB
 - **main.py**: Entry point, Typer-based CLI
 - **interactive.py**: REPL session management
 - **command_completer.py**: Slash command auto-completion
+- **model_selector.py**: Interactive model selection with fuzzy search (v0.3.0)
+- **taxonomy_editor.py**: Full-screen taxonomy checkbox editor (v0.3.0)
 
 **Key Design Decisions:**
 - Slash commands (`/`) for explicit actions
 - Natural language for iterations
 - prompt_toolkit for rich terminal experience
+- **Interactive editors for complex selections** (v0.3.0)
+- **Fuzzy search for model selection** (v0.3.0)
 
 ### 2. API Layer (`src/api/`)
 - **openrouter.py**: Async client for OpenRouter API
@@ -379,17 +383,25 @@ graph TB
 - Token usage tracking
 
 ### 3. Generation System (`src/generation/`)
-- **premise.py**: LOD3 premise generation
+- **premise.py**: LOD3 premise generation with auto-detection and taxonomy iteration (v0.3.0)
 - **treatment.py**: LOD2 story treatment
 - **chapters.py**: LOD2 chapter outlines
 - **prose.py**: LOD0 full prose
-- **iteration.py**: Natural language feedback processing
+- **iteration/**: Natural language feedback processing
+  - **coordinator.py**: Orchestrates iteration workflow
+  - **intent.py**: Intent analysis with confidence scoring
+  - **diff.py**: Unified diff generation and application
+  - **scale.py**: Change scale detection (word-level, paragraph, section, full)
 - **analysis.py**: Story quality analysis
+- **taxonomies.py**: Genre-specific taxonomy system
 
 **Key Design Decisions:**
 - Level of Detail (LOD) approach
 - Temperature varies by generation type
 - Intent checking (>0.8 confidence threshold)
+- **Automatic genre detection from concepts** (v0.3.0)
+- **Taxonomy iteration with natural language or interactive UI** (v0.3.0)
+- **Strict model enforcement - user model for ALL operations** (v0.3.0)
 
 ### 4. Storage Layer (`src/storage/`)
 - **git_manager.py**: Git operations via subprocess
@@ -866,6 +878,319 @@ class TokenTracker:
         return dict(self.usage)
 ```
 
+## Interactive Editor Pattern (v0.3.0)
+
+### Model Selector Implementation
+
+Full-screen fuzzy search model selector using prompt_toolkit:
+
+```python
+from prompt_toolkit import Application
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.layout import Layout, Window
+from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.formatted_text import FormattedText
+
+class ModelSelector:
+    """Interactive model selection with live fuzzy search."""
+
+    def __init__(self, models: List[Model], current_model: str):
+        self.models = models
+        self.current_model = current_model
+        self.search_text = ""
+        self.selected_index = 0
+        self.filtered_models = models.copy()
+
+    def _update_filter(self):
+        """Update filtered models based on search text."""
+        if not self.search_text:
+            self.filtered_models = self.models.copy()
+        else:
+            search_lower = self.search_text.lower()
+            matches = []
+
+            for model in self.models:
+                model_id_lower = model.id.lower()
+
+                if search_lower in model_id_lower:
+                    # Calculate relevance score
+                    score = 0
+                    if model_id_lower.startswith(search_lower):
+                        score = 3  # Starts with search
+                    elif '/' + search_lower in model_id_lower:
+                        score = 2  # Provider or model name match
+                    else:
+                        score = 1  # Contains search
+
+                    matches.append((model, score))
+
+            # Sort by score (descending) then alphabetically
+            matches.sort(key=lambda x: (-x[1], x[0].id.lower()))
+            self.filtered_models = [m[0] for m in matches]
+
+    def get_display_text(self) -> FormattedText:
+        """Generate formatted text for display."""
+        lines = []
+
+        # Header with instructions
+        lines.append(("class:header", "═" * 100))
+        lines.append(("class:header", " MODEL SELECTOR - Type to filter, ↑↓ to navigate, ENTER to select, ESC to cancel"))
+        lines.append(("class:header", "═" * 100))
+        lines.append(("", "\n"))
+
+        # Search box with cursor
+        lines.append(("class:label", "Search: "))
+        lines.append(("class:search", self.search_text))
+        lines.append(("class:cursor", "▋"))
+        lines.append(("", "\n\n"))
+
+        # Model list (show up to 15)
+        display_models = self.filtered_models[:15]
+
+        for i, model in enumerate(display_models):
+            is_selected = i == self.selected_index
+            is_current = model.id == self.current_model
+
+            # Build styled line
+            if is_selected:
+                prefix = "→ "
+                style = "class:selected"
+            else:
+                prefix = "  "
+                style = "class:normal"
+
+            model_display = f"{model.id} [${model.cost_per_1k_tokens * 1000:.4f}/1M]"
+
+            if is_current:
+                model_display += " ← current"
+                if is_selected:
+                    style = "class:selected-current"
+
+            lines.append((style, f"{prefix}{model_display}\n"))
+
+        return FormattedText(lines)
+
+    def run(self) -> Optional[str]:
+        """Run the interactive selector."""
+        kb = KeyBindings()
+
+        # Navigation
+        @kb.add('up')
+        def move_up(event):
+            if self.selected_index > 0:
+                self.selected_index -= 1
+            app.invalidate()
+
+        @kb.add('down')
+        def move_down(event):
+            if self.selected_index < min(len(self.filtered_models) - 1, 14):
+                self.selected_index += 1
+            app.invalidate()
+
+        # Text input - any printable character
+        @kb.add('<any>')
+        def add_char(event):
+            if event.data and len(event.data) == 1 and event.data.isprintable():
+                self.search_text += event.data
+                self._update_filter()
+                self.selected_index = 0
+                app.invalidate()
+
+        # Backspace to delete
+        @kb.add('backspace')
+        def delete_char(event):
+            if self.search_text:
+                self.search_text = self.search_text[:-1]
+                self._update_filter()
+                self.selected_index = 0
+                app.invalidate()
+
+        # Select with Enter
+        @kb.add('enter')
+        def select(event):
+            if self.filtered_models and 0 <= self.selected_index < len(self.filtered_models):
+                event.app.exit(result=self.filtered_models[self.selected_index].id)
+            else:
+                event.app.exit(result=None)
+
+        # Cancel with Esc
+        @kb.add('escape')
+        @kb.add('c-c')
+        def cancel(event):
+            event.app.exit(result=None)
+
+        # Create layout
+        text_control = FormattedTextControl(
+            text=self.get_display_text,
+            focusable=True
+        )
+
+        window = Window(content=text_control)
+        layout = Layout(window)
+
+        # Create and run application
+        app = Application(
+            layout=layout,
+            key_bindings=kb,
+            full_screen=True,
+            mouse_support=False
+        )
+
+        return app.run()
+```
+
+### Taxonomy Editor Implementation
+
+Full-screen checkbox editor for taxonomy selections:
+
+```python
+class TaxonomyEditor:
+    """Interactive taxonomy selection editor."""
+
+    def __init__(
+        self,
+        taxonomy: Dict[str, Any],
+        current_selections: Dict[str, Any],
+        category_options: Dict[str, List[str]]
+    ):
+        self.taxonomy = taxonomy
+        self.current_selections = current_selections.copy()
+        self.category_options = category_options
+
+        # Build category list
+        self.categories = list(category_options.keys())
+        self.current_category_index = 0
+        self.current_option_index = 0
+
+    def toggle_option(self, option: str):
+        """Toggle selection of an option."""
+        category = self.get_current_category()
+        current = self.current_selections.get(category, [])
+
+        # Multi-select list
+        if isinstance(current, list):
+            if option in current:
+                current.remove(option)
+            else:
+                current.append(option)
+            self.current_selections[category] = current
+
+    def get_display_text(self) -> FormattedText:
+        """Generate formatted text with category tabs and checkboxes."""
+        lines = []
+
+        # Header
+        lines.append(("class:header", "═" * 80))
+        lines.append(("class:header", " TAXONOMY EDITOR"))
+        lines.append(("class:header", "═" * 80))
+        lines.append(("", "\n"))
+
+        # Category tabs
+        category_line = []
+        for i, cat in enumerate(self.categories):
+            display_name = cat.replace('_', ' ').title()
+            if i == self.current_category_index:
+                category_line.append(("class:category-selected", f" [{display_name}] "))
+            else:
+                category_line.append(("class:category", f"  {display_name}  "))
+
+        lines.extend(category_line)
+        lines.append(("", "\n\n"))
+
+        # Options with checkboxes
+        category = self.get_current_category()
+        options = self.get_current_options()
+
+        for i, option in enumerate(options):
+            is_selected = self.is_option_selected(option)
+            is_current = i == self.current_option_index
+
+            # Cursor and checkbox
+            marker = "→ " if is_current else "  "
+            checkbox = "[✓] " if is_selected else "[ ] "
+
+            style = "class:option-cursor-selected" if (is_current and is_selected) else \
+                    "class:option-selected" if is_selected else \
+                    "class:option-cursor" if is_current else "class:option"
+
+            lines.append((style, f"{marker}{checkbox}{option}\n"))
+
+        return FormattedText(lines)
+
+    def run(self) -> Optional[Dict[str, Any]]:
+        """Run the interactive editor."""
+        kb = KeyBindings()
+
+        # Navigation within category
+        @kb.add('up')
+        def move_up(event):
+            if self.current_option_index > 0:
+                self.current_option_index -= 1
+            app.invalidate()
+
+        @kb.add('down')
+        def move_down(event):
+            options = self.get_current_options()
+            if self.current_option_index < len(options) - 1:
+                self.current_option_index += 1
+            app.invalidate()
+
+        # Category navigation
+        @kb.add('tab')
+        def next_category(event):
+            if self.current_category_index < len(self.categories) - 1:
+                self.current_category_index += 1
+                self.current_option_index = 0
+            app.invalidate()
+
+        @kb.add('s-tab')  # Shift+Tab
+        def prev_category(event):
+            if self.current_category_index > 0:
+                self.current_category_index -= 1
+                self.current_option_index = 0
+            app.invalidate()
+
+        # Toggle selection with Space
+        @kb.add('space')
+        def toggle(event):
+            options = self.get_current_options()
+            if 0 <= self.current_option_index < len(options):
+                option = options[self.current_option_index]
+                self.toggle_option(option)
+            app.invalidate()
+
+        # Save with Enter
+        @kb.add('enter')
+        def save_and_exit(event):
+            event.app.exit(result=self.current_selections)
+
+        # Cancel with Esc
+        @kb.add('escape')
+        @kb.add('c-c')
+        def cancel(event):
+            event.app.exit(result=None)
+
+        # Create and run application
+        text_control = FormattedTextControl(text=self.get_display_text, focusable=True)
+        layout = Layout(Window(content=text_control))
+
+        app = Application(
+            layout=layout,
+            key_bindings=kb,
+            full_screen=True,
+            mouse_support=False
+        )
+
+        return app.run()
+```
+
+**Key Pattern Elements:**
+- `FormattedText` for styled output (class-based styling)
+- `KeyBindings` for keyboard navigation
+- `Application` with `full_screen=True` for immersive UI
+- Real-time filtering with `app.invalidate()` to refresh display
+- Return value pattern: selected item or `None` for cancel
+
 ## Git Commit Message Formats
 
 ### Standard Formats
@@ -936,17 +1261,28 @@ if not history.should_regenerate(new_premise):
     pass
 ```
 
-### Premise Generator
+### Premise Generator (v0.3.0 Enhanced)
 
 ```python
 from src.generation.premise import PremiseGenerator
 
+# IMPORTANT: Model must be explicitly provided (no fallbacks)
 generator = PremiseGenerator(client, project, model='x-ai/grok-4-fast')
+
+# Auto-detect genre from concept (NEW in v0.3.0)
+genre = await generator.detect_genre("a detective investigating magical crimes")
+# Returns: "mystery-thriller" or "urban-fantasy" based on LLM analysis
 
 # Generate with genre and concept
 result = await generator.generate(
     genre='fantasy',
     user_input='a world where dreams are currency'
+)
+
+# Generate with auto-detection (NEW)
+result = await generator.generate(
+    user_input='a detective story in space'
+    # genre auto-detected from concept
 )
 
 # Extract taxonomy from existing treatment
@@ -955,9 +1291,24 @@ result = await generator.generate_taxonomy_only(
     genre='fantasy'
 )
 
-# Iterate on existing premise
+# Iterate on premise with feedback
 result = await generator.iterate(
     feedback='Make it darker and more mysterious'
+)
+
+# Iterate taxonomy with natural language (NEW in v0.3.0)
+taxonomy_result = await generator.iterate_taxonomy(
+    current_taxonomy={'pacing': ['fast'], 'themes': ['redemption']},
+    feedback='make it standalone and change pacing to slow-burn',
+    current_premise=current_premise_text
+)
+# Returns: updated_taxonomy, changes_made, regenerate_premise, reasoning
+
+# Regenerate premise with specific taxonomy (NEW in v0.3.0)
+result = await generator.regenerate_with_taxonomy(
+    user_input=original_concept,
+    taxonomy_selections={'pacing': ['slow-burn'], 'story_structure': ['standalone']},
+    genre='fantasy'
 )
 ```
 

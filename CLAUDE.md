@@ -43,7 +43,14 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 
 **Key Innovation**: Natural language iteration with git-backed version control. Users simply describe what they want changed, and the system handles intent checking, execution, and auto-commits.
 
-**New Features (v0.2.0)**:
+**New Features (v0.3.0)**:
+- **Automatic genre detection** - LLM auto-detects genre from concept
+- **Interactive taxonomy editor** - Full-screen checkbox UI for taxonomy selection
+- **Interactive model selector** - Live-filtering model search with keyboard navigation
+- **Taxonomy iteration** - Modify story parameters and regenerate premise
+- **Strict model enforcement** - Single user-selected model for ALL operations (no fallbacks)
+
+**Previous Features (v0.2.0)**:
 - Genre-specific taxonomy support (11 genres with autocomplete)
 - Smart input detection (brief premise vs standard vs detailed vs treatment)
 - History tracking to avoid repetitive generations
@@ -65,8 +72,10 @@ agentic           # Start REPL (main interface)
 /open my-book     # Open existing project
 /status           # Check project status
 /models           # List available models
-/model grok       # Switch to grok model (fuzzy search)
-/generate premise fantasy "a magical library"  # Genre-specific generation
+/model            # Interactive model selector (live filtering)
+/model grok       # Or use fuzzy search directly
+/generate premise "a magical library"  # Auto-detects genre (fantasy)
+/iterate taxonomy # Interactive taxonomy editor
 /logs             # View recent log entries
 /help             # Show all commands
 ```
@@ -179,10 +188,23 @@ if not model_obj.has_sufficient_context(required_tokens):
 ```python
 # Genre-specific generation parameters
 from src.generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
+from src.generation.premise import PremiseGenerator
+
+# Auto-detect genre from concept
+generator = PremiseGenerator(client, project, model)
+genre = await generator.detect_genre("a wizard discovers magic is breaking")
+# Returns: "fantasy"
 
 # Load genre taxonomy
 loader = TaxonomyLoader()
-taxonomy = loader.load_merged_taxonomy('fantasy')
+taxonomy = loader.load_merged_taxonomy(genre)
+
+# Interactive taxonomy editing
+/iterate taxonomy  # Launches full-screen checkbox editor
+
+# Or natural language
+/iterate taxonomy
+make it a standalone and change pacing to fast
 
 # Analyze input type
 analysis = PremiseAnalyzer.analyze(user_input)
@@ -195,8 +217,8 @@ else:
 ### Smart Input Detection
 ```
 Input Analysis:
-- < 20 words: Brief premise → Full generation
-- 20-100 words: Standard premise → Enhancement
+- < 20 words: Brief premise → Full generation + auto-detect genre
+- 20-100 words: Standard premise → Enhancement + auto-detect genre
 - 100-200 words: Detailed premise → Structuring
 - 200+ words: Treatment → Preserve + extract taxonomy
 ```
@@ -207,6 +229,13 @@ User: "Add more dialogue to chapter 3"
 → Intent check (single LLM call with JSON response)
 → High confidence: Execute + auto-commit "Iterate chapter 3: add dialogue"
 → Low confidence: Ask clarification
+
+# Taxonomy iteration
+/iterate taxonomy
+→ Interactive editor OR natural language
+→ Update taxonomy selections
+→ Optionally regenerate premise
+→ Auto-commit changes
 ```
 
 ### Git Integration
@@ -256,12 +285,14 @@ books/[project-name]/
 ## Key Implementation Files
 
 - `src/generation/taxonomies.py` - Genre taxonomy system and premise analysis
-- `src/generation/premise.py` - Enhanced premise generation with multiple modes
-- `src/generation/iteration.py` - Natural language feedback processing
+- `src/generation/premise.py` - Premise generation with auto-detection, taxonomy iteration
+- `src/generation/iteration/` - Natural language feedback processing (coordinator, intent, diff, scale)
 - `src/storage/git_manager.py` - Git operations wrapper
 - `src/generation/analysis.py` - Comprehensive story analysis
-- `src/cli/interactive.py` - REPL with prompt_toolkit and logging
+- `src/cli/interactive.py` - REPL with prompt_toolkit, logging, and interactive editors
 - `src/cli/command_completer.py` - Advanced tab completion with genre support
+- `src/cli/taxonomy_editor.py` - Full-screen checkbox UI for taxonomy selection
+- `src/cli/model_selector.py` - Interactive model selector with live fuzzy search
 - `src/utils/logging.py` - Comprehensive logging system
 
 ## Fail-Early Paradigm
