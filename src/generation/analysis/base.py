@@ -80,17 +80,18 @@ class AnalysisResult:
 class BaseAnalyzer:
     """Base class for all analyzers."""
 
-    def __init__(self, client: OpenRouterClient, model: Optional[str] = None):
+    def __init__(self, client: OpenRouterClient, model: str):
         """
         Initialize analyzer.
 
         Args:
             client: OpenRouter API client
-            model: Model to use (defaults to Claude 3.5 Sonnet)
+            model: Model to use for analysis (required)
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
-        # Use capable model for quality analysis
-        self.model = model or "anthropic/claude-3.5-sonnet:beta"
+        self.model = model
 
     async def analyze(
         self,

@@ -95,16 +95,20 @@ Pacing structure:
 class ChapterGenerator:
     """Generator for chapter outlines (LOD2)."""
 
-    def __init__(self, client: OpenRouterClient, project: Project):
+    def __init__(self, client: OpenRouterClient, project: Project, model: str):
         """
         Initialize chapter generator.
 
         Args:
             client: OpenRouter API client
             project: Current project
+            model: Model to use for generation (required)
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
         self.project = project
+        self.model = model
         self.console = Console()
 
     def _calculate_chapter_count(self, total_words: int) -> int:
@@ -155,35 +159,23 @@ class ChapterGenerator:
             from ..utils.logging import get_logger
             logger = get_logger()
 
-            model = None
-            if self.project.metadata and self.project.metadata.model:
-                model = self.project.metadata.model
-                if logger:
-                    logger.debug(f"Using project model: {model}")
-            if not model:
-                from ..config import get_settings
-                settings = get_settings()
-                model = settings.active_model
-                if logger:
-                    logger.debug(f"Using settings model: {model}")
-
             if logger:
-                logger.debug(f"Starting chapter generation: model={model}, chapter_count={chapter_count}, total_words={total_words}")
+                logger.debug(f"Starting chapter generation: model={self.model}, chapter_count={chapter_count}, total_words={total_words}")
                 logger.debug(f"Treatment length: {len(treatment)} chars")
                 logger.debug(f"Prompt length: {len(prompt)} chars")
 
             # Get model capabilities to determine appropriate token allocation
             min_tokens = 5000  # Default for rich outlines
-            model_obj = await self.client.get_model(model)
+            model_obj = await self.client.get_model(self.model)
 
             if logger:
                 if model_obj:
                     logger.debug(f"Model fetched: {model_obj.id}, context={model_obj.context_length}, max_output={model_obj.get_max_output_tokens()}")
                 else:
-                    logger.error(f"Failed to fetch model object for {model}")
+                    logger.error(f"Failed to fetch model object for {self.model}")
 
             if not model_obj:
-                raise Exception(f"Failed to fetch model capabilities for {model}")
+                raise Exception(f"Failed to fetch model capabilities for {self.model}")
 
             if model_obj:
                 max_output = model_obj.get_max_output_tokens()
@@ -214,7 +206,7 @@ class ChapterGenerator:
                 logger.debug(f"Calling json_completion with display_field='summary', display_mode='array_first', min_response_tokens={min_tokens}")
 
             result = await self.client.json_completion(
-                model=model,
+                model=self.model,
                 prompt=prompt,
                 temperature=0.7,  # Slightly higher for more creative variety
                 display_field="summary",  # Display summaries as they complete
@@ -295,17 +287,8 @@ User feedback: {feedback}
 Please revise this chapter outline based on the feedback. Return the updated chapter in the same JSON format."""
 
         # Generate revision
-        # Get model from project settings or default
-        model = None
-        if self.project.metadata and self.project.metadata.model:
-            model = self.project.metadata.model
-        if not model:
-            from ..config import get_settings
-            settings = get_settings()
-            model = settings.active_model
-
         result = await self.client.json_completion(
-            model=model,
+            model=self.model,
             prompt=prompt,
             temperature=0.5,
             display_field="summary",  # Display the updated summary

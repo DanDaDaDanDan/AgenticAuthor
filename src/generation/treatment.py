@@ -44,16 +44,20 @@ Format as flowing narrative prose, not bullet points."""
 class TreatmentGenerator:
     """Generator for story treatments (LOD2)."""
 
-    def __init__(self, client: OpenRouterClient, project: Project):
+    def __init__(self, client: OpenRouterClient, project: Project, model: str):
         """
         Initialize treatment generator.
 
         Args:
             client: OpenRouter API client
             project: Current project
+            model: Model to use for generation (required)
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
         self.project = project
+        self.model = model
 
     async def generate(
         self,
@@ -95,18 +99,9 @@ class TreatmentGenerator:
 
         # Generate with API
         try:
-            # Get model from project settings or default
-            model = None
-            if self.project.metadata and self.project.metadata.model:
-                model = self.project.metadata.model
-            if not model:
-                from ..config import get_settings
-                settings = get_settings()
-                model = settings.active_model
-
             # Use streaming_completion with dynamic token calculation
             result = await self.client.streaming_completion(
-                model=model,
+                model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,  # Balanced for coherent narrative
                 display=True,  # Show streaming progress
@@ -168,18 +163,9 @@ Return the complete revised treatment as flowing narrative prose."""
         # Get current word count
         current_words = len(current_treatment.split())
 
-        # Get model from project settings or default
-        model = None
-        if self.project.metadata and self.project.metadata.model:
-            model = self.project.metadata.model
-        if not model:
-            from ..config import get_settings
-            settings = get_settings()
-            model = settings.active_model
-
         # Generate revision with dynamic token calculation
         result = await self.client.streaming_completion(
-            model=model,
+            model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,  # Lower temp for controlled iteration
             display=True,  # Show streaming progress

@@ -76,10 +76,12 @@ class ScaleDetector:
 
         Args:
             client: OpenRouter API client (optional, for LLM-based detection)
-            model: Model to use for unclear cases
+            model: Model to use for unclear cases (required if client provided)
         """
         self.client = client
-        self.model = model or "anthropic/claude-3-haiku:beta"
+        if client and not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
+        self.model = model
 
     def detect_scale(
         self,

@@ -60,17 +60,18 @@ class PatchError(Exception):
 class DiffGenerator:
     """Generate and apply unified diffs for content changes."""
 
-    def __init__(self, client: OpenRouterClient, model: Optional[str] = None):
+    def __init__(self, client: OpenRouterClient, model: str):
         """
         Initialize diff generator.
 
         Args:
             client: OpenRouter API client
-            model: Model to use for diff generation (needs good code understanding)
+            model: Model to use for diff generation (required)
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
-        # Use a capable model for diff generation (Claude Sonnet or GPT-4)
-        self.model = model or "anthropic/claude-3.5-sonnet:beta"
+        self.model = model
 
     async def generate_diff(
         self,

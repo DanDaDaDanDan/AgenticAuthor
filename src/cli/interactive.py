@@ -199,7 +199,13 @@ class InteractiveSession:
             # Keep reference for backward compatibility
             self.git = self.project.git
 
-            self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
+            # Restore iteration target if set
+            if self.project.metadata and self.project.metadata.iteration_target:
+                self.iteration_target = self.project.metadata.iteration_target
+                self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
+                self._print(f"[dim]Iteration target:[/dim] [cyan]{self.iteration_target}[/cyan]")
+            else:
+                self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
 
         except Exception as e:
             self._print(f"[bold red]Error loading project:[/bold red] {e}")
@@ -546,7 +552,7 @@ class InteractiveSession:
             ("/iterate <target>", "Set iteration target, then type feedback naturally"),
             ("/analyze [type]", "Run story analysis"),
             ("/export [format]", "Export story"),
-            ("/git <command>", "View git history (status/log/diff/show)"),
+            ("/git <command>", "View history or commit changes (status/log/diff/commit)"),
             ("/config", "Show configuration"),
             ("/clear", "Clear screen"),
             ("/logs", "Show recent log entries"),
@@ -1109,7 +1115,7 @@ class InteractiveSession:
         self.console.rule(style="dim")
         self.console.print(f"[cyan]Generating treatment ({target_words} words)...[/cyan]\n")
 
-        generator = TreatmentGenerator(self.client, self.project)
+        generator = TreatmentGenerator(self.client, self.project, model=self.settings.active_model)
         result = await generator.generate(target_words=target_words)
 
         if result:
@@ -1153,7 +1159,7 @@ class InteractiveSession:
         self.console.rule(style="dim")
         self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
 
-        generator = ChapterGenerator(self.client, self.project)
+        generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
         chapters = await generator.generate(
             chapter_count=chapter_count,
             total_words=total_words
@@ -1196,7 +1202,7 @@ class InteractiveSession:
             self.console.print("[dim]    /generate prose all - Generate all chapters sequentially[/dim]")
             return
 
-        generator = ProseGenerator(self.client, self.project)
+        generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
 
         if options.lower() == "all":
             # Generate all chapters sequentially
@@ -1266,6 +1272,11 @@ class InteractiveSession:
                 self._print(f"[dim]Current iteration target:[/dim] [cyan]{self.iteration_target}[/cyan]")
                 self._print("[dim]Type /iterate to clear target[/dim]")
                 self.iteration_target = None
+
+                # Clear from project metadata
+                if self.project and self.project.metadata:
+                    self.project.metadata.iteration_target = None
+                    self.project.save_metadata()
             else:
                 self._print("[yellow]Usage: /iterate <target>[/yellow]")
                 self._print("[dim]Set what to iterate on (premise, treatment, chapters, prose)[/dim]")
@@ -1289,6 +1300,12 @@ class InteractiveSession:
             return
 
         self.iteration_target = target
+
+        # Save to project metadata
+        if self.project and self.project.metadata:
+            self.project.metadata.iteration_target = target
+            self.project.save_metadata()
+
         self._print(f"[green]✓[/green] Iteration target set to: [cyan]{target}[/cyan]")
         self._print("[dim]Now type your feedback naturally (no / needed)[/dim]")
         self._print()
@@ -1464,7 +1481,13 @@ class InteractiveSession:
             return
 
         if not args:
-            # Show status by default
+            # Show help and status
+            self._print("[bold]Git Commands:[/bold]")
+            self._print("  /git status          - Show working tree status")
+            self._print("  /git log [N]         - Show last N commits (default: 10)")
+            self._print("  /git diff            - Show uncommitted changes")
+            self._print("  /git commit [msg]    - Commit all changes (default msg: 'Manual changes')")
+            self._print()
             args = "status"
 
         parts = args.split(None, 1)
@@ -1507,12 +1530,23 @@ class InteractiveSession:
                 self.console.print("[green]✓  All changes staged[/green]")
 
             elif command == "commit":
+                # Check if there are changes to commit
+                status = self.git.status()
+                if not status:
+                    self.console.print("[green]No changes to commit[/green]")
+                    return
+
+                # Stage all changes first
+                self.git.add()
+
+                # Get message or use default
                 if len(parts) > 1:
                     message = parts[1]
-                    self.git.commit(message)
-                    self.console.print(f"[green]✓  Committed: {message}[/green]")
                 else:
-                    self.console.print("[yellow]Usage: /git commit <message>[/yellow]")
+                    message = "Manual changes (external to AgenticAuthor)"
+
+                self.git.commit(message)
+                self.console.print(f"[green]✓  Committed:[/green] {message}")
 
             elif command == "rollback":
                 steps = 1

@@ -229,8 +229,8 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/export [format]'
         },
         'git': {
-            'description': 'View git history and version control status',
-            'usage': '/git <status|log|diff|show>'
+            'description': 'View git history and commit manual changes',
+            'usage': '/git <status|log|diff|commit [message]>'
         },
         'config': {
             'description': 'Show or set configuration',

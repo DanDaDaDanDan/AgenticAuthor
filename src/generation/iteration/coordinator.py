@@ -34,9 +34,13 @@ class IterationCoordinator:
         self.model = model
         self.default_target = default_target
 
-        # Initialize components
-        self.intent_analyzer = IntentAnalyzer(client, default_target=default_target)
-        self.scale_detector = ScaleDetector(client)
+        # Validate model
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
+
+        # Initialize components (all use the same model)
+        self.intent_analyzer = IntentAnalyzer(client, model, default_target=default_target)
+        self.scale_detector = ScaleDetector(client, model)
         self.diff_generator = DiffGenerator(client, model)
 
     async def process_feedback(

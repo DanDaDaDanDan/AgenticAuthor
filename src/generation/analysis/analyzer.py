@@ -26,7 +26,7 @@ class AnalysisCoordinator:
         self,
         client: OpenRouterClient,
         project: Project,
-        model: Optional[str] = None
+        model: str
     ):
         """
         Initialize analysis coordinator.
@@ -34,11 +34,13 @@ class AnalysisCoordinator:
         Args:
             client: OpenRouter API client
             project: Current project
-            model: Model to use (defaults to Claude 3.5 Sonnet)
+            model: Model to use for analysis (required)
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
         self.project = project
-        self.model = model or "anthropic/claude-3.5-sonnet:beta"
+        self.model = model
 
         # Initialize all analyzers
         self.plot_analyzer = PlotAnalyzer(client, self.model)

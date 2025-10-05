@@ -102,16 +102,20 @@ Begin Chapter {{ current_chapter_number }}: {{ current_chapter_title }}:"""
 class ProseGenerator:
     """Generator for full prose (LOD0)."""
 
-    def __init__(self, client: OpenRouterClient, project: Project):
+    def __init__(self, client: OpenRouterClient, project: Project, model: str):
         """
         Initialize prose generator.
 
         Args:
             client: OpenRouter API client
             project: Current project
+            model: Model to use for generation (required)
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
         self.project = project
+        self.model = model
 
 
     def load_all_chapters_with_prose(self) -> List[Dict[str, Any]]:
@@ -210,9 +214,7 @@ class ProseGenerator:
         # Check if configured model is sufficient
         configured_model = self.project.metadata.model if self.project.metadata else None
         if not configured_model:
-            from ..config import Settings
-            settings = Settings()
-            configured_model = settings.active_model
+            configured_model = self.model
 
         recommended_model = None
         is_sufficient = False
@@ -330,20 +332,13 @@ class ProseGenerator:
         try:
             # Get model from project settings or use recommended
             model = None
-            if self.project.metadata and self.project.metadata.model:
-                model = self.project.metadata.model
-            if not model:
-                from ..config import get_settings
-                settings = get_settings()
-                model = settings.active_model
-
             # Check if model has sufficient context
-            model_obj = await self.client.get_model(model)
+            model_obj = await self.client.get_model(self.model)
             if not model_obj:
-                raise Exception(f"Failed to fetch model capabilities for {model}")
+                raise Exception(f"Failed to fetch model capabilities for {self.model}")
 
             if not model_obj.has_sufficient_context(token_calc['total_needed']):
-                print(f"⚠️  Warning: {model} has insufficient context window")
+                print(f"⚠️  Warning: {self.model} has insufficient context window")
                 print(f"   Model context: {model_obj.context_length:,} tokens")
                 print(f"   Required: {token_calc['total_needed']:,} tokens")
                 if token_calc['recommended_model']:
@@ -358,7 +353,7 @@ class ProseGenerator:
 
             # Use streaming_completion with calculated tokens
             result = await self.client.streaming_completion(
-                model=model,
+                model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.8,  # Higher for creative prose
                 display=True,  # Show streaming progress
@@ -452,16 +447,9 @@ Return the complete revised chapter prose (including the chapter title header)."
 
         # Get model from project settings or default
         model = None
-        if self.project.metadata and self.project.metadata.model:
-            model = self.project.metadata.model
-        if not model:
-            from ..config import get_settings
-            settings = get_settings()
-            model = settings.active_model
-
         # Generate revision with dynamic token calculation
         result = await self.client.streaming_completion(
-            model=model,
+            model=self.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6,  # Lower temp for controlled iteration
             # No max_tokens - let it use full available context

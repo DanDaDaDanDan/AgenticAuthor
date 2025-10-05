@@ -42,15 +42,17 @@ Return a JSON object with this structure:
 class PremiseGenerator:
     """Generator for story premises (LOD3)."""
 
-    def __init__(self, client: OpenRouterClient, project: Project, model: Optional[str] = None):
+    def __init__(self, client: OpenRouterClient, project: Project, model: str):
         """
         Initialize premise generator.
 
         Args:
             client: OpenRouter API client
             project: Current project
-            model: Model to use for generation (optional)
+            model: Model to use for generation (required)
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
         self.project = project
         self.taxonomy_loader = TaxonomyLoader()

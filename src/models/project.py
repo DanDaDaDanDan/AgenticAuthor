@@ -23,6 +23,7 @@ class ProjectMetadata(BaseModel):
     chapter_count: int = Field(0, description="Number of chapters")
     status: str = Field("draft", description="Project status")
     tags: List[str] = Field(default_factory=list, description="Project tags")
+    iteration_target: Optional[str] = Field(None, description="Current iteration target (premise/treatment/chapters/prose)")
     custom_data: Dict[str, Any] = Field(default_factory=dict, description="Custom metadata")
 
     def update_timestamp(self):

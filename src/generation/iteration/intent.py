@@ -91,7 +91,7 @@ class IntentAnalyzer:
     def __init__(
         self,
         client: OpenRouterClient,
-        model: Optional[str] = None,
+        model: str,
         default_target: Optional[str] = None
     ):
         """
@@ -99,12 +99,13 @@ class IntentAnalyzer:
 
         Args:
             client: OpenRouter API client
-            model: Model to use (defaults to fast/cheap model for intent analysis)
+            model: Model to use for intent analysis (required)
             default_target: Default target for iterations when not specified
         """
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
         self.client = client
-        # Use fast, cheap model for intent analysis (Claude Haiku or GPT-3.5-turbo)
-        self.model = model or "anthropic/claude-3-haiku:beta"
+        self.model = model
         self.default_target = default_target
 
     async def analyze(

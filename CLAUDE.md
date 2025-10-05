@@ -100,11 +100,36 @@ agentic
 
 1. **Natural Language First**: Always listening for feedback, no explicit commands needed
 2. **Git Everything**: Every book is a git repo, every change is a commit
-3. **Single Active Model**: One model at a time for all operations (switchable)
+3. **Single Active Model**: One model at a time for ALL operations (switchable)
 4. **File-Based Storage**: Human-readable markdown/YAML files
 5. **Smart Intent Checking**: Confidence-based routing (>0.8 execute, else clarify)
 6. **No Modal Dialogs**: All interactions are inline in the CLI, never modal popups
 7. **Fail Early, No Fallbacks**: Use actual facts (API data), never assumptions or fallbacks
+
+## Model Selection Policy
+
+**CRITICAL: Always use the user's selected model for ALL LLM calls. NEVER choose a different model.**
+
+- **No hardcoded models**: Never use hardcoded model names in generation code
+- **No fallback models**: If no model is selected, raise a clear error - don't fall back to a default
+- **No model substitution**: Don't pick a "better" model for specific tasks (diff generation, intent analysis, etc.)
+- **Single model for everything**: The user's selected model must be used for ALL operations:
+  - Premise generation
+  - Treatment generation
+  - Chapter generation
+  - Prose generation
+  - Intent analysis
+  - Diff generation
+  - Scale detection
+  - All other LLM calls
+
+**Error handling:**
+```python
+if not model:
+    raise ValueError("No model selected. Use /model <model-name> to select a model.")
+```
+
+**Why:** Users choose models based on cost, speed, and quality tradeoffs. Silently using a different model violates this choice and can cause unexpected costs or behavior.
 
 ## UI/UX Principles (Following Claude Code)
 
