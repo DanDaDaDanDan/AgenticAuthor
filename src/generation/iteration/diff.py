@@ -121,8 +121,9 @@ class DiffGenerator:
                 model=self.model,
                 messages=messages,
                 temperature=0.2,  # Low temperature for precise output
-                stream=False,
-                display=False,
+                stream=True,
+                display=True,
+                display_label="Generating changes",
                 max_tokens=2000
             )
 

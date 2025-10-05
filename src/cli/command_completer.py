@@ -217,8 +217,8 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/generate <type> [options]'
         },
         'iterate': {
-            'description': 'Iterate on existing content',
-            'usage': '/iterate <feedback>'
+            'description': 'Set iteration target (premise/treatment/chapters/prose)',
+            'usage': '/iterate <target>'
         },
         'analyze': {
             'description': 'Analyze story for issues',

@@ -49,6 +49,7 @@ class InteractiveSession:
         self.story: Optional[Story] = None
         self.git: Optional[GitManager] = None
         self.running = False
+        self.iteration_target: Optional[str] = None  # Track what to iterate on
 
         # Use provided logger or setup basic logging
         self.session_logger = logger
@@ -291,7 +292,8 @@ class InteractiveSession:
         self._print("  [bold]/open[/bold]              Open an existing project")
         self._print("  [bold]/help[/bold]              Show all commands")
         self._print()
-        self._print("[dim]Type [bold]/[/bold] to see available commands[/dim]")
+        self._print("[dim]Natural language mode: Just type your feedback![/dim]")
+        self._print("[dim]Type [bold]exit[/bold] or [bold]/exit[/bold] to quit[/dim]")
         self._print()
 
     async def process_input(self, user_input: str):
@@ -306,6 +308,11 @@ class InteractiveSession:
         # Log user input
         if self.session_logger:
             self.session_logger.log(f"USER INPUT: {user_input}", "INFO")
+
+        # Special handling for 'exit' and 'quit' without slash
+        if user_input.lower() in ['exit', 'quit']:
+            await self._run_command('exit', '')
+            return
 
         # Check if it's a slash command
         if user_input.startswith('/'):
@@ -383,11 +390,14 @@ class InteractiveSession:
             coordinator = IterationCoordinator(
                 client=self.client,
                 project=self.project,
-                model=self.settings.active_model
+                model=self.settings.active_model,
+                default_target=self.iteration_target  # Pass the iteration target
             )
 
-            # Show processing message
-            self._print("\n[dim]📝 Analyzing feedback...[/dim]")
+            # Show processing header
+            target_info = f" → {self.iteration_target}" if self.iteration_target else ""
+            self.console.rule(f"[bold cyan]Iteration{target_info}[/bold cyan]", style="cyan")
+            self._print()
 
             # Process feedback
             result = await coordinator.process_feedback(
@@ -422,13 +432,12 @@ class InteractiveSession:
         if intent.get('target_id'):
             target = f"{target} {intent['target_id']}"
 
-        self._print(f"\n[green]✓ Intent:[/green] {action} ({target})")
-        self._print(f"[dim]  Confidence: {intent.get('confidence', 0):.0%}[/dim]")
-        self._print(f"[dim]  Scale: {scale}[/dim]")
+        self._print(f"[green]✓ Intent understood:[/green] {action} ({target})")
+        self._print(f"[dim]  Confidence: {intent.get('confidence', 0):.0%} | Scale: {scale}[/dim]")
+        self._print()
 
         # Show changes
         if changes:
-            self._print(f"\n[green]🔧 Changes applied:[/green]")
             for change in changes:
                 change_type = change.get('type', 'unknown')
                 file_path = change.get('file', 'unknown')
@@ -438,18 +447,47 @@ class InteractiveSession:
                     new_len = change.get('modified_length', 0)
                     diff_words = new_len - old_len
                     sign = '+' if diff_words >= 0 else ''
-                    self._print(f"   • Patched [cyan]{file_path}[/cyan] ({sign}{diff_words} words)")
+
+                    self._print(f"[green]✓ Applied patch:[/green] [cyan]{file_path}[/cyan] ({sign}{diff_words} words)")
+
+                    # Display the diff with colors
+                    diff = change.get('diff', '')
+                    if diff:
+                        self._print()
+                        self._display_diff(diff)
 
                 elif change_type == 'regenerate':
                     word_count = change.get('word_count', 0)
-                    self._print(f"   • Regenerated [cyan]{file_path}[/cyan] ({word_count:,} words)")
+                    self._print(f"[green]✓ Regenerated:[/green] [cyan]{file_path}[/cyan] ({word_count:,} words)")
 
         # Show commit info
         commit = result.get('commit')
         if commit:
-            self._print(f"\n[green]📦 Committed:[/green] {commit.get('message', 'unknown')}")
+            self._print()
+            self._print(f"[green]✓ Committed:[/green] {commit.get('message', 'unknown')}")
 
+        # Closing rule
         self._print()
+        self.console.rule(style="dim")
+
+    def _display_diff(self, diff: str):
+        """Display a unified diff with syntax highlighting."""
+        for line in diff.split('\n'):
+            if line.startswith('---') or line.startswith('+++'):
+                # File headers
+                self._print(f"[bold cyan]{line}[/bold cyan]")
+            elif line.startswith('@@'):
+                # Hunk headers
+                self._print(f"[bold magenta]{line}[/bold magenta]")
+            elif line.startswith('+'):
+                # Added lines
+                self._print(f"[green]{line}[/green]")
+            elif line.startswith('-'):
+                # Removed lines
+                self._print(f"[red]{line}[/red]")
+            else:
+                # Context lines
+                self._print(f"[dim]{line}[/dim]")
 
     def _ensure_git_repo(self):
         """Ensure project has a git repository initialized."""
@@ -505,22 +543,26 @@ class InteractiveSession:
             ("/model [name]", "Change or show current model"),
             ("/models", "List available models"),
             ("/generate <type>", "Generate content (premise/treatment/chapters/prose)"),
-            ("/iterate <text>", "Iterate with feedback"),
+            ("/iterate <target>", "Set iteration target, then type feedback naturally"),
             ("/analyze [type]", "Run story analysis"),
             ("/export [format]", "Export story"),
             ("/git <command>", "View git history (status/log/diff/show)"),
             ("/config", "Show configuration"),
             ("/clear", "Clear screen"),
             ("/logs", "Show recent log entries"),
-            ("/exit or /quit", "Exit the session"),
+            ("/exit or exit", "Exit the session"),
         ]
 
         for cmd, desc in commands:
             table.add_row(cmd, desc)
 
         self._print(table)
-        self._print("\n[dim]Type / to see command completions[/dim]")
-        self._print("[dim]Or just type natural language to iterate with AI![/dim]")
+        self._print("\n[bold]Natural Language Iteration:[/bold]")
+        self._print("  1. Set target: [cyan]/iterate treatment[/cyan]")
+        self._print("  2. Type feedback: [dim]Add more conflict in act 2[/dim]")
+        self._print("  3. AI understands and executes automatically")
+        self._print()
+        self._print("[dim]Type / to see command completions[/dim]")
 
     def exit_session(self, args: str = ""):
         """Exit the interactive session."""
@@ -1217,8 +1259,52 @@ class InteractiveSession:
                 self.console.print(f"[red]Error: {e}[/red]")
 
     async def iterate_content(self, args: str):
-        """Iterate content command."""
-        await self.process_feedback(args)
+        """Set iteration target for natural language feedback."""
+        if not args:
+            # Show current target or clear it
+            if self.iteration_target:
+                self._print(f"[dim]Current iteration target:[/dim] [cyan]{self.iteration_target}[/cyan]")
+                self._print("[dim]Type /iterate to clear target[/dim]")
+                self.iteration_target = None
+            else:
+                self._print("[yellow]Usage: /iterate <target>[/yellow]")
+                self._print("[dim]Set what to iterate on (premise, treatment, chapters, prose)[/dim]")
+                self._print("[dim]Then just type your feedback naturally[/dim]")
+                self._print()
+                self._print("[dim]Examples:[/dim]")
+                self._print("  [bold]/iterate treatment[/bold]")
+                self._print("  [dim]Add more action scenes[/dim]")
+                self._print()
+                self._print("  [bold]/iterate chapters[/bold]")
+                self._print("  [dim]Make chapter 3 more tense[/dim]")
+            return
+
+        # Parse target
+        target = args.strip().lower()
+        valid_targets = ['premise', 'treatment', 'chapters', 'prose']
+
+        if target not in valid_targets:
+            self._print(f"[red]Invalid target:[/red] {target}")
+            self._print(f"[dim]Valid targets: {', '.join(valid_targets)}[/dim]")
+            return
+
+        self.iteration_target = target
+        self._print(f"[green]✓[/green] Iteration target set to: [cyan]{target}[/cyan]")
+        self._print("[dim]Now type your feedback naturally (no / needed)[/dim]")
+        self._print()
+        self._print("[dim]Examples:[/dim]")
+        if target == 'premise':
+            self._print("  Add more unique elements")
+            self._print("  Make it more genre-specific")
+        elif target == 'treatment':
+            self._print("  Add more conflict in act 2")
+            self._print("  Develop the antagonist's motivation")
+        elif target == 'chapters':
+            self._print("  Make chapter 3 more tense")
+            self._print("  Add a subplot about the protagonist's past")
+        elif target == 'prose':
+            self._print("  Add more dialogue to chapter 5")
+            self._print("  Enhance sensory details in the opening")
 
     async def analyze_story(self, args: str):
         """Run story analysis."""

@@ -17,7 +17,8 @@ class IterationCoordinator:
         self,
         client: OpenRouterClient,
         project: Project,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        default_target: Optional[str] = None
     ):
         """
         Initialize iteration coordinator.
@@ -26,13 +27,15 @@ class IterationCoordinator:
             client: OpenRouter API client
             project: Current project
             model: Model to use for generation tasks (optional)
+            default_target: Default target for iterations (premise/treatment/chapters/prose)
         """
         self.client = client
         self.project = project
         self.model = model
+        self.default_target = default_target
 
         # Initialize components
-        self.intent_analyzer = IntentAnalyzer(client)
+        self.intent_analyzer = IntentAnalyzer(client, default_target=default_target)
         self.scale_detector = ScaleDetector(client)
         self.diff_generator = DiffGenerator(client, model)
 

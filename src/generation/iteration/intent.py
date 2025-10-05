@@ -21,6 +21,11 @@ Available Content:
 - Chapters: {{ chapter_count }} chapters
 - Prose: {{ prose_chapters }} chapters with prose
 
+{% if default_target %}
+Default Iteration Target: {{ default_target }}
+(User has set this as their focus area - if feedback doesn't specify a different target, assume this one)
+{% endif %}
+
 User Feedback: "{{ feedback }}"
 
 Analyze the intent and respond with ONLY valid JSON (no other text):
@@ -83,17 +88,24 @@ Be specific and confident. If unclear, set confidence < 0.8 and intent_type = "c
 class IntentAnalyzer:
     """Analyze user feedback to determine intent."""
 
-    def __init__(self, client: OpenRouterClient, model: Optional[str] = None):
+    def __init__(
+        self,
+        client: OpenRouterClient,
+        model: Optional[str] = None,
+        default_target: Optional[str] = None
+    ):
         """
         Initialize intent analyzer.
 
         Args:
             client: OpenRouter API client
             model: Model to use (defaults to fast/cheap model for intent analysis)
+            default_target: Default target for iterations when not specified
         """
         self.client = client
         # Use fast, cheap model for intent analysis (Claude Haiku or GPT-3.5-turbo)
         self.model = model or "anthropic/claude-3-haiku:beta"
+        self.default_target = default_target
 
     async def analyze(
         self,
@@ -131,6 +143,7 @@ class IntentAnalyzer:
             has_treatment="Yes" if project_context['has_treatment'] else "No",
             chapter_count=project_context['chapter_count'],
             prose_chapters=project_context['prose_chapters'],
+            default_target=self.default_target,
             feedback=feedback
         )
 
@@ -145,8 +158,9 @@ class IntentAnalyzer:
                 model=self.model,
                 messages=messages,
                 temperature=0.3,  # Low temperature for consistent structured output
-                stream=False,
-                display=False,
+                stream=True,
+                display=True,
+                display_label="Analyzing intent",
                 max_tokens=500
             )
 
