@@ -3,6 +3,7 @@ import asyncio
 import re
 import importlib
 import sys
+import json
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
@@ -1391,11 +1392,7 @@ class InteractiveSession:
             self.console.print("[bold]Generated Premises:[/bold]\n")
 
             for i, p in enumerate(premises, 1):
-                # Truncate premise text to ~150 chars for display
                 premise_text = p.get('premise', '')
-                if len(premise_text) > 150:
-                    premise_text = premise_text[:147] + "..."
-
                 hook = p.get('hook', 'N/A')
 
                 self.console.print(f"  [cyan]{i}[/cyan]. {premise_text}")
