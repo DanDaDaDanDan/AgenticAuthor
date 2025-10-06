@@ -35,7 +35,7 @@ agentic_author.egg-info/
 
 # Project specific
 .cache/
-.agentic/      # Contains logs/, history, premise_history.json, debug/
+.agentic/
 books/
 test_project_tmp/
 config.yaml

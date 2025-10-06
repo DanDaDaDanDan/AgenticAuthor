@@ -113,11 +113,20 @@ def new(
             model=settings.active_model
         )
 
-        # Initialize git
+        # Initialize shared git at books/ level if needed
         from ..storage import GitManager
-        git = GitManager(project.path)
-        git.init()
-        git.commit("Initial project creation")
+        books_dir = settings.books_dir
+        git_dir = books_dir / ".git"
+        git = GitManager(books_dir)
+
+        if not git_dir.exists():
+            console.print("[dim]Initializing shared git repository...[/dim]")
+            git.init()
+            git.commit("Initialize books repository")
+
+        # Commit new project to shared git
+        git.add()
+        git.commit(f"[{name}] Initial project creation")
 
         console.print(f"[green]✓ Created project: {name}[/green]")
         console.print(f"[dim]Location: {project_dir}[/dim]")

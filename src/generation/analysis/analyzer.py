@@ -350,7 +350,9 @@ class AnalysisCoordinator:
 
         # Get git SHA if available
         git_sha = "N/A"
-        if self.project.git:
+        # Check if books/ level has git (shared repo)
+        git_dir = self.project.path.parent / ".git"
+        if git_dir.exists():
             try:
                 import subprocess
                 result = subprocess.run(

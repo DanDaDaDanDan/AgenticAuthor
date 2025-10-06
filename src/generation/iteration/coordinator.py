@@ -103,11 +103,6 @@ class IterationCoordinator:
             result['changes'] = changes
             result['success'] = True
 
-            # Step 6: Git commit
-            if auto_commit and changes:
-                commit_info = self._commit_changes(intent, scale)
-                result['commit'] = commit_info
-
             return result
 
         except Exception as e:
@@ -354,31 +349,6 @@ class IterationCoordinator:
 
         return '\n\n'.join(context_parts)
 
-    def _commit_changes(self, intent: Dict[str, Any], scale: str) -> Dict[str, str]:
-        """Create git commit for changes."""
-        if not self.project.git:
-            return {'message': 'No git repository'}
-
-        # Generate commit message
-        action = intent['action'].replace('_', ' ')
-        target = intent['target_type']
-
-        if intent.get('target_id'):
-            target = f"{target} {intent['target_id']}"
-
-        if scale == "patch":
-            message = f"Iterate {target}: {action}"
-        else:
-            message = f"Regenerate {target}: {action}"
-
-        # Add and commit
-        self.project.git.add()
-        self.project.git.commit(message)
-
-        return {
-            'message': message,
-            'sha': self.project.git.get_last_commit_sha() if hasattr(self.project.git, 'get_last_commit_sha') else 'unknown'
-        }
 
     def _request_clarification(
         self,

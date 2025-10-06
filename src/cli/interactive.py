@@ -92,6 +92,9 @@ class InteractiveSession:
         # Setup prompt session (after commands are defined)
         self.session = self._create_prompt_session()
 
+        # Initialize shared git manager at books/ level
+        self._init_shared_git()
+
         # Initialize project if provided
         if project_path:
             self.load_project(project_path)
@@ -178,6 +181,37 @@ class InteractiveSession:
             enable_history_search=True
         )
 
+    def _init_shared_git(self):
+        """Initialize shared git manager at books/ level."""
+        books_dir = self.settings.books_dir
+        git_dir = books_dir / ".git"
+
+        # Initialize GitManager at books/ level
+        self.git = GitManager(books_dir)
+
+        # Initialize git repository if it doesn't exist
+        if not git_dir.exists():
+            self.git.init()
+            self.git.commit("Initialize books repository")
+            self.logger.info(f"Initialized git repository at {books_dir}")
+
+    def _commit(self, message: str):
+        """Commit changes with project name prefix.
+
+        Args:
+            message: Commit message (will be prefixed with project name)
+        """
+        if not self.git:
+            return
+
+        if self.project:
+            prefixed_message = f"[{self.project.name}] {message}"
+        else:
+            prefixed_message = message
+
+        self.git.add()
+        self.git.commit(prefixed_message)
+
     def load_project(self, path: Path):
         """Load a project from path."""
         try:
@@ -193,13 +227,6 @@ class InteractiveSession:
                 self.story.premise = premise
             if treatment := self.project.get_treatment():
                 self.story.treatment = treatment
-
-            # Initialize git if not already initialized
-            if not self.project.is_git_repo:
-                self.project.init_git()
-
-            # Keep reference for backward compatibility
-            self.git = self.project.git
 
             # Restore iteration target if set
             if self.project.metadata and self.project.metadata.iteration_target:
@@ -422,6 +449,24 @@ class InteractiveSession:
             # Display results
             if result['success']:
                 self._display_iteration_success(result)
+
+                # Commit changes if there were any
+                if result.get('changes'):
+                    intent = result.get('intent', {})
+                    scale = result.get('scale', 'patch')
+
+                    # Generate commit message
+                    action = intent.get('action', 'update').replace('_', ' ')
+                    target = intent.get('target_type', 'content')
+                    if intent.get('target_id'):
+                        target = f"{target} {intent['target_id']}"
+
+                    if scale == "patch":
+                        message = f"Iterate {target}: {action}"
+                    else:
+                        message = f"Regenerate {target}: {action}"
+
+                    self._commit(message)
             elif result.get('needs_clarification'):
                 self._display_clarification_request(result)
             else:
@@ -574,10 +619,8 @@ class InteractiveSession:
                         self._print(f"[bold]{new_premise}[/bold]")
 
                         # Git commit
-                        if self.project.git:
-                            self.project.git.add()
-                            self.project.git.commit("Update taxonomy and regenerate premise")
-                            self._print("\n[green]✓ Committed to git[/green]")
+                    self._commit("Update taxonomy and regenerate premise")
+                    self._print("\n[green]✓ Committed to git[/green]")
 
                 else:
                     # Just update taxonomy
@@ -587,10 +630,8 @@ class InteractiveSession:
                     self._print("[green]✓ Taxonomy updated[/green]")
 
                     # Git commit
-                    if self.project.git:
-                        self.project.git.add()
-                        self.project.git.commit("Update taxonomy selections")
-                        self._print("[green]✓ Committed to git[/green]")
+                    self._commit("Update taxonomy selections")
+                    self._print("[green]✓ Committed to git[/green]")
 
                 return
 
@@ -663,10 +704,8 @@ class InteractiveSession:
                     self._print()
 
                     # Git commit
-                    if self.project.git:
-                        self.project.git.add()
-                        self.project.git.commit(f"Iterate taxonomy: {feedback[:50]}")
-                        self._print("[green]✓ Changes committed to git[/green]")
+                    self._commit(f"Iterate taxonomy: {feedback[:50]}")
+                    self._print("[green]✓ Changes committed to git[/green]")
 
             else:
                 # Just update taxonomy without regenerating
@@ -677,10 +716,8 @@ class InteractiveSession:
                 self._print("[dim]Premise unchanged - changes don't require regeneration[/dim]")
 
                 # Git commit
-                if self.project.git:
-                    self.project.git.add()
-                    self.project.git.commit(f"Update taxonomy: {feedback[:50]}")
-                    self._print("[green]✓ Changes committed to git[/green]")
+                self._commit(f"Update taxonomy: {feedback[:50]}")
+                self._print("[green]✓ Changes committed to git[/green]")
 
             self._print()
             self.console.rule(style="dim")
@@ -710,16 +747,10 @@ class InteractiveSession:
                 self._print(f"[dim]{line}[/dim]")
 
     def _ensure_git_repo(self):
-        """Ensure project has a git repository initialized."""
-        if not self.project:
-            return
-
-        if not self.project.is_git_repo:
-            self.console.print("[dim]Initializing git repository...[/dim]")
-            self.project.init_git()
-            if self.project.git:
-                self.project.git.commit("Initialize git repository")
-                self.git = self.project.git
+        """Ensure shared git repository is initialized (no-op with shared git)."""
+        # Git is now initialized at books/ level during startup
+        # This method is kept for backward compatibility but does nothing
+        pass
 
     def _display_clarification_request(self, result: Dict[str, Any]):
         """Display clarification request."""
@@ -816,12 +847,8 @@ class InteractiveSession:
                 model=self.settings.active_model
             )
 
-            # Initialize git
-            self.project.init_git()
-            if self.project.git:
-                self.project.git.commit("Initial project creation")
-                # Keep reference for backward compatibility
-                self.git = self.project.git
+            # Commit to shared git
+            self._commit("Initial project creation")
 
             # Initialize story
             self.story = Story()
@@ -928,6 +955,9 @@ class InteractiveSession:
             # Clone the project
             cloned = self.project.clone(new_path, new_name)
 
+            # Commit clone to shared git
+            self._commit(f"Clone project: {self.project.name} → {new_name}")
+
             self._print(f"[dim]Cloned project:[/dim] [bold]{self.project.name}[/bold] → [bold]{new_name}[/bold]")
             self._print(f"[dim]Location: {new_path}[/dim]")
 
@@ -935,7 +965,6 @@ class InteractiveSession:
             switch = self.console.input("\nSwitch to cloned project? (y/n): ").strip().lower()
             if switch == 'y':
                 self.project = cloned
-                self.git = cloned.git
                 self.story = Story()  # Reset story
                 self._print(f"[dim]Switched to:[/dim] [bold]{new_name}[/bold]")
 
@@ -980,7 +1009,7 @@ class InteractiveSession:
         self.console.print(table)
 
         # Show git status if available
-        if self.git and self.project.is_git_repo:
+        if self.git:
             status = self.git.status()
             if status:
                 self.console.print("\n[cyan]Git Status:[/cyan]")
@@ -1330,9 +1359,7 @@ class InteractiveSession:
                 self.console.print("[dim]Saved to premise.md[/dim]")
 
                 # Git commit
-                if self.project.git:
-                    self.project.git.add()
-                    self.project.git.commit(f"Generate premise: {genre or 'general'}")
+                self._commit(f"Generate premise: {genre or 'general'}")
 
                 # Add to history
                 self.premise_history.add(
@@ -1489,9 +1516,7 @@ class InteractiveSession:
             self.console.print(f"[dim]All {actual_count} candidates saved to premises_candidates.json[/dim]")
 
             # Git commit
-            if self.project.git:
-                self.project.git.add()
-                self.project.git.commit(f"Generate premise (selected #{selected_num} of {actual_count}): {genre or 'general'}")
+            self._commit(f"Generate premise (selected #{selected_num} of {actual_count}): {genre or 'general'}")
 
             # Add to history
             self.premise_history.add(
@@ -1572,9 +1597,7 @@ class InteractiveSession:
             self.console.print("[dim]Saved to treatment.md[/dim]")
 
             # Git commit
-            if self.project.git:
-                self.project.git.add()
-                self.project.git.commit(f"Generate treatment: {word_count} words")
+            self._commit(f"Generate treatment: {word_count} words")
         else:
             self.console.print("[red]Failed to generate treatment[/red]")
 
@@ -1623,9 +1646,7 @@ class InteractiveSession:
             self.console.print("[dim]Saved to chapters.yaml[/dim]")
 
             # Git commit
-            if self.project.git:
-                self.project.git.add()
-                self.project.git.commit(f"Generate {len(chapters)} chapter outlines")
+            self._commit(f"Generate {len(chapters)} chapter outlines")
         else:
             self.console.print("[red]Failed to generate chapters[/red]")
 
@@ -1659,9 +1680,7 @@ class InteractiveSession:
 
                 if results:
                     # Git commit
-                    if self.project.git:
-                        self.project.git.add()
-                        self.project.git.commit(f"Generate prose for {len(results)} chapters (sequential)")
+                    self._commit(f"Generate prose for {len(results)} chapters (sequential)")
 
                     self.console.print(f"\n[green]✅  Successfully generated {len(results)} chapters[/green]")
                     total_words = sum(len(p.split()) for p in results.values())
@@ -1699,9 +1718,7 @@ class InteractiveSession:
                     self.console.print(f"[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
 
                     # Git commit
-                    if self.project.git:
-                        self.project.git.add()
-                        self.project.git.commit(f"Generate prose for chapter {chapter_num} (sequential)")
+                    self._commit(f"Generate prose for chapter {chapter_num} (sequential)")
                 else:
                     self.console.print("[red]Failed to generate prose[/red]")
 
@@ -1842,12 +1859,11 @@ class InteractiveSession:
             self._display_analysis_results(result)
 
             # Git commit
-            if self.project.git and result.get('success', True):
-                self.project.git.add()
+            if result.get('success', True):
                 content_desc = result.get('content_type', content_type)
                 if result.get('target_id'):
                     content_desc += f" {result['target_id']}"
-                self.project.git.commit(f"Analyze {content_desc}")
+                self._commit(f"Analyze {content_desc}")
 
         except Exception as e:
             self.console.print(f"\n[red]✗ Analysis failed:[/red] {str(e)}")
@@ -1921,18 +1937,22 @@ class InteractiveSession:
         self.console.print("[yellow]Export system not yet implemented[/yellow]")
 
     def git_command(self, args: str):
-        """Run git command."""
-        if not self.project or not self.git:
-            self.console.print("[yellow]No project loaded[/yellow]")
+        """Run git command on shared repository."""
+        if not self.git:
+            self.console.print("[yellow]Git not initialized[/yellow]")
             return
 
         if not args:
             # Show help and status
             self._print("[bold]Git Commands:[/bold]")
+            self._print("[dim]All commands operate on the shared books/ repository[/dim]")
+            self._print()
             self._print("  /git status          - Show working tree status")
             self._print("  /git log [N]         - Show last N commits (default: 10)")
             self._print("  /git diff            - Show uncommitted changes")
-            self._print("  /git commit [msg]    - Commit all changes (default msg: 'Manual changes')")
+            self._print("  /git commit [msg]    - Commit with project name prefix")
+            self._print("  /git rollback [N]    - Roll back N commits")
+            self._print("  /git branch [name]   - Create or list branches")
             self._print()
             args = "status"
 
@@ -1982,17 +2002,21 @@ class InteractiveSession:
                     self.console.print("[green]No changes to commit[/green]")
                     return
 
-                # Stage all changes first
-                self.git.add()
-
                 # Get message or use default
                 if len(parts) > 1:
                     message = parts[1]
                 else:
                     message = "Manual changes (external to AgenticAuthor)"
 
-                self.git.commit(message)
-                self.console.print(f"[green]✓  Committed:[/green] {message}")
+                # Use _commit to add project name prefix
+                self._commit(message)
+
+                # Show actual commit message (with prefix)
+                if self.project:
+                    actual_message = f"[{self.project.name}] {message}"
+                else:
+                    actual_message = message
+                self.console.print(f"[green]✓  Committed:[/green] {actual_message}")
 
             elif command == "rollback":
                 steps = 1

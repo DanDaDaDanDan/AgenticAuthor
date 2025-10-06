@@ -6,8 +6,6 @@ from pydantic import BaseModel, Field
 import json
 import yaml
 
-from ..storage.git_manager import GitManager
-
 
 class ProjectMetadata(BaseModel):
     """Project metadata and configuration."""
@@ -44,9 +42,7 @@ class Project:
         self.path = Path(path).resolve()
         self.name = self.path.name
         self.metadata: Optional[ProjectMetadata] = None
-        self.git: Optional[GitManager] = None
         self._load_metadata()
-        self._init_git()
 
     @property
     def project_file(self) -> Path:
@@ -94,19 +90,9 @@ class Project:
         return self.path / "exports"
 
     @property
-    def git_dir(self) -> Path:
-        """Get path to .git directory."""
-        return self.path / ".git"
-
-    @property
     def is_valid(self) -> bool:
         """Check if this is a valid project directory."""
         return self.path.exists() and self.project_file.exists()
-
-    @property
-    def is_git_repo(self) -> bool:
-        """Check if project is a git repository."""
-        return self.git_dir.exists()
 
     def _load_metadata(self):
         """Load project metadata from project.yaml."""
@@ -114,22 +100,6 @@ class Project:
             with open(self.project_file) as f:
                 data = yaml.safe_load(f)
                 self.metadata = ProjectMetadata(**data)
-
-    def _init_git(self):
-        """Initialize git manager if project is a git repo."""
-        if self.is_git_repo:
-            self.git = GitManager(self.path)
-
-    def init_git(self) -> bool:
-        """
-        Initialize git repository for this project.
-
-        Returns:
-            True if successful, False otherwise
-        """
-        if not self.git:
-            self.git = GitManager(self.path)
-        return self.git.init()
 
     def save_metadata(self):
         """Save project metadata to project.yaml."""
@@ -351,11 +321,6 @@ class Project:
         # Copy entire project directory
         shutil.copytree(self.path, new_path)
 
-        # Remove .git directory from clone (we'll reinitialize)
-        git_dir = new_path / ".git"
-        if git_dir.exists():
-            shutil.rmtree(git_dir)
-
         # Load the cloned project
         cloned_project = Project(new_path)
 
@@ -365,10 +330,5 @@ class Project:
             cloned_project.metadata.created_at = datetime.now(timezone.utc)
             cloned_project.metadata.updated_at = datetime.now(timezone.utc)
             cloned_project.save_metadata()
-
-        # Initialize new git repository
-        cloned_project.init_git()
-        if cloned_project.git:
-            cloned_project.git.commit(f"Clone from {self.name}")
 
         return cloned_project

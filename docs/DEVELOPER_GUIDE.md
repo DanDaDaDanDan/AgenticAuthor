@@ -409,7 +409,7 @@ graph TB
 - **filesystem.py**: File I/O operations
 
 **Key Design Decisions:**
-- Every book is a git repository
+- Shared git repository at books/ level with project-prefixed commits
 - Auto-commit on every change
 - Human-readable formats (Markdown/YAML)
 

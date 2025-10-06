@@ -7,11 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed ⚠️  BREAKING
+- **Shared Git Repository Architecture**
+  - Changed from per-project git repos to single shared repo at `books/.git`
+  - All commits now prefixed with project name: `[project-name] commit message`
+  - Simpler architecture, better multi-project management
+  - **Migration**: Remove old `.git` directories from individual projects
+  - Repository auto-created on first run if it doesn't exist
+  - Manual initialization available: `python3 init_shared_git.py`
+  - Projects now committed to shared repository with prefixed messages
+
 ### Added
 - **Project Cloning** 📋
   - `/clone [name]` command to duplicate projects
   - Complete copy of all content (premise, treatment, chapters, prose, analysis)
-  - Fresh git repository initialized with "Clone from <source>" commit
+  - Committed to shared git with message: "Clone project: source → destination"
   - Prompts to switch to cloned project after creation
   - Useful for experiments and variations
 
