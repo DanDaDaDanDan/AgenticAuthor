@@ -45,6 +45,7 @@ test_basictui*.py
 *_tui.py
 src/api/streaming_tui.py
 src/cli/agentic_tui.py
+logs/
 
 # Testing
 tests/htmlcov/
