@@ -511,12 +511,16 @@ class InteractiveSession:
                 file_path = change.get('file', 'unknown')
 
                 if change_type == 'patch':
-                    old_len = change.get('original_length', 0)
-                    new_len = change.get('modified_length', 0)
-                    diff_words = new_len - old_len
-                    sign = '+' if diff_words >= 0 else ''
-
-                    self._print(f"[green]✓ Applied patch:[/green] [cyan]{file_path}[/cyan] ({sign}{diff_words} words)")
+                    # Check if this is chapters.yaml (has chapter_count)
+                    if 'chapter_count' in change:
+                        chapter_count = change.get('chapter_count', 0)
+                        self._print(f"[green]✓ Applied patch:[/green] [cyan]{file_path}[/cyan] ({chapter_count} chapters)")
+                    else:
+                        old_len = change.get('original_length', 0)
+                        new_len = change.get('modified_length', 0)
+                        diff_words = new_len - old_len
+                        sign = '+' if diff_words >= 0 else ''
+                        self._print(f"[green]✓ Applied patch:[/green] [cyan]{file_path}[/cyan] ({sign}{diff_words} words)")
 
                     # Display the diff with colors
                     diff = change.get('diff', '')

@@ -16,7 +16,9 @@
       "Bash(git push:*)",
       "Bash(pip install:*)",
       "Bash(python3 src/utils/import_converter.py:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

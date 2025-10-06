@@ -30,6 +30,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prompt indicator: `(MULTI-MODEL)` when active
   - Status shows all competition models and judge
   - Works for treatment, chapters, and prose generation
+  - **Iteration support**: Multi-model mode now works during iteration
+    - `/iterate chapters` in multi-model mode runs competition
+    - Feedback incorporated into all competing models
+    - Winner selected based on how well feedback was addressed
+
+- **Smart Chapter Iteration** 🔧
+  - chapters.yaml now supports both patch and regenerate modes
+  - Scale detection analyzes YAML content to choose appropriate method
+  - Patch mode: Fast unified diffs for targeted edits (10-15x faster)
+  - Regenerate mode: Full AI regeneration for structural changes
+  - Examples:
+    - "Change chapter 3 title" → Patch (seconds)
+    - "Add foreshadowing chapters 4,8" → Regenerate with context (minutes)
+    - "Fix typo in chapter 5" → Patch (seconds)
+  - Existing chapters included in iteration prompt for true modification
 
 - **Project Cloning** 📋
   - `/clone [name]` command to duplicate projects

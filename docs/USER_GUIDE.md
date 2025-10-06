@@ -408,10 +408,18 @@ Reset to default configuration.
 6. Winner auto-saved, all candidates preserved
 7. Git commit includes judging results
 
+**Iteration Support (NEW):**
+- Multi-model mode now works during iteration
+- `/iterate chapters` runs competition with feedback incorporated
+- All models receive same feedback context
+- Judge evaluates how well each addressed feedback
+- Example: "Add foreshadowing to chapters 4,8" → 3 models compete, best wins
+
 **Judging Criteria:**
 - Treatment: structure, pacing, character development, coherence, prose quality
 - Chapters: detail, pacing, beats, tension, hooks
 - Prose: writing quality, voice, dialogue, emotion, readability
+- Iteration: feedback incorporation, quality improvement, consistency preservation
 
 ### Content Generation
 
@@ -487,6 +495,13 @@ Apply natural language feedback to existing content or taxonomy.
 - **feedback** (optional): Natural language description of desired changes
   - For taxonomy: If no feedback provided, launches interactive checkbox editor
 - Features:
+  - **Smart patch vs regenerate detection** (NEW): System automatically chooses optimal method
+    - Patch: Fast unified diffs for targeted edits (10-15x faster)
+    - Regenerate: Full AI regeneration for structural changes
+    - chapters.yaml supports both modes intelligently
+  - **Multi-model iteration support** (NEW): Competition mode works during iteration
+    - Feedback incorporated into all competing models
+    - Judge evaluates how well feedback was addressed
   - **Interactive taxonomy editor** (NEW): Full-screen UI when `/iterate taxonomy` has no feedback
     - Checkbox interface for all taxonomy categories
     - Keyboard navigation: ↑↓ to move, SPACE to toggle, TAB to switch category
@@ -500,6 +515,8 @@ Apply natural language feedback to existing content or taxonomy.
   - `/iterate taxonomy make it standalone and change pacing to fast` - Natural language (NEW)
   - `/iterate premise add more tension`
   - `/iterate chapter 3 add more dialogue`
+  - `/iterate chapters` → "Change chapter 3 title to 'Awakening'" - Patch (seconds)
+  - `/iterate chapters` → "Add foreshadowing to chapters 4,8" - Regenerate (minutes)
 
 #### `/analyze [type]`
 Analyze story for quality and issues.

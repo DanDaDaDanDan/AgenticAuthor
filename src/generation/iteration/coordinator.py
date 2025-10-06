@@ -184,13 +184,26 @@ class IterationCoordinator:
         # Write modified content
         file_path.write_text(modified, encoding='utf-8')
 
-        changes.append({
+        change_info = {
             'type': 'patch',
             'file': str(file_path.relative_to(self.project.path)),
             'diff': diff,
             'original_length': len(content.split()),
             'modified_length': len(modified.split())
-        })
+        }
+
+        # For chapters.yaml, add chapter count info
+        if intent['target_type'] == 'chapters':
+            # Parse YAML to count chapters
+            import yaml
+            try:
+                chapters_data = yaml.safe_load(modified)
+                if isinstance(chapters_data, list):
+                    change_info['chapter_count'] = len(chapters_data)
+            except:
+                pass  # Fall back to word count
+
+        changes.append(change_info)
 
         return changes
 
@@ -327,14 +340,53 @@ class IterationCoordinator:
             treatment = self.project.get_treatment()
             return (treatment, 'treatment')
 
-        elif target_type in ['chapter', 'chapters', 'prose']:
-            chapter_num = self._extract_chapter_number(intent)
+        elif target_type == 'chapters':
+            # Multiple chapters - load chapters.yaml for patch/regen decision
+            chapters_file = self.project.path / "chapters.yaml"
+            if chapters_file.exists():
+                content = chapters_file.read_text(encoding='utf-8')
+                return (content, 'chapters')
+            return (None, 'chapters')
 
-            if chapter_num:
+        elif target_type == 'chapter':
+            # Single chapter - if default_target is 'chapters', load chapters.yaml
+            # Otherwise, load prose
+            if self.default_target == 'chapters':
+                # User is iterating chapters - load chapters.yaml unconditionally
+                chapters_file = self.project.path / "chapters.yaml"
+                if chapters_file.exists():
+                    content = chapters_file.read_text(encoding='utf-8')
+                    return (content, 'chapters')
+                raise ValueError("No chapters.yaml found. Generate chapters first with /generate chapters")
+            else:
+                # User is iterating prose
+                chapter_num = self._extract_chapter_number(intent)
+                if not chapter_num:
+                    raise ValueError("Cannot determine chapter number")
+
                 chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
                 if chapter_file.exists():
                     content = chapter_file.read_text(encoding='utf-8')
                     return (content, f'chapter {chapter_num}')
+                raise ValueError(
+                    f"No prose found for chapter {chapter_num}. "
+                    f"Generate with /generate prose {chapter_num} or use /iterate chapters for outlines."
+                )
+
+        elif target_type == 'prose':
+            # Explicitly prose - always load prose file
+            chapter_num = self._extract_chapter_number(intent)
+            if not chapter_num:
+                raise ValueError("Cannot determine chapter number")
+
+            chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+            if chapter_file.exists():
+                content = chapter_file.read_text(encoding='utf-8')
+                return (content, f'chapter {chapter_num}')
+            raise ValueError(
+                f"No prose found for chapter {chapter_num}. "
+                f"Generate with /generate prose {chapter_num}"
+            )
 
         return (None, target_type)
 
@@ -348,9 +400,23 @@ class IterationCoordinator:
         elif target_type == 'treatment':
             return self.project.treatment_file
 
-        elif target_type in ['chapter', 'chapters', 'prose']:
-            chapter_num = self._extract_chapter_number(intent)
+        elif target_type == 'chapters':
+            # Multiple chapters - return chapters.yaml
+            return self.project.path / "chapters.yaml"
 
+        elif target_type == 'chapter':
+            # Single chapter - if default_target is 'chapters', return chapters.yaml
+            if self.default_target == 'chapters':
+                return self.project.path / "chapters.yaml"
+            else:
+                # Return prose file
+                chapter_num = self._extract_chapter_number(intent)
+                if chapter_num:
+                    return self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+
+        elif target_type == 'prose':
+            # Explicitly prose - always return prose file
+            chapter_num = self._extract_chapter_number(intent)
             if chapter_num:
                 return self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
 

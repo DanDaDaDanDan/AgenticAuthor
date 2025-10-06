@@ -228,30 +228,103 @@ class DiffGenerator:
 
     def _apply_hunk(self, lines: list, hunk: dict) -> list:
         """Apply a single hunk to lines."""
-        # Convert to 0-indexed
-        start_idx = hunk['old_start'] - 1
-
         # Extract old and new content from hunk
-        old_content = []
-        new_content = []
+        old_lines = []
+        new_lines = []
 
         for line in hunk['lines']:
             if line.startswith('-'):
-                old_content.append(line[1:])
+                # Line to remove
+                old_lines.append(line[1:] + '\n')
             elif line.startswith('+'):
-                new_content.append(line[1:])
+                # Line to add
+                new_lines.append(line[1:] + '\n')
             elif line.startswith(' '):
-                old_content.append(line[1:])
-                new_content.append(line[1:])
+                # Context line (present in both)
+                old_lines.append(line[1:] + '\n')
+                new_lines.append(line[1:] + '\n')
 
-        # Find the location to apply the hunk
-        # This is a simplified approach - real patch is more sophisticated
-        end_idx = start_idx + len(old_content)
+        # Try to find matching location with fuzzy search
+        # Start at the suggested location from diff
+        start_idx = hunk['old_start'] - 1
 
-        # Replace old content with new content
-        result = lines[:start_idx] + new_content + lines[end_idx:]
+        # Verify the old content matches at the suggested location
+        match_idx = self._find_match(lines, old_lines, start_idx)
+
+        if match_idx is None:
+            raise PatchError(
+                f"Cannot find matching content for hunk at line {hunk['old_start']}. "
+                f"The file may have been modified since the diff was generated."
+            )
+
+        # Apply the patch at the matched location
+        end_idx = match_idx + len(old_lines)
+        result = lines[:match_idx] + new_lines + lines[end_idx:]
 
         return result
+
+    def _find_match(self, lines: list, pattern: list, hint_idx: int, fuzz: int = 3) -> Optional[int]:
+        """
+        Find where pattern matches in lines, with fuzzy matching.
+
+        Args:
+            lines: Lines to search in
+            pattern: Pattern to find
+            hint_idx: Suggested starting position
+            fuzz: Number of lines of fuzz (context lines that can differ)
+
+        Returns:
+            Index where pattern matches, or None if not found
+        """
+        if not pattern:
+            return hint_idx
+
+        # First try exact match at hint location
+        if self._matches_at(lines, pattern, hint_idx, fuzz=0):
+            return hint_idx
+
+        # Try with increasing fuzz
+        for f in range(1, fuzz + 1):
+            if self._matches_at(lines, pattern, hint_idx, fuzz=f):
+                return hint_idx
+
+        # Search nearby (within 100 lines)
+        for offset in range(-100, 101):
+            idx = hint_idx + offset
+            if idx < 0 or idx + len(pattern) > len(lines):
+                continue
+            if idx == hint_idx:
+                continue  # Already tried
+
+            if self._matches_at(lines, pattern, idx, fuzz=fuzz):
+                return idx
+
+        return None
+
+    def _matches_at(self, lines: list, pattern: list, idx: int, fuzz: int) -> bool:
+        """
+        Check if pattern matches at given index with fuzz.
+
+        Args:
+            lines: Lines to check
+            pattern: Pattern to match
+            idx: Starting index
+            fuzz: Number of lines allowed to differ
+
+        Returns:
+            True if matches within fuzz tolerance
+        """
+        if idx < 0 or idx + len(pattern) > len(lines):
+            return False
+
+        mismatches = 0
+        for i, pattern_line in enumerate(pattern):
+            if lines[idx + i] != pattern_line:
+                mismatches += 1
+                if mismatches > fuzz:
+                    return False
+
+        return True
 
     def validate_diff(self, diff: str) -> bool:
         """

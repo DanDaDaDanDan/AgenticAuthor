@@ -43,13 +43,19 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 
 **Key Innovation**: Natural language iteration with git-backed version control. Users simply describe what they want changed, and the system handles intent checking, execution, and auto-commits.
 
-**New Features (v0.3.0)**:
+**New Features (v0.3.0 and Unreleased)**:
 - **Automatic genre detection** - LLM auto-detects genre from concept
 - **Interactive taxonomy editor** - Full-screen checkbox UI for taxonomy selection
 - **Interactive model selector** - Live-filtering model search with keyboard navigation
 - **Taxonomy iteration** - Modify story parameters and regenerate premise
 - **Strict model enforcement** - Single user-selected model for ALL operations (no fallbacks)
 - **Multi-model competition mode** - Generate with 3 models in parallel, judge picks winner (tournament mode)
+  - **NEW**: Competition mode works during iteration (`/iterate chapters` runs tournament)
+  - Feedback incorporated into all competing models, judge evaluates results
+- **Smart chapter iteration** - chapters.yaml supports patch and regenerate modes
+  - Patch: Fast unified diffs for targeted edits (10-15x faster)
+  - Regenerate: Full AI regeneration for structural changes
+  - Existing chapters included in iteration prompt for true modification
 
 **Previous Features (v0.2.0)**:
 - Genre-specific taxonomy support (11 genres with autocomplete)

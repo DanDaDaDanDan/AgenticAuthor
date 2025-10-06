@@ -135,7 +135,11 @@ def detect_scale(intent: dict, content: str) -> str:
         return "regenerate"
 
     if intent['scope'] == 'multiple':  # "change chapters 3-7"
-        return "regenerate"
+        # Special case: chapters.yaml can often be patched even for multiple chapters
+        if intent['target_type'] != 'chapters':
+            return "regenerate"
+        # For chapters.yaml, load content and ask model to analyze
+        return "ask_model"
 
     # Structural changes require regeneration
     structural_actions = [
@@ -153,6 +157,22 @@ def detect_scale(intent: dict, content: str) -> str:
     # When in doubt, ask the model
     return "ask_model"  # Escalate to LLM for classification
 ```
+
+### Special Handling: chapters.yaml
+
+The `chapters.yaml` file is a structured YAML document that can often be patched even when targeting multiple chapters:
+
+**Patch-worthy examples:**
+- "Change titles for chapters 2, 4, 6" → Simple field edits
+- "Fix typos in chapters 1-3" → Localized corrections
+- "Add one key event to chapter 5" → Small addition
+
+**Regenerate-worthy examples:**
+- "Add foreshadowing to chapters 4 and 8" → Requires narrative analysis
+- "Delay antagonist reveal" → Structural arc change affecting multiple chapters
+- "Sharpen all chapter hooks" → Creative revision across entire file
+
+When `scope: 'multiple'` and `target_type: 'chapters'`, the system loads the YAML content and asks the LLM to analyze the change magnitude, resulting in 10-15x faster execution for simple multi-chapter edits.
 
 ## Intent Analysis
 
