@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2025-10-05
 
 ### Added ⭐ MAJOR RELEASE
+- **Batch Premise Generation** 🎯
+  - `/generate premises <count>` command (1-30 premises)
+  - Single LLM call generates multiple unique options
+  - Interactive numbered selection
+  - Each premise includes full taxonomy selections
+  - All candidates saved to `premises_candidates.json`
+  - Streaming output shows first premise as it generates
+  - Auto-commits with selection noted
 - **Interactive Model Selector** 🎯
   - Full-screen model selection with live fuzzy search
   - Type to filter models instantly - no menus needed
@@ -344,24 +352,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 🐛 Known Issues
 
-1. **Mouse Selection**: Hold Shift while dragging in Windows Terminal
+1. **Mouse Scrolling**: Full-screen editors (model selector, taxonomy editor) don't support mouse scrolling
 2. **Tab Completion**: Press Tab twice for suggestions in some terminals
 3. **Token Counting**: Not implemented for all models
-4. **Coverage Measurement**: Module paths not always recognized by pytest-cov
 
 ## 📈 Test Coverage
 
-Current Coverage: **~85%** (estimated)
+**Test suite removed in v0.3.0** - needs complete rebuild to match current architecture.
 
-- Config: 97% ✅
-- Models: 94% ✅
-- Taxonomies: 100% ✅
-- Premise Generator: 95% ✅
-- Command Completer: 98% ✅
-- Logging: 100% ✅
-- Interactive: 75% ✅
-- API Client: 80% ✅
-- Integration Tests: 16 tests with real API ✅
+Previous coverage (v0.2.0 - now outdated):
+- 187 total tests (171 unit, 16 integration)
+- ~85% coverage across core modules
+
+**TODO for future:**
+- Rebuild test suite for v0.3.0+ features
+- Test interactive editors
+- Test batch premise generation
+- Test auto genre detection
+- Test strict model enforcement
 
 ## Recent Changes
 

@@ -83,28 +83,33 @@ agentic           # Start REPL (main interface)
 
 ## Testing After Changes
 
-Always test these commands after making changes:
+**Note: Test suite removed as of v0.3.0 - needs rebuilding to match current architecture**
+
+Manual testing checklist after making changes:
 ```bash
-# Unit tests
-pytest tests/unit/ -v
-
-# Integration tests (uses real API with grok-4-fast)
-OPENROUTER_API_KEY=sk-or-your-key pytest tests/integration/ -v
-
-# Full test suite with coverage
-pytest tests/ --cov=src --cov-report=html
-
 # Check the REPL starts
 agentic
-# Then in REPL:
+
+# Then in REPL test these commands:
 /help             # Should show all commands
 /models           # Should list OpenRouter models (needs API key)
 /new test-book    # Should create a project
-/generate premise # Should show genre selection
+/model            # Should launch interactive model selector
+/generate premise # Should show genre selection or auto-detect
+/generate premises 5 fantasy  # Should generate 5 options with streaming
+/iterate taxonomy # Should launch interactive taxonomy editor
 /logs             # Should show log location
 /status           # Should show project info
 /exit             # Should exit cleanly
 ```
+
+**TODO: Rebuild test suite for v0.3.0+**
+- Test interactive editors (model_selector, taxonomy_editor)
+- Test batch premise generation
+- Test auto genre detection
+- Test strict model enforcement
+- Test taxonomy iteration
+- Integration tests with real API calls
 
 ## Core Architecture Principles
 
@@ -360,7 +365,7 @@ process(data)  # No conditionals needed
 - Genre taxonomies are in `docs/taxonomies/` directory
 - Model selection: use specified model or project default or settings default (NOT a fallback chain)
 - Tab completion works for commands, genres, and models
-- Test suite includes 187 tests (171 unit, 16 integration)
+- **Test suite:** Removed in v0.3.0 (needs rebuilding for new architecture)
 - **All generation requires:** premise → treatment → chapters → prose (fail if missing)
 
 ## Repository Structure
@@ -371,12 +376,12 @@ AgenticAuthor/
 ├── .env                    # API keys (git-ignored)
 ├── pyproject.toml          # Python package config
 ├── src/                    # Source code
-├── tests/                  # Test suite
 ├── docs/                   # All documentation
 │   ├── USER_GUIDE.md      # Complete user guide
 │   ├── DEVELOPER_GUIDE.md # Developer reference
 │   ├── CHANGELOG.md       # Version history & status
 │   ├── LOD.md             # Level of Detail system
 │   └── taxonomies/        # Genre taxonomy files
+├── taxonomies/             # Genre taxonomy JSON files
 └── books/                  # Generated book projects
 ```

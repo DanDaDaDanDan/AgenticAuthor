@@ -121,7 +121,7 @@ class TreatmentGenerator:
                 treatment_metadata = {
                     'word_count': len(content.split()),
                     'target_words': target_words,
-                    'model': model
+                    'model': self.model
                 }
                 metadata_file = self.project.path / "treatment_metadata.json"
                 with open(metadata_file, 'w') as f:
