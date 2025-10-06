@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Project Cloning** 📋
+  - `/clone [name]` command to duplicate projects
+  - Complete copy of all content (premise, treatment, chapters, prose, analysis)
+  - Fresh git repository initialized with "Clone from <source>" commit
+  - Prompts to switch to cloned project after creation
+  - Useful for experiments and variations
+
+### Fixed
+- **Treatment Generation Error**
+  - Fixed "model is not defined" error in treatment metadata
+  - Changed from undefined `model` variable to `self.model`
+
 ## [0.3.0] - 2025-10-05
 
 ### Added ⭐ MAJOR RELEASE

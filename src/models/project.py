@@ -325,3 +325,50 @@ class Project:
         project.exports_dir.mkdir(exist_ok=True)
 
         return project
+
+    def clone(self, new_path: Path, new_name: Optional[str] = None) -> "Project":
+        """
+        Clone this project to a new location.
+
+        Args:
+            new_path: Path where cloned project should be created
+            new_name: Name for the cloned project (uses directory name if not provided)
+
+        Returns:
+            New Project instance
+
+        Raises:
+            FileExistsError: If destination already exists
+        """
+        import shutil
+
+        new_path = Path(new_path).resolve()
+
+        # Check if destination exists
+        if new_path.exists():
+            raise FileExistsError(f"Destination already exists: {new_path}")
+
+        # Copy entire project directory
+        shutil.copytree(self.path, new_path)
+
+        # Remove .git directory from clone (we'll reinitialize)
+        git_dir = new_path / ".git"
+        if git_dir.exists():
+            shutil.rmtree(git_dir)
+
+        # Load the cloned project
+        cloned_project = Project(new_path)
+
+        # Update metadata with new name and timestamp
+        if cloned_project.metadata:
+            cloned_project.metadata.name = new_name or new_path.name
+            cloned_project.metadata.created_at = datetime.now(timezone.utc)
+            cloned_project.metadata.updated_at = datetime.now(timezone.utc)
+            cloned_project.save_metadata()
+
+        # Initialize new git repository
+        cloned_project.init_git()
+        if cloned_project.git:
+            cloned_project.git.commit(f"Clone from {self.name}")
+
+        return cloned_project

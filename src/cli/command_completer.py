@@ -200,6 +200,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Open an existing project',
             'usage': '/open [project-path]'
         },
+        'clone': {
+            'description': 'Clone current project to new name',
+            'usage': '/clone [new-name]'
+        },
         'status': {
             'description': 'Show project status',
             'usage': '/status'

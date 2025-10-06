@@ -68,6 +68,7 @@ class InteractiveSession:
             'quit': self.exit_session,
             'new': self.new_project,
             'open': self.open_project,
+            'clone': self.clone_project,
             'status': self.show_status,
             'model': self.change_model,
             'models': self.list_models,
@@ -906,6 +907,42 @@ class InteractiveSession:
                 path = Path(args).expanduser().resolve()
 
         self.load_project(path)
+
+    def clone_project(self, args: str = ""):
+        """Clone current project to a new name."""
+        if not self.project:
+            self._print("[yellow]No project loaded[/yellow]")
+            return
+
+        # Get new name
+        new_name = args.strip() or self.console.input("New project name: ")
+
+        if not new_name:
+            self._print("[bold red]Project name required[/bold red]")
+            return
+
+        # Create destination path
+        new_path = self.settings.books_dir / new_name
+
+        try:
+            # Clone the project
+            cloned = self.project.clone(new_path, new_name)
+
+            self._print(f"[dim]Cloned project:[/dim] [bold]{self.project.name}[/bold] → [bold]{new_name}[/bold]")
+            self._print(f"[dim]Location: {new_path}[/dim]")
+
+            # Ask if user wants to switch to the cloned project
+            switch = self.console.input("\nSwitch to cloned project? (y/n): ").strip().lower()
+            if switch == 'y':
+                self.project = cloned
+                self.git = cloned.git
+                self.story = Story()  # Reset story
+                self._print(f"[dim]Switched to:[/dim] [bold]{new_name}[/bold]")
+
+        except FileExistsError as e:
+            self._print(f"[bold red]Error:[/bold red] {e}")
+        except Exception as e:
+            self._print(f"[bold red]Failed to clone project:[/bold red] {e}")
 
     def show_status(self, args: str = ""):
         """Show current project status."""

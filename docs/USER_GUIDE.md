@@ -287,6 +287,18 @@ Open an existing project.
   - Type number to select, Enter to cancel
   - Can also type project name directly as argument
 
+#### `/clone [name]`
+Clone current project to a new name.
+- **name** (optional): New project name. If not provided, prompts for input.
+- Creates complete copy of current project
+- Initializes new git repository (fresh history)
+- Preserves all content (premise, treatment, chapters, prose, analysis)
+- Prompts to switch to cloned project after creation
+- Useful for:
+  - Experimenting with different story directions
+  - Creating variations of the same story
+  - Backing up before major changes
+
 #### `/status`
 Show current project status.
 - Shows project metadata

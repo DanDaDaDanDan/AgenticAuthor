@@ -70,6 +70,7 @@ agentic           # Start REPL (main interface)
 # In REPL - all commands use / prefix:
 /new my-book      # Create new project
 /open my-book     # Open existing project
+/clone my-book-v2 # Clone current project to new name
 /status           # Check project status
 /models           # List available models
 /model            # Interactive model selector (live filtering)
