@@ -197,23 +197,6 @@ class MultiModelGenerator:
             competitors_table.add_row(str(i), model)
 
         self.console.print(competitors_table)
-        self.console.print()
-
-        # Cost warning
-        total_calls = len(models) + 1  # competitors + judge
-        self.console.print(Panel(
-            f"[yellow]⚠️  This will use {total_calls} API calls ({len(models)} generators + 1 judge)\n"
-            f"Estimated cost: {total_calls}x more than single-model generation[/yellow]",
-            title="Cost Warning",
-            border_style="yellow"
-        ))
-
-        # Confirm
-        response = self.console.input("\n[bold]Continue with multi-model generation? (y/N):[/bold] ").strip().lower()
-        if response not in ['y', 'yes']:
-            self.console.print("[yellow]Cancelled multi-model generation[/yellow]")
-            return None
-
         self.console.print("\n[cyan]Starting parallel generation...[/cyan]\n")
 
         # Run generation in parallel

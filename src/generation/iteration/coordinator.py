@@ -18,7 +18,8 @@ class IterationCoordinator:
         client: OpenRouterClient,
         project: Project,
         model: Optional[str] = None,
-        default_target: Optional[str] = None
+        default_target: Optional[str] = None,
+        settings=None
     ):
         """
         Initialize iteration coordinator.
@@ -28,9 +29,11 @@ class IterationCoordinator:
             project: Current project
             model: Model to use for generation tasks (optional)
             default_target: Default target for iterations (premise/treatment/chapters/prose)
+            settings: Settings object (for multi-model mode detection)
         """
         self.client = client
         self.project = project
+        self.settings = settings
         self.model = model
         self.default_target = default_target
 
@@ -221,7 +224,11 @@ class IterationCoordinator:
             from ..treatment import TreatmentGenerator
             generator = TreatmentGenerator(self.client, self.project, self.model)
 
-            result = await generator.generate()
+            # Use multi-model competition if enabled
+            if self.settings and self.settings.multi_model_mode:
+                result = await generator.generate_with_competition()
+            else:
+                result = await generator.generate()
 
             # Save treatment
             self.project.save_treatment(result)
@@ -233,8 +240,45 @@ class IterationCoordinator:
                 'word_count': len(result.split())
             })
 
-        elif target_type in ['chapter', 'chapters', 'prose']:
-            # Chapter regeneration
+        elif target_type == 'chapters':
+            # Multiple chapters - regenerate all chapter outlines with feedback
+            from ..chapters import ChapterGenerator
+            generator = ChapterGenerator(self.client, self.project, self.model)
+
+            # Get current chapter count or use default
+            current_chapters = self.project.list_chapters()
+            chapter_count = len(current_chapters) if current_chapters else None
+
+            # Get total words from treatment or use default
+            treatment = self.project.get_treatment()
+            total_words = len(treatment.split()) * 20 if treatment else 50000  # Rough estimate
+
+            # Regenerate with feedback as guidance
+            feedback_text = intent.get('description', '')
+
+            # Use multi-model competition if enabled
+            if self.settings and self.settings.multi_model_mode:
+                result = await generator.generate_with_competition(
+                    chapter_count=chapter_count,
+                    total_words=total_words,
+                    template=None
+                )
+            else:
+                result = await generator.generate(
+                    chapter_count=chapter_count,
+                    total_words=total_words,
+                    feedback=feedback_text
+                )
+
+            changes.append({
+                'type': 'regenerate',
+                'target': 'chapters',
+                'file': 'chapters.yaml',
+                'count': len(result)
+            })
+
+        elif target_type in ['chapter', 'prose']:
+            # Single chapter regeneration
             chapter_num = self._extract_chapter_number(intent)
 
             if not chapter_num:
@@ -243,7 +287,11 @@ class IterationCoordinator:
             from ..prose import ProseGenerator
             generator = ProseGenerator(self.client, self.project, self.model)
 
-            result = await generator.generate_chapter_sequential(chapter_num)
+            # Use multi-model competition if enabled
+            if self.settings and self.settings.multi_model_mode:
+                result = await generator.generate_chapter_with_competition(chapter_num)
+            else:
+                result = await generator.generate_chapter_sequential(chapter_num)
 
             # Save chapter
             chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"

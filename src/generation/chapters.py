@@ -121,7 +121,8 @@ class ChapterGenerator:
         self,
         chapter_count: Optional[int] = None,
         total_words: int = 50000,
-        template: Optional[str] = None
+        template: Optional[str] = None,
+        feedback: Optional[str] = None
     ) -> List[ChapterOutline]:
         """
         Generate chapter outlines from treatment.
@@ -130,6 +131,7 @@ class ChapterGenerator:
             chapter_count: Number of chapters (auto-calculated if not provided)
             total_words: Target total word count
             template: Optional custom template
+            feedback: Optional user feedback to incorporate (for iteration)
 
         Returns:
             List of ChapterOutline objects
@@ -153,6 +155,10 @@ class ChapterGenerator:
             chapter_count=chapter_count,
             total_words=total_words
         )
+
+        # Append user feedback if provided (for iteration)
+        if feedback:
+            prompt += f"\n\nADDITIONAL USER GUIDANCE:\n{feedback}\n\nPlease incorporate the above feedback into the chapter outlines."
 
         # Generate with API
         try:

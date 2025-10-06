@@ -27,8 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All candidates saved to `multimodel/` folder for review
   - Git commits include judging results
   - Configurable: add/remove competitors, change judge
-  - Cost warning: 4x API calls (3 competitors + 1 judge)
   - Prompt indicator: `(MULTI-MODEL)` when active
+  - Status shows all competition models and judge
   - Works for treatment, chapters, and prose generation
 
 - **Project Cloning** 📋

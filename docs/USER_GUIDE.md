@@ -373,13 +373,12 @@ Toggle multi-model competition mode on/off.
 - When enabled, generation commands run 3+ models in parallel
 - Judge model evaluates all outputs and picks winner
 - Prompt shows `(MULTI-MODEL)` indicator when active
-- **Cost warning**: Uses 4x API calls (3 competitors + 1 judge)
 - All candidates saved to `multimodel/` folder for review
+- Status shows all competition models and judge
 
 #### `/multimodel config`
 Show current multi-model configuration.
 - Displays competition models and judge model
-- Shows cost multiplier
 - Lists available actions
 
 #### `/multimodel add <model>`

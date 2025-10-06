@@ -449,7 +449,7 @@ class OpenRouterClient:
                     context_window=model_obj.context_length,
                     prompt_tokens=prompt_tokens,
                     min_response_tokens=effective_min_response,
-                    max_response_tokens=None,  # No artificial cap
+                    max_response_tokens=model_obj.get_max_output_tokens(),  # Respect model's output limit
                     buffer_percentage=0.05  # 5% buffer
                 )
             else:

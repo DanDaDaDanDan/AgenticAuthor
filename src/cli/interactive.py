@@ -437,7 +437,8 @@ class InteractiveSession:
                 client=self.client,
                 project=self.project,
                 model=self.settings.active_model,
-                default_target=self.iteration_target  # Pass the iteration target
+                default_target=self.iteration_target,  # Pass the iteration target
+                settings=self.settings  # Pass settings for multi-model mode
             )
 
             # Show processing header
@@ -478,6 +479,9 @@ class InteractiveSession:
             else:
                 error_msg = result.get('error', 'Unknown error')
                 self._print(f"\n[red]✗ Error:[/red] {error_msg}")
+                # Log error to main log file for debugging
+                if self.session_logger:
+                    self.session_logger.log(f"Iteration error: {error_msg}", "ERROR")
 
         except Exception as e:
             self._print(f"\n[red]✗ Error processing feedback:[/red] {str(e)}")
@@ -521,8 +525,13 @@ class InteractiveSession:
                         self._display_diff(diff)
 
                 elif change_type == 'regenerate':
-                    word_count = change.get('word_count', 0)
-                    self._print(f"[green]✓ Regenerated:[/green] [cyan]{file_path}[/cyan] ({word_count:,} words)")
+                    # Check if this is chapters (has 'count' field) or prose (has 'word_count')
+                    if 'count' in change:
+                        chapter_count = change.get('count', 0)
+                        self._print(f"[green]✓ Regenerated:[/green] [cyan]{file_path}[/cyan] ({chapter_count} chapters)")
+                    else:
+                        word_count = change.get('word_count', 0)
+                        self._print(f"[green]✓ Regenerated:[/green] [cyan]{file_path}[/cyan] ({word_count:,} words)")
 
         # Show commit info
         commit = result.get('commit')
@@ -995,7 +1004,14 @@ class InteractiveSession:
             table.add_row("Created", str(self.project.metadata.created_at)[:19])
             table.add_row("Updated", str(self.project.metadata.updated_at)[:19])
             table.add_row("Genre", self.project.metadata.genre or "Not set")
-            table.add_row("Model", self.project.metadata.model or "Not set")
+
+            # Show model(s) - check if multi-model mode is active
+            if self.settings.multi_model_mode:
+                models_display = f"🏆 {', '.join(self.settings.competition_models)} (judged by {self.settings.judge_model})"
+                table.add_row("Models", models_display)
+            else:
+                table.add_row("Model", self.project.metadata.model or self.settings.active_model or "Not set")
+
             table.add_row("Words", str(self.project.metadata.word_count))
             table.add_row("Chapters", str(self.project.metadata.chapter_count))
             table.add_row("Status", self.project.metadata.status)
@@ -2129,7 +2145,6 @@ class InteractiveSession:
                 self.console.print("\n[yellow]📋 Multi-model mode active:[/yellow]")
                 self.console.print(f"  • Competition models: {', '.join(self.settings.competition_models)}")
                 self.console.print(f"  • Judge model: {self.settings.judge_model}")
-                self.console.print(f"  • Cost multiplier: {len(self.settings.competition_models) + 1}x")
                 self.console.print("\n[dim]Use /multimodel config to customize models[/dim]")
 
             return
@@ -2149,7 +2164,6 @@ class InteractiveSession:
             table.add_row("Mode", "Enabled" if self.settings.multi_model_mode else "Disabled")
             table.add_row("Competition Models", ", ".join(self.settings.competition_models))
             table.add_row("Judge Model", self.settings.judge_model)
-            table.add_row("Cost Multiplier", f"{len(self.settings.competition_models) + 1}x")
 
             self.console.print(table)
             self.console.print()
