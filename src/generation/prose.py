@@ -225,7 +225,7 @@ class ProseGenerator:
             from ..api.models import ModelList
             models = await self.client.discover_models()
             models_list = ModelList(models=models)
-            configured_model_obj = models_list.find_by_id(configured_model)
+            configured_model_obj = models_list.get_by_id(configured_model)
 
             if configured_model_obj:
                 is_sufficient = (
