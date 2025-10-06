@@ -145,6 +145,15 @@ class ChapterGenerator:
         if not chapter_count:
             chapter_count = self._calculate_chapter_count(total_words)
 
+        # Load existing chapters if feedback is provided (iteration mode)
+        existing_chapters_yaml = None
+        if feedback:
+            chapters_file = self.project.path / "chapters.yaml"
+            if chapters_file.exists():
+                with open(chapters_file, 'r') as f:
+                    existing_chapters_data = yaml.safe_load(f)
+                    existing_chapters_yaml = yaml.dump(existing_chapters_data, default_flow_style=False, sort_keys=False)
+
         # Prepare template
         template_str = template or DEFAULT_CHAPTERS_TEMPLATE
         jinja_template = Template(template_str)
@@ -156,9 +165,22 @@ class ChapterGenerator:
             total_words=total_words
         )
 
-        # Append user feedback if provided (for iteration)
+        # Append existing chapters and feedback if provided (for iteration)
         if feedback:
-            prompt += f"\n\nADDITIONAL USER GUIDANCE:\n{feedback}\n\nPlease incorporate the above feedback into the chapter outlines."
+            if existing_chapters_yaml:
+                prompt = f"""Here are the current chapter outlines:
+
+```yaml
+{existing_chapters_yaml}
+```
+
+User feedback: {feedback}
+
+Please modify the existing chapters based on the user's feedback. Preserve what works well and change what needs improvement. Return the updated chapters in the same JSON format as specified below.
+
+{prompt}"""
+            else:
+                prompt += f"\n\nADDITIONAL USER GUIDANCE:\n{feedback}\n\nPlease incorporate the above feedback into the chapter outlines."
 
         # Generate with API
         try:
@@ -321,7 +343,8 @@ Please revise this chapter outline based on the feedback. Return the updated cha
         self,
         chapter_count: Optional[int] = None,
         total_words: int = 50000,
-        template: Optional[str] = None
+        template: Optional[str] = None,
+        feedback: Optional[str] = None
     ) -> List[ChapterOutline]:
         """
         Generate chapter outlines using multi-model competition.
@@ -330,6 +353,7 @@ Please revise this chapter outline based on the feedback. Return the updated cha
             chapter_count: Number of chapters (auto-calculated if not provided)
             total_words: Target total word count
             template: Optional custom template
+            feedback: Optional user feedback to incorporate (for iteration)
 
         Returns:
             List of winning ChapterOutline objects
@@ -357,7 +381,8 @@ Please revise this chapter outline based on the feedback. Return the updated cha
                 chapters = await self.generate(
                     chapter_count=chapter_count,
                     total_words=total_words,
-                    template=template
+                    template=template,
+                    feedback=feedback
                 )
                 # Convert chapters to YAML for comparison
                 chapters_data = []

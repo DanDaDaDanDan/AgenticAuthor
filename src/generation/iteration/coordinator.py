@@ -261,7 +261,8 @@ class IterationCoordinator:
                 result = await generator.generate_with_competition(
                     chapter_count=chapter_count,
                     total_words=total_words,
-                    template=None
+                    template=None,
+                    feedback=feedback_text
                 )
             else:
                 result = await generator.generate(
