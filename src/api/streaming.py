@@ -113,8 +113,8 @@ class StreamHandler:
         from ..utils.logging import get_logger
         from ..utils.session_logger import get_session_logger
 
-        logger = get_logger()  # Global logger -> ./logs/agentic_YYYYMMDD.log
-        session_logger = get_session_logger()  # Session logger -> ./logs/session_*.jsonl
+        logger = get_logger()  # Global logger -> .agentic/logs/agentic_YYYYMMDD.log
+        session_logger = get_session_logger()  # Session logger -> .agentic/logs/session_*.jsonl
 
         if logger:
             logger.debug(f"=== Stream handler START ===")
@@ -519,7 +519,7 @@ class StreamHandler:
 
             # Save for debugging
             from pathlib import Path
-            debug_dir = Path.home() / ".agentic" / "debug"
+            debug_dir = Path(".agentic") / "debug"
             debug_dir.mkdir(parents=True, exist_ok=True)
             debug_file = debug_dir / f"truncated_json_{int(time.time())}.json"
 
@@ -546,7 +546,7 @@ class StreamHandler:
 
             # Save for debugging
             from pathlib import Path
-            debug_dir = Path.home() / ".agentic" / "debug"
+            debug_dir = Path(".agentic") / "debug"
             debug_dir.mkdir(parents=True, exist_ok=True)
             debug_file = debug_dir / f"invalid_json_{int(time.time())}.json"
 

@@ -132,12 +132,12 @@ class Settings(BaseSettings):
 
         self.current_model = model
 
-        # Auto-save to user config
-        user_config = Path.home() / '.agentic' / 'config.yaml'
-        self.save_config_file(user_config)
+        # Auto-save to project config
+        project_config = Path('config.yaml')
+        self.save_config_file(project_config)
 
         if logger:
-            logger.debug(f"Model set to '{model}' and saved to {user_config}")
+            logger.debug(f"Model set to '{model}' and saved to {project_config}")
 
     def get_temperature(self, generation_type: str) -> float:
         """Get temperature for a specific generation type."""
@@ -187,20 +187,13 @@ def get_settings() -> Settings:
 
     settings = Settings()
 
-    # Load user config if it exists
-    user_config = Path.home() / '.agentic' / 'config.yaml'
-    if user_config.exists():
-        settings.load_config_file(user_config)
-        if logger:
-            logger.debug(f"Loaded user config from {user_config}")
-            logger.debug(f"Config values: current_model={settings.current_model}, default_model={settings.default_model}")
-
     # Load project config if it exists
     project_config = Path('config.yaml')
     if project_config.exists():
         settings.load_config_file(project_config)
         if logger:
             logger.debug(f"Loaded project config from {project_config}")
+            logger.debug(f"Config values: current_model={settings.current_model}, default_model={settings.default_model}")
 
     if logger:
         logger.debug(f"Active model: {settings.active_model}")

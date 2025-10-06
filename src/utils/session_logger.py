@@ -17,11 +17,11 @@ class SessionLogger:
         """Initialize session logger.
 
         Args:
-            logs_dir: Directory for log files (default: ./logs)
+            logs_dir: Directory for log files (default: .agentic/logs)
         """
         # Set up logs directory
-        self.logs_dir = logs_dir or Path("./logs")
-        self.logs_dir.mkdir(exist_ok=True)
+        self.logs_dir = logs_dir or Path(".agentic/logs")
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
 
         # Create single JSONL log file (JSON Lines format)
         self.session_start = datetime.now()
@@ -332,7 +332,7 @@ def get_latest_log() -> Optional[Path]:
     Returns:
         Path to the latest log file
     """
-    logs_dir = Path("./logs")
+    logs_dir = Path(".agentic/logs")
     if not logs_dir.exists():
         return None
 

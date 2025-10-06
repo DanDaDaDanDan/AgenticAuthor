@@ -35,9 +35,10 @@ agentic_author.egg-info/
 
 # Project specific
 .cache/
+.agentic/      # Contains logs/, history, premise_history.json, debug/
 books/
 test_project_tmp/
-logs/
+config.yaml
 
 # Development/Debug files
 test_basictui*.py

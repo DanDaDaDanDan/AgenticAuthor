@@ -19,6 +19,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Treatment Generation Error**
   - Fixed "model is not defined" error in treatment metadata
   - Changed from undefined `model` variable to `self.model`
+- **Interactive Model Selector Error**
+  - Fixed "asyncio.run() cannot be called from a running event loop" error
+  - Changed `app.run()` to `await app.run_async()` for async compatibility
+  - Made `select_model_interactive()` async function
+- **Project-Local State Files**
+  - Moved all state files from user-level `~/.agentic/` to project-local `./.agentic/`
+  - All state now in `.agentic/` directory:
+    - Logs: `.agentic/logs/` (moved from `./logs/`)
+    - Config: `./config.yaml` (project root)
+    - History: `.agentic/history` (command history)
+    - Premise history: `.agentic/premise_history.json`
+    - Debug files: `.agentic/debug/`
+  - Everything is now project-local for better isolation
+  - Single hidden directory contains all AgenticAuthor state
 
 ## [0.3.0] - 2025-10-05
 

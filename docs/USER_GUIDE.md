@@ -126,7 +126,9 @@ BOOKS_DIR=/path/to/books  # Optional, defaults to ~/books
 DEFAULT_MODEL=x-ai/grok-4-fast  # Optional
 ```
 
-### Config File (`~/.agentic/config.yaml`)
+### Config File (`config.yaml`)
+
+Project-local configuration in the project root directory:
 
 ```yaml
 default_model: anthropic/claude-3-opus
@@ -154,6 +156,14 @@ The `streaming_display_mode` setting controls how content is displayed during ge
 ```
 books/[project-name]/
 ├── .git/                    # Version control
+├── .agentic/                # AgenticAuthor state (hidden)
+│   ├── logs/                # Session logs
+│   │   ├── agentic_YYYYMMDD.log
+│   │   └── session_*.jsonl
+│   ├── history              # Command history
+│   ├── premise_history.json # Generation history
+│   └── debug/               # Debug output
+├── config.yaml              # Project configuration
 ├── premise.md              # Story premise (LOD3)
 ├── premise_metadata.json   # Taxonomy selections
 ├── treatment.md            # Story treatment (LOD2)
@@ -171,7 +181,7 @@ books/[project-name]/
 
 ## Logging and Debugging
 
-Logs are automatically saved to `./logs/agentic_YYYYMMDD.log`
+Logs are automatically saved to `.agentic/logs/agentic_YYYYMMDD.log`
 
 View logs in the REPL:
 ```bash
@@ -181,10 +191,10 @@ View logs in the REPL:
 View logs directly:
 ```bash
 # Windows
-type %USERPROFILE%\.agentic\logs\agentic_20250923.log
+type .agentic\logs\agentic_20251005.log
 
 # Mac/Linux
-cat ./logs/agentic_20250923.log
+cat .agentic/logs/agentic_20251005.log
 ```
 
 ## Testing

@@ -158,8 +158,8 @@ class InteractiveSession:
                     # Cancel the completion menu
                     buff.cancel_completion()
 
-        # Create session
-        history_file = Path.home() / '.agentic' / 'history'
+        # Create session with project-local history
+        history_file = Path('.agentic') / 'history'
         history_file.parent.mkdir(exist_ok=True)
 
         # Create history and custom auto-suggest
@@ -1000,12 +1000,11 @@ class InteractiveSession:
             from .model_selector import select_model_interactive
 
             try:
-                selected = select_model_interactive(models, self.settings.active_model)
+                selected = await select_model_interactive(models, self.settings.active_model)
 
                 if selected:
                     # Update settings
-                    self.settings.current_model = selected
-                    self.settings.save()
+                    self.settings.set_model(selected)
 
                     self.console.print(f"\n[green]✓ Model changed to:[/green] [cyan]{selected}[/cyan]")
                 else:
@@ -1103,7 +1102,7 @@ class InteractiveSession:
         # Update model
         self.settings.set_model(selected_model)
         self.console.print(f"[green]✓  Model changed to: {selected_model}[/green]")
-        self.console.print(f"[dim]   Saved to ~/.agentic/config.yaml[/dim]")
+        self.console.print(f"[dim]   Saved to config.yaml[/dim]")
 
         # Show model details
         for model in models:
@@ -2116,8 +2115,8 @@ class InteractiveSession:
         if self.session_logger and self.session_logger.log_file_path:
             log_file = self.session_logger.log_file_path
         else:
-            # Fall back to latest log in logs directory
-            logs_dir = Path("./logs")
+            # Fall back to latest log in .agentic/logs directory
+            logs_dir = Path(".agentic/logs")
             if logs_dir.exists():
                 # Look for both session logs and agentic logs
                 log_files = sorted(

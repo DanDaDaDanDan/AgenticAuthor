@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 
-def get_latest_log(logs_dir: Path = Path("./logs")) -> Optional[Path]:
+def get_latest_log(logs_dir: Path = Path(".agentic/logs")) -> Optional[Path]:
     """Get the most recent log file.
 
     Args:
@@ -38,7 +38,7 @@ def get_latest_log(logs_dir: Path = Path("./logs")) -> Optional[Path]:
     return log_files[0]
 
 
-def get_latest_json_log(logs_dir: Path = Path("./logs")) -> Optional[Path]:
+def get_latest_json_log(logs_dir: Path = Path(".agentic/logs")) -> Optional[Path]:
     """Get the most recent JSON log file.
 
     Args:
@@ -258,8 +258,8 @@ def main():
     )
     parser.add_argument(
         "--logs-dir",
-        default="./logs",
-        help="Logs directory (default: ./logs)"
+        default=".agentic/logs",
+        help="Logs directory (default: .agentic/logs)"
     )
 
     args = parser.parse_args()

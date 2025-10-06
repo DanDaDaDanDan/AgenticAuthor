@@ -269,8 +269,8 @@ class PremiseHistory:
         if history_file:
             self.history_file = Path(history_file)
         else:
-            # Default to .agentic/premise_history.json
-            self.history_file = Path.home() / ".agentic" / "premise_history.json"
+            # Default to project-local .agentic/premise_history.json
+            self.history_file = Path(".agentic") / "premise_history.json"
 
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
         self.history = self._load_history()

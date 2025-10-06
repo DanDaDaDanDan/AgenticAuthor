@@ -276,6 +276,12 @@ Based on dv-story-generator's comprehensive analysis:
 ```
 books/[project-name]/
 ├── .git/                    # Version control
+├── .agentic/                # AgenticAuthor state (project-local)
+│   ├── logs/                # Session logs
+│   ├── history              # Command history
+│   ├── premise_history.json # Generation history
+│   └── debug/               # Debug output
+├── config.yaml              # Project configuration
 ├── premise.md              # LOD3
 ├── premise_metadata.json   # Taxonomy selections
 ├── treatment.md            # LOD2

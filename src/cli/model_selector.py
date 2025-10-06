@@ -148,7 +148,7 @@ class ModelSelector:
 
         return FormattedText(lines)
 
-    def run(self) -> Optional[str]:
+    async def run(self) -> Optional[str]:
         """
         Run the interactive selector.
 
@@ -220,10 +220,10 @@ class ModelSelector:
             mouse_support=False
         )
 
-        return app.run()
+        return await app.run_async()
 
 
-def select_model_interactive(
+async def select_model_interactive(
     models: List[any],
     current_model: str
 ) -> Optional[str]:
@@ -238,4 +238,4 @@ def select_model_interactive(
         Selected model ID if chosen, None if cancelled
     """
     selector = ModelSelector(models, current_model)
-    return selector.run()
+    return await selector.run()
