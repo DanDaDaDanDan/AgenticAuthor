@@ -546,11 +546,9 @@ async def test_full_iteration_flow():
 
     assert result['success']
     assert result['scale'] == 'patch'
-    assert project.git.has_uncommitted_changes() == False
 
-    # Check git history
-    commit = project.git.get_last_commit()
-    assert 'Iterate chapter 3' in commit.message
+    # Note: Git commits are handled by the interactive session layer
+    # Commits are prefixed with project name: "[project-name] Iterate chapter 3: add dialogue"
 ```
 
 ## Performance Considerations

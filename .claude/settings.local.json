@@ -16,8 +16,7 @@
       "Bash(git push:*)",
       "Bash(pip install:*)",
       "Bash(python3 src/utils/import_converter.py:*)",
-      "Bash(python3:*)",
-      "Bash(export OPENROUTER_API_KEY=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)"
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

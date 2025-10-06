@@ -7,7 +7,7 @@ AI-powered iterative book generation with natural language feedback and git-back
 ### 🚀 Core Functionality
 - **Level of Detail (LOD) Generation**: Premise (LOD3) → Treatment (LOD2) → Chapters (LOD2) → Prose (LOD0)
 - **Natural Language Iteration**: Simply describe what you want changed
-- **Git Integration**: Every book is a git repo, every change is a commit
+- **Git Integration**: Shared repository with project-prefixed commits, every change tracked
 - **Smart Genre System**: Genre-specific taxonomies and parameters
 - **Model Flexibility**: Switch between AI models on the fly
 
@@ -154,30 +154,49 @@ The `streaming_display_mode` setting controls how content is displayed during ge
 ## Project Structure
 
 ```
-books/[project-name]/
-├── .git/                    # Version control
-├── .agentic/                # AgenticAuthor state (hidden)
-│   ├── logs/                # Session logs
-│   │   ├── agentic_YYYYMMDD.log
-│   │   └── session_*.jsonl
-│   ├── history              # Command history
-│   ├── premise_history.json # Generation history
-│   └── debug/               # Debug output
-├── config.yaml              # Project configuration
-├── premise.md              # Story premise (LOD3)
-├── premise_metadata.json   # Taxonomy selections
-├── treatment.md            # Story treatment (LOD2)
-├── chapters.yaml           # Chapter outlines (LOD2)
-├── chapters/               # Full prose (LOD0)
-│   ├── chapter-01.md
-│   ├── chapter-02.md
-│   └── ...
-├── analysis/               # Story analysis
-│   ├── commercial.md
-│   ├── plot.md
-│   └── characters.md
-└── project.yaml            # Project metadata
+books/                      # All projects root
+├── .git/                    # Shared version control for all projects
+├── [project-name-1]/
+│   ├── .agentic/            # Project-local AgenticAuthor state
+│   │   ├── logs/            # Session logs
+│   │   │   ├── agentic_YYYYMMDD.log
+│   │   │   └── session_*.jsonl
+│   │   ├── history          # Command history
+│   │   ├── premise_history.json # Generation history
+│   │   └── debug/           # Debug output
+│   ├── config.yaml          # Project configuration
+│   ├── premise.md           # Story premise (LOD3)
+│   ├── premise_metadata.json # Taxonomy selections
+│   ├── treatment.md         # Story treatment (LOD2)
+│   ├── chapters.yaml        # Chapter outlines (LOD2)
+│   ├── chapters/            # Full prose (LOD0)
+│   │   ├── chapter-01.md
+│   │   ├── chapter-02.md
+│   │   └── ...
+│   ├── analysis/            # Story analysis
+│   │   ├── commercial.md
+│   │   ├── plot.md
+│   │   └── characters.md
+│   └── project.yaml         # Project metadata
+└── [project-name-2]/
+    └── ... (same structure)
 ```
+
+### Git Architecture
+
+All projects share a single git repository at `books/.git`. Each commit is prefixed with the project name:
+
+```
+[my-novel] Generate premise: fantasy
+[my-novel] Generate treatment: 2500 words
+[sci-fi-story] Generate premise: sci-fi
+[my-novel] Iterate chapter 3: add dialogue
+```
+
+This allows for:
+- Simple multi-project history tracking
+- Easy comparison between projects
+- Unified version control across all books
 
 ## Logging and Debugging
 
@@ -442,18 +461,24 @@ Types:
 ### Utility Commands
 
 #### `/git <command>`
-Run git commands on the project repository.
+Run git commands on the shared repository.
+
+**Important:** All projects share a single git repository at `books/.git`. All commits are automatically prefixed with the project name:
+```
+[my-novel] Generate premise: fantasy
+[sci-fi-story] Iterate chapter 3: add dialogue
+```
 
 **Supported commands:**
 - `/git status` - Show working tree status
 - `/git log [n]` - Show last n commits (default: 10)
 - `/git diff` - Show unstaged changes
 - `/git add` - Stage all changes
-- `/git commit <message>` - Commit staged changes
+- `/git commit <message>` - Commit with project name prefix
 - `/git branch [name]` - List branches or create new branch
 - `/git rollback [n]` - Undo last n commits (default: 1)
 
-**Note:** All generation commands auto-commit their changes
+**Note:** All generation commands auto-commit their changes with project name prefixes
 
 #### `/config [key] [value]`
 Show or set configuration values.

@@ -34,16 +34,25 @@ class GitManager:
                 self._run_git("config", "user.name", "AgenticAuthor")
                 self._run_git("config", "user.email", "agentic@localhost")
 
-            # Create initial gitignore
+            # Create initial gitignore for shared repository
             gitignore = self.project_path / ".gitignore"
             if not gitignore.exists():
                 gitignore.write_text(
-                    "# AgenticAuthor\n"
+                    "# AgenticAuthor - Shared Books Repository\n"
+                    "# Ignore project-local state and config\n"
+                    "*/.agentic/\n"
+                    "*/config.yaml\n"
+                    "\n"
+                    "# Python\n"
                     "*.pyc\n"
                     "__pycache__/\n"
+                    "\n"
+                    "# Environment\n"
                     ".env\n"
                     ".cache/\n"
-                    "exports/*.tmp\n"
+                    "\n"
+                    "# Exports\n"
+                    "*/exports/*.tmp\n"
                 )
 
             return True

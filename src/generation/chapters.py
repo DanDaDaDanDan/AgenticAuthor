@@ -305,11 +305,6 @@ Please revise this chapter outline based on the feedback. Return the updated cha
             with open(chapters_file, 'w') as f:
                 yaml.dump(chapters_data, f, default_flow_style=False, sort_keys=False)
 
-            # Git commit
-            if self.project.git:
-                self.project.git.add()
-                self.project.git.commit(f"Iterate chapter {chapter_number}: {feedback[:50]}")
-
             # Return as ChapterOutline using robust from_api_response method
             return ChapterOutline.from_api_response(result)
 

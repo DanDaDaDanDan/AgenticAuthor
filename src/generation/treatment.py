@@ -194,9 +194,4 @@ Return the complete revised treatment as flowing narrative prose."""
             with open(metadata_file, 'w') as f:
                 json.dump(treatment_metadata, f, indent=2)
 
-            # Git commit
-            if self.project.git:
-                self.project.git.add()
-                self.project.git.commit(f"Iterate treatment: {feedback[:50]}")
-
         return result

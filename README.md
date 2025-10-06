@@ -26,7 +26,7 @@ agentic
 
 - 🚀 **Level of Detail (LOD) Generation**: Premise → Treatment → Chapters → Prose
 - ✨ **Natural Language Iteration**: Simply describe what you want changed
-- 📝 **Git Integration**: Every book is a git repo, every change is a commit
+- 📝 **Git Integration**: Shared repository with project-prefixed commits
 - 🎭 **Smart Genre System**: Genre-specific taxonomies and parameters
 - 🔄 **Model Flexibility**: Switch between AI models on the fly
 

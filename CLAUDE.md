@@ -115,7 +115,7 @@ agentic
 ## Core Architecture Principles
 
 1. **Natural Language First**: Always listening for feedback, no explicit commands needed
-2. **Git Everything**: Every book is a git repo, every change is a commit
+2. **Shared Git Repository**: Single git repo at books/ level, commits prefixed with project name
 3. **Single Active Model**: One model at a time for ALL operations (switchable)
 4. **File-Based Storage**: Human-readable markdown/YAML files
 5. **Smart Intent Checking**: Confidence-based routing (>0.8 execute, else clarify)
@@ -274,26 +274,63 @@ Based on dv-story-generator's comprehensive analysis:
 ## Project File Structure
 
 ```
-books/[project-name]/
-├── .git/                    # Version control
-├── .agentic/                # AgenticAuthor state (project-local)
-│   ├── logs/                # Session logs
-│   ├── history              # Command history
-│   ├── premise_history.json # Generation history
-│   └── debug/               # Debug output
-├── config.yaml              # Project configuration
-├── premise.md              # LOD3
-├── premise_metadata.json   # Taxonomy selections
-├── treatment.md            # LOD2
-├── chapters.yaml           # LOD2 outlines
-├── chapters/               # LOD0 prose
-│   └── chapter-*.md
-├── analysis/               # Analysis results
-│   ├── commercial.md
-│   ├── plot.md
-│   └── ...
-└── project.yaml            # Metadata
+books/                      # All projects root
+├── .git/                    # **SHARED** git repo for ALL projects
+├── [project-name-1]/
+│   ├── .agentic/            # Project-local AgenticAuthor state
+│   │   ├── logs/            # Session logs
+│   │   ├── history          # Command history
+│   │   ├── premise_history.json # Generation history
+│   │   └── debug/           # Debug output
+│   ├── config.yaml          # Project configuration
+│   ├── premise.md           # LOD3
+│   ├── premise_metadata.json # Taxonomy selections
+│   ├── treatment.md         # LOD2
+│   ├── chapters.yaml        # LOD2 outlines
+│   ├── chapters/            # LOD0 prose
+│   │   └── chapter-*.md
+│   ├── analysis/            # Analysis results
+│   │   ├── commercial.md
+│   │   ├── plot.md
+│   │   └── ...
+│   └── project.yaml         # Metadata
+└── [project-name-2]/
+    └── ... (same structure)
 ```
+
+### Shared Git Architecture
+
+**CRITICAL**: Single git repository at `books/.git` manages ALL projects.
+
+Commits are prefixed with project name:
+```
+[my-novel] Generate premise: fantasy
+[my-novel] Generate treatment: 2500 words
+[sci-fi-story] Generate premise: sci-fi
+[my-novel] Iterate chapter 3: add dialogue
+```
+
+Implementation in `InteractiveSession`:
+```python
+def _init_shared_git(self):
+    """Initialize shared git at books/ level."""
+    books_dir = self.settings.books_dir
+    self.git = GitManager(books_dir)  # Points to books/.git
+    if not (books_dir / ".git").exists():
+        self.git.init()
+        self.git.commit("Initialize books repository")
+
+def _commit(self, message: str):
+    """Commit with project name prefix."""
+    if self.project:
+        prefixed = f"[{self.project.name}] {message}"
+    else:
+        prefixed = message
+    self.git.add()
+    self.git.commit(prefixed)
+```
+
+**Project model has NO git attribute. No per-project repositories.**
 
 ## Key Implementation Files
 
