@@ -248,6 +248,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Show recent log entries',
             'usage': '/logs'
         },
+        'multimodel': {
+            'description': 'Toggle or configure multi-model competition mode',
+            'usage': '/multimodel [config|add|remove|judge|reset]'
+        },
         'exit': {
             'description': 'Exit the application',
             'usage': '/exit'

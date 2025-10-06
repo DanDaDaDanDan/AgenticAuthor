@@ -247,6 +247,9 @@ def config(
                 # Convert value type
                 current = getattr(settings, key)
                 if isinstance(current, bool):
+                    if value is None:
+                        console.print(f"[red]Error: Value required for boolean setting {key}[/red]")
+                        raise typer.Exit(1)
                     value = value.lower() in ('true', '1', 'yes', 'on')
                 elif isinstance(current, int):
                     value = int(value)

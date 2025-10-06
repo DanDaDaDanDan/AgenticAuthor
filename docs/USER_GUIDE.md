@@ -28,6 +28,12 @@ AI-powered iterative book generation with natural language feedback and git-back
   - Single user-selected model for ALL operations
   - No fallback models - clear error messages
   - Ensures consistent cost and quality
+- **Multi-Model Competition Mode** 🏆
+  - Run 3+ models in parallel (tournament mode)
+  - Judge model evaluates and picks winner
+  - See all candidates side-by-side
+  - Full transparency with scores and reasoning
+  - All candidates saved for review
 
 ### Previous Features (v0.2.0)
 - **Enhanced Premise Generation**
@@ -359,6 +365,54 @@ List available models from OpenRouter.
 - **search** (optional): Filter models by search term
 - Shows pricing and context length
 - Sorted by price
+
+### Multi-Model Competition Mode 🏆
+
+#### `/multimodel`
+Toggle multi-model competition mode on/off.
+- When enabled, generation commands run 3+ models in parallel
+- Judge model evaluates all outputs and picks winner
+- Prompt shows `(MULTI-MODEL)` indicator when active
+- **Cost warning**: Uses 4x API calls (3 competitors + 1 judge)
+- All candidates saved to `multimodel/` folder for review
+
+#### `/multimodel config`
+Show current multi-model configuration.
+- Displays competition models and judge model
+- Shows cost multiplier
+- Lists available actions
+
+#### `/multimodel add <model>`
+Add a model to competition lineup.
+- Example: `/multimodel add anthropic/claude-opus-4`
+
+#### `/multimodel remove <model>`
+Remove a model from competition.
+- Requires at least 2 models to remain
+
+#### `/multimodel judge <model>`
+Set the judge model.
+- Example: `/multimodel judge google/gemini-2.5-pro`
+- Judge should be different from competitors
+
+#### `/multimodel reset`
+Reset to default configuration.
+- Competition: grok-4-fast, claude-sonnet-4.5, claude-opus-4.1
+- Judge: gemini-2.5-pro
+
+**How It Works:**
+1. Enable mode: `/multimodel`
+2. Run generation: `/generate treatment`
+3. All competitors generate in parallel
+4. See candidates side-by-side comparison
+5. Judge evaluates with scoring criteria
+6. Winner auto-saved, all candidates preserved
+7. Git commit includes judging results
+
+**Judging Criteria:**
+- Treatment: structure, pacing, character development, coherence, prose quality
+- Chapters: detail, pacing, beats, tension, hooks
+- Prose: writing quality, voice, dialogue, emotion, readability
 
 ### Content Generation
 

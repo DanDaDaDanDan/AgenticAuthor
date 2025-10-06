@@ -9,6 +9,7 @@ from jinja2 import Template
 from ..api import OpenRouterClient
 from ..models import Project, ChapterOutline
 from rich.console import Console
+from ..config import get_settings
 
 
 DEFAULT_CHAPTERS_TEMPLATE = """Based on this treatment:
@@ -309,3 +310,90 @@ Please revise this chapter outline based on the feedback. Return the updated cha
             return ChapterOutline.from_api_response(result)
 
         raise Exception("Failed to iterate chapter")
+
+    async def generate_with_competition(
+        self,
+        chapter_count: Optional[int] = None,
+        total_words: int = 50000,
+        template: Optional[str] = None
+    ) -> List[ChapterOutline]:
+        """
+        Generate chapter outlines using multi-model competition.
+
+        Args:
+            chapter_count: Number of chapters (auto-calculated if not provided)
+            total_words: Target total word count
+            template: Optional custom template
+
+        Returns:
+            List of winning ChapterOutline objects
+        """
+        from .multi_model import MultiModelGenerator
+
+        # Get context
+        premise = self.project.get_premise()
+        treatment = self.project.get_treatment()
+        genre = self.project.metadata.genre if self.project.metadata else None
+
+        # Calculate chapter count if needed
+        if not chapter_count:
+            chapter_count = self._calculate_chapter_count(total_words)
+
+        # Create multi-model generator
+        multi_gen = MultiModelGenerator(self.client, self.project)
+
+        # Define generator function that takes model parameter
+        async def generate_with_model(model: str) -> str:
+            # Temporarily override self.model
+            original_model = self.model
+            self.model = model
+            try:
+                chapters = await self.generate(
+                    chapter_count=chapter_count,
+                    total_words=total_words,
+                    template=template
+                )
+                # Convert chapters to YAML for comparison
+                chapters_data = []
+                for chapter in chapters:
+                    chapter_dict = chapter.model_dump(exclude_none=True)
+                    chapters_data.append(chapter_dict)
+                return yaml.dump(chapters_data, default_flow_style=False, sort_keys=False)
+            finally:
+                self.model = original_model
+
+        # Run competition
+        result = await multi_gen.generate_parallel(
+            generator_func=generate_with_model,
+            content_type="chapters",
+            file_prefix="chapters",
+            context={
+                'premise': premise,
+                'treatment': treatment,
+                'genre': genre,
+                'chapter_count': chapter_count,
+                'total_words': total_words
+            }
+        )
+
+        if not result:
+            raise Exception("Multi-model competition failed or was cancelled")
+
+        if result.get('fallback'):
+            yaml_content = result['winner']['content']
+        else:
+            yaml_content = result['winner']['content']
+
+        # Parse YAML back to chapter objects
+        chapters_data = yaml.safe_load(yaml_content)
+        chapters = []
+        for chapter_data in chapters_data:
+            chapter = ChapterOutline.from_api_response(chapter_data)
+            chapters.append(chapter)
+
+        # Save to project (the normal generate() already saved, but we need to save winner)
+        chapters_file = self.project.path / "chapters.yaml"
+        with open(chapters_file, 'w') as f:
+            yaml.dump(chapters_data, f, default_flow_style=False, sort_keys=False)
+
+        return chapters

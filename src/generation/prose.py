@@ -10,6 +10,7 @@ from jinja2 import Template
 from ..api import OpenRouterClient
 from ..models import Project
 from ..utils.tokens import estimate_tokens
+from ..config import get_settings
 
 
 SEQUENTIAL_PROSE_TEMPLATE = """## Story Foundation:
@@ -554,3 +555,94 @@ Return the complete revised chapter prose (including the chapter title header)."
         print(f"{'='*60}\n")
 
         return results
+
+    async def generate_chapter_with_competition(
+        self,
+        chapter_number: int,
+        narrative_style: str = "third person limited"
+    ) -> str:
+        """
+        Generate chapter prose using multi-model competition.
+
+        Args:
+            chapter_number: Chapter to generate
+            narrative_style: Narrative voice/style
+
+        Returns:
+            Winning chapter prose text
+        """
+        from .multi_model import MultiModelGenerator
+
+        # Get context
+        premise = self.project.get_premise()
+        treatment = self.project.get_treatment()
+        genre = self.project.metadata.genre if self.project.metadata else None
+
+        # Load chapter info
+        all_chapters = self.load_all_chapters_with_prose()
+        current_chapter = None
+        for ch in all_chapters:
+            if ch['number'] == chapter_number:
+                current_chapter = ch
+                break
+
+        if not current_chapter:
+            raise Exception(f"Chapter {chapter_number} not found")
+
+        # Create multi-model generator
+        multi_gen = MultiModelGenerator(self.client, self.project)
+
+        # Define generator function that takes model parameter
+        async def generate_with_model(model: str) -> str:
+            # Temporarily override self.model
+            original_model = self.model
+            self.model = model
+            try:
+                result = await self.generate_chapter_sequential(
+                    chapter_number=chapter_number,
+                    narrative_style=narrative_style
+                )
+                return result
+            finally:
+                self.model = original_model
+
+        # Run competition
+        result = await multi_gen.generate_parallel(
+            generator_func=generate_with_model,
+            content_type="prose",
+            file_prefix=f"chapter_{chapter_number:02d}",
+            context={
+                'premise': premise,
+                'treatment': treatment,
+                'genre': genre,
+                'chapter_number': chapter_number,
+                'chapter_title': current_chapter['title']
+            }
+        )
+
+        if not result:
+            raise Exception("Multi-model competition failed or was cancelled")
+
+        if result.get('fallback'):
+            prose_content = result['winner']['content']
+        else:
+            prose_content = result['winner']['content']
+
+        # Save winning chapter (the normal generate already saved, but we need to save winner)
+        chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
+        chapter_file.parent.mkdir(exist_ok=True)
+
+        with open(chapter_file, 'w') as f:
+            f.write(prose_content)
+
+        # Update chapter metadata
+        current_chapter['prose_generated'] = True
+        current_chapter['actual_word_count'] = len(prose_content.split())
+        current_chapter['generation_mode'] = 'sequential_multimodel'
+
+        # Save updated chapters.yaml
+        chapters_file = self.project.path / "chapters.yaml"
+        with open(chapters_file, 'w') as f:
+            yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
+
+        return prose_content

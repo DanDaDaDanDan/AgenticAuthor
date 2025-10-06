@@ -8,6 +8,7 @@ from jinja2 import Template
 
 from ..api import OpenRouterClient
 from ..models import Project
+from ..config import get_settings
 
 
 DEFAULT_TREATMENT_TEMPLATE = """Based on this premise:
@@ -195,3 +196,59 @@ Return the complete revised treatment as flowing narrative prose."""
                 json.dump(treatment_metadata, f, indent=2)
 
         return result
+
+    async def generate_with_competition(
+        self,
+        target_words: int = 2500,
+        template: Optional[str] = None
+    ) -> str:
+        """
+        Generate treatment using multi-model competition.
+
+        Args:
+            target_words: Target word count for treatment
+            template: Optional custom template
+
+        Returns:
+            Winning treatment text
+        """
+        from .multi_model import MultiModelGenerator
+
+        # Get premise for context
+        premise = self.project.get_premise()
+        genre = self.project.metadata.genre if self.project.metadata else None
+
+        # Create multi-model generator
+        multi_gen = MultiModelGenerator(self.client, self.project)
+
+        # Define generator function that takes model parameter
+        async def generate_with_model(model: str) -> str:
+            # Temporarily override self.model
+            original_model = self.model
+            self.model = model
+            try:
+                result = await self.generate(target_words=target_words, template=template)
+                return result
+            finally:
+                self.model = original_model
+
+        # Run competition
+        result = await multi_gen.generate_parallel(
+            generator_func=generate_with_model,
+            content_type="treatment",
+            file_prefix="treatment",
+            context={
+                'premise': premise,
+                'genre': genre,
+                'target_words': target_words
+            }
+        )
+
+        if not result:
+            raise Exception("Multi-model competition failed or was cancelled")
+
+        if result.get('fallback'):
+            return result['winner']['content']
+
+        # Return winning content
+        return result['winner']['content']

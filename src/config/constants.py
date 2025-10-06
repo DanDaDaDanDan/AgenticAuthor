@@ -18,6 +18,7 @@ CHAPTERS_FILE = "chapters.yaml"
 CHAPTERS_DIR = "chapters"
 ANALYSIS_DIR = "analysis"
 EXPORTS_DIR = "exports"
+MULTIMODEL_DIR = "multimodel"
 
 # Git Configuration
 DEFAULT_COMMIT_AUTHOR = "AgenticAuthor"
@@ -61,6 +62,14 @@ ANALYSIS_TYPES = [
 
 # Supported Export Formats
 EXPORT_FORMATS = ['txt', 'md', 'html', 'epub', 'pdf']
+
+# Multi-Model Competition
+DEFAULT_COMPETITION_MODELS = [
+    "x-ai/grok-4-fast",
+    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-opus-4.1"
+]
+DEFAULT_JUDGE_MODEL = "google/gemini-2.5-pro"
 
 # Progress Messages
 PROGRESS_MESSAGES = {

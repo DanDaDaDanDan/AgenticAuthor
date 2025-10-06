@@ -18,6 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Projects now committed to shared repository with prefixed messages
 
 ### Added
+- **Multi-Model Competition Mode** 🏆
+  - `/multimodel` command to toggle tournament mode
+  - Runs 3+ models in parallel (grok-4-fast, claude-sonnet-4.5, claude-opus-4.1)
+  - Judge model (gemini-2.5-pro) evaluates and picks winner
+  - Side-by-side candidate comparison with detailed scores
+  - Full transparency: see all outputs, scores, and reasoning
+  - All candidates saved to `multimodel/` folder for review
+  - Git commits include judging results
+  - Configurable: add/remove competitors, change judge
+  - Cost warning: 4x API calls (3 competitors + 1 judge)
+  - Prompt indicator: `(MULTI-MODEL)` when active
+  - Works for treatment, chapters, and prose generation
+
 - **Project Cloning** 📋
   - `/clone [name]` command to duplicate projects
   - Complete copy of all content (premise, treatment, chapters, prose, analysis)

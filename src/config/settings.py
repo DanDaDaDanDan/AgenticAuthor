@@ -1,7 +1,7 @@
 """Configuration management using Pydantic."""
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from functools import lru_cache
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,7 +14,9 @@ from .constants import (
     DEFAULT_TAXONOMIES_DIR,
     DEFAULT_CACHE_DIR,
     DEFAULT_TEMPERATURES,
-    DEFAULT_MAX_TOKENS
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_COMPETITION_MODELS,
+    DEFAULT_JUDGE_MODEL
 )
 
 
@@ -95,6 +97,20 @@ class Settings(BaseSettings):
         description="Enable verbose logging"
     )
 
+    # Multi-model competition mode
+    multi_model_mode: bool = Field(
+        default=False,
+        description="Enable multi-model competition mode"
+    )
+    competition_models: List[str] = Field(
+        default_factory=lambda: DEFAULT_COMPETITION_MODELS.copy(),
+        description="Models to compete in multi-model mode"
+    )
+    judge_model: str = Field(
+        default=DEFAULT_JUDGE_MODEL,
+        description="Model to judge competition outputs"
+    )
+
     @field_validator('openrouter_api_key')
     @classmethod
     def validate_api_key(cls, v: str) -> str:
@@ -169,7 +185,10 @@ class Settings(BaseSettings):
             'show_token_usage': self.show_token_usage,
             'streaming_output': self.streaming_output,
             'streaming_display_mode': self.streaming_display_mode,
-            'verbose': self.verbose
+            'verbose': self.verbose,
+            'multi_model_mode': self.multi_model_mode,
+            'competition_models': self.competition_models,
+            'judge_model': self.judge_model
         }
 
         # Ensure parent directory exists

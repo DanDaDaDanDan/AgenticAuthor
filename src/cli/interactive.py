@@ -80,6 +80,7 @@ class InteractiveSession:
             'config': self.show_config,
             'clear': self.clear_screen,
             'logs': self.show_logs,
+            'multimodel': self.multimodel_command,
         }
 
         # Cache for model IDs (populated when client is initialized)
@@ -117,6 +118,7 @@ class InteractiveSession:
         style = Style.from_dict({
             'prompt': '#8b9bb3',  # Muted blue-gray for prompt
             'project': '#7c8ba3',  # Slightly darker blue-gray for project name
+            'multimodel': '#f59e0b bold',  # Orange/amber for multi-model indicator
             # Completion menu styling - darker, more sophisticated
             'completion-menu': 'bg:#1c1e26 #c5cdd9',
             'completion-menu.completion': '',
@@ -302,7 +304,11 @@ class InteractiveSession:
 
     def _build_prompt(self) -> HTML:
         """Build the prompt string."""
-        return HTML('<prompt>></prompt> ')
+        # Add multi-model indicator if enabled
+        indicator = ""
+        if self.settings.multi_model_mode:
+            indicator = '<multimodel>(MULTI-MODEL)</multimodel> '
+        return HTML(f'{indicator}<prompt>></prompt> ')
 
     def _print(self, *args, **kwargs):
         """Print with 2-space left margin (Claude Code style)."""
@@ -1584,10 +1590,18 @@ class InteractiveSession:
 
         # Print divider line before generation
         self.console.rule(style="dim")
-        self.console.print(f"[cyan]Generating treatment ({target_words} words)...[/cyan]\n")
 
-        generator = TreatmentGenerator(self.client, self.project, model=self.settings.active_model)
-        result = await generator.generate(target_words=target_words)
+        # Check if multi-model mode is enabled
+        if self.settings.multi_model_mode:
+            self.console.print(f"[cyan]🏆 Generating treatment with multi-model competition ({target_words} words)...[/cyan]\n")
+            generator = TreatmentGenerator(self.client, self.project, model=self.settings.active_model)
+            result = await generator.generate_with_competition(target_words=target_words)
+            commit_prefix = "Generate treatment (multi-model)"
+        else:
+            self.console.print(f"[cyan]Generating treatment ({target_words} words)...[/cyan]\n")
+            generator = TreatmentGenerator(self.client, self.project, model=self.settings.active_model)
+            result = await generator.generate(target_words=target_words)
+            commit_prefix = "Generate treatment"
 
         if result:
             word_count = len(result.split())
@@ -1597,7 +1611,7 @@ class InteractiveSession:
             self.console.print("[dim]Saved to treatment.md[/dim]")
 
             # Git commit
-            self._commit(f"Generate treatment: {word_count} words")
+            self._commit(f"{commit_prefix}: {word_count} words")
         else:
             self.console.print("[red]Failed to generate treatment[/red]")
 
@@ -1626,13 +1640,23 @@ class InteractiveSession:
                         total_words = num
 
         self.console.rule(style="dim")
-        self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
 
+        # Check if multi-model mode is enabled
         generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
-        chapters = await generator.generate(
-            chapter_count=chapter_count,
-            total_words=total_words
-        )
+        if self.settings.multi_model_mode:
+            self.console.print(f"[cyan]🏆 Generating chapter outlines with multi-model competition...[/cyan]\n")
+            chapters = await generator.generate_with_competition(
+                chapter_count=chapter_count,
+                total_words=total_words
+            )
+            commit_prefix = "Generate (multi-model)"
+        else:
+            self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
+            chapters = await generator.generate(
+                chapter_count=chapter_count,
+                total_words=total_words
+            )
+            commit_prefix = "Generate"
 
         if chapters:
             # Show all chapters
@@ -1646,7 +1670,7 @@ class InteractiveSession:
             self.console.print("[dim]Saved to chapters.yaml[/dim]")
 
             # Git commit
-            self._commit(f"Generate {len(chapters)} chapter outlines")
+            self._commit(f"{commit_prefix} {len(chapters)} chapter outlines")
         else:
             self.console.print("[red]Failed to generate chapters[/red]")
 
@@ -1700,15 +1724,28 @@ class InteractiveSession:
                 token_calc = await generator.calculate_prose_context_tokens(chapter_num)
 
                 self.console.rule(style="dim")
-                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
-                self.console.print(f"[dim]Mode: Sequential (Full Context)[/dim]")
-                self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
-                self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
-                self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
 
-                self.console.print()
+                # Check if multi-model mode is enabled
+                if self.settings.multi_model_mode:
+                    self.console.print(f"[cyan]🏆 Generating prose for chapter {chapter_num} with multi-model competition...[/cyan]")
+                    self.console.print(f"[dim]Mode: Sequential (Full Context) + Multi-Model[/dim]")
+                    self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
+                    self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
+                    self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
+                    self.console.print()
 
-                result = await generator.generate_chapter(chapter_number=chapter_num)
+                    result = await generator.generate_chapter_with_competition(chapter_number=chapter_num)
+                    commit_suffix = "(sequential, multi-model)"
+                else:
+                    self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
+                    self.console.print(f"[dim]Mode: Sequential (Full Context)[/dim]")
+                    self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
+                    self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
+                    self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
+                    self.console.print()
+
+                    result = await generator.generate_chapter(chapter_number=chapter_num)
+                    commit_suffix = "(sequential)"
 
                 if result:
                     word_count = len(result.split())
@@ -1718,7 +1755,7 @@ class InteractiveSession:
                     self.console.print(f"[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
 
                     # Git commit
-                    self._commit(f"Generate prose for chapter {chapter_num} (sequential)")
+                    self._commit(f"Generate prose for chapter {chapter_num} {commit_suffix}")
                 else:
                     self.console.print("[red]Failed to generate prose[/red]")
 
@@ -2072,6 +2109,113 @@ class InteractiveSession:
     def clear_screen(self, args: str = ""):
         """Clear the screen."""
         self.console.clear()
+
+    def multimodel_command(self, args: str = ""):
+        """Manage multi-model competition mode."""
+        args = args.strip()
+
+        if not args:
+            # Toggle mode
+            self.settings.multi_model_mode = not self.settings.multi_model_mode
+
+            # Save to config
+            config_path = Path('config.yaml')
+            self.settings.save_config_file(config_path)
+
+            status = "enabled" if self.settings.multi_model_mode else "disabled"
+            self.console.print(f"\n[green]✓ Multi-model mode {status}[/green]")
+
+            if self.settings.multi_model_mode:
+                self.console.print("\n[yellow]📋 Multi-model mode active:[/yellow]")
+                self.console.print(f"  • Competition models: {', '.join(self.settings.competition_models)}")
+                self.console.print(f"  • Judge model: {self.settings.judge_model}")
+                self.console.print(f"  • Cost multiplier: {len(self.settings.competition_models) + 1}x")
+                self.console.print("\n[dim]Use /multimodel config to customize models[/dim]")
+
+            return
+
+        # Parse subcommand
+        parts = args.split(None, 1)
+        subcmd = parts[0].lower()
+
+        if subcmd == "config":
+            # Show current config with options to change
+            self.console.print("\n[bold cyan]Multi-Model Configuration[/bold cyan]\n")
+
+            table = Table(show_header=True)
+            table.add_column("Setting", style="cyan")
+            table.add_column("Value", style="yellow")
+
+            table.add_row("Mode", "Enabled" if self.settings.multi_model_mode else "Disabled")
+            table.add_row("Competition Models", ", ".join(self.settings.competition_models))
+            table.add_row("Judge Model", self.settings.judge_model)
+            table.add_row("Cost Multiplier", f"{len(self.settings.competition_models) + 1}x")
+
+            self.console.print(table)
+            self.console.print()
+
+            # Show options
+            self.console.print("[bold]Available actions:[/bold]")
+            self.console.print("  /multimodel              - Toggle mode on/off")
+            self.console.print("  /multimodel add <model>  - Add a competition model")
+            self.console.print("  /multimodel remove <model> - Remove a competition model")
+            self.console.print("  /multimodel judge <model> - Set judge model")
+            self.console.print("  /multimodel reset        - Reset to defaults")
+
+        elif subcmd == "add":
+            if len(parts) < 2:
+                self.console.print("[red]Usage: /multimodel add <model-id>[/red]")
+                return
+
+            model_id = parts[1].strip()
+            if model_id not in self.settings.competition_models:
+                self.settings.competition_models.append(model_id)
+                config_path = Path('config.yaml')
+                self.settings.save_config_file(config_path)
+                self.console.print(f"[green]✓ Added {model_id} to competition models[/green]")
+            else:
+                self.console.print(f"[yellow]{model_id} is already in competition models[/yellow]")
+
+        elif subcmd == "remove":
+            if len(parts) < 2:
+                self.console.print("[red]Usage: /multimodel remove <model-id>[/red]")
+                return
+
+            model_id = parts[1].strip()
+            if model_id in self.settings.competition_models:
+                if len(self.settings.competition_models) <= 2:
+                    self.console.print("[red]Cannot remove - need at least 2 competition models[/red]")
+                    return
+
+                self.settings.competition_models.remove(model_id)
+                config_path = Path('config.yaml')
+                self.settings.save_config_file(config_path)
+                self.console.print(f"[green]✓ Removed {model_id} from competition models[/green]")
+            else:
+                self.console.print(f"[yellow]{model_id} is not in competition models[/yellow]")
+
+        elif subcmd == "judge":
+            if len(parts) < 2:
+                self.console.print("[red]Usage: /multimodel judge <model-id>[/red]")
+                return
+
+            model_id = parts[1].strip()
+            self.settings.judge_model = model_id
+            config_path = Path('config.yaml')
+            self.settings.save_config_file(config_path)
+            self.console.print(f"[green]✓ Set judge model to {model_id}[/green]")
+
+        elif subcmd == "reset":
+            from ..config.constants import DEFAULT_COMPETITION_MODELS, DEFAULT_JUDGE_MODEL
+            self.settings.competition_models = DEFAULT_COMPETITION_MODELS.copy()
+            self.settings.judge_model = DEFAULT_JUDGE_MODEL
+            config_path = Path('config.yaml')
+            self.settings.save_config_file(config_path)
+            self.console.print("[green]✓ Reset to default configuration[/green]")
+
+        else:
+            self.console.print(f"[red]Unknown subcommand: {subcmd}[/red]")
+            self.console.print("[dim]Use /multimodel config for help[/dim]")
 
     def reload_modules(self, args: str = ""):
         """Reload Python modules for development (experimental)."""

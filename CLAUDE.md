@@ -49,6 +49,7 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 - **Interactive model selector** - Live-filtering model search with keyboard navigation
 - **Taxonomy iteration** - Modify story parameters and regenerate premise
 - **Strict model enforcement** - Single user-selected model for ALL operations (no fallbacks)
+- **Multi-model competition mode** - Generate with 3 models in parallel, judge picks winner (tournament mode)
 
 **Previous Features (v0.2.0)**:
 - Genre-specific taxonomy support (11 genres with autocomplete)
@@ -78,6 +79,8 @@ agentic           # Start REPL (main interface)
 /generate premise "a magical library"  # Auto-detects genre (fantasy)
 /generate premises 5 fantasy "a magical library"  # Generate 5 options to choose from
 /iterate taxonomy # Interactive taxonomy editor
+/multimodel       # Toggle multi-model competition mode (3 generators + 1 judge)
+/multimodel config # Configure competition models and judge
 /logs             # View recent log entries
 /help             # Show all commands
 ```
@@ -245,6 +248,35 @@ User: "Add more dialogue to chapter 3"
 → Auto-commit changes
 ```
 
+### Multi-Model Competition
+```python
+# Enable tournament mode
+/multimodel  # Toggle on/off
+
+# Configure models
+/multimodel config           # Show current configuration
+/multimodel add <model>      # Add competitor
+/multimodel remove <model>   # Remove competitor
+/multimodel judge <model>    # Set judge model
+/multimodel reset            # Reset to defaults
+
+# Generation with competition (when enabled)
+/generate treatment
+→ Runs 3 models in parallel (grok-4-fast, claude-sonnet-4.5, claude-opus-4.1)
+→ Shows all candidates side-by-side
+→ Judge model (gemini-2.5-pro) evaluates with criteria
+→ Displays scores and reasoning
+→ Winner auto-saved, all candidates saved to multimodel/
+→ Git commit includes judging results
+
+# Files created:
+project/multimodel/
+  ├── treatment_20250106_143022_x-ai_grok-4-fast.md
+  ├── treatment_20250106_143022_anthropic_claude-sonnet-4-5.md
+  ├── treatment_20250106_143022_anthropic_claude-opus-4-1.md
+  └── decisions.json  # Full judging history
+```
+
 ### Git Integration
 - Auto-commit with descriptive messages
 - Unified diff support
@@ -293,6 +325,9 @@ books/                      # All projects root
 │   │   ├── commercial.md
 │   │   ├── plot.md
 │   │   └── ...
+│   ├── multimodel/          # Multi-model competition results
+│   │   ├── *_candidate_*.md # All candidate outputs
+│   │   └── decisions.json   # Judging history
 │   └── project.yaml         # Metadata
 └── [project-name-2]/
     └── ... (same structure)
@@ -336,6 +371,7 @@ def _commit(self, message: str):
 
 - `src/generation/taxonomies.py` - Genre taxonomy system and premise analysis
 - `src/generation/premise.py` - Premise generation with auto-detection, taxonomy iteration
+- `src/generation/multi_model.py` - Multi-model competition coordinator with judging logic
 - `src/generation/iteration/` - Natural language feedback processing (coordinator, intent, diff, scale)
 - `src/storage/git_manager.py` - Git operations wrapper
 - `src/generation/analysis.py` - Comprehensive story analysis
