@@ -20,7 +20,32 @@ LOD Hierarchy:
 Current Context:
 {{ context }}
 
-Task: Compare the modified {{ modified_lod }} with related LODs and identify inconsistencies.
+Task: Compare the modified {{ modified_lod }} with related LODs and identify ACTUAL INCONSISTENCIES (contradictions), not expected elaborations.
+
+CRITICAL: Understand LOD Direction
+- **Lower LODs (chapters/prose) SHOULD elaborate on higher LODs (treatment/premise)**
+  - Adding supporting/minor characters is EXPECTED (not an inconsistency)
+  - Adding locations, sensory details, pacing adjustments is EXPECTED
+  - Only flag if lower LOD CONTRADICTS or REMOVES higher LOD content
+
+- **Higher LODs (treatment) being checked against lower LODs (chapters)**
+  - Only flag if treatment is MISSING major plot elements that exist in chapters
+  - Don't flag minor characters, locations, or details added in chapters
+
+Acceptable Elaborations (DO NOT FLAG):
+✓ Chapters add supporting/minor characters not in treatment (e.g., tech experts, informants)
+✓ Chapters introduce new locations when needed for scenes
+✓ Timing/pacing adjustments that don't break plot logic (e.g., character development timing)
+✓ Sensory details, character mannerisms, background elements
+✓ Dialogue and scene choreography details
+
+True Inconsistencies to Flag (FLAG THESE):
+✗ Direct contradictions (e.g., "hospitalized" vs "active in field" for same character/time)
+✗ Timeline breaks (events out of order, character in two places)
+✗ Character name/role changes between LODs
+✗ Major plot elements in chapters missing from treatment (significant subplots)
+✗ Plot points removed from chapters that were in treatment
+✗ Severity of injuries/events contradicted (e.g., "carved up" vs "minor wound")
 
 Respond with JSON:
 {
@@ -38,17 +63,23 @@ Respond with JSON:
   "reasoning": "Why these LODs need updating"
 }
 
-Guidelines:
-- "minor": Small details that would improve consistency but don't break the story
-- "moderate": Notable inconsistencies that readers might notice
-- "major": Critical contradictions that break narrative logic
+Severity Guidelines:
+- "major": Plot contradictions, timeline breaks, character role changes, injury severity mismatches
+- "moderate": Major subplots in chapters but missing from treatment, significant contradictions
+- "minor": Only for true inconsistencies, not elaborations (use sparingly)
 
-Examples of inconsistencies:
-- Character name changed in chapters but not in treatment
-- Plot point removed from chapters but still in treatment
-- Prose diverges significantly from chapter outline
-- Chapter outline mentions character arc not present in treatment
-- Theme emphasized in premise not reflected in chapters
+Examples of TRUE inconsistencies:
+- Character name changed (John → Jake)
+- Injury severity contradiction (hospitalized vs walking around)
+- Timeline break (Chapter 6 hospitalized, Chapter 7 investigating)
+- Major subplot in chapters completely missing from treatment (e.g., captain's son subplot)
+- Character arc contradicted (treatment says X learns Y, chapters show X already knows Y)
+
+Examples of ACCEPTABLE elaborations (NOT inconsistencies):
+- Supporting character appears in chapters but not treatment (expected detail)
+- Location introduced in chapters for a scene (expected detail)
+- Character development timing adjusted for pacing (creative freedom)
+- Sensory details added in prose (expected elaboration)
 """
 
 
