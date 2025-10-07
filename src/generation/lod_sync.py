@@ -1,5 +1,6 @@
 """LOD (Level of Detail) synchronization and consistency checking."""
 
+import re
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 from jinja2 import Template
@@ -227,8 +228,13 @@ class LODSyncManager:
                 marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
 
             prose_parts = []
-            for chapter_num in sorted(prose_chapters):
-                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+            for chapter_file in sorted(prose_chapters):
+                # Extract chapter number from filename (e.g., "chapter-01.md" -> 1)
+                match = re.search(r'chapter-(\d+)', chapter_file.name)
+                if not match:
+                    continue
+                chapter_num = int(match.group(1))
+
                 if chapter_file.exists():
                     content = chapter_file.read_text(encoding='utf-8')
                     chapter_marker = f" (MODIFIED)" if specific_target and int(specific_target) == chapter_num else ""
@@ -268,8 +274,13 @@ class LODSyncManager:
 
             # Return ALL prose - full content of all chapters
             prose_parts = []
-            for chapter_num in sorted(prose_chapters):
-                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+            for chapter_file in sorted(prose_chapters):
+                # Extract chapter number from filename (e.g., "chapter-01.md" -> 1)
+                match = re.search(r'chapter-(\d+)', chapter_file.name)
+                if not match:
+                    continue
+                chapter_num = int(match.group(1))
+
                 if chapter_file.exists():
                     content = chapter_file.read_text(encoding='utf-8')
                     prose_parts.append(f"=== Chapter {chapter_num} ===\n{content}")
