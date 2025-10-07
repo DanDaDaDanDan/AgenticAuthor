@@ -1,6 +1,5 @@
 """Main analysis coordinator."""
 
-import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -9,18 +8,11 @@ import yaml
 from ...api import OpenRouterClient
 from ...models import Project
 from .base import AnalysisResult, Issue, Severity
-from .plot_analyzer import PlotAnalyzer
-from .character_analyzer import CharacterAnalyzer
-from .worldbuilding_analyzer import WorldBuildingAnalyzer
-from .dialogue_analyzer import DialogueAnalyzer
-from .prose_analyzer import ProseAnalyzer
-from .theme_analyzer import ThemeAnalyzer
-from .narrative_analyzer import NarrativeAnalyzer
-from .commercial_analyzer import CommercialAnalyzer
+from .unified_analyzer import UnifiedAnalyzer
 
 
 class AnalysisCoordinator:
-    """Coordinates story analysis across multiple dimensions."""
+    """Coordinates story analysis using unified analyzer."""
 
     def __init__(
         self,
@@ -42,29 +34,22 @@ class AnalysisCoordinator:
         self.project = project
         self.model = model
 
-        # Initialize all analyzers
-        self.plot_analyzer = PlotAnalyzer(client, self.model)
-        self.character_analyzer = CharacterAnalyzer(client, self.model)
-        self.worldbuilding_analyzer = WorldBuildingAnalyzer(client, self.model)
-        self.dialogue_analyzer = DialogueAnalyzer(client, self.model)
-        self.prose_analyzer = ProseAnalyzer(client, self.model)
-        self.theme_analyzer = ThemeAnalyzer(client, self.model)
-        self.narrative_analyzer = NarrativeAnalyzer(client, self.model)
-        self.commercial_analyzer = CommercialAnalyzer(client, self.model)
+        # Initialize unified analyzer
+        self.analyzer = UnifiedAnalyzer(client, self.model)
 
     async def analyze(
         self,
         content_type: str,
         target_id: Optional[str] = None,
-        dimensions: Optional[List[str]] = None
+        dimensions: Optional[List[str]] = None  # Kept for backward compatibility, ignored
     ) -> Dict[str, Any]:
         """
-        Analyze content.
+        Analyze content using unified analyzer.
 
         Args:
             content_type: Type (premise/treatment/chapters/chapter/prose)
             target_id: Specific ID (e.g., chapter number)
-            dimensions: Specific dimensions to analyze (None = all applicable)
+            dimensions: Ignored (kept for backward compatibility)
 
         Returns:
             Analysis results dict
@@ -80,20 +65,11 @@ class AnalysisCoordinator:
                 f"No {content_type} content found. Generate it first."
             )
 
-        # Determine which analyzers to run
-        analyzers_to_run = self._determine_analyzers(
-            content_type, dimensions
-        )
+        # Run unified analysis
+        result = await self.analyzer.analyze(content, content_type, context)
 
-        # Run analyses
-        results = await self._run_analyses(
-            content, content_type, context, analyzers_to_run
-        )
-
-        # Aggregate results
-        aggregated = self._aggregate_results(
-            results, content_type, target_id
-        )
+        # Build aggregated response (single result, but keep format for compatibility)
+        aggregated = self._build_result_dict(result, content_type, target_id)
 
         # Generate report
         report_path = await self._generate_report(
@@ -188,122 +164,37 @@ class AnalysisCoordinator:
             lines.append("")
         return "\n".join(lines)
 
-    def _determine_analyzers(
+    def _build_result_dict(
         self,
-        content_type: str,
-        dimensions: Optional[List[str]] = None
-    ) -> List[str]:
-        """Determine which analyzers to run based on content type."""
-        # Default analyzers for each content type
-        defaults = {
-            'premise': ['plot', 'theme', 'commercial'],
-            'treatment': ['plot', 'character', 'worldbuilding', 'theme', 'commercial'],
-            'chapters': ['plot', 'character', 'worldbuilding', 'theme'],
-            'chapter': ['plot', 'character', 'worldbuilding'],
-            'prose': ['plot', 'character', 'worldbuilding', 'dialogue', 'prose', 'theme', 'narrative'],
-        }
-
-        # All possible analyzers
-        all_analyzers = [
-            'plot', 'character', 'worldbuilding', 'dialogue',
-            'prose', 'theme', 'narrative', 'commercial'
-        ]
-
-        if dimensions:
-            # Use specified dimensions
-            return [d for d in dimensions if d in all_analyzers]
-        else:
-            # Use defaults for content type
-            return defaults.get(content_type, all_analyzers)
-
-    async def _run_analyses(
-        self,
-        content: str,
-        content_type: str,
-        context: Dict[str, Any],
-        analyzers_to_run: List[str]
-    ) -> List[AnalysisResult]:
-        """Run specified analyzers."""
-        tasks = []
-        analyzer_map = {
-            'plot': self.plot_analyzer,
-            'character': self.character_analyzer,
-            'worldbuilding': self.worldbuilding_analyzer,
-            'dialogue': self.dialogue_analyzer,
-            'prose': self.prose_analyzer,
-            'theme': self.theme_analyzer,
-            'narrative': self.narrative_analyzer,
-            'commercial': self.commercial_analyzer,
-        }
-
-        for analyzer_name in analyzers_to_run:
-            analyzer = analyzer_map.get(analyzer_name)
-            if analyzer:
-                tasks.append(
-                    analyzer.analyze(content, content_type, context)
-                )
-
-        # Run all analyses concurrently
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # Filter out exceptions, log them
-        valid_results = []
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                print(f"Warning: {analyzers_to_run[i]} analysis failed: {str(result)}")
-            else:
-                valid_results.append(result)
-
-        return valid_results
-
-    def _aggregate_results(
-        self,
-        results: List[AnalysisResult],
+        result: AnalysisResult,
         content_type: str,
         target_id: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Aggregate analysis results."""
-        # Calculate overall score (average of all dimension scores)
-        scores = [r.score for r in results]
-        overall_score = sum(scores) / len(scores) if scores else 0.0
-
-        # Determine overall grade
-        overall_grade = self._score_to_grade(overall_score)
-
-        # Collect all issues by severity
-        all_issues = []
-        for result in results:
-            all_issues.extend(result.issues)
-
-        # Sort by severity
+        """Build result dictionary from single unified analysis."""
+        # Sort issues by severity
         severity_order = {
             Severity.CRITICAL: 0,
             Severity.HIGH: 1,
             Severity.MEDIUM: 2,
             Severity.LOW: 3
         }
-        all_issues.sort(key=lambda i: severity_order[i.severity])
+        all_issues = sorted(result.issues, key=lambda i: severity_order[i.severity])
 
-        # Get top 5 priority issues
-        priority_issues = all_issues[:5]
+        # Priority issues are all issues (already limited to 0-7 by analyzer)
+        priority_issues = all_issues
 
-        # Collect strengths
-        all_strengths = []
-        for result in results:
-            all_strengths.extend(result.strengths)
-
-        # Build aggregated result
+        # Build result dict
         return {
             'content_type': content_type,
             'target_id': target_id,
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'model': self.model,
-            'overall_score': overall_score,
-            'overall_grade': overall_grade,
-            'dimension_results': [r.to_dict() for r in results],
+            'overall_score': result.score,
+            'overall_grade': self._score_to_grade(result.score),
+            'dimension_results': [result.to_dict()],  # Single unified result
             'priority_issues': [i.to_dict() for i in priority_issues],
             'all_issues': [i.to_dict() for i in all_issues],
-            'highlights': [s.to_dict() for s in all_strengths[:5]],
+            'highlights': [s.to_dict() for s in result.strengths[:5]],
             'total_issues': len(all_issues),
             'critical_issues': len([i for i in all_issues if i.severity == Severity.CRITICAL]),
             'high_issues': len([i for i in all_issues if i.severity == Severity.HIGH]),
