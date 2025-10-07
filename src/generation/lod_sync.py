@@ -22,6 +22,13 @@ Current Context:
 
 Task: Compare the modified {{ modified_lod }} with related LODs and identify ACTUAL INCONSISTENCIES (contradictions), not expected elaborations.
 
+STEP 1: CHARACTER NAME VERIFICATION
+Before analyzing anything else, systematically check ALL character names:
+- Compare every named character in treatment vs chapters vs prose
+- Flag ANY name changes, even if subtle (e.g., "Sofia Reyes" → "Sofia Romano")
+- ESPECIALLY check victim names, supporting characters, antagonists
+- Even if same role/description, different name = MAJOR inconsistency
+
 CRITICAL: Understand LOD Direction
 - **Lower LODs (chapters/prose) SHOULD elaborate on higher LODs (treatment/premise)**
   - Adding supporting/minor characters is EXPECTED (not an inconsistency)
@@ -69,11 +76,12 @@ Severity Guidelines:
 - "minor": Only for true inconsistencies, not elaborations (use sparingly)
 
 Examples of TRUE inconsistencies:
-- Character name changed (John → Jake)
+- Character name changed (John → Jake, Sofia Reyes → Sofia Romano)
 - Injury severity contradiction (hospitalized vs walking around)
 - Timeline break (Chapter 6 hospitalized, Chapter 7 investigating)
 - Major subplot in chapters completely missing from treatment (e.g., captain's son subplot)
 - Character arc contradicted (treatment says X learns Y, chapters show X already knows Y)
+- Victim identity mismatch (same role/description but different name)
 
 Examples of ACCEPTABLE elaborations (NOT inconsistencies):
 - Supporting character appears in chapters but not treatment (expected detail)
