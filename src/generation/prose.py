@@ -380,9 +380,12 @@ class ProseGenerator:
                 current_chapter['actual_word_count'] = len(content.split())
                 current_chapter['generation_mode'] = 'sequential'
 
-                # Save updated chapters.yaml
+                # Save updated chapters.yaml (remove full_prose to avoid bloat)
                 chapters_file = self.project.path / "chapters.yaml"
                 with open(chapters_file, 'w') as f:
+                    # Remove full_prose from all chapters before saving
+                    for ch in all_chapters:
+                        ch.pop('full_prose', None)
                     yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
 
                 print(f"\n✅ Chapter {chapter_number} generated successfully")
@@ -478,6 +481,9 @@ Return the complete revised chapter prose (including the chapter title header)."
                     break
 
             with open(chapters_file, 'w') as f:
+                # Remove full_prose from all chapters before saving
+                for ch in all_chapters:
+                    ch.pop('full_prose', None)
                 yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
 
             # Git commit handled by caller if needed
@@ -640,9 +646,12 @@ Return the complete revised chapter prose (including the chapter title header)."
         current_chapter['actual_word_count'] = len(prose_content.split())
         current_chapter['generation_mode'] = 'sequential_multimodel'
 
-        # Save updated chapters.yaml
+        # Save updated chapters.yaml (remove full_prose to avoid bloat)
         chapters_file = self.project.path / "chapters.yaml"
         with open(chapters_file, 'w') as f:
+            # Remove full_prose from all chapters before saving
+            for ch in all_chapters:
+                ch.pop('full_prose', None)
             yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
 
         return prose_content
