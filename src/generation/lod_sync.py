@@ -185,69 +185,57 @@ class LODSyncManager:
         return response.get('content', '').strip()
 
     def _build_context(self, modified_lod: str) -> str:
-        """Build context showing all LOD content."""
+        """
+        Build context showing all LOD content.
+
+        NO TRUNCATION - Modern LLMs have massive context windows and consistency
+        checking requires seeing ALL content to find inconsistencies.
+        """
         parts = []
 
         # Extract base LOD and specific target (e.g., "chapters:5" -> "chapters", "5")
         base_lod = modified_lod.split(':')[0] if ':' in modified_lod else modified_lod
         specific_target = modified_lod.split(':')[1] if ':' in modified_lod else None
 
-        # Premise
+        # Premise - FULL content, no truncation
         premise = self.project.get_premise()
         if premise:
             marker = " (MODIFIED)" if base_lod == "premise" else ""
-            # Show more of premise if it was modified
-            limit = 2000 if base_lod == "premise" else 1000
-            preview = premise if len(premise) <= limit else premise[:limit] + "..."
-            parts.append(f"Premise{marker}:\n{preview}")
+            parts.append(f"Premise{marker}:\n{premise}")
 
-        # Treatment
+        # Treatment - FULL content, no truncation
         treatment = self.project.get_treatment()
         if treatment:
             marker = " (MODIFIED)" if base_lod == "treatment" else ""
-            # Show more of treatment if it was modified
-            limit = 5000 if base_lod == "treatment" else 2000
-            preview = treatment if len(treatment) <= limit else treatment[:limit] + "..."
-            parts.append(f"Treatment{marker}:\n{preview}")
+            parts.append(f"Treatment{marker}:\n{treatment}")
 
-        # Chapters
+        # Chapters - FULL chapters.yaml, no truncation
         chapters_file = self.project.path / "chapters.yaml"
         if chapters_file.exists():
-            import yaml
-            with open(chapters_file, 'r') as f:
-                chapters_data = yaml.safe_load(f)
+            chapters_content = chapters_file.read_text(encoding='utf-8')
+            marker = ""
+            if base_lod == "chapters":
+                marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
+            parts.append(f"Chapters{marker}:\n{chapters_content}")
 
-            if isinstance(chapters_data, list):
-                marker = ""
-                if base_lod == "chapters":
-                    marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
-
-                # If specific chapter was modified, show that chapter in detail
-                if specific_target:
-                    chapter_num = int(specific_target)
-                    specific_ch = next((ch for ch in chapters_data if ch.get('number') == chapter_num), None)
-                    if specific_ch:
-                        import yaml as yaml_module
-                        chapter_yaml = yaml_module.dump([specific_ch], default_flow_style=False)
-                        parts.append(f"Chapters{marker}:\n{chapter_yaml}\n... (plus {len(chapters_data)-1} other chapters)")
-                    else:
-                        summary = f"{len(chapters_data)} chapters total"
-                        parts.append(f"Chapters{marker}:\n{summary}")
-                else:
-                    summary = f"{len(chapters_data)} chapters: "
-                    summary += ", ".join(f"Ch{ch.get('number')}: {ch.get('title')}" for ch in chapters_data[:3])
-                    if len(chapters_data) > 3:
-                        summary += f" ... (+{len(chapters_data) - 3} more)"
-                    parts.append(f"Chapters{marker}:\n{summary}")
-
-        # Prose
+        # Prose - FULL content, no truncation
+        # Even though prose can be large, we need it all for accurate consistency checking
         prose_chapters = self.project.list_chapters()
         if prose_chapters:
             marker = ""
             if base_lod == "prose":
                 marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
 
-            parts.append(f"Prose{marker}:\n{len(prose_chapters)} chapters written")
+            prose_parts = []
+            for chapter_num in sorted(prose_chapters):
+                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                if chapter_file.exists():
+                    content = chapter_file.read_text(encoding='utf-8')
+                    chapter_marker = f" (MODIFIED)" if specific_target and int(specific_target) == chapter_num else ""
+                    prose_parts.append(f"=== Chapter {chapter_num}{chapter_marker} ===\n{content}")
+
+            if prose_parts:
+                parts.append(f"Prose{marker}:\n" + "\n\n".join(prose_parts))
 
         return "\n\n".join(parts)
 
@@ -265,8 +253,7 @@ class LODSyncManager:
                 return chapters_file.read_text(encoding='utf-8')
 
         elif lod.startswith("prose"):
-            # For prose, return concatenated content of all chapters
-            # Or specific chapter if lod is "prose:5"
+            # For prose, return full content - no truncation
             prose_chapters = self.project.list_chapters()
             if not prose_chapters:
                 return None
@@ -279,17 +266,15 @@ class LODSyncManager:
                     return chapter_file.read_text(encoding='utf-8')
                 return None
 
-            # Return summary of all prose (too large to include full text)
-            summaries = []
+            # Return ALL prose - full content of all chapters
+            prose_parts = []
             for chapter_num in sorted(prose_chapters):
                 chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
                 if chapter_file.exists():
                     content = chapter_file.read_text(encoding='utf-8')
-                    # First paragraph as summary
-                    first_para = content.split('\n\n')[0] if content else ""
-                    summaries.append(f"Chapter {chapter_num}: {first_para[:200]}...")
+                    prose_parts.append(f"=== Chapter {chapter_num} ===\n{content}")
 
-            return "\n\n".join(summaries) if summaries else None
+            return "\n\n".join(prose_parts) if prose_parts else None
 
         return None
 
