@@ -188,17 +188,27 @@ class LODSyncManager:
         """Build context showing all LOD content."""
         parts = []
 
+        # Extract base LOD and specific target (e.g., "chapters:5" -> "chapters", "5")
+        base_lod = modified_lod.split(':')[0] if ':' in modified_lod else modified_lod
+        specific_target = modified_lod.split(':')[1] if ':' in modified_lod else None
+
         # Premise
         premise = self.project.get_premise()
         if premise:
-            marker = " (MODIFIED)" if modified_lod == "premise" else ""
-            parts.append(f"Premise{marker}:\n{premise[:500]}...")
+            marker = " (MODIFIED)" if base_lod == "premise" else ""
+            # Show more of premise if it was modified
+            limit = 2000 if base_lod == "premise" else 1000
+            preview = premise if len(premise) <= limit else premise[:limit] + "..."
+            parts.append(f"Premise{marker}:\n{preview}")
 
         # Treatment
         treatment = self.project.get_treatment()
         if treatment:
-            marker = " (MODIFIED)" if modified_lod == "treatment" else ""
-            parts.append(f"Treatment{marker}:\n{treatment[:1000]}...")
+            marker = " (MODIFIED)" if base_lod == "treatment" else ""
+            # Show more of treatment if it was modified
+            limit = 5000 if base_lod == "treatment" else 2000
+            preview = treatment if len(treatment) <= limit else treatment[:limit] + "..."
+            parts.append(f"Treatment{marker}:\n{preview}")
 
         # Chapters
         chapters_file = self.project.path / "chapters.yaml"
@@ -208,17 +218,35 @@ class LODSyncManager:
                 chapters_data = yaml.safe_load(f)
 
             if isinstance(chapters_data, list):
-                marker = " (MODIFIED)" if modified_lod == "chapters" else ""
-                summary = f"{len(chapters_data)} chapters: "
-                summary += ", ".join(f"Ch{ch.get('number')}: {ch.get('title')}" for ch in chapters_data[:3])
-                if len(chapters_data) > 3:
-                    summary += f" ... (+{len(chapters_data) - 3} more)"
-                parts.append(f"Chapters{marker}:\n{summary}")
+                marker = ""
+                if base_lod == "chapters":
+                    marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
+
+                # If specific chapter was modified, show that chapter in detail
+                if specific_target:
+                    chapter_num = int(specific_target)
+                    specific_ch = next((ch for ch in chapters_data if ch.get('number') == chapter_num), None)
+                    if specific_ch:
+                        import yaml as yaml_module
+                        chapter_yaml = yaml_module.dump([specific_ch], default_flow_style=False)
+                        parts.append(f"Chapters{marker}:\n{chapter_yaml}\n... (plus {len(chapters_data)-1} other chapters)")
+                    else:
+                        summary = f"{len(chapters_data)} chapters total"
+                        parts.append(f"Chapters{marker}:\n{summary}")
+                else:
+                    summary = f"{len(chapters_data)} chapters: "
+                    summary += ", ".join(f"Ch{ch.get('number')}: {ch.get('title')}" for ch in chapters_data[:3])
+                    if len(chapters_data) > 3:
+                        summary += f" ... (+{len(chapters_data) - 3} more)"
+                    parts.append(f"Chapters{marker}:\n{summary}")
 
         # Prose
         prose_chapters = self.project.list_chapters()
         if prose_chapters:
-            marker = " (MODIFIED)" if modified_lod == "prose" else ""
+            marker = ""
+            if base_lod == "prose":
+                marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
+
             parts.append(f"Prose{marker}:\n{len(prose_chapters)} chapters written")
 
         return "\n\n".join(parts)
@@ -237,12 +265,31 @@ class LODSyncManager:
                 return chapters_file.read_text(encoding='utf-8')
 
         elif lod.startswith("prose"):
-            # For prose, might need chapter number
-            # Return all prose or specific chapter
-            # For now, just note it exists
+            # For prose, return concatenated content of all chapters
+            # Or specific chapter if lod is "prose:5"
             prose_chapters = self.project.list_chapters()
-            if prose_chapters:
-                return f"{len(prose_chapters)} prose chapters"
+            if not prose_chapters:
+                return None
+
+            # Check if specific chapter requested
+            if ":" in lod:
+                chapter_num = int(lod.split(":")[1])
+                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                if chapter_file.exists():
+                    return chapter_file.read_text(encoding='utf-8')
+                return None
+
+            # Return summary of all prose (too large to include full text)
+            summaries = []
+            for chapter_num in sorted(prose_chapters):
+                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                if chapter_file.exists():
+                    content = chapter_file.read_text(encoding='utf-8')
+                    # First paragraph as summary
+                    first_para = content.split('\n\n')[0] if content else ""
+                    summaries.append(f"Chapter {chapter_num}: {first_para[:200]}...")
+
+            return "\n\n".join(summaries) if summaries else None
 
         return None
 

@@ -893,6 +893,16 @@ class InteractiveSession:
                 elif lod == 'chapters':
                     chapters_file = self.project.path / "chapters.yaml"
                     chapters_file.write_text(updated_content, encoding='utf-8')
+                elif lod.startswith('prose'):
+                    # Handle prose sync
+                    # If specific chapter: prose:5, save to that chapter
+                    # Otherwise, note that prose sync needs manual handling
+                    if ":" in lod:
+                        chapter_num = int(lod.split(":")[1])
+                        chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                        chapter_file.write_text(updated_content, encoding='utf-8')
+                    else:
+                        self._print(f"[yellow]Note: General prose sync requires regenerating chapters individually[/yellow]")
 
                 self._print(f"[green]✓ {lod.capitalize()} updated[/green]")
 

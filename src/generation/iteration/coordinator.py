@@ -126,10 +126,20 @@ class IterationCoordinator:
 
             # Determine which LOD was modified
             target_type = intent.get('target_type')
+            target_id = intent.get('target_id')
+
             if target_type in ['chapter', 'chapters']:
-                modified_lod = 'chapters'
+                # Include chapter number if specific chapter was modified
+                if target_id and target_type == 'chapter':
+                    modified_lod = f'chapters:{target_id}'
+                else:
+                    modified_lod = 'chapters'
             elif target_type == 'prose':
-                modified_lod = 'prose'
+                # Include chapter number for prose
+                if target_id:
+                    modified_lod = f'prose:{target_id}'
+                else:
+                    modified_lod = 'prose'
             elif target_type == 'treatment':
                 modified_lod = 'treatment'
             elif target_type == 'premise':
