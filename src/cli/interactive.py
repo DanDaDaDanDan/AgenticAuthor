@@ -457,6 +457,11 @@ class InteractiveSession:
             if result['success']:
                 self._display_iteration_success(result)
 
+                # Check LOD consistency
+                lod_sync = result.get('lod_sync')
+                if lod_sync:
+                    await self._handle_lod_sync(lod_sync, result)
+
                 # Commit changes if there were any
                 if result.get('changes'):
                     intent = result.get('intent', {})
@@ -770,6 +775,133 @@ class InteractiveSession:
         # Git is now initialized at books/ level during startup
         # This method is kept for backward compatibility but does nothing
         pass
+
+    async def _handle_lod_sync(self, lod_sync: Dict[str, Any], iteration_result: Dict[str, Any]):
+        """Handle LOD synchronization after iteration."""
+        from rich.table import Table
+        from rich.prompt import Prompt
+
+        self._print()
+        self.console.rule("[yellow]📋 LOD Consistency Check[/yellow]", style="yellow")
+        self._print()
+
+        inconsistencies = lod_sync.get('inconsistencies', [])
+        needs_cascade = lod_sync.get('needs_cascade', [])
+
+        if not inconsistencies:
+            self._print("[green]✓ All LODs are consistent[/green]")
+            return
+
+        # Display inconsistencies
+        self._print(f"[yellow]⚠  Found {len(inconsistencies)} inconsistenc{'y' if len(inconsistencies) == 1 else 'ies'}:[/yellow]\n")
+
+        table = Table(show_header=True, header_style="bold cyan", show_lines=True)
+        table.add_column("LOD", style="cyan")
+        table.add_column("Severity", style="yellow")
+        table.add_column("Issue", style="white")
+        table.add_column("Location", style="dim")
+
+        for issue in inconsistencies:
+            severity = issue.get('severity', 'moderate').upper()
+            severity_color = {"MINOR": "green", "MODERATE": "yellow", "MAJOR": "red"}.get(severity, "yellow")
+
+            table.add_row(
+                issue.get('lod', 'unknown'),
+                f"[{severity_color}]{severity}[/{severity_color}]",
+                issue.get('issue', 'Unknown'),
+                issue.get('location', 'N/A')
+            )
+
+        self.console.print(table)
+        self._print()
+
+        # Show suggestions
+        self._print("[bold]Suggested fixes:[/bold]")
+        for i, issue in enumerate(inconsistencies, 1):
+            self._print(f"  {i}. [cyan]{issue.get('lod')}:[/cyan] {issue.get('suggestion', 'No suggestion')}")
+
+        self._print()
+
+        # Ask user what to do
+        self._print("[bold]Options:[/bold]")
+        self._print("  [cyan]all[/cyan]  - Sync all affected LODs automatically")
+        self._print("  [cyan]<lod>[/cyan] - Sync specific LOD (e.g., 'treatment', 'chapters')")
+        self._print("  [cyan]skip[/cyan] - Skip sync for now (keep inconsistent)")
+
+        choice = Prompt.ask("\nSync LODs?", default="skip")
+
+        if choice == "skip":
+            self._print("[dim]Skipping LOD sync. You can manually sync later.[/dim]")
+            return
+
+        # Determine which LODs to sync
+        lods_to_sync = []
+        if choice == "all":
+            lods_to_sync = list(set(i.get('lod') for i in inconsistencies))
+        elif choice in ['treatment', 'chapters', 'premise', 'prose']:
+            lods_to_sync = [choice]
+        else:
+            self._print(f"[red]Invalid choice: {choice}[/red]")
+            return
+
+        # Perform sync
+        await self._sync_lods(lods_to_sync, inconsistencies, iteration_result)
+
+    async def _sync_lods(self, lods: List[str], inconsistencies: List[Dict], iteration_result: Dict[str, Any]):
+        """Sync specified LODs."""
+        from ..generation.lod_sync import LODSyncManager
+
+        sync_manager = LODSyncManager(self.client, self.project, self.settings.active_model)
+
+        intent = iteration_result.get('intent', {})
+        target_type = intent.get('target_type', '')
+
+        # Determine source LOD
+        if target_type in ['chapter', 'chapters']:
+            source_lod = 'chapters'
+        elif target_type == 'prose':
+            source_lod = 'prose'
+        elif target_type == 'treatment':
+            source_lod = 'treatment'
+        elif target_type == 'premise':
+            source_lod = 'premise'
+        else:
+            source_lod = 'unknown'
+
+        changes_desc = intent.get('description', 'Iteration changes')
+
+        for lod in lods:
+            try:
+                self._print(f"\n[cyan]Syncing {lod}...[/cyan]")
+
+                # Get inconsistencies for this LOD
+                lod_issues = [i for i in inconsistencies if i.get('lod') == lod]
+
+                # Sync
+                updated_content = await sync_manager.sync_lod(
+                    source_lod=source_lod,
+                    target_lod=lod,
+                    inconsistencies=lod_issues,
+                    changes_description=changes_desc
+                )
+
+                # Save updated content
+                if lod == 'premise':
+                    self.project.save_premise(updated_content)
+                elif lod == 'treatment':
+                    self.project.save_treatment(updated_content)
+                elif lod == 'chapters':
+                    chapters_file = self.project.path / "chapters.yaml"
+                    chapters_file.write_text(updated_content, encoding='utf-8')
+
+                self._print(f"[green]✓ {lod.capitalize()} updated[/green]")
+
+            except Exception as e:
+                self._print(f"[red]✗ Failed to sync {lod}: {str(e)}[/red]")
+
+        # Commit synced changes
+        self._commit(f"Sync LODs after {source_lod} iteration")
+        self._print(f"\n[green]✓ LOD sync complete[/green]")
 
     def _display_clarification_request(self, result: Dict[str, Any]):
         """Display clarification request."""

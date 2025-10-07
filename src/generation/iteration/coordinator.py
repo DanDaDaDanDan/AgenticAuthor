@@ -106,12 +106,57 @@ class IterationCoordinator:
             result['changes'] = changes
             result['success'] = True
 
+            # Step 6: Check LOD consistency and offer sync
+            if result['success']:
+                result['lod_sync'] = await self._check_lod_consistency(intent)
+
             return result
 
         except Exception as e:
             result['error'] = str(e)
             result['success'] = False
             return result
+
+    async def _check_lod_consistency(self, intent: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Check if LODs are consistent after iteration."""
+        try:
+            from ..lod_sync import LODSyncManager
+
+            sync_manager = LODSyncManager(self.client, self.project, self.model)
+
+            # Determine which LOD was modified
+            target_type = intent.get('target_type')
+            if target_type in ['chapter', 'chapters']:
+                modified_lod = 'chapters'
+            elif target_type == 'prose':
+                modified_lod = 'prose'
+            elif target_type == 'treatment':
+                modified_lod = 'treatment'
+            elif target_type == 'premise':
+                modified_lod = 'premise'
+            else:
+                return None
+
+            # Check consistency
+            changes_desc = intent.get('description', '')
+            consistency_report = await sync_manager.check_consistency(
+                modified_lod=modified_lod,
+                changes_description=changes_desc
+            )
+
+            # Only return if there are inconsistencies
+            if not consistency_report.get('is_consistent', True):
+                return consistency_report
+
+            return None
+
+        except Exception as e:
+            # Don't fail the iteration if consistency check fails
+            from ...utils.logging import get_logger
+            logger = get_logger()
+            if logger:
+                logger.warning(f"LOD consistency check failed: {e}")
+            return None
 
     async def _determine_scale(self, intent: Dict[str, Any]) -> str:
         """Determine if change should be patch or regenerate."""
