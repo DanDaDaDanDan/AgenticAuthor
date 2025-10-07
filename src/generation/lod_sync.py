@@ -236,7 +236,11 @@ class LODSyncManager:
                 chapter_num = int(match.group(1))
 
                 if chapter_file.exists():
-                    content = chapter_file.read_text(encoding='utf-8')
+                    try:
+                        content = chapter_file.read_text(encoding='utf-8')
+                    except UnicodeDecodeError:
+                        # Fallback to latin-1 which accepts all byte values
+                        content = chapter_file.read_text(encoding='latin-1')
                     chapter_marker = f" (MODIFIED)" if specific_target and int(specific_target) == chapter_num else ""
                     prose_parts.append(f"=== Chapter {chapter_num}{chapter_marker} ===\n{content}")
 
@@ -269,7 +273,10 @@ class LODSyncManager:
                 chapter_num = int(lod.split(":")[1])
                 chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
                 if chapter_file.exists():
-                    return chapter_file.read_text(encoding='utf-8')
+                    try:
+                        return chapter_file.read_text(encoding='utf-8')
+                    except UnicodeDecodeError:
+                        return chapter_file.read_text(encoding='latin-1')
                 return None
 
             # Return ALL prose - full content of all chapters
@@ -282,7 +289,10 @@ class LODSyncManager:
                 chapter_num = int(match.group(1))
 
                 if chapter_file.exists():
-                    content = chapter_file.read_text(encoding='utf-8')
+                    try:
+                        content = chapter_file.read_text(encoding='utf-8')
+                    except UnicodeDecodeError:
+                        content = chapter_file.read_text(encoding='latin-1')
                     prose_parts.append(f"=== Chapter {chapter_num} ===\n{content}")
 
             return "\n\n".join(prose_parts) if prose_parts else None
