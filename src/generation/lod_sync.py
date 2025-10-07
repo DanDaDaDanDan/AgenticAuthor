@@ -239,8 +239,15 @@ class LODSyncManager:
                     try:
                         content = chapter_file.read_text(encoding='utf-8')
                     except UnicodeDecodeError:
-                        # Fallback to latin-1 which accepts all byte values
-                        content = chapter_file.read_text(encoding='latin-1')
+                        # File has wrong encoding - try Windows-1252 (common on Windows)
+                        try:
+                            content = chapter_file.read_text(encoding='cp1252')
+                            # Fix the file permanently by re-writing as UTF-8
+                            chapter_file.write_text(content, encoding='utf-8')
+                        except UnicodeDecodeError:
+                            # Last resort: latin-1 never fails but may misinterpret characters
+                            content = chapter_file.read_text(encoding='latin-1')
+                            chapter_file.write_text(content, encoding='utf-8')
                     chapter_marker = f" (MODIFIED)" if specific_target and int(specific_target) == chapter_num else ""
                     prose_parts.append(f"=== Chapter {chapter_num}{chapter_marker} ===\n{content}")
 
@@ -276,7 +283,14 @@ class LODSyncManager:
                     try:
                         return chapter_file.read_text(encoding='utf-8')
                     except UnicodeDecodeError:
-                        return chapter_file.read_text(encoding='latin-1')
+                        # Try Windows-1252, then latin-1, and fix the file
+                        try:
+                            content = chapter_file.read_text(encoding='cp1252')
+                        except UnicodeDecodeError:
+                            content = chapter_file.read_text(encoding='latin-1')
+                        # Fix file permanently
+                        chapter_file.write_text(content, encoding='utf-8')
+                        return content
                 return None
 
             # Return ALL prose - full content of all chapters
@@ -292,7 +306,13 @@ class LODSyncManager:
                     try:
                         content = chapter_file.read_text(encoding='utf-8')
                     except UnicodeDecodeError:
-                        content = chapter_file.read_text(encoding='latin-1')
+                        # Try Windows-1252, then latin-1, and fix the file
+                        try:
+                            content = chapter_file.read_text(encoding='cp1252')
+                        except UnicodeDecodeError:
+                            content = chapter_file.read_text(encoding='latin-1')
+                        # Fix file permanently
+                        chapter_file.write_text(content, encoding='utf-8')
                     prose_parts.append(f"=== Chapter {chapter_num} ===\n{content}")
 
             return "\n\n".join(prose_parts) if prose_parts else None
