@@ -147,6 +147,180 @@ except ValueError as e:
 
 ## Project Structure
 
+### Unified LOD Context Architecture
+
+**Critical System** - All generators use this pattern for consistent LLM interaction.
+
+#### Core Components
+
+1. **LODContextBuilder** (`src/generation/lod_context.py`)
+   - Combines separate files into unified YAML structure
+   - Methods:
+     - `build_context(project, target_lod, include_downstream)` - Assembles context
+     - `to_yaml_string(context)` - Serializes to YAML for LLM
+   - Loads: premise.md, treatment.md, chapters.yaml, chapters/*.md
+
+2. **LODResponseParser** (`src/generation/lod_parser.py`)
+   - Splits LLM's unified YAML back to individual files
+   - Methods:
+     - `parse_and_save(response, project, target_lod, original_context, dry_run=False)`
+     - `_validate_response(data, target_lod)` - Ensures complete response
+     - `_apply_culling(project, target_lod, llm_data)` - Deletes downstream
+     - `_simulate_culling(...)` - Dry-run version for multi-model
+   - Features:
+     - Automatic markdown fence stripping
+     - Change detection for upward sync
+     - Culling rules enforcement
+
+#### Generation Pattern
+
+**All generators follow this pattern:**
+
+```python
+class SomeGenerator:
+    def __init__(self, client, project, model):
+        self.client = client
+        self.project = project
+        self.model = model
+        self.context_builder = LODContextBuilder()
+        self.parser = LODResponseParser()
+
+    async def generate(self, **kwargs):
+        # 1. Build unified context
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod='treatment',  # What LOD we're generating
+            include_downstream=False
+        )
+
+        # 2. Serialize to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
+
+        # 3. Build prompt requesting YAML output
+        prompt = f"""Here is the current book content in YAML format:
+
+```yaml
+{context_yaml}
+```
+
+Generate [what you want]...
+
+CRITICAL: Return your response as YAML with this structure:
+```yaml
+premise:
+  text: |
+    ... (keep existing)
+treatment:
+  text: |
+    ... (your new content)
+```
+
+Do NOT wrap in additional markdown code fences (```).
+Return ONLY the YAML content."""
+
+        # 4. Call LLM
+        result = await self.client.streaming_completion(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            display=True,
+            display_label="Generating...",
+            min_response_tokens=estimated_tokens
+        )
+
+        # 5. Parse and save
+        response_text = result.get('content', result) if isinstance(result, dict) else result
+
+        parse_result = self.parser.parse_and_save(
+            response=response_text,
+            project=self.project,
+            target_lod='treatment',
+            original_context=context,
+            dry_run=False  # Set True for multi-model competition
+        )
+
+        # 6. Return saved content
+        return self.project.get_treatment()
+```
+
+#### Multi-Model Competition Pattern
+
+```python
+async def generate_with_competition(self, **kwargs):
+    # Build context once
+    context = self.context_builder.build_context(...)
+    context_yaml = self.context_builder.to_yaml_string(context)
+
+    # Build prompt
+    prompt = f"""..."""
+
+    # Competitor function
+    async def generate_with_model(model: str) -> str:
+        result = await self.client.streaming_completion(
+            model=model,
+            messages=[...],
+            ...
+        )
+
+        response_text = result.get('content', result) if isinstance(result, dict) else result
+
+        # Validate but DON'T save (dry_run=True)
+        parse_result = self.parser.parse_and_save(
+            response=response_text,
+            project=self.project,
+            target_lod='treatment',
+            original_context=context,
+            dry_run=True  # CRITICAL: Don't save during competition
+        )
+
+        return response_text  # Return for comparison
+
+    # Run competition
+    multi_gen = MultiModelGenerator(self.client, self.project)
+    competition_result = await multi_gen.generate_parallel(
+        generator_func=generate_with_model,
+        content_type="treatment",
+        ...
+    )
+
+    # Save winner for real
+    winning_response = competition_result['winner']['content']
+    parse_result = self.parser.parse_and_save(
+        response=winning_response,
+        project=self.project,
+        target_lod='treatment',
+        original_context=context,
+        dry_run=False  # Actually save this time
+    )
+
+    return self.project.get_treatment()
+```
+
+#### Culling Rules
+
+- **premise** modified → delete: treatment, chapters, prose
+- **treatment** modified → delete: chapters, prose (keep premise)
+- **chapters** modified → delete: prose for changed chapters only
+- **prose** modified → no culling
+
+#### Upward Sync
+
+When iterating chapters/prose, `IterationCoordinator` includes upward sync instructions:
+
+```python
+if target_lod in ['chapters', 'prose']:
+    upward_sync_instruction = f"""
+CRITICAL - UPWARD SYNC:
+As you make changes to {target_lod}, also check if premise and/or treatment need updating.
+Return ALL sections (premise, treatment, {target_lod}) even if unchanged.
+"""
+```
+
+Parser detects changes and marks `synced_upstream=True` when upstream LODs modified.
+
 ### Adding New Features
 
 1. **New Command**: Add to `src/cli/interactive.py`

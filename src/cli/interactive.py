@@ -514,27 +514,38 @@ class InteractiveSession:
         if changes:
             for change in changes:
                 change_type = change.get('type', 'unknown')
-                file_path = change.get('file', 'unknown')
 
                 if change_type == 'patch':
-                    # Check if this is chapters.yaml (has chapter_count)
+                    # New unified context format
+                    updated_files = change.get('updated_files', [])
+                    deleted_files = change.get('deleted_files', [])
+                    synced_upstream = change.get('synced_upstream', False)
+
+                    # Show updated files
+                    if updated_files:
+                        for file in updated_files:
+                            self._print(f"[green]✓ Updated:[/green] [cyan]{file}[/cyan]")
+
+                    # Show upstream sync if it happened
+                    if synced_upstream:
+                        upstream_files = [f for f in updated_files if f in ['premise.md', 'treatment.md', 'premise_metadata.json']]
+                        if upstream_files:
+                            self._print(f"[yellow]↑ Synced upstream:[/yellow] {', '.join(upstream_files)}")
+
+                    # Show deleted files (culled downstream)
+                    if deleted_files:
+                        self._print(f"[dim]✗ Culled downstream:[/dim]")
+                        for file in deleted_files:
+                            self._print(f"  [dim]- {file}[/dim]")
+
+                    # Show chapter count if applicable
                     if 'chapter_count' in change:
                         chapter_count = change.get('chapter_count', 0)
-                        self._print(f"[green]✓ Applied patch:[/green] [cyan]{file_path}[/cyan] ({chapter_count} chapters)")
-                    else:
-                        old_len = change.get('original_length', 0)
-                        new_len = change.get('modified_length', 0)
-                        diff_words = new_len - old_len
-                        sign = '+' if diff_words >= 0 else ''
-                        self._print(f"[green]✓ Applied patch:[/green] [cyan]{file_path}[/cyan] ({sign}{diff_words} words)")
-
-                    # Display the diff with colors
-                    diff = change.get('diff', '')
-                    if diff:
-                        self._print()
-                        self._display_diff(diff)
+                        self._print(f"[dim]  ({chapter_count} chapters)[/dim]")
 
                 elif change_type == 'regenerate':
+                    # Old format (still used by some generators)
+                    file_path = change.get('file', 'unknown')
                     # Check if this is chapters (has 'count' field) or prose (has 'word_count')
                     if 'count' in change:
                         chapter_count = change.get('count', 0)

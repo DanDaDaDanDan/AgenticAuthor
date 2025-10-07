@@ -7,6 +7,8 @@ from jinja2 import Template
 
 from ..api import OpenRouterClient
 from ..models import Project
+from .lod_context import LODContextBuilder
+from .lod_parser import LODResponseParser
 
 
 CONSISTENCY_CHECK_TEMPLATE = """You are analyzing consistency between different levels of detail in a book project.
@@ -91,7 +93,7 @@ Examples of ACCEPTABLE elaborations (NOT inconsistencies):
 """
 
 
-SYNC_UPDATE_TEMPLATE = """You are updating a {{ target_lod }} to maintain consistency with {{ source_lod }}.
+SYNC_UPDATE_TEMPLATE = """You are synchronizing LODs to maintain consistency.
 
 CRITICAL PRINCIPLE: The most detailed LOD is AUTHORITATIVE
 - LOD Hierarchy (most → least detailed): Prose (LOD0) → Chapters (LOD2) → Treatment (LOD2) → Premise (LOD3)
@@ -100,14 +102,10 @@ CRITICAL PRINCIPLE: The most detailed LOD is AUTHORITATIVE
 
 {{ direction_guidance }}
 
-Original {{ target_lod }}:
-```
-{{ original_content }}
-```
+Current book content in YAML format:
 
-Authoritative {{ source_lod }}:
-```
-{{ modified_source }}
+```yaml
+{{ context_yaml }}
 ```
 
 Changes Made:
@@ -116,14 +114,36 @@ Changes Made:
 Inconsistencies to Fix:
 {{ inconsistencies }}
 
-Task: Generate an updated version of the {{ target_lod }} that:
+Task: Generate an updated version of ALL sections that:
 1. **Defers to {{ source_lod }} as the authoritative source** (more detailed = more accurate)
 2. Fixes all identified inconsistencies by matching {{ source_lod }}
-3. Maintains the appropriate level of detail for {{ target_lod }}
+3. Maintains appropriate level of detail for each section
 4. Preserves content not affected by the changes
 
-Return ONLY the updated {{ target_lod }} content, no explanations.
-"""
+CRITICAL: Return your response as YAML with ALL sections:
+```yaml
+premise:
+  text: |
+    ... (update if needed to match {{ source_lod }})
+  metadata: ...
+
+treatment:
+  text: |
+    ... (update if needed to match {{ source_lod }})
+
+chapters:
+  - number: 1
+    title: "..."
+    # ... (update if needed to match {{ source_lod }})
+
+prose:
+  - chapter: 1
+    text: |
+      ... (update if needed to match {{ source_lod }})
+```
+
+Do NOT wrap your response in additional markdown code fences (```).
+Return ONLY the YAML content with all sections."""
 
 
 class LODSyncManager:
@@ -143,6 +163,8 @@ class LODSyncManager:
         self.client = client
         self.project = project
         self.model = model
+        self.context_builder = LODContextBuilder()
+        self.parser = LODResponseParser()
 
     async def check_consistency(
         self,
@@ -150,7 +172,7 @@ class LODSyncManager:
         changes_description: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Check consistency between LODs after a modification.
+        Check consistency between LODs after a modification using unified context.
 
         Args:
             modified_lod: Which LOD was modified (premise, treatment, chapters, prose)
@@ -159,13 +181,20 @@ class LODSyncManager:
         Returns:
             Consistency report with inconsistencies and recommendations
         """
-        # Gather context from all LODs
-        context = self._build_context(modified_lod)
+        # Build unified context (include everything for consistency checking)
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod='prose',  # Include all LODs
+            include_downstream=True
+        )
+
+        # Serialize to YAML for LLM
+        context_yaml = self.context_builder.to_yaml_string(context)
 
         # Render prompt
         template = Template(CONSISTENCY_CHECK_TEMPLATE)
         prompt = template.render(
-            context=context,
+            context=context_yaml,  # Now using YAML context
             modified_lod=modified_lod
         )
 
@@ -185,9 +214,9 @@ class LODSyncManager:
         target_lod: str,
         inconsistencies: List[Dict[str, Any]],
         changes_description: str
-    ) -> str:
+    ) -> Dict[str, Any]:
         """
-        Sync target LOD with changes from source LOD.
+        Sync LODs using unified context approach.
 
         CRITICAL: Most detailed LOD is AUTHORITATIVE
         - If syncing chapters → treatment, chapters is the source (more detailed)
@@ -200,7 +229,7 @@ class LODSyncManager:
             changes_description: Description of changes made
 
         Returns:
-            Updated content for target LOD
+            Dict with parse result (updated_files, deleted_files, etc.)
         """
         # LOD detail levels (higher = more detailed)
         lod_detail_level = {
@@ -221,20 +250,22 @@ class LODSyncManager:
         else:
             direction_guidance = f"Syncing DOWN: {source_lod} is more detailed, so use it as authority"
 
-        # Load content
-        original_content = self._get_lod_content(target_lod)
-        modified_source = self._get_lod_content(source_lod)
+        # Build unified context (include everything for sync)
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod='prose',  # Include all LODs for sync
+            include_downstream=True
+        )
 
-        if not original_content:
-            raise ValueError(f"No content found for {target_lod}")
+        # Serialize context to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
 
         # Render prompt
         template = Template(SYNC_UPDATE_TEMPLATE)
         prompt = template.render(
-            target_lod=target_lod,
             source_lod=source_lod,
-            original_content=original_content,
-            modified_source=modified_source,
+            target_lod=target_lod,
+            context_yaml=context_yaml,
             changes_description=changes_description,
             inconsistencies=self._format_inconsistencies(inconsistencies, target_lod),
             direction_guidance=direction_guidance
@@ -244,150 +275,30 @@ class LODSyncManager:
         response = await self.client.streaming_completion(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are an expert at maintaining narrative consistency across different levels of detail."},
+                {"role": "system", "content": "You are an expert at maintaining narrative consistency across different levels of detail. You always return valid YAML without additional formatting."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.5,
             stream=True,
             display=True,
-            display_label=f"Syncing {target_lod}"
+            display_label=f"Syncing {target_lod} with {source_lod}"
         )
 
-        return response.get('content', '').strip()
+        if not response:
+            raise Exception("No response from API")
 
-    def _build_context(self, modified_lod: str) -> str:
-        """
-        Build context showing all LOD content.
+        # Extract response text
+        response_text = response.get('content', response) if isinstance(response, dict) else response
 
-        NO TRUNCATION - Modern LLMs have massive context windows and consistency
-        checking requires seeing ALL content to find inconsistencies.
-        """
-        parts = []
+        # Parse and save to files
+        parse_result = self.parser.parse_and_save(
+            response=response_text,
+            project=self.project,
+            target_lod=target_lod,  # Use target_lod for culling rules
+            original_context=context
+        )
 
-        # Extract base LOD and specific target (e.g., "chapters:5" -> "chapters", "5")
-        base_lod = modified_lod.split(':')[0] if ':' in modified_lod else modified_lod
-        specific_target = modified_lod.split(':')[1] if ':' in modified_lod else None
-
-        # Premise - FULL content, no truncation
-        premise = self.project.get_premise()
-        if premise:
-            marker = " (MODIFIED)" if base_lod == "premise" else ""
-            parts.append(f"Premise{marker}:\n{premise}")
-
-        # Treatment - FULL content, no truncation
-        treatment = self.project.get_treatment()
-        if treatment:
-            marker = " (MODIFIED)" if base_lod == "treatment" else ""
-            parts.append(f"Treatment{marker}:\n{treatment}")
-
-        # Chapters - FULL chapters.yaml, no truncation
-        chapters_file = self.project.path / "chapters.yaml"
-        if chapters_file.exists():
-            chapters_content = chapters_file.read_text(encoding='utf-8')
-            marker = ""
-            if base_lod == "chapters":
-                marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
-            parts.append(f"Chapters{marker}:\n{chapters_content}")
-
-        # Prose - FULL content, no truncation
-        # Even though prose can be large, we need it all for accurate consistency checking
-        prose_chapters = self.project.list_chapters()
-        if prose_chapters:
-            marker = ""
-            if base_lod == "prose":
-                marker = f" (MODIFIED: Chapter {specific_target})" if specific_target else " (MODIFIED)"
-
-            prose_parts = []
-            for chapter_file in sorted(prose_chapters):
-                # Extract chapter number from filename (e.g., "chapter-01.md" -> 1)
-                match = re.search(r'chapter-(\d+)', chapter_file.name)
-                if not match:
-                    continue
-                chapter_num = int(match.group(1))
-
-                if chapter_file.exists():
-                    try:
-                        content = chapter_file.read_text(encoding='utf-8')
-                    except UnicodeDecodeError:
-                        # File has wrong encoding - try Windows-1252 (common on Windows)
-                        try:
-                            content = chapter_file.read_text(encoding='cp1252')
-                            # Fix the file permanently by re-writing as UTF-8
-                            chapter_file.write_text(content, encoding='utf-8')
-                        except UnicodeDecodeError:
-                            # Last resort: latin-1 never fails but may misinterpret characters
-                            content = chapter_file.read_text(encoding='latin-1')
-                            chapter_file.write_text(content, encoding='utf-8')
-                    chapter_marker = f" (MODIFIED)" if specific_target and int(specific_target) == chapter_num else ""
-                    prose_parts.append(f"=== Chapter {chapter_num}{chapter_marker} ===\n{content}")
-
-            if prose_parts:
-                parts.append(f"Prose{marker}:\n" + "\n\n".join(prose_parts))
-
-        return "\n\n".join(parts)
-
-    def _get_lod_content(self, lod: str) -> Optional[str]:
-        """Get content for a specific LOD."""
-        if lod == "premise":
-            return self.project.get_premise()
-
-        elif lod == "treatment":
-            return self.project.get_treatment()
-
-        elif lod == "chapters":
-            chapters_file = self.project.path / "chapters.yaml"
-            if chapters_file.exists():
-                return chapters_file.read_text(encoding='utf-8')
-
-        elif lod.startswith("prose"):
-            # For prose, return full content - no truncation
-            prose_chapters = self.project.list_chapters()
-            if not prose_chapters:
-                return None
-
-            # Check if specific chapter requested
-            if ":" in lod:
-                chapter_num = int(lod.split(":")[1])
-                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
-                if chapter_file.exists():
-                    try:
-                        return chapter_file.read_text(encoding='utf-8')
-                    except UnicodeDecodeError:
-                        # Try Windows-1252, then latin-1, and fix the file
-                        try:
-                            content = chapter_file.read_text(encoding='cp1252')
-                        except UnicodeDecodeError:
-                            content = chapter_file.read_text(encoding='latin-1')
-                        # Fix file permanently
-                        chapter_file.write_text(content, encoding='utf-8')
-                        return content
-                return None
-
-            # Return ALL prose - full content of all chapters
-            prose_parts = []
-            for chapter_file in sorted(prose_chapters):
-                # Extract chapter number from filename (e.g., "chapter-01.md" -> 1)
-                match = re.search(r'chapter-(\d+)', chapter_file.name)
-                if not match:
-                    continue
-                chapter_num = int(match.group(1))
-
-                if chapter_file.exists():
-                    try:
-                        content = chapter_file.read_text(encoding='utf-8')
-                    except UnicodeDecodeError:
-                        # Try Windows-1252, then latin-1, and fix the file
-                        try:
-                            content = chapter_file.read_text(encoding='cp1252')
-                        except UnicodeDecodeError:
-                            content = chapter_file.read_text(encoding='latin-1')
-                        # Fix file permanently
-                        chapter_file.write_text(content, encoding='utf-8')
-                    prose_parts.append(f"=== Chapter {chapter_num} ===\n{content}")
-
-            return "\n\n".join(prose_parts) if prose_parts else None
-
-        return None
+        return parse_result
 
     def _format_inconsistencies(
         self,
@@ -410,6 +321,29 @@ class LODSyncManager:
             )
 
         return "\n".join(parts)
+
+    def _strip_markdown_fences(self, content: str) -> str:
+        """
+        Strip markdown code fences if LLM wrapped output in ```yaml or ``` blocks.
+
+        Args:
+            content: Raw content from LLM
+
+        Returns:
+            Content with code fences removed
+        """
+        # Remove opening fence (```yaml, ```markdown, ```md, or just ```)
+        if content.startswith('```'):
+            lines = content.split('\n')
+            # Remove first line if it's a fence
+            if lines[0].strip().startswith('```'):
+                lines = lines[1:]
+            # Remove last line if it's a fence
+            if lines and lines[-1].strip() == '```':
+                lines = lines[:-1]
+            content = '\n'.join(lines)
+
+        return content.strip()
 
     def get_affected_lods(self, modified_lod: str) -> List[str]:
         """

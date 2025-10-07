@@ -8,6 +8,8 @@ from ...models import Project
 from .intent import IntentAnalyzer
 from .scale import ScaleDetector
 from .diff import DiffGenerator, PatchError
+from ..lod_context import LODContextBuilder
+from ..lod_parser import LODResponseParser
 
 
 class IterationCoordinator:
@@ -45,6 +47,8 @@ class IterationCoordinator:
         self.intent_analyzer = IntentAnalyzer(client, model, default_target=default_target)
         self.scale_detector = ScaleDetector(client, model)
         self.diff_generator = DiffGenerator(client, model)
+        self.context_builder = LODContextBuilder()
+        self.parser = LODResponseParser()
 
     async def process_feedback(
         self,
@@ -193,70 +197,143 @@ class IterationCoordinator:
         intent: Dict[str, Any],
         show_preview: bool = False
     ) -> list:
-        """Execute patch-based iteration."""
+        """
+        Execute patch-based iteration using unified LOD context.
+
+        KEY: When iterating chapters/prose, explicitly ask LLM to update premise/treatment
+        if needed (upward sync in single atomic operation).
+        """
         changes = []
+        target_lod = intent['target_type']
 
-        # Get target content
-        content, content_type = self._get_target_content(intent)
-
-        if not content:
-            raise ValueError(
-                f"No content found for {intent['target_type']}. "
-                f"Generate it first before iterating."
-            )
-
-        # Get file path
-        file_path = self._get_target_file_path(intent)
-
-        # Generate diff
-        diff = await self.diff_generator.generate_diff(
-            original=content,
-            intent=intent,
-            file_path=str(file_path.relative_to(self.project.path)),
-            context=self._build_context(intent)
+        # Build unified context up to (and including) target LOD
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod=target_lod,
+            include_downstream=False  # Don't send prose when iterating chapters
         )
 
-        # Show preview if requested
-        if show_preview:
-            preview = self.diff_generator.create_preview(content, diff)
-            # TODO: Show preview to user and ask for confirmation
-            # For now, just include it in changes
-            changes.append({
-                'type': 'preview',
-                'diff': preview
-            })
+        # Check if we have the required content
+        if target_lod == 'premise' and 'premise' not in context:
+            raise ValueError("No premise found. Generate premise first.")
+        elif target_lod == 'treatment' and 'treatment' not in context:
+            raise ValueError("No treatment found. Generate treatment first.")
+        elif target_lod == 'chapters' and 'chapters' not in context:
+            raise ValueError("No chapters found. Generate chapters first.")
+        elif target_lod == 'prose':
+            # For prose, we just need chapter outlines
+            if 'chapters' not in context:
+                raise ValueError("No chapter outlines found. Generate chapters first.")
 
-        # Apply diff
-        try:
-            modified = self.diff_generator.apply_diff(content, diff)
-        except PatchError as e:
-            # Fallback to regeneration if patch fails
-            raise ValueError(
-                f"Patch failed: {str(e)}. Try rephrasing your request, "
-                f"or the change may be too large for a patch."
-            )
+        # Serialize context to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
 
-        # Write modified content
-        file_path.write_text(modified, encoding='utf-8')
+        # Build prompt with UPWARD SYNC instructions
+        upward_sync_instruction = ""
+        if target_lod in ['chapters', 'prose']:
+            upward_sync_instruction = f"""
+CRITICAL - UPWARD SYNC:
+As you make changes to {target_lod}, also check if premise and/or treatment need updating to stay consistent.
+Examples of when to update upstream:
+- If you add major plot points → update treatment to reflect them
+- If you change character arcs → update treatment and possibly premise
+- If you change themes or stakes → update premise
+- If you adjust the story scope → update premise
 
+Return ALL sections (premise, treatment, {target_lod}) even if some are unchanged.
+This ensures the high-level documents stay in sync with detailed content.
+"""
+
+        # Build the iteration prompt
+        prompt = f"""Current book content in YAML format:
+
+```yaml
+{context_yaml}
+```
+
+USER FEEDBACK: "{intent['description']}"
+
+TARGET: {target_lod}{f" (specifically: {intent.get('target_id', 'all')})" if intent.get('target_id') else ""}
+
+TASK:
+1. Apply the user's requested changes to the {target_lod} section
+2. Maintain consistency with other sections
+3. Keep the same overall structure and level of detail
+{upward_sync_instruction}
+
+RESPONSE FORMAT:
+Return the complete book in YAML format with ALL existing sections.
+Only modify the sections that need changing based on the feedback.
+
+```yaml
+premise:
+  text: |
+    ... (keep existing or update if needed)
+  metadata:
+    ... (keep existing or update if needed)
+
+treatment:
+  text: |
+    ... (keep existing or update if needed)
+
+{f'''chapters:
+  - number: 1
+    title: ...
+    # ... all chapter fields
+''' if target_lod in ['chapters', 'prose'] else '# Do not include chapters section'}
+
+{f'''prose:
+  - chapter: 1
+    text: |
+      ...
+    word_count: ...
+''' if target_lod == 'prose' else '# Do not include prose section'}
+```
+
+CRITICAL: Do NOT wrap your response in additional markdown code fences (```).
+Return ONLY the YAML content."""
+
+        # Call LLM
+        result = await self.client.streaming_completion(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a precise story editor. You return valid YAML and maintain narrative consistency across all LOD levels."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,  # Lower for controlled edits
+            stream=True,
+            display=True,
+            display_label=f"Updating {target_lod}"
+        )
+
+        if not result:
+            raise ValueError("LLM returned no response")
+
+        # Extract response
+        response_text = result.get('content', result) if isinstance(result, dict) else result
+
+        # Parse and save (includes culling and upward sync detection)
+        parse_result = self.parser.parse_and_save(
+            response=response_text,
+            project=self.project,
+            target_lod=target_lod,
+            original_context=context
+        )
+
+        # Build change info
         change_info = {
             'type': 'patch',
-            'file': str(file_path.relative_to(self.project.path)),
-            'diff': diff,
-            'original_length': len(content.split()),
-            'modified_length': len(modified.split())
+            'updated_files': parse_result['updated_files'],
+            'deleted_files': parse_result['deleted_files'],
+            'synced_upstream': parse_result.get('synced_upstream', False),
+            'changes': parse_result.get('changes', {})
         }
 
-        # For chapters.yaml, add chapter count info
-        if intent['target_type'] == 'chapters':
-            # Parse YAML to count chapters
-            import yaml
-            try:
-                chapters_data = yaml.safe_load(modified)
-                if isinstance(chapters_data, list):
-                    change_info['chapter_count'] = len(chapters_data)
-            except:
-                pass  # Fall back to word count
+        # Add chapter count if applicable
+        if target_lod == 'chapters' and 'chapters.yaml' in parse_result['updated_files']:
+            chapters = self.project.get_chapters()
+            if chapters:
+                change_info['chapter_count'] = len(chapters)
 
         changes.append(change_info)
 

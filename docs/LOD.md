@@ -19,6 +19,77 @@ The story generation system uses a progressive refinement approach, starting fro
 - **Structural Integrity**: Earlier decisions constrain later choices to maintain coherence
 - **Creative Freedom Within Constraints**: The system provides structure while allowing artistic interpretation
 - **Genre-Aware Generation**: All prompts adapt to the selected genre and taxonomy
+- **Unified Context Architecture**: Files stay separate on disk, but LLM sees/edits unified YAML for consistency
+
+### Unified LOD Context System
+
+**Critical Architecture** - The system maintains separate files on disk for human readability, but presents a unified YAML context to the LLM for consistent generation and iteration.
+
+#### File Storage (On Disk)
+```
+project/
+├── premise.md              # LOD3 - Core concept
+├── premise_metadata.json   # Taxonomy selections
+├── treatment.md            # LOD2 - Narrative arc
+├── chapters.yaml           # LOD2 - Chapter outlines
+└── chapters/               # LOD0 - Full prose
+    ├── chapter-01.md
+    ├── chapter-02.md
+    └── ...
+```
+
+#### LLM View (Unified YAML)
+```yaml
+premise:
+  text: |
+    [Premise content from premise.md]
+  metadata:
+    protagonist: "..."
+    antagonist: "..."
+    # ... from premise_metadata.json
+
+treatment:
+  text: |
+    [Treatment content from treatment.md]
+
+chapters:
+  - number: 1
+    title: "..."
+    summary: "..."
+    key_events: [...]
+    # ... from chapters.yaml
+
+prose:
+  - chapter: 1
+    text: |
+      [Content from chapters/chapter-01.md]
+  - chapter: 2
+    text: |
+      [Content from chapters/chapter-02.md]
+```
+
+#### Key Benefits
+
+1. **Atomic Upward Sync**: When iterating chapters/prose, the LLM can update premise/treatment in the same operation
+2. **Automatic Culling**: When upstream LODs change, downstream content is automatically deleted to maintain consistency
+3. **Complete Context**: LLM always sees the full story context, ensuring better coherence
+4. **Human-Readable Storage**: Separate markdown files remain easy to read and version control
+5. **Validation**: System ensures LLM returns all required sections in correct YAML structure
+
+#### Generation Flow
+
+1. **Build Context**: LODContextBuilder assembles files into unified YAML
+2. **Generate**: LLM receives YAML context, generates response in YAML format
+3. **Parse**: LODResponseParser validates and splits YAML back to individual files
+4. **Cull**: Downstream files deleted if upstream LODs were modified
+5. **Save**: Each section saved to its corresponding file
+
+#### Culling Rules
+
+- Modify **premise** → Delete: treatment, chapters, prose
+- Modify **treatment** → Delete: chapters, prose (keep premise)
+- Modify **chapters** → Delete: prose for changed chapters only
+- Modify **prose** → No culling (most detailed LOD)
 
 ## LOD Hierarchy
 

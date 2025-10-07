@@ -11,6 +11,8 @@ from ..api import OpenRouterClient
 from ..models import Project
 from ..utils.tokens import estimate_tokens
 from ..config import get_settings
+from .lod_context import LODContextBuilder
+from .lod_parser import LODResponseParser
 
 
 SEQUENTIAL_PROSE_TEMPLATE = """## Story Foundation:
@@ -117,6 +119,8 @@ class ProseGenerator:
         self.client = client
         self.project = project
         self.model = model
+        self.context_builder = LODContextBuilder()
+        self.parser = LODResponseParser()
 
 
     def load_all_chapters_with_prose(self) -> List[Dict[str, Any]]:
@@ -269,7 +273,7 @@ class ProseGenerator:
         narrative_style: str = "third person limited"
     ) -> str:
         """
-        Generate full prose for a chapter with complete story context.
+        Generate full prose for a chapter using unified LOD context.
 
         Args:
             chapter_number: Chapter to generate
@@ -278,14 +282,35 @@ class ProseGenerator:
         Returns:
             Chapter prose text
         """
-        # Check token requirements first
+        # Build unified context (premise + treatment + chapters + existing prose)
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod='prose',  # Include everything
+            include_downstream=True  # Include any existing prose
+        )
+
+        if 'premise' not in context:
+            raise Exception("No premise found. Generate premise first with /generate premise")
+        if 'treatment' not in context:
+            raise Exception("No treatment found. Generate treatment first with /generate treatment")
+        if 'chapters' not in context:
+            raise Exception("No chapters found. Generate chapters first with /generate chapters")
+
+        # Find current chapter info
+        chapters = context['chapters']
+        current_chapter = None
+        for ch in chapters:
+            if ch['number'] == chapter_number:
+                current_chapter = ch
+                break
+
+        if not current_chapter:
+            raise Exception(f"Chapter {chapter_number} not found in outlines")
+
+        # Check token requirements
         token_calc = await self.calculate_prose_context_tokens(chapter_number)
 
         print(f"\n📊 Token Analysis for Chapter {chapter_number}:")
-        print(f"  Premise: {token_calc['premise_tokens']:,} tokens")
-        print(f"  Treatment: {token_calc['treatment_tokens']:,} tokens")
-        print(f"  Taxonomy: {token_calc['taxonomy_tokens']:,} tokens")
-        print(f"  Chapters: {token_calc['chapters_tokens']:,} tokens")
         print(f"  Total Context: {token_calc['total_context_tokens']:,} tokens")
         print(f"  Response Needed: {token_calc['response_tokens']:,} tokens")
         print(f"  Total Required: {token_calc['total_needed']:,} tokens")
@@ -293,46 +318,59 @@ class ProseGenerator:
             print(f"  ⚠️  Recommended Model: {token_calc['recommended_model']}")
         print()
 
-        # Get all content - fail early if required content missing
-        premise = self.project.get_premise()
-        if not premise:
-            raise Exception("No premise found. Generate premise first with /generate premise")
+        # Serialize context to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
 
-        treatment = self.project.get_treatment()
-        if not treatment:
-            raise Exception("No treatment found. Generate treatment first with /generate treatment")
+        # Build prompt requesting YAML output with prose
+        word_count_target = current_chapter.get('word_count_target', 3000)
 
-        taxonomy_selections = self.get_taxonomy_selections()  # Optional
-        all_chapters = self.load_all_chapters_with_prose()  # Will fail if no chapters exist
+        prompt = f"""Here is the current book content in YAML format:
 
-        # Find current chapter data
-        current_chapter = None
-        for ch in all_chapters:
-            if ch['number'] == chapter_number:
-                current_chapter = ch
-                break
+```yaml
+{context_yaml}
+```
 
-        if not current_chapter:
-            raise Exception(f"Chapter {chapter_number} not found")
+Generate full prose for Chapter {chapter_number}: "{current_chapter['title']}"
 
-        # Prepare template
-        jinja_template = Template(SEQUENTIAL_PROSE_TEMPLATE)
+Guidelines:
+1. Target ~{word_count_target} words of flowing narrative prose
+2. Perfect continuity from previous chapters (if any exist)
+3. Consistent character voices and development
+4. Proper pacing relative to the story arc
+5. Natural progression toward upcoming chapters
+6. Narrative style: {narrative_style}
+7. Build on established world-building, character traits, and plot threads
+8. Follow the chapter outline's key events, character developments, relationship beats, and tension points
 
-        # Render prompt with full context
-        prompt = jinja_template.render(
-            premise=premise,
-            taxonomy_selections=taxonomy_selections,
-            treatment=treatment,
-            all_chapters=all_chapters,
-            current_chapter_number=chapter_number,
-            current_chapter_title=current_chapter['title'],
-            word_count_target=current_chapter.get('word_count_target', 3000)
-        )
+CRITICAL: Return your response as YAML with this structure:
+```yaml
+premise:
+  text: |
+    ... (keep existing premise unchanged)
+  metadata: ...
+
+treatment:
+  text: |
+    ... (keep existing treatment unchanged)
+
+chapters:
+  - number: 1
+    title: "..."
+    # ... (keep all chapter outlines unchanged)
+
+prose:
+  - chapter: {chapter_number}
+    text: |
+      # Chapter {chapter_number}: {current_chapter['title']}
+
+      Your prose here... (~{word_count_target} words of narrative)
+```
+
+Do NOT wrap your response in additional markdown code fences (```).
+Return ONLY the YAML content with all sections (premise + treatment + chapters + prose)."""
 
         # Generate with API
         try:
-            # Get model from project settings or use recommended
-            model = None
             # Check if model has sufficient context
             model_obj = await self.client.get_model(self.model)
             if not model_obj:
@@ -348,52 +386,49 @@ class ProseGenerator:
             # Also check output capacity
             max_output = model_obj.get_max_output_tokens()
             if max_output and max_output < token_calc['response_tokens']:
-                print(f"⚠️  Warning: {model} may have insufficient output capacity")
+                print(f"⚠️  Warning: {self.model} may have insufficient output capacity")
                 print(f"   Model max output: {max_output:,} tokens")
                 print(f"   Required: {token_calc['response_tokens']:,} tokens")
 
-            # Use streaming_completion with calculated tokens
+            # Use streaming_completion with YAML response
             result = await self.client.streaming_completion(
                 model=self.model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": "You are a professional fiction writer. You always return valid YAML without additional formatting."},
+                    {"role": "user", "content": prompt}
+                ],
                 temperature=0.8,  # Higher for creative prose
-                display=True,  # Show streaming progress
+                display=True,
+                display_label=f"Generating Chapter {chapter_number} prose",
                 min_response_tokens=token_calc['response_tokens']
             )
 
-            if result:
-                # Extract content from response
-                content = result.get('content', result) if isinstance(result, dict) else result
+            if not result:
+                raise Exception("No response from API")
 
-                # Save chapter
-                chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
-                chapter_file.parent.mkdir(exist_ok=True)
+            # Extract response text
+            response_text = result.get('content', result) if isinstance(result, dict) else result
 
-                # Format with title
-                formatted_content = f"# Chapter {chapter_number}: {current_chapter['title']}\n\n{content}"
+            # Parse and save to files (includes culling if needed)
+            parse_result = self.parser.parse_and_save(
+                response=response_text,
+                project=self.project,
+                target_lod='prose',
+                original_context=context
+            )
 
-                with open(chapter_file, 'w') as f:
-                    f.write(formatted_content)
+            print(f"\n✅ Chapter {chapter_number} generated successfully")
 
-                # Update chapter metadata
-                current_chapter['prose_generated'] = True
-                current_chapter['actual_word_count'] = len(content.split())
-                current_chapter['generation_mode'] = 'sequential'
-
-                # Save updated chapters.yaml (remove full_prose to avoid bloat)
-                chapters_file = self.project.path / "chapters.yaml"
-                with open(chapters_file, 'w') as f:
-                    # Remove full_prose from all chapters before saving
-                    for ch in all_chapters:
-                        ch.pop('full_prose', None)
-                    yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
-
-                print(f"\n✅ Chapter {chapter_number} generated successfully")
-                print(f"   Word count: {len(content.split()):,}")
-
-                return formatted_content
-
-            raise Exception("No content generated")
+            # Read the saved prose
+            chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
+            if chapter_file.exists():
+                with open(chapter_file, 'r', encoding='utf-8') as f:
+                    prose_content = f.read()
+                    word_count = len(prose_content.split())
+                    print(f"   Word count: {word_count:,}")
+                    return prose_content
+            else:
+                raise Exception(f"Prose file not created for chapter {chapter_number}")
 
         except Exception as e:
             raise Exception(f"Failed to generate prose: {e}")
@@ -417,80 +452,6 @@ class ProseGenerator:
             chapter_number=chapter_number,
             narrative_style=narrative_style
         )
-
-    async def iterate_prose(self, chapter_number: int, feedback: str) -> str:
-        """
-        Iterate on existing chapter prose.
-
-        Args:
-            chapter_number: Chapter to iterate
-            feedback: Natural language feedback
-
-        Returns:
-            Updated chapter prose
-        """
-        # Load current chapter
-        chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
-        if not chapter_file.exists():
-            raise Exception(f"Chapter {chapter_number} prose not found. Generate it first.")
-
-        with open(chapter_file, 'r') as f:
-            current_prose = f.read()
-
-        # Create iteration prompt
-        prompt = f"""Current chapter prose:
-{current_prose}
-
-User feedback: {feedback}
-
-Please revise this chapter based on the feedback. Maintain the same overall structure and approximate length.
-Return the complete revised chapter prose (including the chapter title header)."""
-
-        # Get word count for dynamic token calculation
-        current_words = len(current_prose.split())
-
-        # Get model from project settings or default
-        model = None
-        # Generate revision with dynamic token calculation
-        result = await self.client.streaming_completion(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.6,  # Lower temp for controlled iteration
-            # No max_tokens - let it use full available context
-            # Estimate we need roughly same token count as current chapter
-            min_response_tokens=int(current_words * 1.3)
-        )
-
-        if result:
-            # Extract content from response
-            content = result.get('content', result) if isinstance(result, dict) else result
-
-            # Save updated chapter
-            with open(chapter_file, 'w') as f:
-                f.write(content)
-
-            # Update metadata
-            chapters_file = self.project.path / "chapters.yaml"
-            with open(chapters_file, 'r') as f:
-                all_chapters = yaml.safe_load(f)
-
-            for i, ch in enumerate(all_chapters):
-                if ch['number'] == chapter_number:
-                    all_chapters[i]['actual_word_count'] = len(content.split())
-                    all_chapters[i]['last_iteration'] = feedback[:100]
-                    break
-
-            with open(chapters_file, 'w') as f:
-                # Remove full_prose from all chapters before saving
-                for ch in all_chapters:
-                    ch.pop('full_prose', None)
-                yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
-
-            # Git commit handled by caller if needed
-
-            return result
-
-        raise Exception("Failed to iterate prose")
 
     async def generate_all_chapters(
         self,
@@ -568,7 +529,7 @@ Return the complete revised chapter prose (including the chapter title header)."
         narrative_style: str = "third person limited"
     ) -> str:
         """
-        Generate chapter prose using multi-model competition.
+        Generate chapter prose using multi-model competition with unified context.
 
         Args:
             chapter_number: Chapter to generate
@@ -579,79 +540,162 @@ Return the complete revised chapter prose (including the chapter title header)."
         """
         from .multi_model import MultiModelGenerator
 
-        # Get context
-        premise = self.project.get_premise()
-        treatment = self.project.get_treatment()
-        genre = self.project.metadata.genre if self.project.metadata else None
+        # Build unified context (premise + treatment + chapters + existing prose)
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod='prose',
+            include_downstream=True
+        )
 
-        # Load chapter info
-        all_chapters = self.load_all_chapters_with_prose()
+        if 'premise' not in context:
+            raise Exception("No premise found. Generate premise first with /generate premise")
+        if 'treatment' not in context:
+            raise Exception("No treatment found. Generate treatment first with /generate treatment")
+        if 'chapters' not in context:
+            raise Exception("No chapters found. Generate chapters first with /generate chapters")
+
+        # Find current chapter info
+        chapters = context['chapters']
         current_chapter = None
-        for ch in all_chapters:
+        for ch in chapters:
             if ch['number'] == chapter_number:
                 current_chapter = ch
                 break
 
         if not current_chapter:
-            raise Exception(f"Chapter {chapter_number} not found")
+            raise Exception(f"Chapter {chapter_number} not found in outlines")
+
+        # Check token requirements
+        token_calc = await self.calculate_prose_context_tokens(chapter_number)
+
+        # Serialize context to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
+
+        # Build prompt (same as generate_chapter_sequential)
+        word_count_target = current_chapter.get('word_count_target', 3000)
+
+        prompt = f"""Here is the current book content in YAML format:
+
+```yaml
+{context_yaml}
+```
+
+Generate full prose for Chapter {chapter_number}: "{current_chapter['title']}"
+
+Guidelines:
+1. Target ~{word_count_target} words of flowing narrative prose
+2. Perfect continuity from previous chapters (if any exist)
+3. Consistent character voices and development
+4. Proper pacing relative to the story arc
+5. Natural progression toward upcoming chapters
+6. Narrative style: {narrative_style}
+7. Build on established world-building, character traits, and plot threads
+8. Follow the chapter outline's key events, character developments, relationship beats, and tension points
+
+CRITICAL: Return your response as YAML with this structure:
+```yaml
+premise:
+  text: |
+    ... (keep existing premise unchanged)
+  metadata: ...
+
+treatment:
+  text: |
+    ... (keep existing treatment unchanged)
+
+chapters:
+  - number: 1
+    title: "..."
+    # ... (keep all chapter outlines unchanged)
+
+prose:
+  - chapter: {chapter_number}
+    text: |
+      # Chapter {chapter_number}: {current_chapter['title']}
+
+      Your prose here... (~{word_count_target} words of narrative)
+```
+
+Do NOT wrap your response in additional markdown code fences (```).
+Return ONLY the YAML content with all sections (premise + treatment + chapters + prose)."""
 
         # Create multi-model generator
         multi_gen = MultiModelGenerator(self.client, self.project)
 
         # Define generator function that takes model parameter
         async def generate_with_model(model: str) -> str:
-            # Temporarily override self.model
-            original_model = self.model
-            self.model = model
-            try:
-                result = await self.generate_chapter_sequential(
-                    chapter_number=chapter_number,
-                    narrative_style=narrative_style
-                )
-                return result
-            finally:
-                self.model = original_model
+            # Check model capabilities
+            model_obj = await self.client.get_model(model)
+            if not model_obj:
+                raise Exception(f"Failed to fetch model capabilities for {model}")
+
+            # Generate with this model using dry_run
+            result = await self.client.streaming_completion(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a professional fiction writer. You always return valid YAML without additional formatting."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.8,
+                display=True,
+                display_label=f"Generating Chapter {chapter_number} prose ({model})",
+                min_response_tokens=token_calc['response_tokens']
+            )
+
+            if not result:
+                raise Exception(f"No response from {model}")
+
+            response_text = result.get('content', result) if isinstance(result, dict) else result
+
+            # Parse with dry_run to validate but not save
+            parse_result = self.parser.parse_and_save(
+                response=response_text,
+                project=self.project,
+                target_lod='prose',
+                original_context=context,
+                dry_run=True
+            )
+
+            # Return the raw response for comparison
+            return response_text
 
         # Run competition
-        result = await multi_gen.generate_parallel(
+        competition_result = await multi_gen.generate_parallel(
             generator_func=generate_with_model,
             content_type="prose",
             file_prefix=f"chapter_{chapter_number:02d}",
             context={
-                'premise': premise,
-                'treatment': treatment,
-                'genre': genre,
+                'premise': context['premise']['text'],
+                'treatment': context['treatment']['text'],
+                'genre': self.project.metadata.genre if self.project.metadata else None,
                 'chapter_number': chapter_number,
                 'chapter_title': current_chapter['title']
             }
         )
 
-        if not result:
+        if not competition_result:
             raise Exception("Multi-model competition failed or was cancelled")
 
-        if result.get('fallback'):
-            prose_content = result['winner']['content']
-        else:
-            prose_content = result['winner']['content']
+        # Get winning response
+        winning_response = competition_result['winner']['content']
 
-        # Save winning chapter (the normal generate already saved, but we need to save winner)
+        # Now save the winner for real
+        parse_result = self.parser.parse_and_save(
+            response=winning_response,
+            project=self.project,
+            target_lod='prose',
+            original_context=context,
+            dry_run=False  # Actually save this time
+        )
+
+        # Read the saved prose
         chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
-        chapter_file.parent.mkdir(exist_ok=True)
-
-        with open(chapter_file, 'w') as f:
-            f.write(prose_content)
-
-        # Update chapter metadata
-        current_chapter['prose_generated'] = True
-        current_chapter['actual_word_count'] = len(prose_content.split())
-        current_chapter['generation_mode'] = 'sequential_multimodel'
-
-        # Save updated chapters.yaml (remove full_prose to avoid bloat)
-        chapters_file = self.project.path / "chapters.yaml"
-        with open(chapters_file, 'w') as f:
-            # Remove full_prose from all chapters before saving
-            for ch in all_chapters:
-                ch.pop('full_prose', None)
-            yaml.dump(all_chapters, f, default_flow_style=False, sort_keys=False)
-
-        return prose_content
+        if chapter_file.exists():
+            with open(chapter_file, 'r', encoding='utf-8') as f:
+                prose_content = f.read()
+                word_count = len(prose_content.split())
+                print(f"\n✅ Chapter {chapter_number} generated successfully (multi-model)")
+                print(f"   Word count: {word_count:,}")
+                return prose_content
+        else:
+            raise Exception(f"Prose file not created for chapter {chapter_number}")

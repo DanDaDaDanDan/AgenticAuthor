@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Unified LOD Context System** 🏗️
+  - New architecture: files stay separate, LLM sees/edits unified YAML
+  - LODContextBuilder: Combines all files into single YAML structure for LLM
+  - LODResponseParser: Splits LLM's YAML response back to individual files
+  - Atomic upward sync: When iterating chapters/prose, premise/treatment update in same call
+  - Automatic culling: Downstream content deleted when upstream changes
+  - Dry-run mode for multi-model competition (validate without saving)
+  - All generators now use unified context (treatment, chapters, prose)
+  - Enhanced validation: Ensures all required sections present in responses
+
+### Fixed
+- **Multi-Model Competition Architecture** ✅
+  - Fixed race conditions where parallel models overwrote each other's files
+  - Added `dry_run` parameter to `parse_and_save()` for validation without saving
+  - Each competitor now generates with `dry_run=True`, winner saved with `dry_run=False`
+  - Updated all `generate_with_competition()` methods to use new pattern
+- **Dead Code Removal** 🧹
+  - Removed obsolete iteration methods: `iterate()`, `iterate_chapter()`, `iterate_prose()`
+  - All iteration now goes through `IterationCoordinator._execute_patch()`
+  - Removed 200+ lines of duplicate/obsolete code from `lod_sync.py`
+  - Removed old `_build_context()` and `_get_lod_content()` methods
+- **LOD Sync Consistency Check** ✅
+  - Updated `check_consistency()` to use LODContextBuilder instead of old methods
+  - Now builds unified YAML context for more accurate consistency checking
+- **Prose Validation** ✅
+  - Fixed validation to check for `premise` and `treatment` sections (not just `chapters` and `prose`)
+  - Ensures LLM returns complete YAML structure as requested
+- **Encoding Auto-Fix** ✅
+  - Standardized encoding handling across all file readers
+  - Auto-fix files to UTF-8 when wrong encoding detected
+  - Consistent behavior in `lod_context.py` and `lod_sync.py`
+
 ### Changed ⚠️  BREAKING
 - **Shared Git Repository Architecture**
   - Changed from per-project git repos to single shared repo at `books/.git`

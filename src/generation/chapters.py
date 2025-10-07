@@ -10,6 +10,8 @@ from ..api import OpenRouterClient
 from ..models import Project, ChapterOutline
 from rich.console import Console
 from ..config import get_settings
+from .lod_context import LODContextBuilder
+from .lod_parser import LODResponseParser
 
 
 DEFAULT_CHAPTERS_TEMPLATE = """Based on this treatment:
@@ -111,6 +113,8 @@ class ChapterGenerator:
         self.project = project
         self.model = model
         self.console = Console()
+        self.context_builder = LODContextBuilder()
+        self.parser = LODResponseParser()
 
     def _calculate_chapter_count(self, total_words: int) -> int:
         """Calculate recommended chapter count based on word count."""
@@ -125,7 +129,7 @@ class ChapterGenerator:
         feedback: Optional[str] = None
     ) -> List[ChapterOutline]:
         """
-        Generate chapter outlines from treatment.
+        Generate chapter outlines from treatment using unified LOD context.
 
         Args:
             chapter_count: Number of chapters (auto-calculated if not provided)
@@ -136,51 +140,113 @@ class ChapterGenerator:
         Returns:
             List of ChapterOutline objects
         """
-        # Load treatment
-        treatment = self.project.get_treatment()
-        if not treatment:
+        # Build context (premise + treatment for chapter generation)
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod='treatment',  # Include up to treatment
+            include_downstream=False
+        )
+
+        if 'premise' not in context:
+            raise Exception("No premise found. Generate premise first with /generate premise")
+        if 'treatment' not in context:
             raise Exception("No treatment found. Generate treatment first with /generate treatment")
 
         # Calculate chapter count if not provided
         if not chapter_count:
             chapter_count = self._calculate_chapter_count(total_words)
 
-        # Load existing chapters if feedback is provided (iteration mode)
-        existing_chapters_yaml = None
+        # Serialize context to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
+
+        # Build unified prompt
+        feedback_instruction = ""
         if feedback:
-            chapters_file = self.project.path / "chapters.yaml"
-            if chapters_file.exists():
-                with open(chapters_file, 'r') as f:
-                    existing_chapters_data = yaml.safe_load(f)
-                    existing_chapters_yaml = yaml.dump(existing_chapters_data, default_flow_style=False, sort_keys=False)
+            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nPlease incorporate the above feedback while generating the chapters."
 
-        # Prepare template
-        template_str = template or DEFAULT_CHAPTERS_TEMPLATE
-        jinja_template = Template(template_str)
-
-        # Render prompt
-        prompt = jinja_template.render(
-            treatment=treatment,
-            chapter_count=chapter_count,
-            total_words=total_words
-        )
-
-        # Append existing chapters and feedback if provided (for iteration)
-        if feedback:
-            if existing_chapters_yaml:
-                prompt = f"""Here are the current chapter outlines:
+        prompt = f"""Here is the current book content in YAML format:
 
 ```yaml
-{existing_chapters_yaml}
+{context_yaml}
 ```
 
-User feedback: {feedback}
+Generate {chapter_count} detailed chapter outlines based on the treatment above.
 
-Please modify the existing chapters based on the user's feedback. Preserve what works well and change what needs improvement. Return the updated chapters in the same JSON format as specified below.
+Target: {total_words} total words distributed across chapters
 
-{prompt}"""
-            else:
-                prompt += f"\n\nADDITIONAL USER GUIDANCE:\n{feedback}\n\nPlease incorporate the above feedback into the chapter outlines."
+IMPORTANT: Create comprehensive, professional-quality outlines with 15-20 total beats per chapter.
+
+For each chapter, provide:
+1. Chapter number
+2. Title (evocative, specific, not generic)
+3. POV character (whose perspective we follow)
+4. Summary (3-4 sentences capturing the essence)
+5. Key events (8-10 specific plot beats showing what happens)
+6. Character developments (3-4 internal changes/realizations)
+7. Relationship beats (2-3 how relationships evolve)
+8. Tension points (2-3 what raises stakes/urgency)
+9. Sensory details (2-3 atmospheric/sensory elements)
+10. Subplot threads (1-2 if applicable)
+11. Word count target (distribute {total_words} words across chapters)
+12. Act designation (Act I, Act II, or Act III)
+
+Guidelines for rich outlines:
+- Each key_event should be a complete story beat, not just "Clara talks to Amos"
+- Character developments show internal change, not just actions
+- Relationship beats track evolving dynamics between specific characters
+- Tension points identify what creates urgency or raises stakes
+- Be specific: names, places, emotions, not generic descriptions
+
+Pacing structure:
+- Act I: ~25% of chapters (setup, inciting incident, establishing stakes)
+- Act II: ~50% of chapters (rising action, complications, midpoint shift)
+- Act III: ~25% of chapters (climax, resolution, denouement)
+- Each chapter ends with momentum (cliffhanger, revelation, or decision)
+- Vary chapter lengths between 2500-4000 words for rhythm{feedback_instruction}
+
+CRITICAL: Return your response as YAML with this structure:
+```yaml
+premise:
+  text: |
+    ... (keep existing premise unchanged)
+  metadata:
+    ... (keep existing metadata unchanged)
+
+treatment:
+  text: |
+    ... (keep existing treatment unchanged)
+
+chapters:
+  - number: 1
+    title: "Specific Evocative Title"
+    pov: "Character Name"
+    act: "Act I"
+    summary: "3-4 sentences describing what happens..."
+    key_events:
+      - "Opening hook/scene that draws reader in"
+      - "Inciting incident or triggering event"
+      - ...
+    character_developments:
+      - "Internal conflict or desire revealed"
+      - ...
+    relationship_beats:
+      - "How protagonist relates to another character"
+      - ...
+    tension_points:
+      - "What deadline or threat looms"
+      - ...
+    sensory_details:
+      - "Key visual or atmospheric element"
+      - ...
+    subplot_threads:
+      - "Secondary storyline progression"
+    word_count_target: 3000
+  - number: 2
+    # ... (continue for all {chapter_count} chapters)
+```
+
+Do NOT wrap your response in additional markdown code fences (```).
+Return ONLY the YAML content with premise + treatment + chapters sections."""
 
         # Generate with API
         try:
@@ -190,7 +256,7 @@ Please modify the existing chapters based on the user's feedback. Preserve what 
 
             if logger:
                 logger.debug(f"Starting chapter generation: model={self.model}, chapter_count={chapter_count}, total_words={total_words}")
-                logger.debug(f"Treatment length: {len(treatment)} chars")
+                logger.debug(f"Context size: {len(context_yaml)} chars")
                 logger.debug(f"Prompt length: {len(prompt)} chars")
 
             # Get model capabilities to determine appropriate token allocation
@@ -206,138 +272,84 @@ Please modify the existing chapters based on the user's feedback. Preserve what 
             if not model_obj:
                 raise Exception(f"Failed to fetch model capabilities for {self.model}")
 
-            if model_obj:
-                max_output = model_obj.get_max_output_tokens()
+            max_output = model_obj.get_max_output_tokens()
 
-                # Adjust based on actual model capabilities
-                if max_output and max_output < min_tokens:
-                    # Use 80% of available output capacity to avoid hitting limits
-                    min_tokens = int(max_output * 0.8)
+            # Adjust based on actual model capabilities
+            if max_output and max_output < min_tokens:
+                # Use 80% of available output capacity to avoid hitting limits
+                min_tokens = int(max_output * 0.8)
 
-                    self.console.print(f"\n[yellow]⚠️  Model output capacity: {max_output} tokens[/yellow]")
-                    self.console.print(f"[dim]Adjusting generation to use {min_tokens} tokens[/dim]")
-                    self.console.print(f"[dim]Consider:[/dim]")
-                    self.console.print(f"[dim]  • Generating fewer chapters at once[/dim]")
-                    self.console.print(f"[dim]  • Using a model with higher output capacity[/dim]")
+                self.console.print(f"\n[yellow]⚠️  Model output capacity: {max_output} tokens[/yellow]")
+                self.console.print(f"[dim]Adjusting generation to use {min_tokens} tokens[/dim]")
+                self.console.print(f"[dim]Consider:[/dim]")
+                self.console.print(f"[dim]  • Generating fewer chapters at once[/dim]")
+                self.console.print(f"[dim]  • Using a model with higher output capacity[/dim]")
 
-                    # Suggest alternatives if output is very limited
-                    if max_output < 3000:
-                        models_list = await self.client.discover_models()
-                        alternative = models_list.select_by_requirements(
-                            min_output_tokens=5000,
-                            exclude_models=[model]
-                        )
-                        if alternative:
-                            self.console.print(f"[dim]  • Try: {alternative.id} (supports {alternative.get_max_output_tokens() or 'unlimited'} tokens)[/dim]")
-                    self.console.print()
+                # Suggest alternatives if output is very limited
+                if max_output < 3000:
+                    models_list = await self.client.discover_models()
+                    alternative = models_list.select_by_requirements(
+                        min_output_tokens=5000,
+                        exclude_models=[self.model]
+                    )
+                    if alternative:
+                        self.console.print(f"[dim]  • Try: {alternative.id} (supports {alternative.get_max_output_tokens() or 'unlimited'} tokens)[/dim]")
+                self.console.print()
 
             if logger:
-                logger.debug(f"Calling json_completion with display_field='summary', display_mode='array_first', min_response_tokens={min_tokens}")
+                logger.debug(f"Calling streaming_completion with min_response_tokens={min_tokens}")
 
-            result = await self.client.json_completion(
+            # Use streaming_completion with YAML response
+            result = await self.client.streaming_completion(
                 model=self.model,
-                prompt=prompt,
+                messages=[
+                    {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                    {"role": "user", "content": prompt}
+                ],
                 temperature=0.7,  # Slightly higher for more creative variety
-                display_field="summary",  # Display summaries as they complete
+                stream=True,
+                display=True,
                 display_label="Generating chapter outlines",
-                display_mode="array_progressive",  # Show all chapter summaries as they complete
-                # No max_tokens - let it use full available context
                 min_response_tokens=min_tokens
             )
 
+            if not result:
+                raise Exception("No response from API")
+
+            # Extract response text
+            response_text = result.get('content', result) if isinstance(result, dict) else result
+
             if logger:
-                logger.debug(f"json_completion returned: type={type(result)}, is_list={isinstance(result, list)}, length={len(result) if isinstance(result, list) else 'N/A'}")
+                logger.debug(f"Received response, length: {len(response_text)} chars")
 
-            if result and isinstance(result, list):
-                # Convert to ChapterOutline objects using robust from_api_response method
-                chapters = []
-                for chapter_data in result:
-                    # Use the model's from_api_response method which handles missing/extra fields
-                    chapter = ChapterOutline.from_api_response(chapter_data)
-                    chapters.append(chapter)
+            # Parse and save to files (includes culling downstream)
+            parse_result = self.parser.parse_and_save(
+                response=response_text,
+                project=self.project,
+                target_lod='chapters',
+                original_context=context
+            )
 
-                # Save to project
-                chapters_file = self.project.path / "chapters.yaml"
-                chapters_data = []
-                for chapter in chapters:
-                    # Use Pydantic's model_dump to get all fields, excluding None values
-                    chapter_dict = chapter.model_dump(exclude_none=True)
-                    chapters_data.append(chapter_dict)
+            if logger:
+                logger.debug(f"Parse result: updated_files={parse_result['updated_files']}, deleted_files={parse_result['deleted_files']}")
 
-                with open(chapters_file, 'w') as f:
-                    yaml.dump(chapters_data, f, default_flow_style=False, sort_keys=False)
+            # Load the saved chapters and return as ChapterOutline objects
+            chapters_data = self.project.get_chapters()
+            if not chapters_data:
+                raise Exception("No chapters found after generation")
 
-                # Git commit handled by caller if needed
+            chapters = []
+            for chapter_dict in chapters_data:
+                chapter = ChapterOutline.from_api_response(chapter_dict)
+                chapters.append(chapter)
 
-                return chapters
+            if logger:
+                logger.debug(f"Successfully generated {len(chapters)} chapters")
 
-            raise Exception("Invalid response format from API")
+            return chapters
 
         except Exception as e:
             raise Exception(f"Failed to generate chapters: {e}")
-
-    async def iterate_chapter(self, chapter_number: int, feedback: str) -> ChapterOutline:
-        """
-        Iterate on a specific chapter outline.
-
-        Args:
-            chapter_number: Chapter to iterate on
-            feedback: Natural language feedback
-
-        Returns:
-            Updated ChapterOutline
-        """
-        # Load current chapters
-        chapters_file = self.project.path / "chapters.yaml"
-        if not chapters_file.exists():
-            raise Exception("No chapter outlines found. Generate chapters first with /generate chapters")
-
-        with open(chapters_file, 'r') as f:
-            chapters_data = yaml.safe_load(f)
-
-        # Find the chapter
-        chapter_data = None
-        chapter_index = None
-        for i, ch in enumerate(chapters_data):
-            if ch['number'] == chapter_number:
-                chapter_data = ch
-                chapter_index = i
-                break
-
-        if not chapter_data:
-            raise Exception(f"Chapter {chapter_number} not found")
-
-        # Create iteration prompt
-        prompt = f"""Current chapter outline:
-{json.dumps(chapter_data, indent=2)}
-
-User feedback: {feedback}
-
-Please revise this chapter outline based on the feedback. Return the updated chapter in the same JSON format."""
-
-        # Generate revision
-        result = await self.client.json_completion(
-            model=self.model,
-            prompt=prompt,
-            temperature=0.5,
-            display_field="summary",  # Display the updated summary
-            display_label=f"Revising chapter {chapter_number}",
-            # No max_tokens - let it use full available context
-            min_response_tokens=800  # Single chapter outline needs moderate space
-        )
-
-        if result:
-            # Update the chapter
-            chapters_data[chapter_index] = result
-
-            # Save updated chapters
-            with open(chapters_file, 'w') as f:
-                yaml.dump(chapters_data, f, default_flow_style=False, sort_keys=False)
-
-            # Return as ChapterOutline using robust from_api_response method
-            return ChapterOutline.from_api_response(result)
-
-        raise Exception("Failed to iterate chapter")
 
     async def generate_with_competition(
         self,
@@ -347,7 +359,7 @@ Please revise this chapter outline based on the feedback. Return the updated cha
         feedback: Optional[str] = None
     ) -> List[ChapterOutline]:
         """
-        Generate chapter outlines using multi-model competition.
+        Generate chapter outlines using multi-model competition with unified context.
 
         Args:
             chapter_count: Number of chapters (auto-calculated if not provided)
@@ -360,71 +372,198 @@ Please revise this chapter outline based on the feedback. Return the updated cha
         """
         from .multi_model import MultiModelGenerator
 
-        # Get context
-        premise = self.project.get_premise()
-        treatment = self.project.get_treatment()
-        genre = self.project.metadata.genre if self.project.metadata else None
+        # Build context (premise + treatment for chapter generation)
+        context = self.context_builder.build_context(
+            project=self.project,
+            target_lod='treatment',
+            include_downstream=False
+        )
 
-        # Calculate chapter count if needed
+        if 'premise' not in context:
+            raise Exception("No premise found. Generate premise first with /generate premise")
+        if 'treatment' not in context:
+            raise Exception("No treatment found. Generate treatment first with /generate treatment")
+
+        # Calculate chapter count if not provided
         if not chapter_count:
             chapter_count = self._calculate_chapter_count(total_words)
+
+        # Serialize context to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
+
+        # Build unified prompt (same as generate() method)
+        feedback_instruction = ""
+        if feedback:
+            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nPlease incorporate the above feedback while generating the chapters."
+
+        prompt = f"""Here is the current book content in YAML format:
+
+```yaml
+{context_yaml}
+```
+
+Generate {chapter_count} detailed chapter outlines based on the treatment above.
+
+Target: {total_words} total words distributed across chapters
+
+IMPORTANT: Create comprehensive, professional-quality outlines with 15-20 total beats per chapter.
+
+For each chapter, provide:
+1. Chapter number
+2. Title (evocative, specific, not generic)
+3. POV character (whose perspective we follow)
+4. Summary (3-4 sentences capturing the essence)
+5. Key events (8-10 specific plot beats showing what happens)
+6. Character developments (3-4 internal changes/realizations)
+7. Relationship beats (2-3 how relationships evolve)
+8. Tension points (2-3 what raises stakes/urgency)
+9. Sensory details (2-3 atmospheric/sensory elements)
+10. Subplot threads (1-2 if applicable)
+11. Word count target (distribute {total_words} words across chapters)
+12. Act designation (Act I, Act II, or Act III)
+
+Guidelines for rich outlines:
+- Each key_event should be a complete story beat, not just "Clara talks to Amos"
+- Character developments show internal change, not just actions
+- Relationship beats track evolving dynamics between specific characters
+- Tension points identify what creates urgency or raises stakes
+- Be specific: names, places, emotions, not generic descriptions
+
+Pacing structure:
+- Act I: ~25% of chapters (setup, inciting incident, establishing stakes)
+- Act II: ~50% of chapters (rising action, complications, midpoint shift)
+- Act III: ~25% of chapters (climax, resolution, denouement)
+- Each chapter ends with momentum (cliffhanger, revelation, or decision)
+- Vary chapter lengths between 2500-4000 words for rhythm{feedback_instruction}
+
+CRITICAL: Return your response as YAML with this structure:
+```yaml
+premise:
+  text: |
+    ... (keep existing premise unchanged)
+  metadata:
+    ... (keep existing metadata unchanged)
+
+treatment:
+  text: |
+    ... (keep existing treatment unchanged)
+
+chapters:
+  - number: 1
+    title: "Specific Evocative Title"
+    pov: "Character Name"
+    act: "Act I"
+    summary: "3-4 sentences describing what happens..."
+    key_events:
+      - "Opening hook/scene that draws reader in"
+      - "Inciting incident or triggering event"
+      - ...
+    character_developments:
+      - "Internal conflict or desire revealed"
+      - ...
+    relationship_beats:
+      - "How protagonist relates to another character"
+      - ...
+    tension_points:
+      - "What deadline or threat looms"
+      - ...
+    sensory_details:
+      - "Key visual or atmospheric element"
+      - ...
+    subplot_threads:
+      - "Secondary storyline progression"
+    word_count_target: 3000
+  - number: 2
+    # ... (continue for all {chapter_count} chapters)
+```
+
+Do NOT wrap your response in additional markdown code fences (```).
+Return ONLY the YAML content with premise + treatment + chapters sections."""
 
         # Create multi-model generator
         multi_gen = MultiModelGenerator(self.client, self.project)
 
         # Define generator function that takes model parameter
         async def generate_with_model(model: str) -> str:
-            # Temporarily override self.model
-            original_model = self.model
-            self.model = model
-            try:
-                chapters = await self.generate(
-                    chapter_count=chapter_count,
-                    total_words=total_words,
-                    template=template,
-                    feedback=feedback
-                )
-                # Convert chapters to YAML for comparison
-                chapters_data = []
-                for chapter in chapters:
-                    chapter_dict = chapter.model_dump(exclude_none=True)
-                    chapters_data.append(chapter_dict)
-                return yaml.dump(chapters_data, default_flow_style=False, sort_keys=False)
-            finally:
-                self.model = original_model
+            # Get model capabilities
+            model_obj = await self.client.get_model(model)
+            if not model_obj:
+                raise Exception(f"Failed to fetch model capabilities for {model}")
+
+            max_output = model_obj.get_max_output_tokens()
+            min_tokens = 5000  # Default for rich outlines
+
+            if max_output and max_output < min_tokens:
+                min_tokens = int(max_output * 0.8)
+
+            # Generate with this model using dry_run
+            result = await self.client.streaming_completion(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                stream=True,
+                display=True,
+                display_label=f"Generating chapters ({model})",
+                min_response_tokens=min_tokens
+            )
+
+            if not result:
+                raise Exception(f"No response from {model}")
+
+            response_text = result.get('content', result) if isinstance(result, dict) else result
+
+            # Parse with dry_run to validate but not save
+            parse_result = self.parser.parse_and_save(
+                response=response_text,
+                project=self.project,
+                target_lod='chapters',
+                original_context=context,
+                dry_run=True
+            )
+
+            # Return the raw response for comparison
+            return response_text
 
         # Run competition
-        result = await multi_gen.generate_parallel(
+        competition_result = await multi_gen.generate_parallel(
             generator_func=generate_with_model,
             content_type="chapters",
             file_prefix="chapters",
             context={
-                'premise': premise,
-                'treatment': treatment,
-                'genre': genre,
+                'premise': context['premise']['text'],
+                'treatment': context['treatment']['text'],
+                'genre': self.project.metadata.genre if self.project.metadata else None,
                 'chapter_count': chapter_count,
                 'total_words': total_words
             }
         )
 
-        if not result:
+        if not competition_result:
             raise Exception("Multi-model competition failed or was cancelled")
 
-        if result.get('fallback'):
-            yaml_content = result['winner']['content']
-        else:
-            yaml_content = result['winner']['content']
+        # Get winning response
+        winning_response = competition_result['winner']['content']
 
-        # Parse YAML back to chapter objects
-        chapters_data = yaml.safe_load(yaml_content)
+        # Now save the winner for real
+        parse_result = self.parser.parse_and_save(
+            response=winning_response,
+            project=self.project,
+            target_lod='chapters',
+            original_context=context,
+            dry_run=False  # Actually save this time
+        )
+
+        # Load the saved chapters and return as ChapterOutline objects
+        chapters_data = self.project.get_chapters()
+        if not chapters_data:
+            raise Exception("No chapters found after saving winner")
+
         chapters = []
-        for chapter_data in chapters_data:
-            chapter = ChapterOutline.from_api_response(chapter_data)
+        for chapter_dict in chapters_data:
+            chapter = ChapterOutline.from_api_response(chapter_dict)
             chapters.append(chapter)
-
-        # Save to project (the normal generate() already saved, but we need to save winner)
-        chapters_file = self.project.path / "chapters.yaml"
-        with open(chapters_file, 'w') as f:
-            yaml.dump(chapters_data, f, default_flow_style=False, sort_keys=False)
 
         return chapters
