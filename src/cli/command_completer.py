@@ -224,6 +224,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Set iteration target (premise/treatment/chapters/prose/taxonomy)',
             'usage': '/iterate <target>'
         },
+        'sync': {
+            'description': 'Check and sync LODs for consistency',
+            'usage': '/sync <lod>'
+        },
         'analyze': {
             'description': 'Analyze story for issues',
             'usage': '/analyze [type]'

@@ -74,6 +74,7 @@ class InteractiveSession:
             'models': self.list_models,
             'generate': self.generate_content,
             'iterate': self.iterate_content,
+            'sync': self.sync_lods,
             'analyze': self.analyze_story,
             'export': self.export_story,
             'git': self.git_command,
@@ -956,6 +957,7 @@ class InteractiveSession:
             ("/models", "List available models"),
             ("/generate <type>", "Generate content (premise/treatment/chapters/prose)"),
             ("/iterate <target>", "Set iteration target, then type feedback naturally"),
+            ("/sync [lod]", "Check and sync LODs (premise/treatment/chapters/prose)"),
             ("/analyze [type]", "Run story analysis"),
             ("/export [format]", "Export story"),
             ("/git <command>", "View history or commit changes (status/log/diff/commit)"),
@@ -2129,6 +2131,174 @@ class InteractiveSession:
         self.console.rule(style="cyan")
         self.console.print(f"\n[green]Full report saved:[/green] {result['report_path']}")
         self.console.print()
+
+    async def sync_lods(self, args: str):
+        """Check and sync LODs for consistency."""
+        if not self.project:
+            self._print("[red]No project open. Use /open or /new first.[/red]")
+            return
+
+        if not self.settings.active_model:
+            self._print("[red]No model selected. Use /model first.[/red]")
+            return
+
+        # Parse arguments
+        args = args.strip().lower()
+        modified_lod = args if args else None
+
+        # Show usage if no args
+        if not modified_lod:
+            self._print("[yellow]Usage: /sync <lod>[/yellow]")
+            self._print("[dim]Check consistency from the perspective of a modified LOD:[/dim]")
+            self._print()
+            self._print("  [cyan]/sync premise[/cyan]   - Check if treatment/chapters/prose match premise")
+            self._print("  [cyan]/sync treatment[/cyan] - Check if chapters/prose match treatment")
+            self._print("  [cyan]/sync chapters[/cyan]  - Check if treatment/prose match chapters")
+            self._print("  [cyan]/sync prose[/cyan]     - Check if chapters match prose")
+            self._print()
+            self._print("[dim]Example:[/dim]")
+            self._print("  [bold]/sync chapters[/bold]")
+            self._print("  [dim]Checks if premise, treatment, and prose are consistent with chapters.yaml[/dim]")
+            return
+
+        # Validate LOD
+        valid_lods = ['premise', 'treatment', 'chapters', 'prose']
+        if modified_lod not in valid_lods:
+            self._print(f"[red]Invalid LOD:[/red] {modified_lod}")
+            self._print(f"[dim]Valid LODs: {', '.join(valid_lods)}[/dim]")
+            return
+
+        try:
+            from ..generation.lod_sync import LODSyncManager
+            from rich.prompt import Prompt
+
+            self._print(f"\n[cyan]Checking consistency from {modified_lod} perspective...[/cyan]")
+
+            # Create sync manager
+            sync_manager = LODSyncManager(self.client, self.project, self.settings.active_model)
+
+            # Check consistency
+            consistency_report = await sync_manager.check_consistency(
+                modified_lod=modified_lod,
+                changes_description=f"Manual consistency check from {modified_lod}"
+            )
+
+            # Display results
+            inconsistencies = consistency_report.get('inconsistencies', [])
+            is_consistent = consistency_report.get('is_consistent', True)
+
+            if is_consistent:
+                self._print(f"\n[green]✓ All LODs are consistent with {modified_lod}[/green]")
+                return
+
+            # Show inconsistencies
+            self._print()
+            self.console.rule("[yellow]📋 Inconsistencies Found[/yellow]", style="yellow")
+            self._print()
+
+            self._print(f"[yellow]⚠  Found {len(inconsistencies)} inconsistenc{'y' if len(inconsistencies) == 1 else 'ies'}:[/yellow]\n")
+
+            table = Table(show_header=True, header_style="bold cyan", show_lines=True)
+            table.add_column("LOD", style="cyan")
+            table.add_column("Severity", style="yellow")
+            table.add_column("Issue", style="white")
+            table.add_column("Location", style="dim")
+
+            for issue in inconsistencies:
+                severity = issue.get('severity', 'moderate').upper()
+                severity_color = {"MINOR": "green", "MODERATE": "yellow", "MAJOR": "red"}.get(severity, "yellow")
+
+                table.add_row(
+                    issue.get('lod', 'unknown'),
+                    f"[{severity_color}]{severity}[/{severity_color}]",
+                    issue.get('issue', 'Unknown'),
+                    issue.get('location', 'N/A')
+                )
+
+            self.console.print(table)
+            self._print()
+
+            # Show reasoning
+            reasoning = consistency_report.get('reasoning', '')
+            if reasoning:
+                self._print(f"[bold]Reasoning:[/bold] {reasoning}\n")
+
+            # Show suggestions
+            self._print("[bold]Suggested fixes:[/bold]")
+            for i, issue in enumerate(inconsistencies, 1):
+                self._print(f"  {i}. [cyan]{issue.get('lod')}:[/cyan] {issue.get('suggestion', 'No suggestion')}")
+
+            self._print()
+
+            # Ask user what to do
+            self._print("[bold]Options:[/bold]")
+            self._print("  [cyan]all[/cyan]     - Sync all affected LODs automatically")
+            self._print("  [cyan]<lod>[/cyan]    - Sync specific LOD (e.g., 'treatment', 'chapters')")
+            self._print("  [cyan]skip[/cyan]    - Skip sync for now (keep inconsistent)")
+
+            choice = Prompt.ask("\nSync LODs?", default="skip")
+
+            if choice == "skip":
+                self._print("[dim]Skipping LOD sync.[/dim]")
+                return
+
+            # Determine which LODs to sync
+            lods_to_sync = []
+            if choice == "all":
+                lods_to_sync = list(set(i.get('lod') for i in inconsistencies))
+            elif choice in valid_lods:
+                lods_to_sync = [choice]
+            else:
+                self._print(f"[red]Invalid choice: {choice}[/red]")
+                return
+
+            # Perform sync
+            for lod in lods_to_sync:
+                try:
+                    self._print(f"\n[cyan]Syncing {lod}...[/cyan]")
+
+                    # Get inconsistencies for this LOD
+                    lod_issues = [i for i in inconsistencies if i.get('lod') == lod]
+
+                    # Sync
+                    updated_content = await sync_manager.sync_lod(
+                        source_lod=modified_lod,
+                        target_lod=lod,
+                        inconsistencies=lod_issues,
+                        changes_description=f"Manual sync from {modified_lod}"
+                    )
+
+                    # Save updated content
+                    if lod == 'premise':
+                        self.project.save_premise(updated_content)
+                    elif lod == 'treatment':
+                        self.project.save_treatment(updated_content)
+                    elif lod == 'chapters':
+                        chapters_file = self.project.path / "chapters.yaml"
+                        chapters_file.write_text(updated_content, encoding='utf-8')
+                    elif lod.startswith('prose'):
+                        if ":" in lod:
+                            chapter_num = int(lod.split(":")[1])
+                            chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                            chapter_file.write_text(updated_content, encoding='utf-8')
+                        else:
+                            self._print(f"[yellow]Note: General prose sync requires regenerating chapters individually[/yellow]")
+
+                    self._print(f"[green]✓ {lod.capitalize()} updated[/green]")
+
+                except Exception as e:
+                    self._print(f"[red]✗ Failed to sync {lod}: {str(e)}[/red]")
+                    if self.session_logger:
+                        self.session_logger.log_error(e, f"LOD sync failed for {lod}")
+
+            # Commit synced changes
+            self._commit(f"Sync LODs from {modified_lod}")
+            self._print(f"\n[green]✓ LOD sync complete[/green]")
+
+        except Exception as e:
+            self._print(f"[red]✗ Sync failed:[/red] {str(e)}")
+            if self.session_logger:
+                self.session_logger.log_error(e, "LOD sync failed")
 
     async def export_story(self, args: str):
         """Export story to different format."""
