@@ -91,14 +91,21 @@ Examples of ACCEPTABLE elaborations (NOT inconsistencies):
 """
 
 
-SYNC_UPDATE_TEMPLATE = """You are updating a {{ target_lod }} to maintain consistency with changes made to {{ source_lod }}.
+SYNC_UPDATE_TEMPLATE = """You are updating a {{ target_lod }} to maintain consistency with {{ source_lod }}.
+
+CRITICAL PRINCIPLE: The most detailed LOD is AUTHORITATIVE
+- LOD Hierarchy (most → least detailed): Prose (LOD0) → Chapters (LOD2) → Treatment (LOD2) → Premise (LOD3)
+- When syncing UP (less detailed): Match the detailed version (e.g., update treatment to match chapters)
+- When syncing DOWN (more detailed): Only update if less detailed version changed significantly
+
+{{ direction_guidance }}
 
 Original {{ target_lod }}:
 ```
 {{ original_content }}
 ```
 
-Modified {{ source_lod }}:
+Authoritative {{ source_lod }}:
 ```
 {{ modified_source }}
 ```
@@ -110,8 +117,8 @@ Inconsistencies to Fix:
 {{ inconsistencies }}
 
 Task: Generate an updated version of the {{ target_lod }} that:
-1. Incorporates the changes from {{ source_lod }}
-2. Fixes all identified inconsistencies
+1. **Defers to {{ source_lod }} as the authoritative source** (more detailed = more accurate)
+2. Fixes all identified inconsistencies by matching {{ source_lod }}
 3. Maintains the appropriate level of detail for {{ target_lod }}
 4. Preserves content not affected by the changes
 
@@ -182,15 +189,38 @@ class LODSyncManager:
         """
         Sync target LOD with changes from source LOD.
 
+        CRITICAL: Most detailed LOD is AUTHORITATIVE
+        - If syncing chapters → treatment, chapters is the source (more detailed)
+        - If syncing treatment → chapters, we swap so chapters becomes source
+
         Args:
-            source_lod: LOD that was modified
-            target_lod: LOD to update
+            source_lod: LOD that was modified (may be swapped to ensure detailed → less detailed)
+            target_lod: LOD to update (may be swapped to ensure detailed → less detailed)
             inconsistencies: List of inconsistencies to fix
             changes_description: Description of changes made
 
         Returns:
             Updated content for target LOD
         """
+        # LOD detail levels (higher = more detailed)
+        lod_detail_level = {
+            'prose': 4,
+            'chapters': 3,
+            'treatment': 2,
+            'premise': 1
+        }
+
+        # Ensure source is always MORE detailed than target
+        source_detail = lod_detail_level.get(source_lod.split(':')[0], 0)
+        target_detail = lod_detail_level.get(target_lod.split(':')[0], 0)
+
+        # Swap if target is more detailed (enforce detailed → less detailed direction)
+        if target_detail > source_detail:
+            source_lod, target_lod = target_lod, source_lod
+            direction_guidance = f"Syncing UP: {target_lod} is less detailed, so defer to {source_lod}"
+        else:
+            direction_guidance = f"Syncing DOWN: {source_lod} is more detailed, so use it as authority"
+
         # Load content
         original_content = self._get_lod_content(target_lod)
         modified_source = self._get_lod_content(source_lod)
@@ -206,7 +236,8 @@ class LODSyncManager:
             original_content=original_content,
             modified_source=modified_source,
             changes_description=changes_description,
-            inconsistencies=self._format_inconsistencies(inconsistencies, target_lod)
+            inconsistencies=self._format_inconsistencies(inconsistencies, target_lod),
+            direction_guidance=direction_guidance
         )
 
         # Generate updated content
