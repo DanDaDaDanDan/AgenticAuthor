@@ -111,12 +111,18 @@ class AnalysisCoordinator:
                 context['taxonomy'] = taxonomy
 
         elif content_type == 'chapters':
-            # Analyze chapter outlines
-            chapters = self.project.get_chapters()
-            if chapters:
-                # Convert to text format
-                content = self._chapters_to_text(chapters)
-                context['treatment'] = self.project.get_treatment()
+            # Analyze chapter outlines - try new self-contained format first
+            chapters_yaml = self.project.get_chapters_yaml()
+            if chapters_yaml:
+                # New self-contained format with metadata, characters, world, chapters
+                content = self._chapters_yaml_to_text(chapters_yaml)
+                # No treatment needed - chapters.yaml is self-contained
+            else:
+                # Legacy format fallback
+                chapters = self.project.get_chapters()
+                if chapters:
+                    content = self._chapters_to_text(chapters)
+                    context['treatment'] = self.project.get_treatment()
 
         elif content_type == 'chapter':
             # Analyze specific chapter outline
@@ -155,13 +161,93 @@ class AnalysisCoordinator:
         return content, context
 
     def _chapters_to_text(self, chapters: List[Dict[str, Any]]) -> str:
-        """Convert chapters list to readable text."""
+        """Convert chapters list to readable text (legacy format)."""
         lines = []
         for ch in chapters:
             lines.append(f"Chapter {ch.get('number', '?')}: {ch.get('title', 'Untitled')}")
             lines.append(f"Summary: {ch.get('summary', '')}")
             lines.append(f"Target words: {ch.get('word_count_target', 'N/A')}")
             lines.append("")
+        return "\n".join(lines)
+
+    def _chapters_yaml_to_text(self, chapters_yaml: Dict[str, Any]) -> str:
+        """Convert self-contained chapters.yaml to readable text (new format)."""
+        lines = []
+
+        # METADATA SECTION
+        metadata = chapters_yaml.get('metadata', {})
+        if metadata:
+            lines.append("=== STORY METADATA ===")
+            lines.append(f"Genre: {metadata.get('genre', 'N/A')}")
+            lines.append(f"Subgenre: {metadata.get('subgenre', 'N/A')}")
+            lines.append(f"Tone: {metadata.get('tone', 'N/A')}")
+            lines.append(f"Pacing: {metadata.get('pacing', 'N/A')}")
+            themes = metadata.get('themes', [])
+            if themes:
+                lines.append(f"Themes: {', '.join(themes)}")
+            lines.append(f"Narrative Style: {metadata.get('narrative_style', 'N/A')}")
+            lines.append(f"Target Word Count: {metadata.get('target_word_count', 'N/A')}")
+            lines.append(f"Setting: {metadata.get('setting_location', 'N/A')} ({metadata.get('setting_period', 'N/A')})")
+            lines.append("")
+
+        # CHARACTERS SECTION
+        characters = chapters_yaml.get('characters', [])
+        if characters:
+            lines.append("=== CHARACTERS ===")
+            for char in characters:
+                lines.append(f"\n{char.get('name', 'Unknown')} ({char.get('role', 'N/A')})")
+                if char.get('age'):
+                    lines.append(f"Age: {char.get('age')}")
+                lines.append(f"Background: {char.get('background', 'N/A')}")
+                lines.append(f"Motivation: {char.get('motivation', 'N/A')}")
+                lines.append(f"Character Arc: {char.get('character_arc', 'N/A')}")
+                lines.append(f"Internal Conflict: {char.get('internal_conflict', 'N/A')}")
+            lines.append("")
+
+        # WORLD SECTION
+        world = chapters_yaml.get('world', {})
+        if world:
+            lines.append("=== WORLD-BUILDING ===")
+            lines.append(f"Setting Overview: {world.get('setting_overview', 'N/A')}")
+
+            key_locations = world.get('key_locations', [])
+            if key_locations:
+                lines.append("\nKey Locations:")
+                for loc in key_locations:
+                    lines.append(f"  - {loc.get('name', 'Unknown')}: {loc.get('description', 'N/A')}")
+
+            systems = world.get('systems_and_rules', {})
+            if systems:
+                lines.append("\nSystems and Rules:")
+                for key, value in systems.items():
+                    lines.append(f"  - {key}: {value}")
+
+            social_context = world.get('social_context', {})
+            if social_context:
+                lines.append("\nSocial Context:")
+                for key, value in social_context.items():
+                    lines.append(f"  - {key}: {value}")
+            lines.append("")
+
+        # CHAPTERS SECTION
+        chapters = chapters_yaml.get('chapters', [])
+        if chapters:
+            lines.append("=== CHAPTER OUTLINES ===")
+            for ch in chapters:
+                lines.append(f"\nChapter {ch.get('number', '?')}: {ch.get('title', 'Untitled')}")
+                lines.append(f"POV: {ch.get('pov', 'N/A')}")
+                lines.append(f"Act: {ch.get('act', 'N/A')}")
+                lines.append(f"Summary: {ch.get('summary', 'N/A')}")
+                lines.append(f"Target words: {ch.get('word_count_target', 'N/A')}")
+
+                key_events = ch.get('key_events', [])
+                if key_events:
+                    lines.append(f"Key Events ({len(key_events)} total)")
+
+                char_devs = ch.get('character_developments', [])
+                if char_devs:
+                    lines.append(f"Character Developments ({len(char_devs)} total)")
+
         return "\n".join(lines)
 
     def _build_result_dict(

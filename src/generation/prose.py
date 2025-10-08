@@ -513,25 +513,29 @@ Just the flowing narrative prose (~{word_count_target} words)."""
         """
         from .multi_model import MultiModelGenerator
 
-        # Build unified context (premise + treatment + chapters + existing prose)
+        # Build unified context (self-contained chapters.yaml only)
         context = self.context_builder.build_context(
             project=self.project,
             target_lod='prose',
-            include_downstream=True
+            include_downstream=False  # Chapters.yaml is self-contained
         )
 
-        if 'premise' not in context:
-            raise Exception("No premise found. Generate premise first with /generate premise")
-        if 'treatment' not in context:
-            raise Exception("No treatment found. Generate treatment first with /generate treatment")
         if 'chapters' not in context:
             raise Exception("No chapters found. Generate chapters first with /generate chapters")
 
+        # Extract chapters from dict or list format
+        chapters_data = context['chapters']
+        if isinstance(chapters_data, dict):
+            # New self-contained format
+            chapters = chapters_data.get('chapters', [])
+        else:
+            # Legacy format (list)
+            chapters = chapters_data
+
         # Find current chapter info
-        chapters = context['chapters']
         current_chapter = None
         for ch in chapters:
-            if ch['number'] == chapter_number:
+            if ch.get('number') == chapter_number:
                 current_chapter = ch
                 break
 

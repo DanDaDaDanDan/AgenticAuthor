@@ -82,8 +82,12 @@ class LODResponseParser:
             # Save chapters if present
             if 'chapters' in data:
                 chapters = data['chapters']
-                if isinstance(chapters, list):
-                    # Save as list to chapters.yaml
+                if isinstance(chapters, dict):
+                    # New self-contained format (metadata, characters, world, chapters)
+                    project.save_chapters_yaml(chapters)
+                    updated_files.append('chapters.yaml')
+                elif isinstance(chapters, list):
+                    # Legacy format - save as list to chapters.yaml
                     with open(project.chapters_file, 'w', encoding='utf-8') as f:
                         yaml.dump(chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
                     updated_files.append('chapters.yaml')

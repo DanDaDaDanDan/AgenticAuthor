@@ -1036,7 +1036,29 @@ class InteractiveSession:
         table.add_row("", "")  # Separator
         table.add_row("Premise", "✓ " if has_premise else "✗ ")
         table.add_row("Treatment", "✓ " if has_treatment else "✗ ")
-        table.add_row("Outlines", "✓ " if has_outlines else "✗ ")
+
+        # Show chapters with enhanced info from new format
+        if has_outlines:
+            chapters_yaml = self.project.get_chapters_yaml()
+            if chapters_yaml:
+                # New self-contained format - show additional info
+                metadata = chapters_yaml.get('metadata', {})
+                characters = chapters_yaml.get('characters', [])
+                world = chapters_yaml.get('world', {})
+                chapters = chapters_yaml.get('chapters', [])
+
+                outline_info = f"✓  ({len(chapters)} chapters"
+                if metadata.get('genre'):
+                    outline_info += f", {metadata.get('genre')}"
+                if len(characters) > 0:
+                    outline_info += f", {len(characters)} chars"
+                outline_info += ")"
+                table.add_row("Outlines", outline_info)
+            else:
+                table.add_row("Outlines", "✓ ")
+        else:
+            table.add_row("Outlines", "✗ ")
+
         table.add_row("Prose Chapters", str(num_chapters))
 
         self.console.print(table)
