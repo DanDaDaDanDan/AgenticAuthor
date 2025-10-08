@@ -174,7 +174,7 @@ books/                      # All projects root
 │   ├── premise.md           # Story premise (LOD3)
 │   ├── premise_metadata.json # Taxonomy selections
 │   ├── treatment.md         # Story treatment (LOD2)
-│   ├── chapters.yaml        # Chapter outlines (LOD2)
+│   ├── chapters.yaml        # Self-contained chapter context (metadata, characters, world, outlines)
 │   ├── chapters/            # Full prose (LOD0)
 │   │   ├── chapter-01.md
 │   │   ├── chapter-02.md
@@ -527,6 +527,29 @@ Types:
 - `characters` - Character consistency
 - `world` - World-building coherence
 - `all` - Run all analyses
+
+#### `/cull <target>`
+Delete generated content with cascade deletion.
+
+Targets:
+- `prose` - Delete all chapter prose files (chapter-XX.md)
+- `chapters` - Delete chapters.yaml + cascade to prose
+- `treatment` - Delete treatment.md + cascade to chapters and prose
+- `premise` - Delete premise.md, premise_metadata.json + cascade to all downstream content
+
+Features:
+- Confirmation prompt before deletion
+- Cascade deletion (deleting treatment also deletes chapters and prose)
+- Git commit after successful deletion
+- Useful for:
+  - Starting over with a different approach
+  - Regenerating from a specific LOD level
+  - Removing unwanted generated content
+
+Examples:
+- `/cull prose` - Remove all prose, keep chapter outlines
+- `/cull chapters` - Remove chapters and prose, keep treatment
+- `/cull treatment` - Remove treatment, chapters, and prose
 
 ### Utility Commands
 

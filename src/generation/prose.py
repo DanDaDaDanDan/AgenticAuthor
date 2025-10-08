@@ -273,7 +273,7 @@ class ProseGenerator:
         narrative_style: str = "third person limited"
     ) -> str:
         """
-        Generate full prose for a chapter using unified LOD context.
+        Generate full prose for a chapter using ONLY chapters.yaml (self-contained).
 
         Args:
             chapter_number: Chapter to generate
@@ -282,22 +282,22 @@ class ProseGenerator:
         Returns:
             Chapter prose text
         """
-        # Build unified context (premise + treatment + chapters + existing prose)
-        context = self.context_builder.build_context(
-            project=self.project,
-            target_lod='prose',  # Include everything
-            include_downstream=True  # Include any existing prose
-        )
+        # Load chapters.yaml (self-contained - no premise/treatment needed)
+        chapters_data = self.project.get_chapters_yaml()
 
-        if 'premise' not in context:
-            raise Exception("No premise found. Generate premise first with /generate premise")
-        if 'treatment' not in context:
-            raise Exception("No treatment found. Generate treatment first with /generate treatment")
-        if 'chapters' not in context:
-            raise Exception("No chapters found. Generate chapters first with /generate chapters")
+        if not chapters_data:
+            raise Exception(
+                "chapters.yaml not found or in legacy format. "
+                "Please regenerate chapters with /generate chapters to create the new self-contained format."
+            )
 
-        # Find current chapter info
-        chapters = context['chapters']
+        # Extract sections
+        metadata = chapters_data.get('metadata', {})
+        characters = chapters_data.get('characters', [])
+        world = chapters_data.get('world', {})
+        chapters = chapters_data.get('chapters', [])
+
+        # Find current chapter
         current_chapter = None
         for ch in chapters:
             if ch['number'] == chapter_number:
@@ -305,130 +305,102 @@ class ProseGenerator:
                 break
 
         if not current_chapter:
-            raise Exception(f"Chapter {chapter_number} not found in outlines")
+            raise Exception(f"Chapter {chapter_number} not found in chapters.yaml")
 
-        # Check token requirements
-        token_calc = await self.calculate_prose_context_tokens(chapter_number)
+        # Get previous chapters for context
+        prev_chapters = [ch for ch in chapters if ch['number'] < chapter_number]
 
-        print(f"\n📊 Token Analysis for Chapter {chapter_number}:")
-        print(f"  Total Context: {token_calc['total_context_tokens']:,} tokens")
-        print(f"  Response Needed: {token_calc['response_tokens']:,} tokens")
-        print(f"  Total Required: {token_calc['total_needed']:,} tokens")
-        if token_calc['recommended_model']:
-            print(f"  ⚠️  Recommended Model: {token_calc['recommended_model']}")
-        print()
+        # Build previous chapters summary
+        prev_summary = ""
+        if prev_chapters:
+            prev_summary = "\nPREVIOUS CHAPTERS SUMMARY:\n"
+            for ch in prev_chapters:
+                prev_summary += f"\nChapter {ch['number']}: {ch['title']}\n"
+                prev_summary += f"Summary: {ch.get('summary', 'N/A')}\n"
+                # Check if prose exists for this chapter
+                prose_file = self.project.chapters_dir / f"chapter-{ch['number']:02d}.md"
+                if prose_file.exists():
+                    prose_text = prose_file.read_text(encoding='utf-8')
+                    # Include last paragraph for continuity
+                    paragraphs = [p.strip() for p in prose_text.split('\n\n') if p.strip()]
+                    if paragraphs:
+                        prev_summary += f"Ending: ...{paragraphs[-1]}\n"
 
-        # Serialize context to YAML
-        context_yaml = self.context_builder.to_yaml_string(context)
+        # Serialize to YAML for prompt
+        chapters_yaml = yaml.dump(chapters_data, sort_keys=False)
 
-        # Build prompt requesting YAML output with prose
+        # Build prose generation prompt
         word_count_target = current_chapter.get('word_count_target', 3000)
 
-        prompt = f"""Here is the current book content in YAML format:
+        prompt = f"""Generate full prose for a chapter using this self-contained story context.
 
+STORY CONTEXT (chapters.yaml):
 ```yaml
-{context_yaml}
+{chapters_yaml}
 ```
+{prev_summary}
 
-Generate full prose for Chapter {chapter_number}: "{current_chapter['title']}"
+TASK:
+Generate ~{word_count_target} words of polished narrative prose for:
+- Chapter {chapter_number}: "{current_chapter['title']}"
+- POV: {current_chapter.get('pov', 'N/A')}
+- Act: {current_chapter.get('act', 'N/A')}
 
-Guidelines:
-1. Target ~{word_count_target} words of flowing narrative prose
-2. Perfect continuity from previous chapters (if any exist)
-3. Consistent character voices and development
-4. Proper pacing relative to the story arc
-5. Natural progression toward upcoming chapters
-6. Narrative style: {narrative_style}
-7. Build on established world-building, character traits, and plot threads
-8. Follow the chapter outline's key events, character developments, relationship beats, and tension points
+GUIDELINES:
+1. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
+2. Draw on character backgrounds, motivations, and arcs from the characters section
+3. Use world-building details (locations, systems, atmosphere) to ground the scene
+4. Follow the chapter outline's key events, character developments, relationship beats
+5. Perfect continuity from previous chapters (if any)
+6. Target: ~{word_count_target} words
+7. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
 
-CRITICAL: Return your response as YAML with this structure:
-```yaml
-premise:
-  text: |
-    ... (keep existing premise unchanged)
-  metadata: ...
+Return ONLY the prose text. Do NOT include:
+- YAML formatting
+- Chapter headers (we'll add those)
+- Explanations or notes
 
-treatment:
-  text: |
-    ... (keep existing treatment unchanged)
-
-chapters:
-  - number: 1
-    title: "..."
-    # ... (keep all chapter outlines unchanged)
-
-prose:
-  - chapter: {chapter_number}
-    text: |
-      # Chapter {chapter_number}: {current_chapter['title']}
-
-      Your prose here... (~{word_count_target} words of narrative)
-```
-
-Do NOT wrap your response in additional markdown code fences (```).
-Return ONLY the YAML content with all sections (premise + treatment + chapters + prose)."""
+Just the flowing narrative prose (~{word_count_target} words)."""
 
         # Generate with API
         try:
-            # Check if model has sufficient context
-            model_obj = await self.client.get_model(self.model)
-            if not model_obj:
-                raise Exception(f"Failed to fetch model capabilities for {self.model}")
+            # Estimate tokens (simplified - no longer checking premise/treatment)
+            from ..utils.tokens import estimate_messages_tokens
+            estimated_response_tokens = word_count_target + 500  # ~1 token per word + buffer
 
-            if not model_obj.has_sufficient_context(token_calc['total_needed']):
-                print(f"⚠️  Warning: {self.model} has insufficient context window")
-                print(f"   Model context: {model_obj.context_length:,} tokens")
-                print(f"   Required: {token_calc['total_needed']:,} tokens")
-                if token_calc['recommended_model']:
-                    print(f"   Consider using: {token_calc['recommended_model']}")
-
-            # Also check output capacity
-            max_output = model_obj.get_max_output_tokens()
-            if max_output and max_output < token_calc['response_tokens']:
-                print(f"⚠️  Warning: {self.model} may have insufficient output capacity")
-                print(f"   Model max output: {max_output:,} tokens")
-                print(f"   Required: {token_calc['response_tokens']:,} tokens")
-
-            # Use streaming_completion with YAML response
+            # Use streaming_completion for prose (plain text, not YAML)
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a professional fiction writer. You always return valid YAML without additional formatting."},
+                    {"role": "system", "content": "You are a professional fiction writer. Return only the prose text without any formatting or explanations."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.8,  # Higher for creative prose
                 display=True,
                 display_label=f"Generating Chapter {chapter_number} prose",
-                min_response_tokens=token_calc['response_tokens']
+                min_response_tokens=estimated_response_tokens
             )
 
             if not result:
                 raise Exception("No response from API")
 
-            # Extract response text
-            response_text = result.get('content', result) if isinstance(result, dict) else result
+            # Extract response text (plain prose, not YAML)
+            prose_text = result.get('content', result) if isinstance(result, dict) else result
 
-            # Parse and save to files (includes culling if needed)
-            parse_result = self.parser.parse_and_save(
-                response=response_text,
-                project=self.project,
-                target_lod='prose',
-                original_context=context
-            )
+            # Save prose directly to file
+            chapter_file = self.project.chapters_dir / f"chapter-{chapter_number:02d}.md"
+            self.project.chapters_dir.mkdir(exist_ok=True)
 
+            # Add chapter header
+            full_prose = f"# Chapter {chapter_number}: {current_chapter['title']}\n\n{prose_text}"
+
+            chapter_file.write_text(full_prose, encoding='utf-8')
+
+            word_count = len(prose_text.split())
             print(f"\n✅ Chapter {chapter_number} generated successfully")
+            print(f"   Word count: {word_count:,}")
 
-            # Read the saved prose
-            chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
-            if chapter_file.exists():
-                with open(chapter_file, 'r', encoding='utf-8') as f:
-                    prose_content = f.read()
-                    word_count = len(prose_content.split())
-                    print(f"   Word count: {word_count:,}")
-                    return prose_content
-            else:
-                raise Exception(f"Prose file not created for chapter {chapter_number}")
+            return full_prose
 
         except Exception as e:
             raise Exception(f"Failed to generate prose: {e}")
@@ -471,12 +443,13 @@ Return ONLY the YAML content with all sections (premise + treatment + chapters +
             Dict mapping chapter numbers to prose
         """
         # Load chapters to determine range
-        chapters_file = self.project.path / "chapters.yaml"
-        if not chapters_file.exists():
-            raise Exception("No chapter outlines found")
+        chapters_data = self.project.get_chapters_yaml()
+        if not chapters_data:
+            raise Exception("No chapters.yaml found. Generate chapters first.")
 
-        with open(chapters_file, 'r') as f:
-            all_chapters = yaml.safe_load(f)
+        all_chapters = chapters_data.get('chapters', [])
+        if not all_chapters:
+            raise Exception("No chapters found in chapters.yaml")
 
         if not end_chapter:
             end_chapter = len(all_chapters)

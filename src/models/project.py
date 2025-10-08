@@ -178,6 +178,40 @@ class Project:
             self.metadata.chapter_count = len(outlines.get('chapters', []))
             self.save_metadata()
 
+    def get_chapters_yaml(self) -> Optional[Dict[str, Any]]:
+        """
+        Load complete chapters.yaml structure (self-contained format).
+
+        Returns full structure with metadata, characters, world, chapters sections.
+        Returns None if file doesn't exist or for legacy format.
+        """
+        if self.chapters_file.exists():
+            with open(self.chapters_file) as f:
+                data = yaml.safe_load(f)
+                # Check if it's the new self-contained format
+                if isinstance(data, dict) and 'metadata' in data:
+                    return data
+                # Legacy format (list or old dict) - return None
+                return None
+        return None
+
+    def save_chapters_yaml(self, data: Dict[str, Any]):
+        """
+        Save complete chapters.yaml structure (self-contained format).
+
+        Args:
+            data: Dict with metadata, characters, world, chapters sections
+        """
+        with open(self.chapters_file, 'w') as f:
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+        if self.metadata:
+            self.metadata.update_timestamp()
+            # Extract chapter count from new structure
+            chapters = data.get('chapters', [])
+            self.metadata.chapter_count = len(chapters)
+            self.save_metadata()
+
     def get_chapter(self, chapter_num: int) -> Optional[str]:
         """
         Load a specific chapter's content.

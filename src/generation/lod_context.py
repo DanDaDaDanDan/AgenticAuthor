@@ -37,28 +37,52 @@ class LODContextBuilder:
         """
         context = {}
 
-        # Always include premise if it exists
-        premise = project.get_premise()
-        if premise:
-            metadata = self._load_premise_metadata(project)
-            context['premise'] = {
-                'text': premise,
-                'metadata': metadata
-            }
+        # NEW LOGIC: chapters.yaml is self-contained
+        # When iterating chapters, ONLY return chapters.yaml
+        # When generating chapters, return premise + treatment (as input)
 
-        # Include treatment if target is treatment or beyond
-        if target_lod in ['treatment', 'chapters', 'prose'] or include_downstream:
+        if target_lod == 'chapters' and not include_downstream:
+            # Chapter iteration: ONLY chapters.yaml (self-contained)
+            chapters_yaml = project.get_chapters_yaml()
+            if chapters_yaml:
+                context['chapters'] = chapters_yaml
+            else:
+                # Legacy format fallback
+                chapters = project.get_chapters()
+                if chapters:
+                    context['chapters'] = chapters
+            return context
+
+        # For all other cases, use the old logic:
+
+        # Include premise if needed
+        if target_lod in ['premise', 'treatment'] or include_downstream:
+            premise = project.get_premise()
+            if premise:
+                metadata = self._load_premise_metadata(project)
+                context['premise'] = {
+                    'text': premise,
+                    'metadata': metadata
+                }
+
+        # Include treatment if needed
+        if target_lod in ['treatment'] or include_downstream:
             treatment = project.get_treatment()
             if treatment:
                 context['treatment'] = {'text': treatment}
 
-        # Include chapters if target is chapters or beyond
-        if target_lod in ['chapters', 'prose'] or include_downstream:
-            chapters = project.get_chapters()  # List from chapters.yaml
-            if chapters:
-                context['chapters'] = chapters  # Already list of dicts
+        # Include chapters for prose generation (uses chapters.yaml)
+        if target_lod == 'prose' or include_downstream:
+            chapters_yaml = project.get_chapters_yaml()
+            if chapters_yaml:
+                context['chapters'] = chapters_yaml
+            else:
+                # Legacy format fallback
+                chapters = project.get_chapters()
+                if chapters:
+                    context['chapters'] = chapters
 
-        # Include prose if target is prose or forced
+        # Include prose if needed
         if target_lod == 'prose' or include_downstream:
             prose = self._load_all_prose(project)
             if prose:

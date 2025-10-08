@@ -44,11 +44,11 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 **Key Innovation**: Natural language iteration with git-backed version control. Users simply describe what they want changed, and the system handles intent checking, execution, and auto-commits.
 
 **Recent Major Features (v0.3.0 and Unreleased)**:
-- **Unified LOD Context System** - Files stay separate, LLM sees/edits unified YAML
-  - LODContextBuilder: Combines files into single YAML for LLM
-  - LODResponseParser: Splits LLM's YAML back to individual files
-  - Atomic upward sync: Chapters/prose iterations update premise/treatment in same call
-  - Automatic culling: Downstream content deleted when upstream changes
+- **Self-Contained Chapters Architecture** - chapters.yaml includes everything for prose generation
+  - chapters.yaml has 4 sections: metadata, characters, world, chapters
+  - Prose generation ONLY uses chapters.yaml (no premise/treatment needed)
+  - Unidirectional data flow: premise → treatment → chapters → prose (no sync back)
+  - /cull command for cascade deletion (prose, chapters, treatment, premise)
   - Dry-run mode for multi-model competition (validate without saving)
 - **Automatic genre detection** - LLM auto-detects genre from concept
 - **Interactive taxonomy editor** - Full-screen checkbox UI for taxonomy selection
@@ -91,6 +91,7 @@ agentic           # Start REPL (main interface)
 /generate premise "a magical library"  # Auto-detects genre (fantasy)
 /generate premises 5 fantasy "a magical library"  # Generate 5 options to choose from
 /iterate taxonomy # Interactive taxonomy editor
+/cull prose       # Delete prose files (or chapters/treatment/premise - cascades downstream)
 /multimodel       # Toggle multi-model competition mode (3 generators + 1 judge)
 /multimodel config # Configure competition models and judge
 /logs             # View recent log entries
@@ -330,7 +331,7 @@ books/                      # All projects root
 │   ├── premise.md           # LOD3
 │   ├── premise_metadata.json # Taxonomy selections
 │   ├── treatment.md         # LOD2
-│   ├── chapters.yaml        # LOD2 outlines
+│   ├── chapters.yaml        # LOD2 - Self-contained (metadata, characters, world, outlines)
 │   ├── chapters/            # LOD0 prose
 │   │   └── chapter-*.md
 │   ├── analysis/            # Analysis results
@@ -385,6 +386,7 @@ def _commit(self, message: str):
 - `src/generation/premise.py` - Premise generation with auto-detection, taxonomy iteration
 - `src/generation/multi_model.py` - Multi-model competition coordinator with judging logic
 - `src/generation/iteration/` - Natural language feedback processing (coordinator, intent, diff, scale)
+- `src/generation/cull.py` - Content deletion manager with cascade (prose → chapters → treatment → premise)
 - `src/storage/git_manager.py` - Git operations wrapper
 - `src/generation/analysis.py` - Comprehensive story analysis
 - `src/cli/interactive.py` - REPL with prompt_toolkit, logging, and interactive editors

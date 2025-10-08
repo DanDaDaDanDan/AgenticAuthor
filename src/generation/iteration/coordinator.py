@@ -110,67 +110,12 @@ class IterationCoordinator:
             result['changes'] = changes
             result['success'] = True
 
-            # Step 6: Check LOD consistency and offer sync
-            if result['success']:
-                result['lod_sync'] = await self._check_lod_consistency(intent)
-
             return result
 
         except Exception as e:
             result['error'] = str(e)
             result['success'] = False
             return result
-
-    async def _check_lod_consistency(self, intent: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Check if LODs are consistent after iteration."""
-        try:
-            from ..lod_sync import LODSyncManager
-
-            sync_manager = LODSyncManager(self.client, self.project, self.model)
-
-            # Determine which LOD was modified
-            target_type = intent.get('target_type')
-            target_id = intent.get('target_id')
-
-            if target_type in ['chapter', 'chapters']:
-                # Include chapter number if specific chapter was modified
-                if target_id and target_type == 'chapter':
-                    modified_lod = f'chapters:{target_id}'
-                else:
-                    modified_lod = 'chapters'
-            elif target_type == 'prose':
-                # Include chapter number for prose
-                if target_id:
-                    modified_lod = f'prose:{target_id}'
-                else:
-                    modified_lod = 'prose'
-            elif target_type == 'treatment':
-                modified_lod = 'treatment'
-            elif target_type == 'premise':
-                modified_lod = 'premise'
-            else:
-                return None
-
-            # Check consistency
-            changes_desc = intent.get('description', '')
-            consistency_report = await sync_manager.check_consistency(
-                modified_lod=modified_lod,
-                changes_description=changes_desc
-            )
-
-            # Only return if there are inconsistencies
-            if not consistency_report.get('is_consistent', True):
-                return consistency_report
-
-            return None
-
-        except Exception as e:
-            # Don't fail the iteration if consistency check fails
-            from ...utils.logging import get_logger
-            logger = get_logger()
-            if logger:
-                logger.warning(f"LOD consistency check failed: {e}")
-            return None
 
     async def _determine_scale(self, intent: Dict[str, Any]) -> str:
         """Determine if change should be patch or regenerate."""
@@ -228,44 +173,7 @@ class IterationCoordinator:
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)
 
-        # Build prompt with SYNC instructions
-        sync_instruction = ""
-        if target_lod == 'premise':
-            sync_instruction = """
-CRITICAL - KEEP ALL PHASES IN SYNC:
-As you modify the premise, ensure consistency across all levels:
-- Return the updated premise
-- If treatment exists, keep it unchanged (it will be synced separately if needed)
-- Do NOT include chapters or prose sections
-"""
-        elif target_lod == 'treatment':
-            sync_instruction = """
-CRITICAL - KEEP ALL PHASES IN SYNC:
-As you modify the treatment:
-- Ensure the premise still aligns (update it if needed to stay consistent)
-- Return both premise and treatment sections
-- Do NOT include chapters or prose sections
-"""
-        elif target_lod in ['chapters', 'prose']:
-            sync_instruction = f"""
-CRITICAL - KEEP ALL PHASES IN SYNC:
-As you make changes to {target_lod}, ensure consistency across ALL levels:
-- Check if premise needs updating to stay consistent (e.g., if themes, stakes, or scope changed)
-- Check if treatment needs updating (e.g., if you added major plot points or changed character arcs)
-- Update premise/treatment in the response if needed to maintain consistency
-
-Examples of when to update upstream levels:
-- Add major plot points → update treatment to reflect them
-- Change character arcs significantly → update treatment and possibly premise
-- Alter themes or stakes → update premise
-- Adjust story scope → update premise
-
-Return ALL sections (premise, treatment, {target_lod}) even if some are unchanged.
-This ensures the high-level documents stay in sync with detailed content.
-
-IMPORTANT: When iterating chapters, do NOT include the prose section in your response.
-When iterating prose, include chapters for context but focus changes on the prose section.
-"""
+        # No sync instructions - each LOD level is independent now
 
         # Build the iteration prompt
         prompt = f"""Current book content in YAML format:
@@ -280,41 +188,14 @@ TARGET: {target_lod}{f" (specifically: {intent.get('target_id', 'all')})" if int
 
 TASK:
 1. Apply the user's requested changes to the {target_lod} section
-2. Maintain consistency with other sections
+2. Maintain internal consistency within this section
 3. Keep the same overall structure and level of detail
-{sync_instruction}
 
 RESPONSE FORMAT:
-Return the complete book in YAML format with ALL existing sections.
-Only modify the sections that need changing based on the feedback.
+Return the updated content in YAML format.
+Only modify what needs changing based on the feedback.
 
-```yaml
-premise:
-  text: |
-    ... (keep existing or update if needed)
-  metadata:
-    ... (keep existing or update if needed)
-
-treatment:
-  text: |
-    ... (keep existing or update if needed)
-
-{f'''chapters:
-  - number: 1
-    title: ...
-    # ... all chapter fields
-''' if target_lod in ['chapters', 'prose'] else '# Do not include chapters section'}
-
-{f'''prose:
-  - chapter: 1
-    text: |
-      ...
-    word_count: ...
-''' if target_lod == 'prose' else '# Do not include prose section'}
-```
-
-CRITICAL: Do NOT wrap your response in additional markdown code fences (```).
-Return ONLY the YAML content."""
+Return ONLY the YAML content. Do NOT wrap in markdown code fences (```)."""
 
         # Call LLM
         result = await self.client.streaming_completion(
@@ -348,7 +229,6 @@ Return ONLY the YAML content."""
             'type': 'patch',
             'updated_files': parse_result['updated_files'],
             'deleted_files': parse_result['deleted_files'],
-            'synced_upstream': parse_result.get('synced_upstream', False),
             'changes': parse_result.get('changes', {})
         }
 

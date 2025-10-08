@@ -165,12 +165,21 @@ except ValueError as e:
    - Methods:
      - `parse_and_save(response, project, target_lod, original_context, dry_run=False)`
      - `_validate_response(data, target_lod)` - Ensures complete response
-     - `_apply_culling(project, target_lod, llm_data)` - Deletes downstream
+     - `_apply_culling(project, target_lod, llm_data)` - Deletes downstream (deprecated)
      - `_simulate_culling(...)` - Dry-run version for multi-model
    - Features:
      - Automatic markdown fence stripping
-     - Change detection for upward sync
-     - Culling rules enforcement
+     - Validation and file-saving logic
+
+3. **Self-Contained Chapters** (`chapters.yaml`)
+   - chapters.yaml now includes ALL context needed for prose generation:
+     - `metadata`: Genre, tone, themes, narrative_style, target_word_count
+     - `characters`: Name, role, background, motivation, arc, relationships
+     - `world`: Setting, locations, systems, social_context
+     - `chapters`: Individual chapter outlines with beats and developments
+   - Prose generation ONLY uses chapters.yaml (no premise/treatment needed)
+   - Unidirectional data flow: premise → treatment → chapters → prose
+   - No cross-level synchronization
 
 #### Generation Pattern
 
@@ -299,27 +308,33 @@ async def generate_with_competition(self, **kwargs):
     return self.project.get_treatment()
 ```
 
-#### Culling Rules
+#### Content Deletion with CullManager
 
-- **premise** modified → delete: treatment, chapters, prose
-- **treatment** modified → delete: chapters, prose (keep premise)
-- **chapters** modified → delete: prose for changed chapters only
-- **prose** modified → no culling
-
-#### Upward Sync
-
-When iterating chapters/prose, `IterationCoordinator` includes upward sync instructions:
+The `/cull` command provides explicit content deletion with cascade:
 
 ```python
-if target_lod in ['chapters', 'prose']:
-    upward_sync_instruction = f"""
-CRITICAL - UPWARD SYNC:
-As you make changes to {target_lod}, also check if premise and/or treatment need updating.
-Return ALL sections (premise, treatment, {target_lod}) even if unchanged.
-"""
+from src.generation.cull import CullManager
+
+cull_manager = CullManager(project)
+
+# Delete prose only
+result = cull_manager.cull_prose()  # Deletes all chapter-XX.md files
+
+# Delete chapters (cascades to prose)
+result = cull_manager.cull_chapters()  # Deletes chapters.yaml + prose
+
+# Delete treatment (cascades to chapters + prose)
+result = cull_manager.cull_treatment()  # Deletes treatment.md + downstream
+
+# Delete premise (cascades to all)
+result = cull_manager.cull_premise()  # Deletes premise.md + all downstream
 ```
 
-Parser detects changes and marks `synced_upstream=True` when upstream LODs modified.
+Cascade rules:
+- **prose**: Delete chapter-XX.md files only
+- **chapters**: Delete chapters.yaml → cascade to prose
+- **treatment**: Delete treatment.md → cascade to chapters + prose
+- **premise**: Delete premise.md, premise_metadata.json → cascade to all
 
 ### Adding New Features
 

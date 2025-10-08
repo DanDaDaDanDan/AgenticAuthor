@@ -34,7 +34,6 @@ class LODResponseParser:
                 - 'parsed_data': Parsed YAML dict (always included)
                 - 'updated_files': List of files that would be/were updated
                 - 'deleted_files': List of files that would be/were deleted (culled)
-                - 'synced_upstream': Bool indicating if premise/treatment were updated from downstream
                 - 'changes': Dict of what changed per LOD
         """
         # Strip markdown fences if present
@@ -54,7 +53,6 @@ class LODResponseParser:
 
         updated_files = []
         changes = {}
-        synced_upstream = False
 
         # Track what changed (compare to original_context)
         if original_context:
@@ -74,20 +72,12 @@ class LODResponseParser:
                         self._save_premise_metadata(project, premise_data['metadata'])
                         updated_files.append('premise_metadata.json')
 
-                    # Check if this was upward sync
-                    if target_lod in ['chapters', 'prose'] and changes.get('premise'):
-                        synced_upstream = True
-
             # Save treatment if present
             if 'treatment' in data:
                 treatment_data = data['treatment']
                 if isinstance(treatment_data, dict) and 'text' in treatment_data:
                     project.save_treatment(treatment_data['text'])
                     updated_files.append('treatment.md')
-
-                    # Check if this was upward sync
-                    if target_lod in ['chapters', 'prose'] and changes.get('treatment'):
-                        synced_upstream = True
 
             # Save chapters if present
             if 'chapters' in data:
@@ -115,13 +105,9 @@ class LODResponseParser:
                 updated_files.append('premise.md')
                 if data['premise'].get('metadata'):
                     updated_files.append('premise_metadata.json')
-                if target_lod in ['chapters', 'prose'] and changes.get('premise'):
-                    synced_upstream = True
 
             if 'treatment' in data:
                 updated_files.append('treatment.md')
-                if target_lod in ['chapters', 'prose'] and changes.get('treatment'):
-                    synced_upstream = True
 
             if 'chapters' in data:
                 updated_files.append('chapters.yaml')
@@ -139,7 +125,6 @@ class LODResponseParser:
             'parsed_data': data,
             'updated_files': updated_files,
             'deleted_files': deleted_files,
-            'synced_upstream': synced_upstream,
             'changes': changes
         }
 

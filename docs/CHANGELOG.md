@@ -8,12 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Self-Contained Chapters Architecture** 🏗️
+  - chapters.yaml now includes ALL context for prose generation:
+    - `metadata`: Genre, tone, themes, narrative_style, target_word_count, etc.
+    - `characters`: Complete profiles with backgrounds, motivations, arcs, relationships
+    - `world`: Setting overview, locations, systems, social_context
+    - `chapters`: Individual chapter outlines with beats and character developments
+  - Prose generation ONLY uses chapters.yaml (no premise/treatment needed)
+  - Unidirectional data flow: premise → treatment → chapters → prose
+  - No cross-level synchronization (simplified architecture)
+  - Chapter generation extracts ALL material information from treatment
+  - LLM adapts metadata from taxonomy to match actual story
+
+- **Content Deletion System** 🗑️
+  - `/cull <target>` command for explicit content deletion
+  - Cascade deletion with confirmation:
+    - `/cull prose` - Delete all chapter-XX.md files
+    - `/cull chapters` - Delete chapters.yaml → cascade to prose
+    - `/cull treatment` - Delete treatment.md → cascade to chapters + prose
+    - `/cull premise` - Delete premise.md + metadata → cascade to all
+  - Confirmation prompt before deletion
+  - Git commit after successful deletion
+  - CullManager class handles all deletion logic
+
 - **Unified LOD Context System** 🏗️
   - New architecture: files stay separate, LLM sees/edits unified YAML
   - LODContextBuilder: Combines all files into single YAML structure for LLM
   - LODResponseParser: Splits LLM's YAML response back to individual files
-  - Atomic upward sync: When iterating chapters/prose, premise/treatment update in same call
-  - Automatic culling: Downstream content deleted when upstream changes
   - Dry-run mode for multi-model competition (validate without saving)
   - All generators now use unified context (treatment, chapters, prose)
   - Enhanced validation: Ensures all required sections present in responses
@@ -49,6 +70,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Repository auto-created on first run if it doesn't exist
   - Manual initialization available: `python3 init_shared_git.py`
   - Projects now committed to shared repository with prefixed messages
+
+### Removed
+- **LOD Synchronization System** ⚠️  BREAKING
+  - Removed `/sync` command entirely
+  - Removed `lod_sync.py` file and all LODSyncManager code
+  - Removed automatic upward sync during iteration
+  - Removed cross-level consistency checking
+  - Simplified architecture: unidirectional data flow only
+  - **Why**: Sync added complexity without clear benefit. Self-contained chapters.yaml provides all needed context.
+
+- **Automatic Culling on Modification** ⚠️  BREAKING
+  - Removed automatic cascade deletion when upstream content changes
+  - Now explicit via `/cull` command only
+  - Users have full control over when content is deleted
+
+- **prose_status Field**
+  - Removed prose_status tracking from chapters.yaml
+  - No longer needed with explicit `/cull` command
 
 ### Added
 - **Multi-Model Competition Mode** 🏆
