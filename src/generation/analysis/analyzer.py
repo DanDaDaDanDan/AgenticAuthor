@@ -335,19 +335,6 @@ class AnalysisCoordinator:
             lines.append("---")
             lines.append("")
 
-        # Priority Issues
-        if aggregated['priority_issues']:
-            lines.append("## Priority Issues (Top 5)")
-            lines.append("")
-            for i, issue in enumerate(aggregated['priority_issues'], 1):
-                lines.append(f"### {i}. [{issue['severity']}] {issue['category']}")
-                lines.append(f"- **Location**: {issue['location']}")
-                lines.append(f"- **Issue**: {issue['description']}")
-                lines.append(f"- **Fix**: {issue['suggestion']}")
-                lines.append("")
-            lines.append("---")
-            lines.append("")
-
         # Positive Highlights
         if aggregated['highlights']:
             lines.append("## Positive Highlights")

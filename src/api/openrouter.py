@@ -254,93 +254,120 @@ class OpenRouterClient:
                 f"prompt_tokens_est={prompt_tokens_est}"
             )
 
-        try:
-            async with self._session.post(
-                f"{self.base_url}/chat/completions",
-                json=request_data,
-                headers=self._get_headers()
-            ) as response:
-                response.raise_for_status()
+        # Retry logic for streaming errors
+        max_retries = 2
+        retry_count = 0
+        last_error = None
 
-                if stream:
-                    # Handle streaming response with live status
-                    model_display = model.split('/')[-1] if '/' in model else model
-                    result = await self.stream_handler.handle_sse_stream_with_status(
-                        response,
-                        model_name=model_display,
-                        on_token=on_token,
-                        display=display,
-                        display_mode=self.settings.streaming_display_mode
-                    )
-                else:
-                    # Handle non-streaming response
-                    data = await response.json()
-                    result = {
-                        'content': data['choices'][0]['message']['content'],
-                        'usage': data.get('usage', {}),
-                        'finish_reason': data['choices'][0].get('finish_reason'),
-                        'model': data.get('model')
-                    }
-                    if display:
-                        self.console.print(result['content'])
+        while retry_count <= max_retries:
+            try:
+                async with self._session.post(
+                    f"{self.base_url}/chat/completions",
+                    json=request_data,
+                    headers=self._get_headers()
+                ) as response:
+                    response.raise_for_status()
 
-                # Log API call with FULL details
-                logger = get_session_logger()
-                if logger:
-                    # Extract prompt from messages for backward compatibility
-                    prompt_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
-                    logger.log_api_call(
-                        model=model,
-                        prompt=prompt_text,
-                        response=result.get('content', ''),
-                        tokens=result.get('usage', {}),
-                        error=None,
-                        full_messages=messages,  # Log complete messages array
-                        request_params={
-                            "temperature": temperature,
-                            "max_tokens": max_tokens,
-                            "stream": stream,
-                            **kwargs
-                        }
-                    )
-
-                # Update token counter
-                if result.get('usage'):
-                    # Calculate cost if model info is available
-                    model_obj = await self.get_model(model)
-                    cost = 0.0
-                    if model_obj:
-                        cost = model_obj.estimate_cost(
-                            result['usage'].get('prompt_tokens', 0),
-                            result['usage'].get('completion_tokens', 0)
+                    if stream:
+                        # Handle streaming response with live status
+                        model_display = model.split('/')[-1] if '/' in model else model
+                        result = await self.stream_handler.handle_sse_stream_with_status(
+                            response,
+                            model_name=model_display,
+                            on_token=on_token,
+                            display=display,
+                            display_mode=self.settings.streaming_display_mode
                         )
-                    self.token_counter.update(result['usage'], cost)
 
-                    # Show usage if enabled
-                    if self.settings.show_token_usage:
-                        self._display_usage(result['usage'], cost)
+                        # Check if stream was interrupted
+                        if result.get('finish_reason') == 'connection_error' and retry_count < max_retries:
+                            retry_count += 1
+                            self.console.print(f"[yellow]Retrying ({retry_count}/{max_retries})...[/yellow]")
+                            await asyncio.sleep(1)  # Brief delay before retry
+                            continue
 
-                return result
+                    else:
+                        # Handle non-streaming response
+                        data = await response.json()
+                        result = {
+                            'content': data['choices'][0]['message']['content'],
+                            'usage': data.get('usage', {}),
+                            'finish_reason': data['choices'][0].get('finish_reason'),
+                            'model': data.get('model')
+                        }
+                        if display:
+                            self.console.print(result['content'])
 
-        except aiohttp.ClientError as e:
-            self.console.print(f"[red]API Error: {e}[/red]")
+                    # Log API call with FULL details
+                    logger = get_session_logger()
+                    if logger:
+                        # Extract prompt from messages for backward compatibility
+                        prompt_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+                        logger.log_api_call(
+                            model=model,
+                            prompt=prompt_text,
+                            response=result.get('content', ''),
+                            tokens=result.get('usage', {}),
+                            error=None,
+                            full_messages=messages,  # Log complete messages array
+                            request_params={
+                                "temperature": temperature,
+                                "max_tokens": max_tokens,
+                                "stream": stream,
+                                **kwargs
+                            }
+                        )
 
-            # Log the error with FULL request details
-            session_logger = get_session_logger()
-            if session_logger:
-                session_logger.log_api_error(
-                    model=model,
-                    error=e,
-                    request_params={
-                        "temperature": temperature,
-                        "max_tokens": max_tokens,
-                        "stream": stream,
-                        **kwargs
-                    },
-                    full_messages=messages  # Log complete messages array
-                )
+                    # Update token counter
+                    if result.get('usage'):
+                        # Calculate cost if model info is available
+                        model_obj = await self.get_model(model)
+                        cost = 0.0
+                        if model_obj:
+                            cost = model_obj.estimate_cost(
+                                result['usage'].get('prompt_tokens', 0),
+                                result['usage'].get('completion_tokens', 0)
+                            )
+                        self.token_counter.update(result['usage'], cost)
 
-            raise
+                        # Show usage if enabled
+                        if self.settings.show_token_usage:
+                            self._display_usage(result['usage'], cost)
+
+                    # Stream completed successfully or non-streaming, break retry loop
+                    break
+
+            except aiohttp.ClientError as e:
+                last_error = e
+                if retry_count < max_retries and stream:
+                    retry_count += 1
+                    self.console.print(f"[yellow]Connection error: {e}[/yellow]")
+                    self.console.print(f"[yellow]Retrying ({retry_count}/{max_retries})...[/yellow]")
+                    await asyncio.sleep(1)
+                    continue
+                else:
+                    # Max retries reached or non-streaming error
+                    self.console.print(f"[red]API Error: {e}[/red]")
+
+                    # Log the error with FULL request details
+                    session_logger = get_session_logger()
+                    if session_logger:
+                        session_logger.log_api_error(
+                            model=model,
+                            error=e,
+                            request_params={
+                                "temperature": temperature,
+                                "max_tokens": max_tokens,
+                                "stream": stream,
+                                **kwargs
+                            },
+                            full_messages=messages  # Log complete messages array
+                        )
+
+                    raise
+
+        # Return the result after successful completion or retries
+        return result
 
     async def completion(
         self,

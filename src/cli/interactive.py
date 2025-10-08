@@ -458,12 +458,7 @@ class InteractiveSession:
             if result['success']:
                 self._display_iteration_success(result)
 
-                # Check LOD consistency
-                lod_sync = result.get('lod_sync')
-                if lod_sync:
-                    await self._handle_lod_sync(lod_sync, result)
-
-                # Commit changes if there were any
+                # Commit changes BEFORE LOD sync (if there were any)
                 if result.get('changes'):
                     intent = result.get('intent', {})
                     scale = result.get('scale', 'patch')
@@ -480,6 +475,11 @@ class InteractiveSession:
                         message = f"Regenerate {target}: {action}"
 
                     self._commit(message)
+
+                # Check LOD consistency AFTER committing the iteration
+                lod_sync = result.get('lod_sync')
+                if lod_sync:
+                    await self._handle_lod_sync(lod_sync, result)
             elif result.get('needs_clarification'):
                 self._display_clarification_request(result)
             else:

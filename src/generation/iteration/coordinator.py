@@ -228,20 +228,43 @@ class IterationCoordinator:
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)
 
-        # Build prompt with UPWARD SYNC instructions
-        upward_sync_instruction = ""
-        if target_lod in ['chapters', 'prose']:
-            upward_sync_instruction = f"""
-CRITICAL - UPWARD SYNC:
-As you make changes to {target_lod}, also check if premise and/or treatment need updating to stay consistent.
-Examples of when to update upstream:
-- If you add major plot points → update treatment to reflect them
-- If you change character arcs → update treatment and possibly premise
-- If you change themes or stakes → update premise
-- If you adjust the story scope → update premise
+        # Build prompt with SYNC instructions
+        sync_instruction = ""
+        if target_lod == 'premise':
+            sync_instruction = """
+CRITICAL - KEEP ALL PHASES IN SYNC:
+As you modify the premise, ensure consistency across all levels:
+- Return the updated premise
+- If treatment exists, keep it unchanged (it will be synced separately if needed)
+- Do NOT include chapters or prose sections
+"""
+        elif target_lod == 'treatment':
+            sync_instruction = """
+CRITICAL - KEEP ALL PHASES IN SYNC:
+As you modify the treatment:
+- Ensure the premise still aligns (update it if needed to stay consistent)
+- Return both premise and treatment sections
+- Do NOT include chapters or prose sections
+"""
+        elif target_lod in ['chapters', 'prose']:
+            sync_instruction = f"""
+CRITICAL - KEEP ALL PHASES IN SYNC:
+As you make changes to {target_lod}, ensure consistency across ALL levels:
+- Check if premise needs updating to stay consistent (e.g., if themes, stakes, or scope changed)
+- Check if treatment needs updating (e.g., if you added major plot points or changed character arcs)
+- Update premise/treatment in the response if needed to maintain consistency
+
+Examples of when to update upstream levels:
+- Add major plot points → update treatment to reflect them
+- Change character arcs significantly → update treatment and possibly premise
+- Alter themes or stakes → update premise
+- Adjust story scope → update premise
 
 Return ALL sections (premise, treatment, {target_lod}) even if some are unchanged.
 This ensures the high-level documents stay in sync with detailed content.
+
+IMPORTANT: When iterating chapters, do NOT include the prose section in your response.
+When iterating prose, include chapters for context but focus changes on the prose section.
 """
 
         # Build the iteration prompt
@@ -259,7 +282,7 @@ TASK:
 1. Apply the user's requested changes to the {target_lod} section
 2. Maintain consistency with other sections
 3. Keep the same overall structure and level of detail
-{upward_sync_instruction}
+{sync_instruction}
 
 RESPONSE FORMAT:
 Return the complete book in YAML format with ALL existing sections.

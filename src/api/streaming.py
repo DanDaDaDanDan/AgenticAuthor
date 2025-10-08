@@ -606,104 +606,122 @@ class StreamHandler:
             # For "simple" mode, we don't need any special display setup
 
         try:
-            async for line in response.content:
-                line = line.decode('utf-8').strip()
+            try:
+                async for line in response.content:
+                    line = line.decode('utf-8').strip()
 
-                if not line or not line.startswith('data: '):
-                    continue
+                    if not line or not line.startswith('data: '):
+                        continue
 
-                if line == 'data: [DONE]':
-                    break
+                    if line == 'data: [DONE]':
+                        break
 
-                try:
-                    # Parse SSE data
-                    data_str = line[6:]  # Remove 'data: ' prefix
-                    data = json.loads(data_str)
+                    try:
+                        # Parse SSE data
+                        data_str = line[6:]  # Remove 'data: ' prefix
+                        data = json.loads(data_str)
 
-                    # Handle different event types
-                    if 'choices' in data and data['choices']:
-                        choice = data['choices'][0]
+                        # Handle different event types
+                        if 'choices' in data and data['choices']:
+                            choice = data['choices'][0]
 
-                        # Extract content delta
-                        if 'delta' in choice and 'content' in choice['delta']:
-                            token = choice['delta']['content']
-                            # Skip empty content deltas (common with Grok)
-                            if token:
-                                content += token
-                                token_count += 1
+                            # Extract content delta
+                            if 'delta' in choice and 'content' in choice['delta']:
+                                token = choice['delta']['content']
+                                # Skip empty content deltas (common with Grok)
+                                if token:
+                                    content += token
+                                    token_count += 1
 
-                            # Call token callback if provided
-                            if on_token:
-                                on_token(token, token_count)
+                                # Call token callback if provided
+                                if on_token:
+                                    on_token(token, token_count)
 
-                            # Update display based on mode
-                            if display and token:  # Only update display when we have actual tokens
-                                elapsed = time.time() - start_time
-                                tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
+                                # Update display based on mode
+                                if display and token:  # Only update display when we have actual tokens
+                                    elapsed = time.time() - start_time
+                                    tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
 
-                                if display_mode == "status" and status_context:
-                                    # Batch status updates - only every 20 tokens to prevent flicker
-                                    if token_count % 20 == 0 or token_count == 1:
-                                        status_text = f"Generating with {model_name} • {elapsed:.1f}s • {token_count} tokens"
+                                    if display_mode == "status" and status_context:
+                                        # Batch status updates - only every 20 tokens to prevent flicker
+                                        if token_count % 20 == 0 or token_count == 1:
+                                            status_text = f"Generating with {model_name} • {elapsed:.1f}s • {token_count} tokens"
+                                            if tokens_per_sec > 0:
+                                                status_text += f" • {tokens_per_sec:.0f} t/s"
+                                            status_context.update(status_text)
+
+                                        # Stream content to console (normal scrollable output)
+                                        self.console.print(token, end="", highlight=False)
+                                        # Flush every 10 tokens to reduce buffering but not overdo it
+                                        if token_count % 10 == 0:
+                                            self.console.file.flush()
+
+                                    elif display_mode == "live" and live:
+                                        # Original Live display behavior
+                                        display_lines = []
+
+                                        # Status line
+                                        status_text = Text()
+                                        status_text.append(f"Generating with {model_name}", style="cyan")
+                                        status_text.append(f" • {elapsed:.1f}s", style="dim")
+                                        status_text.append(f" • {token_count} tokens", style="dim")
                                         if tokens_per_sec > 0:
-                                            status_text += f" • {tokens_per_sec:.0f} t/s"
-                                        status_context.update(status_text)
+                                            status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
+                                        display_lines.append(status_text)
 
-                                    # Stream content to console (normal scrollable output)
-                                    self.console.print(token, end="", highlight=False)
-                                    # Flush every 10 tokens to reduce buffering but not overdo it
-                                    if token_count % 10 == 0:
-                                        self.console.file.flush()
+                                        # Content - show full content as it streams
+                                        display_lines.append("")  # Empty line
+                                        display_lines.append(Text(content))
 
-                                elif display_mode == "live" and live:
-                                    # Original Live display behavior
-                                    display_lines = []
+                                        # Update live display
+                                        from rich.console import Group
+                                        live.update(Group(*display_lines))
 
-                                    # Status line
-                                    status_text = Text()
-                                    status_text.append(f"Generating with {model_name}", style="cyan")
-                                    status_text.append(f" • {elapsed:.1f}s", style="dim")
-                                    status_text.append(f" • {token_count} tokens", style="dim")
-                                    if tokens_per_sec > 0:
-                                        status_text.append(f" • {tokens_per_sec:.0f} t/s", style="dim")
-                                    display_lines.append(status_text)
+                                    elif display_mode == "simple":
+                                        # Simple mode - just print tokens as they come
+                                        self.console.print(token, end="", highlight=False)
+                                        # Flush periodically to prevent buffering issues
+                                        if token_count % 10 == 0:
+                                            self.console.file.flush()
 
-                                    # Content - show full content as it streams
-                                    display_lines.append("")  # Empty line
-                                    display_lines.append(Text(content))
+                                    elif display_mode == "silent":
+                                        # Silent mode - no status, just print content
+                                        # Use file.write directly for maximum compatibility
+                                        self.console.file.write(token)
+                                        self.console.file.flush()  # Flush every token for immediate display
 
-                                    # Update live display
-                                    from rich.console import Group
-                                    live.update(Group(*display_lines))
+                            # Check for finish reason
+                            if 'finish_reason' in choice and choice['finish_reason']:
+                                finish_reason = choice['finish_reason']
 
-                                elif display_mode == "simple":
-                                    # Simple mode - just print tokens as they come
-                                    self.console.print(token, end="", highlight=False)
-                                    # Flush periodically to prevent buffering issues
-                                    if token_count % 10 == 0:
-                                        self.console.file.flush()
+                        # Extract model info
+                        if 'model' in data:
+                            model = data['model']
 
-                                elif display_mode == "silent":
-                                    # Silent mode - no status, just print content
-                                    # Use file.write directly for maximum compatibility
-                                    self.console.file.write(token)
-                                    self.console.file.flush()  # Flush every token for immediate display
+                        # Extract usage info
+                        if 'usage' in data:
+                            usage = data['usage']
 
-                        # Check for finish reason
-                        if 'finish_reason' in choice and choice['finish_reason']:
-                            finish_reason = choice['finish_reason']
+                    except json.JSONDecodeError:
+                        # Skip malformed data
+                        continue
 
-                    # Extract model info
-                    if 'model' in data:
-                        model = data['model']
-
-                    # Extract usage info
-                    if 'usage' in data:
-                        usage = data['usage']
-
-                except json.JSONDecodeError:
-                    # Skip malformed data
-                    continue
+            except Exception as stream_error:
+                # Handle streaming errors (TransferEncodingError, ConnectionError, etc.)
+                import aiohttp
+                if isinstance(stream_error, (aiohttp.ClientPayloadError, aiohttp.ClientConnectionError)):
+                    # If we got partial content, return it with a warning
+                    if content and token_count > 0:
+                        self.console.print(f"\n[yellow]⚠️  Stream interrupted ({type(stream_error).__name__})[/yellow]")
+                        self.console.print(f"[yellow]Received {token_count} tokens before interruption[/yellow]")
+                        # Set finish reason to indicate truncation
+                        finish_reason = "connection_error"
+                    else:
+                        # No content received, re-raise
+                        raise
+                else:
+                    # Other exceptions, re-raise
+                    raise
 
         finally:
             # Clean up display
