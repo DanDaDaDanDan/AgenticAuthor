@@ -1440,9 +1440,7 @@ project = Project("books/my-novel")
 # Set book metadata
 project.set_book_metadata('title', 'The Shadow Protocol')
 project.set_book_metadata('author', 'Jane Doe')
-project.set_book_metadata('subtitle', 'A Thriller')
 project.set_book_metadata('copyright_year', 2025)
-project.set_book_metadata('isbn', '978-1-234567-89-0')
 
 # Get metadata
 metadata = project.get_book_metadata()  # All metadata as dict
@@ -1613,7 +1611,6 @@ custom_frontmatter = """---
 ## Title Page
 
 {{title}}
-{{subtitle}}
 
 by {{author}}
 
@@ -1624,9 +1621,6 @@ by {{author}}
 Copyright © {{copyright_year}} by {{author}}
 
 All rights reserved...
-
-ISBN: {{isbn}}
-Edition: {{edition}}
 
 ---
 
@@ -1640,25 +1634,18 @@ project.save_frontmatter(custom_frontmatter)
 
 **Variable Replacement:**
 - `{{title}}` - Book title
-- `{{subtitle}}` - Book subtitle
 - `{{author}}` - Author name
 - `{{copyright_year}}` - Copyright year
-- `{{isbn}}` - ISBN number
-- `{{edition}}` - Edition text
-- `{{publisher}}` - Publisher name
 
 **Template Processing:**
 ```python
 def _replace_variables(self, text: str) -> str:
     """Replace {{variable}} placeholders in text."""
+    from datetime import datetime
     replacements = {
         'title': self.metadata.get('title', ''),
-        'subtitle': self.metadata.get('subtitle', ''),
         'author': self.metadata.get('author', ''),
-        'copyright_year': str(self.metadata.get('copyright_year', 2025)),
-        'isbn': self.metadata.get('isbn', ''),
-        'edition': self.metadata.get('edition', ''),
-        'publisher': self.metadata.get('publisher', ''),
+        'copyright_year': str(self.metadata.get('copyright_year', datetime.now().year)),
     }
 
     for key, value in replacements.items():

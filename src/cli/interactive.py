@@ -2133,14 +2133,8 @@ class InteractiveSession:
 
         fields = [
             ('title', 'Title'),
-            ('subtitle', 'Subtitle'),
             ('author', 'Author'),
-            ('series', 'Series'),
-            ('series_number', 'Series #'),
-            ('isbn', 'ISBN'),
-            ('copyright_year', 'Copyright Year'),
-            ('publisher', 'Publisher'),
-            ('edition', 'Edition')
+            ('copyright_year', 'Copyright Year')
         ]
 
         for key, label in fields:
@@ -2159,8 +2153,7 @@ class InteractiveSession:
 
     def _display_single_metadata(self, key: str):
         """Display single metadata field."""
-        valid_keys = ['title', 'subtitle', 'author', 'series', 'series_number',
-                      'isbn', 'copyright', 'publisher', 'edition']
+        valid_keys = ['title', 'author', 'copyright']
 
         if key == 'copyright':
             key = 'copyright_year'
@@ -2184,22 +2177,14 @@ class InteractiveSession:
         if key == 'copyright':
             key = 'copyright_year'
 
-        valid_keys = ['title', 'subtitle', 'author', 'series', 'series_number',
-                      'isbn', 'copyright_year', 'publisher', 'edition']
+        valid_keys = ['title', 'author', 'copyright_year']
 
         if key not in valid_keys:
             self.console.print(f"[red]Unknown metadata key: {key}[/red]")
-            self.console.print(f"Valid keys: {', '.join(valid_keys)}")
+            self.console.print(f"Valid keys: title, author, copyright")
             return
 
-        # Validate specific types
-        if key == 'series_number':
-            try:
-                value = int(value) if value else None
-            except ValueError:
-                self.console.print("[red]Series number must be an integer[/red]")
-                return
-
+        # Validate copyright year
         if key == 'copyright_year':
             try:
                 year = int(value)

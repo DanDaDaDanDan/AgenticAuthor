@@ -600,33 +600,22 @@ View or set book metadata for export.
 
 **Supported Fields:**
 - `title` - Book title (required for export)
-- `subtitle` - Book subtitle
 - `author` - Author name (required for export)
-- `series` - Series name
-- `series_number` - Series number (integer)
-- `isbn` - ISBN number
-- `copyright` - Copyright year (1900-2100)
-- `publisher` - Publisher name
-- `edition` - Edition text (e.g., "First Edition")
+- `copyright` - Copyright year (1900-2100, defaults to current year)
 
 **Features:**
 - Auto-creates frontmatter template on first metadata set
-- Validates input (year range, series number as integer)
+- Validates copyright year range (1900-2100)
 - Shows warnings if required fields (title, author) are missing
 - Values stored in `config.yaml` under `book_metadata`
+- Copyright year automatically set to current year if not specified
 
 **Examples:**
 ```bash
 /metadata                          # View all metadata
 /metadata title "The Shadow Protocol"
 /metadata author "Jane Doe"
-/metadata subtitle "A Thriller"
 /metadata copyright 2025
-/metadata isbn "978-1-234567-89-0"
-/metadata series "Shadow Chronicles"
-/metadata series_number 1
-/metadata publisher "Self-Published"
-/metadata edition "First Edition"
 ```
 
 #### `/export <format> [filename]`
@@ -643,8 +632,8 @@ Export book to professional formats for publishing.
 - Custom filename support (absolute or relative paths)
 - Shows file size and chapter count after export
 - Professional formatting:
-  - Title page with centered title, subtitle, author
-  - Copyright page with legal text and ISBN
+  - Title page with centered title and author
+  - Copyright page with legal text
   - Frontmatter sections (dedication, acknowledgments)
   - Chapter headers with numbers and titles
   - Proper paragraph formatting (first-line indent, justification)
@@ -658,7 +647,7 @@ Export book to professional formats for publishing.
 - Justified text alignment
 - Page breaks between chapters
 - Em dash and en dash support
-- Variable replacement: {{title}}, {{author}}, {{copyright_year}}, etc.
+- Variable replacement: {{title}}, {{author}}, {{copyright_year}}
 
 **Examples:**
 ```bash

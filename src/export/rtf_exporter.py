@@ -92,7 +92,6 @@ class RTFExporter:
     def _build_title_page(self) -> str:
         """Build RTF title page."""
         title = self.metadata.get('title', 'Untitled')
-        subtitle = self.metadata.get('subtitle', '')
         author = self.metadata.get('author', 'Unknown Author')
 
         parts = []
@@ -102,13 +101,6 @@ class RTFExporter:
         parts.append(self._escape_rtf(title))
         parts.append(r"\b0\fs24\par}")
         parts.append("\n")
-
-        # Subtitle (if present)
-        if subtitle:
-            parts.append(r"{\pard\qc\fs32 ")
-            parts.append(self._escape_rtf(subtitle))
-            parts.append(r"\fs24\par}")
-            parts.append("\n")
 
         # Spacing
         parts.append(r"{\pard\qc\par}")
@@ -126,10 +118,9 @@ class RTFExporter:
 
     def _build_copyright_page(self) -> str:
         """Build RTF copyright page."""
+        from datetime import datetime
         author = self.metadata.get('author', 'Unknown Author')
-        year = self.metadata.get('copyright_year', 2025)
-        isbn = self.metadata.get('isbn', '')
-        edition = self.metadata.get('edition', 'First Edition')
+        year = self.metadata.get('copyright_year', datetime.now().year)
 
         parts = []
 
@@ -156,23 +147,6 @@ class RTFExporter:
         # Fiction disclaimer
         parts.append(r"{\pard ")
         parts.append("This is a work of fiction. Names, characters, places, and incidents are either the product of the author's imagination or are used fictitiously. Any resemblance to actual persons, living or dead, events, or locales is entirely coincidental.")
-        parts.append(r"\par}")
-        parts.append("\n")
-
-        # ISBN if present
-        if isbn:
-            parts.append(r"{\pard\par}")
-            parts.append("\n")
-            parts.append(r"{\pard ")
-            parts.append(f"ISBN: {self._escape_rtf(isbn)}")
-            parts.append(r"\par}")
-            parts.append("\n")
-
-        # Edition
-        parts.append(r"{\pard\par}")
-        parts.append("\n")
-        parts.append(r"{\pard ")
-        parts.append(self._escape_rtf(edition))
         parts.append(r"\par}")
         parts.append("\n")
 
@@ -234,6 +208,11 @@ class RTFExporter:
         # Blank line after heading
         parts.append(r"{\pard\par}")
         parts.append("\n")
+
+        # Strip markdown heading from chapter text if present
+        # Chapter files often start with "# Chapter X: Title" which we don't want to duplicate
+        import re
+        text = re.sub(r'^#\s+Chapter\s+\d+[:\s].*?$', '', text, flags=re.MULTILINE | re.IGNORECASE).strip()
 
         # Convert markdown prose to RTF paragraphs
         paragraphs = self._markdown_to_paragraphs(text)
@@ -355,14 +334,11 @@ class RTFExporter:
 
     def _replace_variables(self, text: str) -> str:
         """Replace {{variable}} placeholders in text."""
+        from datetime import datetime
         replacements = {
             'title': self.metadata.get('title', ''),
-            'subtitle': self.metadata.get('subtitle', ''),
             'author': self.metadata.get('author', ''),
-            'copyright_year': str(self.metadata.get('copyright_year', 2025)),
-            'isbn': self.metadata.get('isbn', ''),
-            'edition': self.metadata.get('edition', ''),
-            'publisher': self.metadata.get('publisher', ''),
+            'copyright_year': str(self.metadata.get('copyright_year', datetime.now().year)),
         }
 
         for key, value in replacements.items():

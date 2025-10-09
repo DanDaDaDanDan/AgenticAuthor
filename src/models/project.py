@@ -441,14 +441,8 @@ class Project:
         if 'book_metadata' not in config:
             config['book_metadata'] = {
                 'title': '',
-                'subtitle': '',
                 'author': '',
-                'series': '',
-                'series_number': None,
-                'isbn': '',
-                'copyright_year': datetime.now().year,
-                'publisher': 'Self-Published',
-                'edition': 'First Edition'
+                'copyright_year': datetime.now().year
             }
             self._save_config(config)
 
@@ -485,13 +479,12 @@ class Project:
         return """---
 # Frontmatter Template for {{title}}
 # Edit sections as needed. Delete sections you don't want.
-# Variables: {{title}}, {{author}}, {{subtitle}}, {{copyright_year}}, {{isbn}}, {{edition}}
+# Variables: {{title}}, {{author}}, {{copyright_year}}
 ---
 
 ## Title Page
 
 {{title}}
-{{subtitle}}
 
 by {{author}}
 
@@ -504,9 +497,6 @@ Copyright © {{copyright_year}} by {{author}}
 All rights reserved. No part of this book may be reproduced in any form or by any electronic or mechanical means, including information storage and retrieval systems, without permission in writing from the author, except by a reviewer who may quote brief passages in a review.
 
 This is a work of fiction. Names, characters, places, and incidents are either the product of the author's imagination or are used fictitiously. Any resemblance to actual persons, living or dead, events, or locales is entirely coincidental.
-
-ISBN: {{isbn}}
-Edition: {{edition}}
 
 ---
 

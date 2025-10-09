@@ -50,32 +50,23 @@ class MarkdownExporter:
 
     def _build_markdown(self) -> str:
         """Build complete markdown document."""
+        from datetime import datetime
         parts = []
 
         # Title page
         title = self.metadata.get('title', 'Untitled')
-        subtitle = self.metadata.get('subtitle', '')
         author = self.metadata.get('author', 'Unknown Author')
 
         parts.append(f"# {title}\n\n")
-        if subtitle:
-            parts.append(f"## {subtitle}\n\n")
         parts.append(f"by {author}\n\n")
         parts.append("---\n\n")
 
         # Copyright
-        year = self.metadata.get('copyright_year', 2025)
-        isbn = self.metadata.get('isbn', '')
-        edition = self.metadata.get('edition', 'First Edition')
+        year = self.metadata.get('copyright_year', datetime.now().year)
 
         parts.append(f"Copyright © {year} by {author}\n\n")
         parts.append("All rights reserved. No part of this book may be reproduced in any form or by any electronic or mechanical means, including information storage and retrieval systems, without permission in writing from the author, except by a reviewer who may quote brief passages in a review.\n\n")
         parts.append("This is a work of fiction. Names, characters, places, and incidents are either the product of the author's imagination or are used fictitiously. Any resemblance to actual persons, living or dead, events, or locales is entirely coincidental.\n\n")
-
-        if isbn:
-            parts.append(f"ISBN: {isbn}\n\n")
-
-        parts.append(f"{edition}\n\n")
         parts.append("---\n\n")
 
         # Frontmatter sections (if any)
@@ -130,6 +121,11 @@ class MarkdownExporter:
                 parts.append(f": {chapter_title}")
             parts.append("\n\n")
 
+            # Strip markdown heading from chapter text if present
+            # Chapter files often start with "# Chapter X: Title" which we don't want to duplicate
+            import re
+            chapter_text = re.sub(r'^#\s+Chapter\s+\d+[:\s].*?$', '', chapter_text, flags=re.MULTILINE | re.IGNORECASE).strip()
+
             # Chapter content
             parts.append(chapter_text)
             parts.append("\n\n")
@@ -138,14 +134,11 @@ class MarkdownExporter:
 
     def _replace_variables(self, text: str) -> str:
         """Replace {{variable}} placeholders in text."""
+        from datetime import datetime
         replacements = {
             'title': self.metadata.get('title', ''),
-            'subtitle': self.metadata.get('subtitle', ''),
             'author': self.metadata.get('author', ''),
-            'copyright_year': str(self.metadata.get('copyright_year', 2025)),
-            'isbn': self.metadata.get('isbn', ''),
-            'edition': self.metadata.get('edition', ''),
-            'publisher': self.metadata.get('publisher', ''),
+            'copyright_year': str(self.metadata.get('copyright_year', datetime.now().year)),
         }
 
         for key, value in replacements.items():

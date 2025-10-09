@@ -22,8 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Book Metadata and Export System** 📚
   - `/metadata [key] [value]` command to view and set book metadata
-  - Metadata fields: title, author, subtitle, series, series_number, isbn, copyright_year, publisher, edition
-  - Validation: title and author required for export; copyright year 1900-2100; series_number must be integer
+  - Metadata fields: title, author, copyright_year (minimal, essential fields only)
+  - Validation: title and author required for export; copyright year 1900-2100
+  - Copyright year automatically set to current year if not specified
   - Auto-creates frontmatter template on first metadata set
   - `/export rtf [filename]` - Professional RTF export for Kindle/ebook publishing
   - `/export markdown [filename]` - Combined markdown export
@@ -31,12 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Times New Roman font (ebook standard)
     - Professional paragraph formatting (first-line indent 0.25", justification)
     - First paragraph after headings/scene breaks has NO indent (professional standard)
-    - Title page with centered title, subtitle, author
-    - Copyright page with legal text and ISBN
+    - Title page with centered title and author
+    - Copyright page with legal text (fiction disclaimer, all rights reserved)
     - Chapter headers with numbers and titles
     - Scene breaks (centered * * *)
     - Markdown to RTF conversion (bold, italic, em dashes)
-    - Variable replacement in frontmatter templates ({{title}}, {{author}}, etc.)
+    - Variable replacement in frontmatter templates ({{title}}, {{author}}, {{copyright_year}})
   - Frontmatter template system:
     - Auto-created `frontmatter.md` with sections (title page, copyright, dedication, acknowledgments)
     - Variable placeholders for metadata
@@ -47,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Escape RTF special characters (\\, {, }) BEFORE adding RTF codes (prevents corruption)
     - Professional formatting: no first-line indent on first paragraph after chapter headings or scene breaks
     - Scene break detection: check for centered `\qc * * *` specifically, not any occurrence of "* * *" in text
+    - Strip markdown chapter headings from prose to prevent duplication in exports
 
 - **Content Deletion System** 🗑️
   - `/cull <target>` command for explicit content deletion
