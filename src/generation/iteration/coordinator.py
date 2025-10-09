@@ -158,7 +158,7 @@ class IterationCoordinator:
         # Build unified context up to (and including) target LOD
         context = self.context_builder.build_context(
             project=self.project,
-            target_lod=target_lod,
+            context_level=target_lod,  # Include content up to this level
             include_downstream=False  # Don't send prose when iterating chapters
         )
 

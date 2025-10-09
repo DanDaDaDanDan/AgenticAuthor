@@ -516,7 +516,7 @@ Just the flowing narrative prose (~{word_count_target} words)."""
         # Build unified context (self-contained chapters.yaml only)
         context = self.context_builder.build_context(
             project=self.project,
-            target_lod='prose',
+            context_level='prose',  # Include chapters.yaml (self-contained)
             include_downstream=False  # Chapters.yaml is self-contained
         )
 

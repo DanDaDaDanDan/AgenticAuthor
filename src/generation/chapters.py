@@ -66,7 +66,7 @@ class ChapterGenerator:
         # Build context (premise + treatment for chapter generation)
         context = self.context_builder.build_context(
             project=self.project,
-            target_lod='treatment',  # Include up to treatment
+            context_level='treatment',  # Include premise+treatment as input context
             include_downstream=False
         )
 
@@ -379,7 +379,7 @@ Return ONLY the YAML content."""
         # Build context (premise + treatment for chapter generation)
         context = self.context_builder.build_context(
             project=self.project,
-            target_lod='treatment',
+            context_level='treatment',  # Include premise+treatment as input context
             include_downstream=False
         )
 

@@ -1,4 +1,68 @@
-"""LOD response parsing to split unified YAML back to individual files."""
+"""LOD response parsing to split unified YAML back to individual files.
+
+This module handles parsing LLM responses and saving them to the appropriate files.
+It supports multiple response formats for backward compatibility.
+
+Format Detection and Handling
+==============================
+The parser automatically detects which format the LLM used:
+
+1. NEW Self-Contained Chapters Format:
+   {
+     metadata: {genre, pacing, tone, ...},
+     characters: [{name, role, background, ...}],
+     world: {setting_overview, locations, ...},
+     chapters: [{number, title, key_events, ...}]
+   }
+
+   Used by: Normal chapters generation, competition mode
+   Validation: Strict structural checks for all required fields
+   Saves to: chapters.yaml (entire structure)
+
+2. OLD Efficient Format (treatment/prose):
+   {
+     treatment: {text: "..."}
+   }
+   OR
+   {
+     prose: [{chapter: 1, text: "..."}]
+   }
+
+   Used by: Treatment generation (ONLY returns treatment, not premise)
+   Validation: Basic presence checks
+   Saves to: Respective files only
+
+3. LEGACY Format (backward compatibility):
+   {
+     premise: {...},
+     treatment: {...},
+     chapters: [...]
+   }
+
+   Used by: Older iteration code paths
+   Validation: Permissive, accepts what's present
+   Saves to: All present sections
+
+Validation Strategy
+===================
+- NEW format: Strict validation with detailed error messages
+- EFFICIENT format: Basic validation (must have target section)
+- LEGACY format: Permissive (saves whatever is present)
+
+This ensures new code has high quality while maintaining backward compatibility.
+
+Culling Strategy
+================
+Files are automatically deleted based on what was modified:
+
+- Modify premise → Delete treatment, chapters, prose
+- Modify treatment → Delete chapters, prose (keep premise)
+- Modify chapters → Delete affected chapter prose files
+- Modify prose → No culling (just update that chapter)
+
+This maintains consistency: if you change a high level, downstream content
+becomes invalid and must be regenerated.
+"""
 
 import json
 import yaml
@@ -387,6 +451,9 @@ class LODResponseParser:
                 if not isinstance(data['chapters'], list):
                     raise ValueError("In new format, chapters must be a list")
 
+                # Deep structural validation for new format
+                self._validate_new_chapters_structure(data)
+
             # OLD format is no longer validated strictly (backward compatibility only)
             # Just ensure chapters is list or dict
             elif not isinstance(data['chapters'], (list, dict)):
@@ -403,6 +470,86 @@ class LODResponseParser:
                 raise ValueError("Response missing 'prose' section")
             if not isinstance(data['prose'], list):
                 raise ValueError("Prose section must be a list")
+
+    def _validate_new_chapters_structure(self, data: Dict[str, Any]):
+        """
+        Deep structural validation for new self-contained chapters format.
+
+        Validates that the structure has all required fields and proper types
+        to ensure prose generation has complete information.
+
+        Args:
+            data: Parsed chapters YAML data in new format
+
+        Raises:
+            ValueError: If structure is invalid or missing required fields
+        """
+        errors = []
+
+        # Validate metadata section
+        metadata = data.get('metadata', {})
+        if not isinstance(metadata, dict):
+            errors.append("metadata must be a dict")
+        else:
+            required_meta_fields = ['genre', 'tone', 'pacing', 'themes', 'narrative_style', 'target_word_count']
+            for field in required_meta_fields:
+                if field not in metadata:
+                    errors.append(f"metadata missing required field: {field}")
+
+        # Validate characters section
+        characters = data.get('characters', [])
+        if not isinstance(characters, list):
+            errors.append("characters must be a list")
+        elif len(characters) == 0:
+            errors.append("characters list is empty - need at least protagonist")
+        else:
+            for i, char in enumerate(characters):
+                if not isinstance(char, dict):
+                    errors.append(f"characters[{i}] must be a dict")
+                    continue
+
+                required_char_fields = ['name', 'role', 'background', 'motivation']
+                for field in required_char_fields:
+                    if field not in char:
+                        errors.append(f"characters[{i}] ({char.get('name', 'unknown')}) missing: {field}")
+
+        # Validate world section
+        world = data.get('world', {})
+        if not isinstance(world, dict):
+            errors.append("world must be a dict")
+        else:
+            required_world_fields = ['setting_overview', 'key_locations']
+            for field in required_world_fields:
+                if field not in world:
+                    errors.append(f"world missing required field: {field}")
+
+        # Validate chapters section
+        chapters = data.get('chapters', [])
+        if not isinstance(chapters, list):
+            errors.append("chapters must be a list")
+        elif len(chapters) == 0:
+            errors.append("chapters list is empty")
+        else:
+            for i, chapter in enumerate(chapters):
+                if not isinstance(chapter, dict):
+                    errors.append(f"chapters[{i}] must be a dict")
+                    continue
+
+                required_chapter_fields = ['number', 'title', 'summary', 'key_events', 'word_count_target']
+                for field in required_chapter_fields:
+                    if field not in chapter:
+                        errors.append(f"chapters[{i}] missing: {field}")
+
+                # Validate key_events is a list
+                if 'key_events' in chapter and not isinstance(chapter['key_events'], list):
+                    errors.append(f"chapters[{i}].key_events must be a list")
+                elif 'key_events' in chapter and len(chapter['key_events']) == 0:
+                    errors.append(f"chapters[{i}].key_events is empty")
+
+        # Raise aggregated errors
+        if errors:
+            error_msg = "New chapters format validation failed:\n  - " + "\n  - ".join(errors)
+            raise ValueError(error_msg)
 
     def _strip_markdown_fences(self, content: str) -> str:
         """

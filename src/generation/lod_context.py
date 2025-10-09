@@ -1,4 +1,44 @@
-"""LOD context building for unified LLM prompts."""
+"""LOD context building for unified LLM prompts.
+
+This module builds input context for LLM generation by assembling content
+from multiple files into unified YAML structures.
+
+KEY CONCEPT: context_level Parameter
+======================================
+The build_context() method takes a context_level parameter that indicates
+"what level of content to include as INPUT", NOT what you're generating.
+
+Examples:
+    - Generating treatment? Use context_level='premise' (premise as input)
+    - Generating chapters? Use context_level='treatment' (premise+treatment as input)
+    - Iterating chapters? Use context_level='chapters' (include chapters too)
+
+This is intentional: you provide existing content as context, then ask the
+LLM to generate the NEXT level or iterate the CURRENT level.
+
+Format Evolution
+================
+The system has evolved to use different formats for different purposes:
+
+1. EFFICIENT FORMAT (current generation):
+   - Treatment: Returns ONLY treatment (uses premise as input context)
+   - Chapters: Returns ONLY self-contained chapters.yaml (uses premise+treatment as input)
+   - Prose: Returns ONLY prose text (uses chapters.yaml as input)
+
+2. LEGACY FORMAT (backward compatibility):
+   - Some iteration paths may still return premise+treatment+chapters
+   - Parser detects and handles both formats automatically
+
+Self-Contained Chapters Format
+===============================
+Chapters.yaml is special - it contains everything prose generation needs:
+    - metadata: genre, pacing, tone, themes, narrative_style
+    - characters: full profiles with backgrounds, motivations, arcs
+    - world: setting, locations, systems, atmosphere
+    - chapters: detailed outlines with events, developments, beats
+
+This allows prose generation to work without accessing premise or treatment.
+"""
 
 import json
 import re
@@ -15,7 +55,7 @@ class LODContextBuilder:
     def build_context(
         self,
         project: Project,
-        target_lod: str,
+        context_level: str,
         include_downstream: bool = False
     ) -> Dict[str, Any]:
         """
@@ -23,17 +63,22 @@ class LODContextBuilder:
 
         Args:
             project: Current project
-            target_lod: What we're generating/iterating ('premise' | 'treatment' | 'chapters' | 'prose')
-            include_downstream: If True, include content beyond target_lod (for consistency checks)
+            context_level: What level of content to include as context for generation
+                          ('premise' | 'treatment' | 'chapters' | 'prose')
+                          This indicates "include up to this level", not what you're generating.
+            include_downstream: If True, include content beyond context_level (for consistency checks)
 
         Returns:
             Dict that will be serialized to YAML for LLM
 
         Examples:
-            - Generating treatment: target_lod='premise', returns {premise: {...}}
-            - Generating chapters: target_lod='treatment', returns {premise, treatment}
-            - Iterating chapters: target_lod='chapters', returns {premise, treatment, chapters}
-            - Full context check: target_lod='prose', include_downstream=True, returns everything
+            - Generating treatment: context_level='premise', returns {premise: {...}}
+            - Generating chapters: context_level='treatment', returns {premise, treatment}
+            - Iterating chapters: context_level='chapters', returns {premise, treatment, chapters}
+            - Full context check: context_level='prose', include_downstream=True, returns everything
+
+        Note: context_level indicates INPUT context, not OUTPUT target.
+              E.g., treatment generation uses context_level='premise' (premise as input)
         """
         context = {}
 
@@ -41,7 +86,7 @@ class LODContextBuilder:
         # When iterating chapters, ONLY return chapters.yaml
         # When generating chapters, return premise + treatment (as input)
 
-        if target_lod == 'chapters' and not include_downstream:
+        if context_level == 'chapters' and not include_downstream:
             # Chapter iteration: ONLY chapters.yaml (self-contained)
             chapters_yaml = project.get_chapters_yaml()
             if chapters_yaml:
@@ -56,7 +101,7 @@ class LODContextBuilder:
         # For all other cases, use the old logic:
 
         # Include premise if needed
-        if target_lod in ['premise', 'treatment'] or include_downstream:
+        if context_level in ['premise', 'treatment'] or include_downstream:
             premise = project.get_premise()
             if premise:
                 metadata = self._load_premise_metadata(project)
@@ -66,13 +111,13 @@ class LODContextBuilder:
                 }
 
         # Include treatment if needed
-        if target_lod in ['treatment'] or include_downstream:
+        if context_level in ['treatment'] or include_downstream:
             treatment = project.get_treatment()
             if treatment:
                 context['treatment'] = {'text': treatment}
 
         # Include chapters for prose generation (uses chapters.yaml)
-        if target_lod == 'prose' or include_downstream:
+        if context_level == 'prose' or include_downstream:
             chapters_yaml = project.get_chapters_yaml()
             if chapters_yaml:
                 context['chapters'] = chapters_yaml
@@ -83,7 +128,7 @@ class LODContextBuilder:
                     context['chapters'] = chapters
 
         # Include prose if needed
-        if target_lod == 'prose' or include_downstream:
+        if context_level == 'prose' or include_downstream:
             prose = self._load_all_prose(project)
             if prose:
                 context['prose'] = prose

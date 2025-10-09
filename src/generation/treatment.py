@@ -82,7 +82,7 @@ class TreatmentGenerator:
         # Build context (only premise for treatment generation)
         context = self.context_builder.build_context(
             project=self.project,
-            target_lod='premise',  # Only include premise
+            context_level='premise',  # Only include premise as input context
             include_downstream=False
         )
 
@@ -204,7 +204,7 @@ Return ONLY the treatment section."""
         # Build context (only premise for treatment generation)
         context = self.context_builder.build_context(
             project=self.project,
-            target_lod='premise',
+            context_level='premise',  # Only include premise as input context
             include_downstream=False
         )
 
