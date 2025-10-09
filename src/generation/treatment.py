@@ -96,7 +96,7 @@ class TreatmentGenerator:
         premise_metadata = context['premise'].get('metadata', {})
 
         # Build prompt
-        prompt = f"""Here is the current book content in YAML format:
+        prompt = f"""Here is the current book content for context:
 
 ```yaml
 {context_yaml}
@@ -122,16 +122,8 @@ Include:
 
 Format as flowing narrative prose, not bullet points.
 
-CRITICAL: Return your response as YAML with this structure:
+CRITICAL: Return ONLY the treatment as YAML:
 ```yaml
-premise:
-  text: |
-    {context['premise']['text'][:100]}...  # Keep existing premise text unchanged
-  metadata:
-    # Keep existing metadata unchanged
-    protagonist: "{premise_metadata.get('protagonist', '')}"
-    # ... etc
-
 treatment:
   text: |
     ### Your Treatment Title
@@ -141,8 +133,9 @@ treatment:
     Target ~{target_words} words of flowing prose.
 ```
 
-Do NOT include 'chapters' or 'prose' sections. Return only premise + treatment sections.
-Do NOT wrap in additional markdown code fences."""
+Do NOT include premise, chapters, or prose sections.
+Do NOT wrap in additional markdown code fences.
+Return ONLY the treatment section."""
 
         # Generate with API
         try:
@@ -222,7 +215,7 @@ Do NOT wrap in additional markdown code fences."""
         context_yaml = self.context_builder.to_yaml_string(context)
 
         # Build prompt (same as generate() method)
-        prompt = f"""Here is the current book content in YAML format:
+        prompt = f"""Here is the current book content for context:
 
 ```yaml
 {context_yaml}```
@@ -247,16 +240,8 @@ Include:
 
 Format as flowing narrative prose, not bullet points.
 
-CRITICAL: Return your response as YAML with this structure:
+CRITICAL: Return ONLY the treatment as YAML:
 ```yaml
-premise:
-  text: |
-    {context['premise']['text'][:100]}...  # Keep existing premise text unchanged
-  metadata:
-    # Keep existing metadata unchanged
-    protagonist: "{premise_metadata.get('protagonist', '')}"
-    # ... etc
-
 treatment:
   text: |
     ### Your Treatment Title
@@ -266,8 +251,9 @@ treatment:
     Target ~{target_words} words of flowing prose.
 ```
 
-Do NOT include 'chapters' or 'prose' sections. Return only premise + treatment sections.
-Do NOT wrap in additional markdown code fences."""
+Do NOT include premise, chapters, or prose sections.
+Do NOT wrap in additional markdown code fences.
+Return ONLY the treatment section."""
 
         # Create multi-model generator
         multi_gen = MultiModelGenerator(self.client, self.project)

@@ -23,7 +23,8 @@
       "Bash(dir:*)",
       "WebSearch",
       "WebFetch(domain:kdp.amazon.com)",
-      "WebFetch(domain:blog.reedsy.com)"
+      "WebFetch(domain:blog.reedsy.com)",
+      "Bash(set PYTHONPATH=.)"
     ],
     "deny": [],
     "ask": []

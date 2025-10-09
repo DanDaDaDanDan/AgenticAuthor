@@ -353,8 +353,7 @@ class LODResponseParser:
                 raise ValueError("Premise section must have 'text' field")
 
         elif target_lod == 'treatment':
-            if 'premise' not in data:
-                raise ValueError("Response missing 'premise' section (should be preserved)")
+            # Treatment generation now returns ONLY treatment (not premise)
             if 'treatment' not in data:
                 raise ValueError("Response missing 'treatment' section")
             if not isinstance(data['treatment'], dict) or 'text' not in data['treatment']:
