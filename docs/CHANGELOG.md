@@ -20,6 +20,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Chapter generation extracts ALL material information from treatment
   - LLM adapts metadata from taxonomy to match actual story
 
+- **Book Metadata and Export System** 📚
+  - `/metadata [key] [value]` command to view and set book metadata
+  - Metadata fields: title, author, subtitle, series, series_number, isbn, copyright_year, publisher, edition
+  - Validation: title and author required for export; copyright year 1900-2100; series_number must be integer
+  - Auto-creates frontmatter template on first metadata set
+  - `/export rtf [filename]` - Professional RTF export for Kindle/ebook publishing
+  - `/export markdown [filename]` - Combined markdown export
+  - RTF features:
+    - Times New Roman font (ebook standard)
+    - Professional paragraph formatting (first-line indent 0.25", justification)
+    - First paragraph after headings/scene breaks has NO indent (professional standard)
+    - Title page with centered title, subtitle, author
+    - Copyright page with legal text and ISBN
+    - Chapter headers with numbers and titles
+    - Scene breaks (centered * * *)
+    - Markdown to RTF conversion (bold, italic, em dashes)
+    - Variable replacement in frontmatter templates ({{title}}, {{author}}, etc.)
+  - Frontmatter template system:
+    - Auto-created `frontmatter.md` with sections (title page, copyright, dedication, acknowledgments)
+    - Variable placeholders for metadata
+    - Edit template to customize sections
+  - Default export paths: `exports/book-title.rtf`, `exports/book-title.md`
+  - Tab completion for /metadata and /export commands
+  - Critical bug fixes:
+    - Escape RTF special characters (\\, {, }) BEFORE adding RTF codes (prevents corruption)
+    - Professional formatting: no first-line indent on first paragraph after chapter headings or scene breaks
+
 - **Content Deletion System** 🗑️
   - `/cull <target>` command for explicit content deletion
   - Cascade deletion with confirmation:

@@ -35,6 +35,13 @@ AI-powered iterative book generation with natural language feedback and git-back
   - Full transparency with scores and reasoning
   - All candidates saved for review
 
+- **Book Metadata and Export** 📚
+  - Set title, author, copyright, ISBN, and other metadata
+  - Professional RTF export for Kindle/ebook publishing
+  - Combined Markdown export
+  - Frontmatter template system (title page, copyright, dedication, acknowledgments)
+  - Variable replacement in templates ({{title}}, {{author}}, etc.)
+
 ### Previous Features (v0.2.0)
 - **Enhanced Premise Generation**
   - Genre-specific taxonomy support
@@ -170,7 +177,8 @@ books/                      # All projects root
 │   │   ├── history          # Command history
 │   │   ├── premise_history.json # Generation history
 │   │   └── debug/           # Debug output
-│   ├── config.yaml          # Project configuration
+│   ├── config.yaml          # Project configuration (including book_metadata)
+│   ├── frontmatter.md       # Frontmatter template (title page, copyright, dedication, etc.)
 │   ├── premise.md           # Story premise (LOD3)
 │   ├── premise_metadata.json # Taxonomy selections
 │   ├── treatment.md         # Story treatment (LOD2)
@@ -179,6 +187,9 @@ books/                      # All projects root
 │   │   ├── chapter-01.md
 │   │   ├── chapter-02.md
 │   │   └── ...
+│   ├── exports/             # Export outputs (RTF, Markdown, etc.)
+│   │   ├── my-book-title.rtf
+│   │   └── my-book-title.md
 │   ├── analysis/            # Story analysis
 │   │   ├── commercial.md
 │   │   ├── plot.md
@@ -579,9 +590,96 @@ Show or set configuration values.
 - With key: Show specific value
 - With key and value: Set configuration
 
-#### `/export [format]`
-Export story to different formats (not yet implemented).
-- Formats: `md`, `html`, `epub`, `pdf`
+### Book Metadata and Export
+
+#### `/metadata [key] [value]`
+View or set book metadata for export.
+- **No args**: Display all metadata in a formatted table
+- **key only**: Show specific metadata field
+- **key and value**: Set metadata value
+
+**Supported Fields:**
+- `title` - Book title (required for export)
+- `subtitle` - Book subtitle
+- `author` - Author name (required for export)
+- `series` - Series name
+- `series_number` - Series number (integer)
+- `isbn` - ISBN number
+- `copyright` - Copyright year (1900-2100)
+- `publisher` - Publisher name
+- `edition` - Edition text (e.g., "First Edition")
+
+**Features:**
+- Auto-creates frontmatter template on first metadata set
+- Validates input (year range, series number as integer)
+- Shows warnings if required fields (title, author) are missing
+- Values stored in `config.yaml` under `book_metadata`
+
+**Examples:**
+```bash
+/metadata                          # View all metadata
+/metadata title "The Shadow Protocol"
+/metadata author "Jane Doe"
+/metadata subtitle "A Thriller"
+/metadata copyright 2025
+/metadata isbn "978-1-234567-89-0"
+/metadata series "Shadow Chronicles"
+/metadata series_number 1
+/metadata publisher "Self-Published"
+/metadata edition "First Edition"
+```
+
+#### `/export <format> [filename]`
+Export book to professional formats for publishing.
+
+**Formats:**
+- `rtf` - Rich Text Format for Kindle/ebook publishing
+- `markdown` or `md` - Combined markdown file
+
+**Features:**
+- Checks for required metadata (title, author) before export
+- Creates `exports/` directory automatically
+- Default filename based on book title
+- Custom filename support (absolute or relative paths)
+- Shows file size and chapter count after export
+- Professional formatting:
+  - Title page with centered title, subtitle, author
+  - Copyright page with legal text and ISBN
+  - Frontmatter sections (dedication, acknowledgments)
+  - Chapter headers with numbers and titles
+  - Proper paragraph formatting (first-line indent, justification)
+  - Scene breaks (centered * * *)
+  - Markdown formatting converted to RTF (bold, italic)
+
+**RTF Format Details:**
+- Times New Roman font (standard for ebooks)
+- 12pt font size
+- First-line indent (0.25") for paragraphs (except first paragraph after headings)
+- Justified text alignment
+- Page breaks between chapters
+- Em dash and en dash support
+- Variable replacement: {{title}}, {{author}}, {{copyright_year}}, etc.
+
+**Examples:**
+```bash
+/export rtf                        # Export to default path: exports/book-title.rtf
+/export rtf my-book.rtf            # Custom filename
+/export markdown                   # Export to markdown
+/export md                         # Short form
+```
+
+**Default Export Paths:**
+- RTF: `books/my-novel/exports/my-novel-title.rtf`
+- Markdown: `books/my-novel/exports/my-novel-title.md`
+
+**Frontmatter Template:**
+When you first set metadata, a `frontmatter.md` template is created with:
+- Title page section
+- Copyright section with standard legal text
+- Dedication section (placeholder)
+- Acknowledgments section (placeholder)
+
+Edit `frontmatter.md` to customize sections. Use variables like {{title}}, {{author}}, etc. for automatic replacement during export.
 
 #### `/clear`
 Clear the terminal screen.

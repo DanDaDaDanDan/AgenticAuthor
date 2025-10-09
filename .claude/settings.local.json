@@ -19,7 +19,8 @@
       "Bash(python3:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(dir /O-D /B D:PersonalProjectsAgenticAuthor.agenticlogs)"
+      "Bash(dir /O-D /B D:PersonalProjectsAgenticAuthor.agenticlogs)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

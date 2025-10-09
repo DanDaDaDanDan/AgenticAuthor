@@ -90,6 +90,16 @@ class Project:
         return self.path / "exports"
 
     @property
+    def frontmatter_file(self) -> Path:
+        """Get path to frontmatter.md file."""
+        return self.path / "frontmatter.md"
+
+    @property
+    def config_file(self) -> Path:
+        """Get path to config.yaml file (for book metadata)."""
+        return self.path / "config.yaml"
+
+    @property
     def is_valid(self) -> bool:
         """Check if this is a valid project directory."""
         return self.path.exists() and self.project_file.exists()
@@ -366,3 +376,172 @@ class Project:
             cloned_project.save_metadata()
 
         return cloned_project
+
+    # --- Book Metadata Methods ---
+
+    def _load_config(self) -> Dict[str, Any]:
+        """Load config.yaml file."""
+        if self.config_file.exists():
+            with open(self.config_file, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f) or {}
+        return {}
+
+    def _save_config(self, config: Dict[str, Any]):
+        """Save config.yaml file."""
+        with open(self.config_file, 'w', encoding='utf-8') as f:
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+    def get_book_metadata(self, key: Optional[str] = None, default=None):
+        """
+        Get book metadata.
+
+        Args:
+            key: Specific metadata key, or None for all metadata
+            default: Default value if key not found
+
+        Returns:
+            Single value if key specified, dict if key is None
+        """
+        config = self._load_config()
+        book_meta = config.get('book_metadata', {})
+
+        if key is None:
+            return book_meta
+        return book_meta.get(key, default)
+
+    def set_book_metadata(self, key: str, value):
+        """
+        Set book metadata value.
+
+        Args:
+            key: Metadata key
+            value: Metadata value
+        """
+        config = self._load_config()
+        if 'book_metadata' not in config:
+            config['book_metadata'] = {}
+        config['book_metadata'][key] = value
+        self._save_config(config)
+
+    def has_required_metadata(self) -> bool:
+        """
+        Check if required metadata (title, author) is set.
+
+        Returns:
+            True if title and author are non-empty
+        """
+        title = self.get_book_metadata('title', '')
+        author = self.get_book_metadata('author', '')
+        return bool(title and author)
+
+    def init_default_book_metadata(self):
+        """Initialize book metadata with default values if not exists."""
+        from datetime import datetime
+        config = self._load_config()
+        if 'book_metadata' not in config:
+            config['book_metadata'] = {
+                'title': '',
+                'subtitle': '',
+                'author': '',
+                'series': '',
+                'series_number': None,
+                'isbn': '',
+                'copyright_year': datetime.now().year,
+                'publisher': 'Self-Published',
+                'edition': 'First Edition'
+            }
+            self._save_config(config)
+
+    # --- Frontmatter Methods ---
+
+    def get_frontmatter(self) -> Optional[str]:
+        """
+        Get frontmatter content.
+
+        Returns:
+            Frontmatter text, or None if not exists
+        """
+        if self.frontmatter_file.exists():
+            return self.frontmatter_file.read_text(encoding='utf-8')
+        return None
+
+    def save_frontmatter(self, content: str):
+        """
+        Save frontmatter content.
+
+        Args:
+            content: Frontmatter markdown text
+        """
+        self.frontmatter_file.write_text(content, encoding='utf-8')
+
+    def init_default_frontmatter(self):
+        """Initialize frontmatter with default template if not exists."""
+        if not self.frontmatter_file.exists():
+            template = self._get_default_frontmatter_template()
+            self.save_frontmatter(template)
+
+    def _get_default_frontmatter_template(self) -> str:
+        """Get default frontmatter template with placeholders."""
+        return """---
+# Frontmatter Template for {{title}}
+# Edit sections as needed. Delete sections you don't want.
+# Variables: {{title}}, {{author}}, {{subtitle}}, {{copyright_year}}, {{isbn}}, {{edition}}
+---
+
+## Title Page
+
+{{title}}
+{{subtitle}}
+
+by {{author}}
+
+---
+
+## Copyright
+
+Copyright © {{copyright_year}} by {{author}}
+
+All rights reserved. No part of this book may be reproduced in any form or by any electronic or mechanical means, including information storage and retrieval systems, without permission in writing from the author, except by a reviewer who may quote brief passages in a review.
+
+This is a work of fiction. Names, characters, places, and incidents are either the product of the author's imagination or are used fictitiously. Any resemblance to actual persons, living or dead, events, or locales is entirely coincidental.
+
+ISBN: {{isbn}}
+Edition: {{edition}}
+
+---
+
+## Dedication
+
+[Your dedication here, or delete this section]
+
+---
+
+## Acknowledgments
+
+[Your acknowledgments here, or delete this section]
+"""
+
+    # --- Export Methods ---
+
+    def ensure_exports_dir(self):
+        """Ensure exports directory exists."""
+        self.exports_dir.mkdir(exist_ok=True)
+
+    def get_export_path(self, format_name: str) -> Path:
+        """
+        Get default export file path for given format.
+
+        Args:
+            format_name: Format extension (rtf, md, html, etc.)
+
+        Returns:
+            Path to export file in exports/ directory
+        """
+        self.ensure_exports_dir()
+        title = self.get_book_metadata('title', self.name)
+        # Create safe filename
+        safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_'))
+        safe_title = safe_title.replace(' ', '-').lower()
+        if not safe_title:
+            safe_title = self.name
+        return self.exports_dir / f"{safe_title}.{format_name}"

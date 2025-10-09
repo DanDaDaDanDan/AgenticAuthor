@@ -232,9 +232,13 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Delete generated content (prose/chapters/treatment/premise)',
             'usage': '/cull <target>'
         },
+        'metadata': {
+            'description': 'View or set book metadata (title, author, copyright, etc.)',
+            'usage': '/metadata [key] [value]'
+        },
         'export': {
-            'description': 'Export story to file',
-            'usage': '/export [format]'
+            'description': 'Export book to RTF or Markdown',
+            'usage': '/export <rtf|markdown> [filename]'
         },
         'git': {
             'description': 'View git history and commit manual changes',

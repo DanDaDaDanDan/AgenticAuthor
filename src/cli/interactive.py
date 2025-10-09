@@ -76,6 +76,7 @@ class InteractiveSession:
             'iterate': self.iterate_content,
             'cull': self.cull_content,
             'analyze': self.analyze_story,
+            'metadata': self.manage_metadata,
             'export': self.export_story,
             'git': self.git_command,
             'config': self.show_config,
@@ -822,7 +823,8 @@ class InteractiveSession:
             ("/iterate <target>", "Set iteration target, then type feedback naturally"),
             ("/sync [lod]", "Check and sync LODs (premise/treatment/chapters/prose)"),
             ("/analyze [type]", "Run story analysis"),
-            ("/export [format]", "Export story"),
+            ("/metadata [key] [value]", "View or set book metadata (title, author, etc.)"),
+            ("/export <format>", "Export book (rtf, markdown)"),
             ("/git <command>", "View history or commit changes (status/log/diff/commit)"),
             ("/config", "Show configuration"),
             ("/clear", "Clear screen"),
@@ -2086,10 +2088,237 @@ class InteractiveSession:
         self.console.print(f"\n[green]Full report saved:[/green] {result['report_path']}")
         self.console.print()
 
+    async def manage_metadata(self, args: str):
+        """
+        Set or view book metadata.
+
+        Usage:
+            /metadata                    # View all metadata
+            /metadata title "Book Title" # Set title
+            /metadata author "Author"    # Set author
+            /metadata copyright 2025     # Set copyright year
+        """
+        if not self.project:
+            self.console.print("[red]No project open. Use /open <project> first.[/red]")
+            return
+
+        args = args.strip()
+
+        if not args:
+            # Display all metadata
+            self._display_book_metadata()
+            return
+
+        # Parse key-value
+        parts = args.split(None, 1)
+        key = parts[0].lower()
+
+        if len(parts) < 2:
+            # Show single key
+            self._display_single_metadata(key)
+            return
+
+        value = parts[1].strip().strip('"\'')
+
+        # Set metadata
+        self._set_metadata(key, value)
+
+    def _display_book_metadata(self):
+        """Display all book metadata in a table."""
+        metadata = self.project.get_book_metadata()
+
+        table = Table(title="Book Metadata", show_header=True)
+        table.add_column("Field", style="cyan")
+        table.add_column("Value", style="yellow")
+
+        fields = [
+            ('title', 'Title'),
+            ('subtitle', 'Subtitle'),
+            ('author', 'Author'),
+            ('series', 'Series'),
+            ('series_number', 'Series #'),
+            ('isbn', 'ISBN'),
+            ('copyright_year', 'Copyright Year'),
+            ('publisher', 'Publisher'),
+            ('edition', 'Edition')
+        ]
+
+        for key, label in fields:
+            value = metadata.get(key, '')
+            if value is None or value == '':
+                value = '[dim]Not set[/dim]'
+            table.add_row(label, str(value))
+
+        self.console.print(table)
+
+        # Warn if required fields missing
+        if not self.project.has_required_metadata():
+            self.console.print("\n[yellow]⚠ Required fields missing: title and author[/yellow]")
+            self.console.print("Set with: [cyan]/metadata title \"Your Title\"[/cyan]")
+            self.console.print("          [cyan]/metadata author \"Your Name\"[/cyan]")
+
+    def _display_single_metadata(self, key: str):
+        """Display single metadata field."""
+        valid_keys = ['title', 'subtitle', 'author', 'series', 'series_number',
+                      'isbn', 'copyright', 'publisher', 'edition']
+
+        if key == 'copyright':
+            key = 'copyright_year'
+
+        if key not in valid_keys and key != 'copyright_year':
+            self.console.print(f"[red]Unknown metadata key: {key}[/red]")
+            self.console.print(f"Valid keys: {', '.join(valid_keys)}")
+            return
+
+        value = self.project.get_book_metadata(key, '')
+        label = key.replace('_', ' ').title()
+
+        if value:
+            self.console.print(f"{label}: [yellow]{value}[/yellow]")
+        else:
+            self.console.print(f"{label}: [dim]Not set[/dim]")
+
+    def _set_metadata(self, key: str, value: str):
+        """Set metadata value with validation."""
+        # Normalize key
+        if key == 'copyright':
+            key = 'copyright_year'
+
+        valid_keys = ['title', 'subtitle', 'author', 'series', 'series_number',
+                      'isbn', 'copyright_year', 'publisher', 'edition']
+
+        if key not in valid_keys:
+            self.console.print(f"[red]Unknown metadata key: {key}[/red]")
+            self.console.print(f"Valid keys: {', '.join(valid_keys)}")
+            return
+
+        # Validate specific types
+        if key == 'series_number':
+            try:
+                value = int(value) if value else None
+            except ValueError:
+                self.console.print("[red]Series number must be an integer[/red]")
+                return
+
+        if key == 'copyright_year':
+            try:
+                year = int(value)
+                if year < 1900 or year > 2100:
+                    self.console.print("[red]Copyright year must be between 1900 and 2100[/red]")
+                    return
+                value = year
+            except ValueError:
+                self.console.print("[red]Copyright year must be a number (e.g., 2025)[/red]")
+                return
+
+        # Set value
+        self.project.set_book_metadata(key, value)
+
+        label = key.replace('_', ' ').title()
+        self.console.print(f"[green]✓[/green] {label} set to: [yellow]{value}[/yellow]")
+
+        # Auto-create frontmatter if this is first metadata
+        if not self.project.frontmatter_file.exists():
+            self.project.init_default_frontmatter()
+            self.console.print("[dim]Created default frontmatter template[/dim]")
+
     async def export_story(self, args: str):
-        """Export story to different format."""
-        self.console.print(f"[cyan]Export to: {args or 'markdown'}[/cyan]")
-        self.console.print("[yellow]Export system not yet implemented[/yellow]")
+        """
+        Export book to various formats.
+
+        Usage:
+            /export rtf [filename]       # Export to RTF format
+            /export markdown [filename]  # Export to combined markdown
+        """
+        if not self.project:
+            self.console.print("[red]No project open. Use /open <project> first.[/red]")
+            return
+
+        parts = args.strip().split(None, 1)
+
+        if not parts:
+            self.console.print("[yellow]Usage: /export <format> [filename][/yellow]")
+            self.console.print("Formats: rtf, markdown")
+            return
+
+        format_type = parts[0].lower()
+        custom_path = parts[1] if len(parts) > 1 else None
+
+        # Check required metadata
+        if not self.project.has_required_metadata():
+            self.console.print("[red]Missing required metadata (title and author).[/red]")
+            self.console.print("Set with: [cyan]/metadata title \"Your Title\"[/cyan]")
+            self.console.print("          [cyan]/metadata author \"Your Name\"[/cyan]")
+            return
+
+        try:
+            if format_type == 'rtf':
+                await self._export_rtf(custom_path)
+            elif format_type == 'markdown' or format_type == 'md':
+                await self._export_markdown(custom_path)
+            else:
+                self.console.print(f"[red]Unknown export format: {format_type}[/red]")
+                self.console.print("Supported formats: rtf, markdown")
+
+        except Exception as e:
+            self.console.print(f"[red]Export failed: {str(e)}[/red]")
+            self.logger.exception("Export error")
+
+    async def _export_rtf(self, custom_path: Optional[str] = None):
+        """Export to RTF format."""
+        from ..export.rtf_exporter import RTFExporter
+
+        exporter = RTFExporter(self.project)
+
+        # Determine output path
+        if custom_path:
+            output_path = Path(custom_path)
+            if not output_path.is_absolute():
+                output_path = self.project.path / output_path
+        else:
+            output_path = None  # Use default
+
+        # Export
+        with self.console.status("[yellow]Generating RTF...[/yellow]"):
+            result_path = exporter.export(output_path)
+
+        self.console.print(f"[green]✓[/green] Exported to: [cyan]{result_path}[/cyan]")
+
+        # Show file info
+        size_kb = result_path.stat().st_size / 1024
+        self.console.print(f"  File size: {size_kb:.1f} KB")
+
+        # Count chapters
+        chapters = len(list(self.project.list_chapters()))
+        self.console.print(f"  Chapters: {chapters}")
+
+    async def _export_markdown(self, custom_path: Optional[str] = None):
+        """Export to combined markdown."""
+        from ..export.md_exporter import MarkdownExporter
+
+        exporter = MarkdownExporter(self.project)
+
+        # Determine output path
+        if custom_path:
+            output_path = Path(custom_path)
+            if not output_path.is_absolute():
+                output_path = self.project.path / output_path
+        else:
+            output_path = None  # Use default
+
+        # Export
+        with self.console.status("[yellow]Combining markdown files...[/yellow]"):
+            result_path = exporter.export(output_path)
+
+        self.console.print(f"[green]✓[/green] Exported to: [cyan]{result_path}[/cyan]")
+
+        # Show file info
+        size_kb = result_path.stat().st_size / 1024
+        self.console.print(f"  File size: {size_kb:.1f} KB")
+
+        # Count chapters
+        chapters = len(list(self.project.list_chapters()))
+        self.console.print(f"  Chapters: {chapters}")
 
     def git_command(self, args: str):
         """Run git command on shared repository."""

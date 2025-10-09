@@ -603,7 +603,7 @@ graph TB
 - Human-readable formats (Markdown/YAML)
 
 ### 5. Data Models (`src/models/`)
-- **project.py**: Project metadata and structure
+- **project.py**: Project metadata and structure (including book_metadata for export)
 - **story.py**: Story content hierarchy
 - **taxonomy.py**: Genre-specific elements
 
@@ -611,6 +611,20 @@ graph TB
 - Pydantic for validation
 - Separation of metadata and content
 - Support for custom taxonomies
+- **Book metadata for professional export** (v0.3.0)
+
+### 6. Export System (`src/export/`)
+- **rtf_exporter.py**: Professional RTF export for Kindle/ebook publishing
+- **md_exporter.py**: Combined markdown export
+
+**Key Design Decisions:**
+- RTF format with Times New Roman (ebook standard)
+- Professional formatting (first-line indent, justification, scene breaks)
+- Variable replacement in frontmatter templates ({{title}}, {{author}}, etc.)
+- Markdown to RTF conversion (bold, italic, em dashes)
+- Escape RTF special characters BEFORE adding RTF codes (critical bug fix)
+- Metadata validation (title and author required for export)
+- Default export paths based on book title
 
 ## Data Flow
 
@@ -1413,6 +1427,272 @@ def generate_commit_message(action: str, target: str, details: dict) -> str:
     template = templates.get(action, "{action} {target}")
     return template.format(target=target, **details)
 ```
+
+## Export System Implementation (v0.3.0)
+
+### Book Metadata Management
+
+```python
+from src.models import Project
+
+project = Project("books/my-novel")
+
+# Set book metadata
+project.set_book_metadata('title', 'The Shadow Protocol')
+project.set_book_metadata('author', 'Jane Doe')
+project.set_book_metadata('subtitle', 'A Thriller')
+project.set_book_metadata('copyright_year', 2025)
+project.set_book_metadata('isbn', '978-1-234567-89-0')
+
+# Get metadata
+metadata = project.get_book_metadata()  # All metadata as dict
+title = project.get_book_metadata('title')  # Single field
+
+# Check if ready for export
+if project.has_required_metadata():
+    # title and author are set
+    pass
+
+# Initialize frontmatter template
+project.init_default_frontmatter()
+```
+
+### RTF Export Pattern
+
+```python
+from src.export.rtf_exporter import RTFExporter
+
+exporter = RTFExporter(project)
+
+# Export with default path (exports/book-title.rtf)
+output_path = exporter.export()
+
+# Export with custom path
+from pathlib import Path
+custom_path = Path("custom/path/book.rtf")
+output_path = exporter.export(custom_path)
+```
+
+**RTF Exporter Implementation Details:**
+
+```python
+class RTFExporter:
+    """Export to professional RTF format for Kindle/ebook."""
+
+    HEADER = r"""{\rtf1\ansi\deff0
+{\fonttbl{\f0\froman Times New Roman;}}
+{\colortbl;\red0\green0\blue0;}
+\f0\fs24
+"""
+
+    def _markdown_to_paragraphs(self, text: str) -> List[str]:
+        """
+        Convert markdown to RTF paragraphs.
+
+        CRITICAL: Escape RTF special characters FIRST, before adding RTF codes.
+        """
+        paragraphs = []
+        sections = re.split(r'\n\s*\n', text.strip())
+
+        for section in sections:
+            section = section.strip()
+
+            # Check for scene break
+            if re.match(r'^\*\s*\*\s*\*$', section):
+                paragraphs.append(r"{\pard\qc * * *\par}")
+                continue
+
+            # Regular paragraph
+            para_text = section.replace('\n', ' ')
+
+            # STEP 1: Escape RTF special chars (\\, {, })
+            para_text = self._escape_rtf(para_text)
+
+            # STEP 2: Convert markdown (asterisks still work because not escaped)
+            para_text = re.sub(r'\*\*(.*?)\*\*', r'\\b \1\\b0 ', para_text)
+            para_text = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\\i \1\\i0 ', para_text)
+
+            # STEP 3: Convert special chars to RTF codes
+            para_text = para_text.replace('—', '\\emdash ')
+            para_text = para_text.replace('–', '\\endash ')
+
+            # Build paragraph with first-line indent and justification
+            rtf_para = r"{\pard\fi360\qj " + para_text + r"\par}"
+            paragraphs.append(rtf_para)
+
+        return paragraphs
+
+    def _build_chapter(self, number: int, title: str, text: str) -> str:
+        """Build chapter with professional formatting."""
+        parts = []
+
+        # Chapter number (centered, large, bold)
+        parts.append(r"{\pard\qc\fs36\b ")
+        parts.append(f"Chapter {number}")
+        parts.append(r"\b0\fs24\par}")
+
+        # Chapter title if present
+        if title:
+            parts.append(r"{\pard\qc\b ")
+            parts.append(self._escape_rtf(title))
+            parts.append(r"\b0\par}")
+
+        # Blank line
+        parts.append(r"{\pard\par}")
+
+        # Convert prose to paragraphs
+        paragraphs = self._markdown_to_paragraphs(text)
+
+        # CRITICAL: Professional formatting - no indent on first paragraph
+        is_first = True
+        for para in paragraphs:
+            if '* * *' in para:  # Scene break
+                parts.append(para)
+                is_first = True  # Next paragraph after scene break has no indent
+                continue
+
+            # Remove indent from first paragraph or paragraph after scene break
+            if is_first and '\\fi360' in para:
+                para = para.replace('\\fi360', '\\fi0')
+                is_first = False
+
+            parts.append(para)
+
+        return ''.join(parts)
+
+    def _escape_rtf(self, text: str) -> str:
+        """Escape RTF special characters."""
+        text = text.replace('\\', '\\\\')  # Backslash first
+        text = text.replace('{', '\\{')
+        text = text.replace('}', '\\}')
+        return text
+```
+
+**Critical Bug Fix:**
+- **MUST** escape RTF special chars (`\`, `{`, `}`) BEFORE adding RTF codes
+- If done after, would corrupt the RTF codes we just added (e.g., `\b` → `\\b`)
+- Asterisks (`*`) are NOT escaped, so markdown patterns still work
+
+**Professional Formatting:**
+- First paragraph after chapter heading: NO first-line indent (`\fi0`)
+- First paragraph after scene break: NO first-line indent
+- All other paragraphs: 0.25" first-line indent (`\fi360`)
+- Justification: `\qj` for all body paragraphs
+- Centering: `\qc` for headings and scene breaks
+
+### Markdown Export Pattern
+
+```python
+from src.export.md_exporter import MarkdownExporter
+
+exporter = MarkdownExporter(project)
+output_path = exporter.export()
+```
+
+**Markdown exporter combines:**
+- Title page
+- Copyright section
+- Frontmatter sections (dedication, acknowledgments)
+- All chapters with headings
+- Preserves all markdown formatting
+
+### Frontmatter Template System
+
+```python
+# Get frontmatter content
+frontmatter = project.get_frontmatter()
+
+# Save custom frontmatter
+custom_frontmatter = """---
+## Title Page
+
+{{title}}
+{{subtitle}}
+
+by {{author}}
+
+---
+
+## Copyright
+
+Copyright © {{copyright_year}} by {{author}}
+
+All rights reserved...
+
+ISBN: {{isbn}}
+Edition: {{edition}}
+
+---
+
+## Dedication
+
+To my family and friends...
+"""
+
+project.save_frontmatter(custom_frontmatter)
+```
+
+**Variable Replacement:**
+- `{{title}}` - Book title
+- `{{subtitle}}` - Book subtitle
+- `{{author}}` - Author name
+- `{{copyright_year}}` - Copyright year
+- `{{isbn}}` - ISBN number
+- `{{edition}}` - Edition text
+- `{{publisher}}` - Publisher name
+
+**Template Processing:**
+```python
+def _replace_variables(self, text: str) -> str:
+    """Replace {{variable}} placeholders in text."""
+    replacements = {
+        'title': self.metadata.get('title', ''),
+        'subtitle': self.metadata.get('subtitle', ''),
+        'author': self.metadata.get('author', ''),
+        'copyright_year': str(self.metadata.get('copyright_year', 2025)),
+        'isbn': self.metadata.get('isbn', ''),
+        'edition': self.metadata.get('edition', ''),
+        'publisher': self.metadata.get('publisher', ''),
+    }
+
+    for key, value in replacements.items():
+        text = text.replace('{{' + key + '}}', value)
+
+    return text
+```
+
+### RTF Format Reference
+
+**Control Words:**
+- `\rtf1` - RTF version 1
+- `\ansi` - ANSI encoding
+- `\deff0` - Default font 0
+- `\fonttbl` - Font table
+- `\colortbl` - Color table
+- `\f0` - Font 0
+- `\fs24` - Font size 24 (12pt)
+- `\fs36` - Font size 36 (18pt for chapter numbers)
+- `\fs48` - Font size 48 (24pt for title)
+- `\pard` - Start paragraph
+- `\par` - End paragraph
+- `\fi360` - First-line indent 0.25" (360 twips)
+- `\qj` - Justify
+- `\qc` - Center
+- `\ql` - Left align
+- `\b` - Bold on
+- `\b0` - Bold off
+- `\i` - Italic on
+- `\i0` - Italic off
+- `\emdash` - Em dash (—)
+- `\endash` - En dash (–)
+- `\u169` - Unicode character (©)
+- `\page` - Page break
+
+**Twips Conversion:**
+- 1 inch = 1440 twips
+- 0.25" = 360 twips (first-line indent)
+- 0.5" = 720 twips
+- 1" = 1440 twips
 
 # Python API Reference
 
