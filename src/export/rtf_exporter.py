@@ -241,8 +241,8 @@ class RTFExporter:
         # Apply professional formatting: no indent on first paragraph and after scene breaks
         is_first = True
         for para in paragraphs:
-            # Check if this is a scene break
-            if '* * *' in para:
+            # Check if this is a scene break (centered * * *, not just any occurrence)
+            if r"\qc * * *" in para:
                 parts.append(para)
                 parts.append("\n")
                 is_first = True  # Next paragraph after scene break has no indent

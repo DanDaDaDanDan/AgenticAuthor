@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Critical bug fixes:
     - Escape RTF special characters (\\, {, }) BEFORE adding RTF codes (prevents corruption)
     - Professional formatting: no first-line indent on first paragraph after chapter headings or scene breaks
+    - Scene break detection: check for centered `\qc * * *` specifically, not any occurrence of "* * *" in text
 
 - **Content Deletion System** 🗑️
   - `/cull <target>` command for explicit content deletion

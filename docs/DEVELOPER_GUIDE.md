@@ -1580,6 +1580,12 @@ class RTFExporter:
 - Justification: `\qj` for all body paragraphs
 - Centering: `\qc` for headings and scene breaks
 
+**Scene Break Detection:**
+- Scene breaks are created as `{\pard\qc * * *\par}` (centered)
+- Detection uses `r"\qc * * *" in para` to match only centered scene breaks
+- This prevents false positives if user writes "* * *" in regular prose
+- Regular paragraphs use `\qj` (justify), so they won't match the `\qc` check
+
 ### Markdown Export Pattern
 
 ```python
