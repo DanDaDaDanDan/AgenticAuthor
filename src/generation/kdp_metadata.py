@@ -525,8 +525,7 @@ Generate all metadata now:"""
                 content = content.replace(f'### Keyword Box {i} (50 char max):\n```\n\n```',
                                          f'### Keyword Box {i} (50 char max):\n```\n{keyword}\n```')
 
-        if metadata.get('author_bio'):
-            content = self._insert_section(content, '## 5. Author Bio', metadata['author_bio'])
+        # Note: Author bio is NOT auto-generated (users should write their own)
 
         # Write to file
         output_path.write_text(content, encoding='utf-8')
