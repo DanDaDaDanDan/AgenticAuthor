@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Kindle Publishing Documentation** 📖
   - Comprehensive research on Amazon KDP metadata requirements
-  - Complete guide to book descriptions (150-300 words optimal, HTML formatting, best practices)
+  - Complete guide to book descriptions (100-150 words optimal, HTML formatting, best practices)
   - Keyword strategy (7 boxes, 50 characters each, research methods)
   - Category selection guide (BISAC codes, Amazon categories, competition analysis)
   - Author bio best practices (fiction vs nonfiction approaches)
@@ -68,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `/generate marketing` command for automatic metadata generation
   - New `KDPMetadataGenerator` class in `src/generation/kdp_metadata.py`
   - Generates Amazon KDP marketing metadata:
-    - **Book Description**: 150-300 words, HTML formatted with compelling hook, conflict, stakes, and CTA
+    - **Book Description**: 100-150 words, HTML formatted with compelling hook, conflict, stakes, and CTA
     - **Keywords**: 7 keyword boxes (50 characters each) optimized for Amazon search
     - **Categories**: 3 optimal Amazon categories with reasoning (specific subcategories)
     - **Comp Titles**: 3 comparable titles with explanations (recent, similar tone/themes)

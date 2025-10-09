@@ -504,7 +504,7 @@ Generate full prose for a chapter (LOD0).
 Generate Amazon KDP marketing metadata using LLM.
 - **components** (optional): Specific metadata to generate
   - `all` (default): Generate all metadata
-  - `description`: Book description only (150-300 words, HTML formatted)
+  - `description`: Book description only (100-150 words, HTML formatted)
   - `keywords`: 7 keyword boxes only (50 characters each)
   - `categories`: 3 optimal Amazon categories only
   - `comp`: Comparable titles only (3 suggestions)
@@ -512,7 +512,7 @@ Generate Amazon KDP marketing metadata using LLM.
   - Title and author must be set (`/metadata title` and `/metadata author`)
   - Premise must exist (generates from all available content)
 - Features:
-  - **Book Description**: Compelling 150-300 word pitch with HTML formatting
+  - **Book Description**: Compelling 100-150 word pitch with HTML formatting
   - **Keywords**: 7 optimized keyword boxes for Amazon search
   - **Categories**: 3 specific Amazon/BISAC categories with reasoning
   - **Comp Titles**: 3 comparable titles with explanations

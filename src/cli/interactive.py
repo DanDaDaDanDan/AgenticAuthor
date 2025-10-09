@@ -1914,7 +1914,7 @@ class InteractiveSession:
         try:
             # Generate book description
             if generate_description:
-                with self.console.status("[yellow]Writing book description (150-300 words)...[/yellow]"):
+                with self.console.status("[yellow]Writing book description (100-150 words)...[/yellow]"):
                     description = await generator.generate_description()
                     metadata['description'] = description
 
@@ -1967,6 +1967,21 @@ class InteractiveSession:
 
                 self.console.print(f"[green]✓ Saved to:[/green] [cyan]{output_path}[/cyan]")
                 self.console.print(f"[dim]File size: {output_path.stat().st_size / 1024:.1f} KB[/dim]\n")
+
+            # Commit the generated metadata
+            components = []
+            if generate_description:
+                components.append("description")
+            if generate_keywords:
+                components.append("keywords")
+            if generate_categories:
+                components.append("categories")
+            if generate_comp:
+                components.append("comp titles")
+
+            if components:
+                component_str = ", ".join(components)
+                self._commit(f"Generate marketing metadata: {component_str}")
 
             self.console.print("[green]✅ Marketing metadata generation complete![/green]")
             self.console.print("\n[dim]Next steps:[/dim]")
@@ -2311,6 +2326,9 @@ class InteractiveSession:
             self.project.init_default_frontmatter()
             self.console.print("[dim]Created default frontmatter template[/dim]")
 
+        # Commit metadata change
+        self._commit(f"Set {key}: {value}")
+
     async def export_story(self, args: str):
         """
         Export book to various formats.
@@ -2381,6 +2399,9 @@ class InteractiveSession:
         chapters = len(list(self.project.list_chapters()))
         self.console.print(f"  Chapters: {chapters}")
 
+        # Commit the export
+        self._commit(f"Export to RTF: {result_path.name}")
+
     async def _export_markdown(self, custom_path: Optional[str] = None):
         """Export to combined markdown."""
         from ..export.md_exporter import MarkdownExporter
@@ -2408,6 +2429,9 @@ class InteractiveSession:
         # Count chapters
         chapters = len(list(self.project.list_chapters()))
         self.console.print(f"  Chapters: {chapters}")
+
+        # Commit the export
+        self._commit(f"Export to Markdown: {result_path.name}")
 
     def git_command(self, args: str):
         """Run git command on shared repository."""

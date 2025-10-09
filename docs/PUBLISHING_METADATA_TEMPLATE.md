@@ -37,7 +37,7 @@ This template contains all metadata needed for Amazon Kindle Direct Publishing (
 ## 2. Book Description (Sales Copy)
 
 **Character Limit**: 4,000 characters maximum
-**Optimal Length**: 150-300 words (~800-1,600 characters)
+**Optimal Length**: 100-150 words (~500-750 characters)
 **Current Length**: 0 characters
 
 ### Writing Guide

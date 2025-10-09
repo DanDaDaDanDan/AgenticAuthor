@@ -83,7 +83,7 @@ Publishing on Amazon Kindle Direct Publishing (KDP) requires much more than just
 
 ### Character Limits
 - **Maximum**: 4,000 characters (Amazon's hard limit)
-- **Optimal**: 150-300 words (~800-1,600 characters)
+- **Optimal**: 100-150 words (~500-750 characters)
 - **Key principle**: Be compelling and scannable, not exhaustive
 - Shorter, focused descriptions often convert better than long ones
 

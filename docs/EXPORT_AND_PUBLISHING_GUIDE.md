@@ -203,7 +203,7 @@ Your book description is **the most important piece of marketing copy** you'll w
 ### Book Description Best Practices
 
 **Character Limit**: 4,000 characters maximum
-**Optimal Length**: 150-300 words (~800-1,600 characters)
+**Optimal Length**: 100-150 words (~500-750 characters)
 **Key Principle**: Be compelling and scannable, not exhaustive
 
 **Structure for Fiction**:

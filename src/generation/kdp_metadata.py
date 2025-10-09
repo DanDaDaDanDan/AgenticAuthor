@@ -47,7 +47,7 @@ class KDPMetadataGenerator:
 
     async def generate_description(self) -> str:
         """
-        Generate compelling book description (150-300 words).
+        Generate compelling book description (100-150 words).
 
         Returns:
             HTML-formatted book description
@@ -59,7 +59,7 @@ class KDPMetadataGenerator:
 Based on the book content below, write a compelling book description that will sell this book.
 
 REQUIREMENTS:
-- Length: 150-300 words (~800-1,600 characters)
+- Length: 100-150 words (~500-750 characters)
 - Format: HTML with <b>, <i>, <br> tags
 - Structure for fiction:
   * Hook (1-2 sentences) - Make it bold <b>
@@ -359,7 +359,7 @@ Based on the book content below, generate ALL metadata needed for a successful K
 Generate the following in this EXACT format:
 
 DESCRIPTION:
-[150-300 word HTML-formatted book description with <b>, <i>, <br> tags]
+[100-150 word HTML-formatted book description with <b>, <i>, <br> tags]
 
 KEYWORDS:
 [7 keyword phrases, one per line, max 50 chars each]
