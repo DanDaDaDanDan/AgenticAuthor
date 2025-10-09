@@ -145,16 +145,30 @@ class IterationCoordinator:
         """
         Execute patch-based iteration using unified LOD context.
 
-        KEY: Prose iteration uses diff-based patching with full context of ALL chapters.
+        ITERATION STRATEGIES:
+        - Prose: Diff-based patching (most efficient, line-level changes)
+        - Chapters/Treatment/Premise: YAML replacement (simple, maintains consistency)
+
+        Current approach sends full context and asks LLM to return updated YAML.
+        This is token-intensive but ensures full consistency and is simple to implement.
+
+        For large projects (20+ chapters), this could use 10k+ tokens round-trip.
+        However, this is acceptable because:
+        - Chapter iteration is infrequent compared to prose iteration
+        - Maintaining consistency is more important than token optimization
+        - Alternative (YAML diff-patching) is complex and error-prone
+
+        FUTURE OPTIMIZATION: Consider diff-based patching for chapters.yaml
+        when project size becomes a common issue.
         """
         changes = []
         target_lod = intent['target_type']
 
-        # Special handling for prose iteration (diff-based)
+        # Special handling for prose iteration (diff-based - efficient)
         if target_lod == 'prose':
             return await self._execute_prose_patch(intent, show_preview)
 
-        # For other LODs, use YAML-based patching
+        # For other LODs, use YAML-based replacement (simple but complete)
         # Build unified context up to (and including) target LOD
         context = self.context_builder.build_context(
             project=self.project,
