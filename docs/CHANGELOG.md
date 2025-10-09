@@ -67,21 +67,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LLM-Powered KDP Metadata Generation** 🤖
   - `/generate marketing` command for automatic metadata generation
   - New `KDPMetadataGenerator` class in `src/generation/kdp_metadata.py`
-  - Generates Amazon KDP marketing metadata:
+  - Generates essential Amazon KDP marketing metadata:
     - **Book Description**: 100-150 words, HTML formatted with compelling hook, conflict, stakes, and CTA
     - **Keywords**: 7 keyword boxes (50 characters each) optimized for Amazon search
-    - **Categories**: 3 optimal Amazon categories with reasoning (specific subcategories)
-    - **Comp Titles**: 3 comparable titles with explanations (recent, similar tone/themes)
   - Context building from all book content:
     - Premise, treatment, chapters.yaml (genre, themes, characters)
     - First chapter prose sample (writing style)
-  - Selective generation: `all`, `description`, `keywords`, `categories`, `comp`
-  - Saves to `publishing-metadata.md` file alongside RTF export
+  - Selective generation: `all`, `description`, `keywords`
+  - Saves to simplified `publishing-metadata.md` file alongside RTF export
   - Progress spinners and formatted output display
   - Prerequisites validation (title/author set, content exists)
   - Uses project's selected model for all generation
   - Tested and verified with real book project
-  - Note: Author bio NOT generated (LLM would make it up - users should write their own)
+  - Simplified template: just description and keywords (the essentials)
 
 - **Content Deletion System** 🗑️
   - `/cull <target>` command for explicit content deletion

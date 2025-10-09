@@ -518,7 +518,7 @@ Generate all metadata now:"""
 
         # Insert generated metadata
         if metadata.get('description'):
-            content = self._insert_section(content, '## 2. Book Description', metadata['description'])
+            content = self._insert_section(content, '## Book Description', metadata['description'])
 
         if metadata.get('keywords'):
             for i, keyword in enumerate(metadata['keywords'], 1):
@@ -532,7 +532,14 @@ Generate all metadata now:"""
 
     def _insert_section(self, content: str, section_header: str, new_text: str) -> str:
         """Insert generated text into a section."""
-        # Find the section
+        # For Book Description section, replace the placeholder in the code block
+        if section_header == '## Book Description':
+            placeholder = '[Generated description will appear here]'
+            if placeholder in content:
+                content = content.replace(placeholder, new_text)
+            return content
+
+        # Find the section for other headers
         if section_header in content:
             # Find next section or end
             start = content.find(section_header)
@@ -553,19 +560,54 @@ Generate all metadata now:"""
         """Get basic template if file doesn't exist."""
         return """# Publishing Metadata
 
-Generated for: {{title}}
-Author: {{author}}
-Date: {{date}}
+**Book**: {{title}}
+**Author**: {{author}}
+**Generated**: {{date}}
 
-## 2. Book Description
+---
 
-[Generated description will go here]
+## Book Description
 
-## Keywords
+```
+[Generated description will appear here]
+```
 
-[Generated keywords will go here]
+---
 
-## Author Bio
+## Keywords (7 Search Terms)
 
-[Generated bio will go here]
+### Keyword Box 1 (50 char max):
+```
+
+```
+
+### Keyword Box 2 (50 char max):
+```
+
+```
+
+### Keyword Box 3 (50 char max):
+```
+
+```
+
+### Keyword Box 4 (50 char max):
+```
+
+```
+
+### Keyword Box 5 (50 char max):
+```
+
+```
+
+### Keyword Box 6 (50 char max):
+```
+
+```
+
+### Keyword Box 7 (50 char max):
+```
+
+```
 """

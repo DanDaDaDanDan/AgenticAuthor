@@ -1894,13 +1894,11 @@ class InteractiveSession:
 
         self.console.print("[cyan]Generating KDP marketing metadata...[/cyan]\n")
 
-        # Parse options
+        # Parse options - only description and keywords
         parts = options.strip().split() if options else []
         generate_all = not parts or 'all' in parts
         generate_description = generate_all or 'description' in parts
         generate_keywords = generate_all or 'keywords' in parts
-        generate_categories = generate_all or 'categories' in parts
-        generate_comp = generate_all or 'comp' in parts
 
         # Create generator
         generator = KDPMetadataGenerator(
@@ -1933,31 +1931,6 @@ class InteractiveSession:
                     self.console.print(f"  {i}. {keyword}")
                 self.console.print()
 
-            # Generate categories
-            if generate_categories:
-                with self.console.status("[yellow]Recommending Amazon categories...[/yellow]"):
-                    categories = await generator.generate_categories()
-                    metadata['categories'] = categories
-
-                self.console.print("[green]✓[/green] [bold]Recommended Categories:[/bold]")
-                for i, cat in enumerate(categories, 1):
-                    self.console.print(f"  {i}. {cat.get('path', 'Unknown')}")
-                    self.console.print(f"     [dim]{cat.get('reason', '')}[/dim]")
-                self.console.print()
-
-            # Generate comp titles
-            if generate_comp:
-                with self.console.status("[yellow]Finding comparable titles...[/yellow]"):
-                    comp_titles = await generator.suggest_comp_titles()
-                    metadata['comp_titles'] = comp_titles
-
-                self.console.print("[green]✓[/green] [bold]Comparable Titles:[/bold]")
-                for i, comp in enumerate(comp_titles, 1):
-                    self.console.print(f"  {i}. {comp.get('info', 'Unknown')}")
-                    self.console.print(f"     [dim]{comp.get('why', '')}[/dim]")
-                    self.console.print(f"     [dim]{comp.get('use', '')}[/dim]")
-                self.console.print()
-
             # Save to publishing-metadata.md
             output_path = self.project.path / 'publishing-metadata.md'
 
@@ -1974,10 +1947,6 @@ class InteractiveSession:
                 components.append("description")
             if generate_keywords:
                 components.append("keywords")
-            if generate_categories:
-                components.append("categories")
-            if generate_comp:
-                components.append("comp titles")
 
             if components:
                 component_str = ", ".join(components)

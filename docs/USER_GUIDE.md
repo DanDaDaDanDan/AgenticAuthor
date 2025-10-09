@@ -503,27 +503,22 @@ Generate full prose for a chapter (LOD0).
 #### `/generate marketing [components]`
 Generate Amazon KDP marketing metadata using LLM.
 - **components** (optional): Specific metadata to generate
-  - `all` (default): Generate all metadata
+  - `all` (default): Generate description and keywords
   - `description`: Book description only (100-150 words, HTML formatted)
   - `keywords`: 7 keyword boxes only (50 characters each)
-  - `categories`: 3 optimal Amazon categories only
-  - `comp`: Comparable titles only (3 suggestions)
 - Prerequisites:
   - Title and author must be set (`/metadata title` and `/metadata author`)
   - Premise must exist (generates from all available content)
 - Features:
   - **Book Description**: Compelling 100-150 word pitch with HTML formatting
   - **Keywords**: 7 optimized keyword boxes for Amazon search
-  - **Categories**: 3 specific Amazon/BISAC categories with reasoning
-  - **Comp Titles**: 3 comparable titles with explanations
   - Builds context from premise, treatment, chapters.yaml, and first chapter prose
   - Saves to `publishing-metadata.md` file
   - Progress spinners and formatted display
-- Note: Author bio is NOT generated (write your own in the metadata template)
 - Examples:
-  - `/generate marketing` - Generate all metadata
+  - `/generate marketing` - Generate description and keywords
   - `/generate marketing description` - Only book description
-  - `/generate marketing keywords categories` - Keywords and categories
+  - `/generate marketing keywords` - Only keywords
 - See also: `docs/EXPORT_AND_PUBLISHING_GUIDE.md` for complete publishing workflow
 
 #### `/iterate <target> [feedback]`
