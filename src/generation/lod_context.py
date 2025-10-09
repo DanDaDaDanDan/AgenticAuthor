@@ -129,6 +129,47 @@ class LODContextBuilder:
             return int(match.group(1))
         return 0
 
+    def build_prose_iteration_context(
+        self,
+        project: Project,
+        target_chapter: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        Build full context for prose iteration with ALL chapter prose.
+
+        CRITICAL: For prose iteration, we pass full prose for ALL chapters
+        to give maximum context. No truncation, context is king.
+
+        Args:
+            project: Current project
+            target_chapter: Specific chapter being iterated (for identification)
+
+        Returns:
+            Dict with chapters.yaml and full prose of ALL chapters
+        """
+        context = {}
+
+        # Include chapters.yaml (self-contained with metadata, characters, world, chapters)
+        chapters_yaml = project.get_chapters_yaml()
+        if chapters_yaml:
+            context['chapters'] = chapters_yaml
+        else:
+            # Legacy format fallback
+            chapters = project.get_chapters()
+            if chapters:
+                context['chapters'] = chapters
+
+        # Include FULL prose for ALL chapters (untruncated)
+        prose = self._load_all_prose(project)
+        if prose:
+            context['prose'] = prose
+
+        # Mark target chapter if specified
+        if target_chapter is not None:
+            context['target_chapter'] = target_chapter
+
+        return context
+
     def to_yaml_string(self, context: Dict[str, Any]) -> str:
         """Serialize context to YAML string for LLM."""
         return yaml.dump(context, default_flow_style=False, sort_keys=False, allow_unicode=True)

@@ -98,13 +98,10 @@ class DiffGenerator:
         if not original:
             raise ValueError("Original content cannot be empty")
 
-        # Truncate very long content for prompt (keep first/last portions)
-        original_for_prompt = self._truncate_content(original, max_words=3000)
-
-        # Render prompt
+        # Render prompt (full content, no truncation - context is king)
         template = Template(DIFF_GENERATION_TEMPLATE)
         prompt = template.render(
-            original_content=original_for_prompt,
+            original_content=original,
             intent_description=intent.get('description', ''),
             action=intent.get('action', ''),
             scope=intent.get('scope', ''),
@@ -387,33 +384,34 @@ class DiffGenerator:
 
         return diff
 
-    def _truncate_content(self, content: str, max_words: int = 3000) -> str:
+    def get_diff_statistics(self, diff: str) -> Dict[str, int]:
         """
-        Truncate long content for prompt, keeping beginning and end.
+        Calculate statistics from a unified diff.
 
         Args:
-            content: Content to truncate
-            max_words: Maximum words to keep
+            diff: Unified diff string
 
         Returns:
-            Truncated content
+            Dict with 'added', 'removed', 'changed' line counts
         """
-        words = content.split()
+        added = 0
+        removed = 0
 
-        if len(words) <= max_words:
-            return content
+        for line in diff.splitlines():
+            if line.startswith('+') and not line.startswith('+++'):
+                added += 1
+            elif line.startswith('-') and not line.startswith('---'):
+                removed += 1
 
-        # Keep first 60% and last 40%
-        keep_start = int(max_words * 0.6)
-        keep_end = max_words - keep_start
+        # Changed lines = minimum of added/removed
+        changed = min(added, removed)
 
-        truncated = (
-            ' '.join(words[:keep_start]) +
-            '\n\n[... content truncated ...]\n\n' +
-            ' '.join(words[-keep_end:])
-        )
-
-        return truncated
+        return {
+            'added': added,
+            'removed': removed,
+            'changed': changed,
+            'total_changes': added + removed
+        }
 
     def create_preview(self, original: str, diff: str) -> str:
         """

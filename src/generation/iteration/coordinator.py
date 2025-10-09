@@ -145,12 +145,16 @@ class IterationCoordinator:
         """
         Execute patch-based iteration using unified LOD context.
 
-        KEY: When iterating chapters/prose, explicitly ask LLM to update premise/treatment
-        if needed (upward sync in single atomic operation).
+        KEY: Prose iteration uses diff-based patching with full context of ALL chapters.
         """
         changes = []
         target_lod = intent['target_type']
 
+        # Special handling for prose iteration (diff-based)
+        if target_lod == 'prose':
+            return await self._execute_prose_patch(intent, show_preview)
+
+        # For other LODs, use YAML-based patching
         # Build unified context up to (and including) target LOD
         context = self.context_builder.build_context(
             project=self.project,
@@ -165,15 +169,9 @@ class IterationCoordinator:
             raise ValueError("No treatment found. Generate treatment first.")
         elif target_lod == 'chapters' and 'chapters' not in context:
             raise ValueError("No chapters found. Generate chapters first.")
-        elif target_lod == 'prose':
-            # For prose, we just need chapter outlines
-            if 'chapters' not in context:
-                raise ValueError("No chapter outlines found. Generate chapters first.")
 
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)
-
-        # No sync instructions - each LOD level is independent now
 
         # Build the iteration prompt
         prompt = f"""Current book content in YAML format:
@@ -241,6 +239,122 @@ Return ONLY the YAML content. Do NOT wrap in markdown code fences (```)."""
         changes.append(change_info)
 
         return changes
+
+    async def _execute_prose_patch(
+        self,
+        intent: Dict[str, Any],
+        show_preview: bool = False
+    ) -> list:
+        """
+        Execute diff-based prose iteration with full context of ALL chapters.
+
+        CRITICAL: Pass full prose of ALL chapters for maximum context.
+        No truncation, context is king.
+        """
+        changes = []
+
+        # Extract target chapter number
+        chapter_num = self._extract_chapter_number(intent)
+        if not chapter_num:
+            raise ValueError("Cannot determine which chapter to iterate. Please specify chapter number.")
+
+        # Get target chapter file
+        chapter_file = self.project.chapters_dir / f'chapter-{chapter_num:02d}.md'
+        if not chapter_file.exists():
+            raise ValueError(f"Chapter {chapter_num} not found. Generate it first with /generate prose {chapter_num}")
+
+        # Read original content
+        original_content = chapter_file.read_text(encoding='utf-8')
+
+        # Build FULL context with ALL chapter prose
+        full_context = self.context_builder.build_prose_iteration_context(
+            project=self.project,
+            target_chapter=chapter_num
+        )
+
+        # Serialize context to YAML (includes chapters.yaml + ALL prose)
+        context_yaml = self.context_builder.to_yaml_string(full_context)
+
+        # Build additional context for diff generation
+        additional_context = f"""Full Story Context (chapters.yaml + all prose):
+
+```yaml
+{context_yaml}
+```
+
+TARGET CHAPTER: {chapter_num}
+You are modifying chapter {chapter_num}. All other chapters are provided for context."""
+
+        # Create backup for undo
+        backup_path = self.project.path / '.agentic' / 'debug' / f'chapter-{chapter_num:02d}.backup.md'
+        backup_path.parent.mkdir(parents=True, exist_ok=True)
+        backup_path.write_text(original_content, encoding='utf-8')
+
+        # Generate diff
+        try:
+            diff = await self.diff_generator.generate_diff(
+                original=original_content,
+                intent=intent,
+                file_path=f'chapters/chapter-{chapter_num:02d}.md',
+                context=additional_context
+            )
+
+            # Get diff statistics
+            stats = self.diff_generator.get_diff_statistics(diff)
+
+            # Show preview if requested
+            if show_preview:
+                preview = self.diff_generator.create_preview(original_content, diff)
+                print("\n=== Diff Preview ===")
+                print(preview)
+                print("\n=== Statistics ===")
+                print(f"Lines added: {stats['added']}")
+                print(f"Lines removed: {stats['removed']}")
+                print(f"Lines changed: {stats['changed']}")
+                print(f"Total changes: {stats['total_changes']}")
+
+                # Ask for confirmation
+                response = input("\nApply these changes? [y/N]: ")
+                if response.lower() != 'y':
+                    return [{
+                        'type': 'patch',
+                        'status': 'cancelled',
+                        'message': 'User cancelled changes'
+                    }]
+
+            # Apply diff
+            modified_content = self.diff_generator.apply_diff(original_content, diff)
+
+            # Save modified content
+            chapter_file.write_text(modified_content, encoding='utf-8')
+
+            # Build change info
+            change_info = {
+                'type': 'prose_patch',
+                'chapter': chapter_num,
+                'updated_files': [f'chapters/chapter-{chapter_num:02d}.md'],
+                'backup_path': str(backup_path.relative_to(self.project.path)),
+                'statistics': stats,
+                'word_count_before': len(original_content.split()),
+                'word_count_after': len(modified_content.split())
+            }
+
+            changes.append(change_info)
+
+            # Display statistics
+            print(f"\n✓ Applied {stats['total_changes']} line changes to chapter {chapter_num}")
+            print(f"  +{stats['added']} lines added")
+            print(f"  -{stats['removed']} lines removed")
+            print(f"  Backup saved to: {change_info['backup_path']}")
+            print(f"  To undo: copy backup back to chapters/chapter-{chapter_num:02d}.md")
+
+            return changes
+
+        except Exception as e:
+            # Restore from backup on error
+            if backup_path.exists():
+                chapter_file.write_text(backup_path.read_text(encoding='utf-8'), encoding='utf-8')
+            raise ValueError(f"Failed to apply prose patch: {str(e)}")
 
     async def _execute_regenerate(self, intent: Dict[str, Any]) -> list:
         """Execute full regeneration."""

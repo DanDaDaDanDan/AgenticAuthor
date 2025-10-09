@@ -121,7 +121,11 @@ class ScaleDetector:
         return "patch"
 
     def _has_override_conditions(self, intent: Dict[str, Any]) -> bool:
-        """Check if there are conditions that override the scale."""
+        """
+        Check if there are conditions that override the scale.
+
+        Uses lines-based estimation, not structural scope.
+        """
         # Check for regeneration keywords in feedback
         feedback = intent.get('original_feedback', '').lower()
         if any(kw in feedback for kw in self.REGEN_KEYWORDS):
@@ -131,8 +135,9 @@ class ScaleDetector:
         if intent.get('action') in self.STRUCTURAL_ACTIONS:
             return True
 
-        # Check scope
-        if intent.get('scope') in ['multiple', 'entire']:
+        # Estimate lines changed - if > 300 lines, override to regenerate
+        estimated_lines = self._estimate_lines_changed(intent)
+        if estimated_lines > 300:
             return True
 
         return False
@@ -143,7 +148,11 @@ class ScaleDetector:
         content: Optional[str] = None
     ) -> str:
         """
-        Apply rule-based heuristics to determine scale.
+        Apply rule-based heuristics to determine scale based on estimated lines changed.
+
+        KEY: Focus on estimated lines changed, not structural scope.
+        E.g., adjusting 20 pieces of dialog across 10 chapters = patch (localized changes)
+        vs. rewriting chapter structure = regenerate (fundamental change)
 
         Returns:
             "patch", "regenerate", or "unclear"
@@ -153,47 +162,101 @@ class ScaleDetector:
         if any(kw in feedback for kw in self.REGEN_KEYWORDS):
             return "regenerate"
 
-        # Check scope
-        scope = intent.get('scope')
-        if scope == 'entire':
-            return "regenerate"
-
-        if scope == 'multiple':
-            return "regenerate"
-
         # Structural changes require regeneration
         if intent.get('action') in self.STRUCTURAL_ACTIONS:
             return "regenerate"
 
-        # Specific, targeted changes are usually patches
-        if scope == 'specific' and intent.get('target_type') in ['chapter', 'prose']:
-            # Check action type
-            action = intent.get('action', '')
-            patch_actions = [
-                'add_dialogue', 'remove_dialogue',
-                'enhance_description', 'fix_description',
-                'add_detail', 'remove_detail',
-                'fix_typo', 'fix_grammar',
-                'adjust_pacing', 'refine_style'
-            ]
+        # Estimate lines changed based on intent
+        estimated_lines = self._estimate_lines_changed(intent, content)
 
-            if any(pa in action for pa in patch_actions):
-                return "patch"
+        # Decision based on estimated lines:
+        # < 100 lines: patch (localized changes, e.g., 20-30 dialog tweaks)
+        # 100-300 lines: ask model (unclear, moderate changes)
+        # > 300 lines: regenerate (major changes)
+        if estimated_lines < 100:
+            return "patch"
+        elif estimated_lines > 300:
+            return "regenerate"
+        else:
+            # Unclear, need LLM analysis
+            return "unclear"
 
-        # If we have content, analyze change magnitude
-        if content:
-            content_length = len(content.split())
+    def _estimate_lines_changed(self, intent: Dict[str, Any], content: Optional[str] = None) -> int:
+        """
+        Estimate how many lines will be changed based on intent.
 
-            # Very short content (<200 words) - regenerate is safer
-            if content_length < 200:
-                return "regenerate"
+        Args:
+            intent: Parsed intent structure
+            content: Current content being modified
 
-            # Long content with specific scope - likely a patch
-            if content_length > 500 and scope == 'specific':
-                return "patch"
+        Returns:
+            Estimated number of lines that will change
+        """
+        feedback = intent.get('original_feedback', '').lower()
+        action = intent.get('action', '').lower()
+        scope = intent.get('scope', '').lower()
 
-        # Default: unclear, need LLM analysis
-        return "unclear"
+        # Analyze feedback for quantitative hints
+        # Look for numbers like "20 pieces of dialog", "5 scenes", etc.
+        import re
+        numbers = re.findall(r'\d+', feedback)
+        if numbers:
+            # Take the largest number mentioned as a hint
+            max_num = max(int(n) for n in numbers)
+        else:
+            max_num = 0
+
+        # Base estimate on action type
+        if 'dialogue' in action or 'dialog' in feedback:
+            # Dialog changes: typically 2-5 lines per occurrence
+            if max_num > 0:
+                return max_num * 3  # ~3 lines per dialog change
+            return 10  # Default: small dialog tweak
+
+        if 'description' in action or 'describe' in feedback:
+            # Description changes: typically 3-10 lines per description
+            if max_num > 0:
+                return max_num * 5
+            return 15  # Default: small description enhancement
+
+        if 'scene' in feedback or 'scenes' in feedback:
+            # Scene changes: large, 50-200 lines per scene
+            if max_num > 0:
+                return max_num * 100
+            return 100
+
+        if 'character' in feedback and ('arc' in feedback or 'motivation' in feedback):
+            # Character arc changes: affects many lines throughout
+            return 150
+
+        if 'pacing' in action or 'tone' in action:
+            # Style/pacing changes: typically affects many lines but localized
+            return 30
+
+        if 'fix' in action or 'typo' in action or 'grammar' in action:
+            # Fixes: very small
+            return 5
+
+        # Scope-based estimation
+        if scope == 'entire':
+            # Entire content - assume 50% of lines change
+            if content:
+                return len(content.splitlines()) // 2
+            return 250  # Default to large change
+
+        if scope == 'multiple':
+            # Multiple sections - estimate based on content size
+            if content:
+                # Assume 30% of lines across multiple sections
+                return len(content.splitlines()) // 3
+            return 100
+
+        if scope == 'specific':
+            # Specific location - small change
+            return 20
+
+        # Default: medium estimate
+        return 50
 
     async def ask_model_for_scale(
         self,
