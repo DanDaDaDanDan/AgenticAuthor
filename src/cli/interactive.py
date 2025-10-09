@@ -1298,7 +1298,7 @@ class InteractiveSession:
         # Parse generation type
         parts = args.strip().split(None, 1)
         if not parts:
-            self.console.print("[yellow]Usage: /generate <premise|premises|treatment|chapters|prose> [options][/yellow]")
+            self.console.print("[yellow]Usage: /generate <premise|premises|treatment|chapters|prose|marketing> [options][/yellow]")
             return
 
         gen_type = parts[0].lower()
@@ -1316,9 +1316,11 @@ class InteractiveSession:
                 await self._generate_chapters(options)
             elif gen_type == "prose":
                 await self._generate_prose(options)
+            elif gen_type == "marketing":
+                await self._generate_marketing(options)
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
-                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose[/dim]")
+                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing[/dim]")
         except Exception as e:
             self.console.print(f"[red]Generation failed: {e}[/red]")
 
@@ -1873,6 +1875,108 @@ class InteractiveSession:
         elif target == 'prose':
             self._print("  Add more dialogue to chapter 5")
             self._print("  Enhance sensory details in the opening")
+
+    async def _generate_marketing(self, options: str = ""):
+        """Generate KDP marketing metadata (description, keywords, categories, etc.)."""
+        from ..generation.kdp_metadata import KDPMetadataGenerator
+
+        # Check if book is ready for marketing
+        if not self.project.has_required_metadata():
+            self.console.print("[red]Missing required metadata (title and author).[/red]")
+            self.console.print("Set with: [cyan]/metadata title \"Your Title\"[/cyan]")
+            self.console.print("          [cyan]/metadata author \"Your Name\"[/cyan]")
+            return
+
+        # Check if content exists
+        if not self.project.get_premise():
+            self.console.print("[yellow]⚠ No premise found. Generate content first with /generate premise[/yellow]")
+            return
+
+        self.console.print("[cyan]Generating KDP marketing metadata...[/cyan]\n")
+
+        # Parse options
+        parts = options.strip().split() if options else []
+        generate_all = not parts or 'all' in parts
+        generate_description = generate_all or 'description' in parts
+        generate_keywords = generate_all or 'keywords' in parts
+        generate_categories = generate_all or 'categories' in parts
+        generate_comp = generate_all or 'comp' in parts
+
+        # Create generator
+        generator = KDPMetadataGenerator(
+            self.client,
+            self.project,
+            model=self.settings.active_model
+        )
+
+        metadata = {}
+
+        try:
+            # Generate book description
+            if generate_description:
+                with self.console.status("[yellow]Writing book description (150-300 words)...[/yellow]"):
+                    description = await generator.generate_description()
+                    metadata['description'] = description
+
+                self.console.print("[green]✓[/green] [bold]Book Description:[/bold]")
+                self.console.print(description)
+                self.console.print(f"[dim]Length: {len(description)} characters[/dim]\n")
+
+            # Generate keywords
+            if generate_keywords:
+                with self.console.status("[yellow]Researching optimal keywords...[/yellow]"):
+                    keywords = await generator.generate_keywords()
+                    metadata['keywords'] = keywords
+
+                self.console.print("[green]✓[/green] [bold]Keywords (7 boxes):[/bold]")
+                for i, keyword in enumerate(keywords, 1):
+                    self.console.print(f"  {i}. {keyword}")
+                self.console.print()
+
+            # Generate categories
+            if generate_categories:
+                with self.console.status("[yellow]Recommending Amazon categories...[/yellow]"):
+                    categories = await generator.generate_categories()
+                    metadata['categories'] = categories
+
+                self.console.print("[green]✓[/green] [bold]Recommended Categories:[/bold]")
+                for i, cat in enumerate(categories, 1):
+                    self.console.print(f"  {i}. {cat.get('path', 'Unknown')}")
+                    self.console.print(f"     [dim]{cat.get('reason', '')}[/dim]")
+                self.console.print()
+
+            # Generate comp titles
+            if generate_comp:
+                with self.console.status("[yellow]Finding comparable titles...[/yellow]"):
+                    comp_titles = await generator.suggest_comp_titles()
+                    metadata['comp_titles'] = comp_titles
+
+                self.console.print("[green]✓[/green] [bold]Comparable Titles:[/bold]")
+                for i, comp in enumerate(comp_titles, 1):
+                    self.console.print(f"  {i}. {comp.get('info', 'Unknown')}")
+                    self.console.print(f"     [dim]{comp.get('why', '')}[/dim]")
+                    self.console.print(f"     [dim]{comp.get('use', '')}[/dim]")
+                self.console.print()
+
+            # Save to publishing-metadata.md
+            output_path = self.project.path / 'publishing-metadata.md'
+
+            if generate_all:
+                with self.console.status("[yellow]Saving publishing-metadata.md...[/yellow]"):
+                    generator.save_metadata_file(metadata, output_path)
+
+                self.console.print(f"[green]✓ Saved to:[/green] [cyan]{output_path}[/cyan]")
+                self.console.print(f"[dim]File size: {output_path.stat().st_size / 1024:.1f} KB[/dim]\n")
+
+            self.console.print("[green]✅ Marketing metadata generation complete![/green]")
+            self.console.print("\n[dim]Next steps:[/dim]")
+            self.console.print("  1. Review and edit publishing-metadata.md")
+            self.console.print("  2. Export your book: /export rtf")
+            self.console.print("  3. Upload to Amazon KDP with this metadata")
+
+        except Exception as e:
+            self.console.print(f"[red]✗ Marketing generation failed: {e}[/red]")
+            self.logger.exception("Marketing metadata generation error")
 
     async def cull_content(self, args: str):
         """Delete generated content at various LOD levels."""

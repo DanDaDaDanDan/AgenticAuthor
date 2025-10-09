@@ -50,6 +50,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Scene break detection: check for centered `\qc * * *` specifically, not any occurrence of "* * *" in text
     - Strip markdown chapter headings from prose to prevent duplication in exports
 
+- **Kindle Publishing Documentation** 📖
+  - Comprehensive research on Amazon KDP metadata requirements
+  - Complete guide to book descriptions (150-300 words optimal, HTML formatting, best practices)
+  - Keyword strategy (7 boxes, 50 characters each, research methods)
+  - Category selection guide (BISAC codes, Amazon categories, competition analysis)
+  - Author bio best practices (fiction vs nonfiction approaches)
+  - Comparable titles (comp titles) guidance
+  - Pricing strategies (70% vs 35% royalty, territory rights)
+  - Marketing and launch checklists
+  - Three comprehensive documentation files:
+    - `KINDLE_PUBLISHING_METADATA_RESEARCH.md` - In-depth research (10 sections, 500+ lines)
+    - `PUBLISHING_METADATA_TEMPLATE.md` - Fill-in template for each book (14 sections)
+    - `EXPORT_AND_PUBLISHING_GUIDE.md` - Step-by-step workflow from export to launch
+
+- **LLM-Powered KDP Metadata Generation** 🤖
+  - `/generate marketing` command for automatic metadata generation
+  - New `KDPMetadataGenerator` class in `src/generation/kdp_metadata.py`
+  - Generates Amazon KDP marketing metadata:
+    - **Book Description**: 150-300 words, HTML formatted with compelling hook, conflict, stakes, and CTA
+    - **Keywords**: 7 keyword boxes (50 characters each) optimized for Amazon search
+    - **Categories**: 3 optimal Amazon categories with reasoning (specific subcategories)
+    - **Comp Titles**: 3 comparable titles with explanations (recent, similar tone/themes)
+  - Context building from all book content:
+    - Premise, treatment, chapters.yaml (genre, themes, characters)
+    - First chapter prose sample (writing style)
+  - Selective generation: `all`, `description`, `keywords`, `categories`, `comp`
+  - Saves to `publishing-metadata.md` file alongside RTF export
+  - Progress spinners and formatted output display
+  - Prerequisites validation (title/author set, content exists)
+  - Uses project's selected model for all generation
+  - Tested and verified with real book project
+  - Note: Author bio NOT generated (LLM would make it up - users should write their own)
+
 - **Content Deletion System** 🗑️
   - `/cull <target>` command for explicit content deletion
   - Cascade deletion with confirmation:

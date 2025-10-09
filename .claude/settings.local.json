@@ -20,7 +20,10 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(dir /O-D /B D:PersonalProjectsAgenticAuthor.agenticlogs)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "WebSearch",
+      "WebFetch(domain:kdp.amazon.com)",
+      "WebFetch(domain:blog.reedsy.com)"
     ],
     "deny": [],
     "ask": []
