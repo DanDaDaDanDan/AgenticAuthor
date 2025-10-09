@@ -81,16 +81,23 @@ class LODResponseParser:
 
             # Save chapters if present
             if 'chapters' in data:
-                chapters = data['chapters']
-                if isinstance(chapters, dict):
-                    # New self-contained format (metadata, characters, world, chapters)
-                    project.save_chapters_yaml(chapters)
+                # Detect format: NEW self-contained has metadata/characters/world at top level
+                if 'metadata' in data and 'characters' in data and 'world' in data:
+                    # NEW self-contained format - save entire structure
+                    project.save_chapters_yaml(data)
                     updated_files.append('chapters.yaml')
-                elif isinstance(chapters, list):
-                    # Legacy format - save as list to chapters.yaml
-                    with open(project.chapters_file, 'w', encoding='utf-8') as f:
-                        yaml.dump(chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-                    updated_files.append('chapters.yaml')
+                else:
+                    # OLD/LEGACY format - only chapters section
+                    chapters = data['chapters']
+                    if isinstance(chapters, dict):
+                        # Dict format (could be partial new format)
+                        project.save_chapters_yaml(chapters)
+                        updated_files.append('chapters.yaml')
+                    elif isinstance(chapters, list):
+                        # Legacy list format - save as list to chapters.yaml
+                        with open(project.chapters_file, 'w', encoding='utf-8') as f:
+                            yaml.dump(chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+                        updated_files.append('chapters.yaml')
 
             # Save prose if present
             if 'prose' in data:
@@ -360,14 +367,30 @@ class LODResponseParser:
                 raise ValueError("Treatment section must have 'text' field")
 
         elif target_lod == 'chapters':
-            if 'premise' not in data:
-                raise ValueError("Response missing 'premise' section (should be preserved)")
-            if 'treatment' not in data:
-                raise ValueError("Response missing 'treatment' section (should be preserved)")
+            # Chapters can be in two formats:
+            # 1. NEW self-contained: {metadata: {}, characters: [], world: {}, chapters: []}
+            # 2. OLD with context: {premise: {}, treatment: {}, chapters: []}
+
+            # Both formats MUST have 'chapters' section
             if 'chapters' not in data:
                 raise ValueError("Response missing 'chapters' section")
-            if not isinstance(data['chapters'], list):
-                raise ValueError("Chapters section must be a list")
+
+            # Detect format based on presence of metadata
+            if 'metadata' in data:
+                # NEW self-contained format - validate required sections
+                required_sections = ['metadata', 'characters', 'world', 'chapters']
+                missing = [s for s in required_sections if s not in data]
+                if missing:
+                    raise ValueError(f"New chapters format missing required sections: {', '.join(missing)}")
+
+                # In new format, chapters is a list at top level
+                if not isinstance(data['chapters'], list):
+                    raise ValueError("In new format, chapters must be a list")
+
+            # OLD format is no longer validated strictly (backward compatibility only)
+            # Just ensure chapters is list or dict
+            elif not isinstance(data['chapters'], (list, dict)):
+                raise ValueError("Chapters section must be a list or dict")
 
         elif target_lod == 'prose':
             if 'premise' not in data:

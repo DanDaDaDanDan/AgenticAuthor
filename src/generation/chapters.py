@@ -400,89 +400,118 @@ Return ONLY the YAML content."""
         if feedback:
             feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nPlease incorporate the above feedback while generating the chapters."
 
-        prompt = f"""Here is the current book content in YAML format:
+        # Use same prompt as normal generate() - self-contained format
+        # Get taxonomy from premise_metadata if available
+        taxonomy_data = self.project.get_taxonomy() or {}
 
+        prompt = f"""Generate a comprehensive, self-contained chapter structure for a book.
+
+INPUT CONTEXT:
 ```yaml
 {context_yaml}
 ```
 
-Generate {chapter_count} detailed chapter outlines based on the treatment above.
+TASK:
+Create a complete chapters.yaml file with 4 sections that contains ALL information needed for prose generation.
+This file will be used STANDALONE - prose generation will NOT have access to premise or treatment.
 
-Target: {total_words} total words distributed across chapters
+SECTION 1: METADATA
+Generate high-level story parameters based on the taxonomy and treatment:
+- genre, subgenre (if applicable)
+- tone (e.g., "dark, tense", "light, humorous")
+- pacing (e.g., "fast", "moderate", "slow")
+- themes: 2-4 core themes from the story
+- story_structure (e.g., "three_act", "hero_journey")
+- narrative_style (e.g., "third_person_limited", "first_person")
+- target_audience (e.g., "adult", "young adult")
+- target_word_count: {total_words}
+- setting_period (e.g., "contemporary", "historical", "future")
+- setting_location (e.g., "urban", "rural", "multiple")
+- content_warnings: list any if applicable
 
-IMPORTANT: Create comprehensive, professional-quality outlines with 15-20 total beats per chapter.
+NOTE: Base this on the taxonomy provided, but YOU MAY ADAPT based on what the actual story requires.
 
-For each chapter, provide:
-1. Chapter number
-2. Title (evocative, specific, not generic)
-3. POV character (whose perspective we follow)
-4. Summary (3-4 sentences capturing the essence)
-5. Key events (8-10 specific plot beats showing what happens)
-6. Character developments (3-4 internal changes/realizations)
-7. Relationship beats (2-3 how relationships evolve)
-8. Tension points (2-3 what raises stakes/urgency)
-9. Sensory details (2-3 atmospheric/sensory elements)
-10. Subplot threads (1-2 if applicable)
-11. Word count target (distribute {total_words} words across chapters)
-12. Act designation (Act I, Act II, or Act III)
+SECTION 2: CHARACTERS
+Extract ALL major characters from the treatment with COMPLETE profiles.
+Include AT MINIMUM: protagonist, main supporting character(s), antagonist.
 
-Guidelines for rich outlines:
-- Each key_event should be a complete story beat, not just "Clara talks to Amos"
-- Character developments show internal change, not just actions
-- Relationship beats track evolving dynamics between specific characters
-- Tension points identify what creates urgency or raises stakes
-- Be specific: names, places, emotions, not generic descriptions
+For each character provide:
+- name, role (protagonist/deuteragonist/antagonist/supporting)
+- background: 2-3 paragraphs of history, formative experiences, context
+- motivation: 1-2 paragraphs on what drives them, their goals
+- character_arc: 3-4 sentences on how they change across acts
+- personality_traits: 3-5 key traits
+- internal_conflict: Their psychological struggle
+- relationships: List of relationships with other characters, including:
+  * character name
+  * dynamic description
+  * evolution across story
 
-Pacing structure:
-- Act I: ~25% of chapters (setup, inciting incident, establishing stakes)
-- Act II: ~50% of chapters (rising action, complications, midpoint shift)
-- Act III: ~25% of chapters (climax, resolution, denouement)
-- Each chapter ends with momentum (cliffhanger, revelation, or decision)
-- Vary chapter lengths between 2500-4000 words for rhythm{feedback_instruction}
+CRITICAL: Ensure NO material character information from the treatment is missing.
 
-CRITICAL: Return your response as YAML with this structure:
+SECTION 3: WORLD
+Extract ALL world-building elements from the treatment.
+
+Provide:
+- setting_overview: 2-3 paragraph description of the world
+- key_locations: 4-8 important places, each with:
+  * name
+  * description
+  * atmosphere
+  * significance to story
+- systems_and_rules: How the world works (magic systems, tech, social structures, etc.)
+- social_context: Cultural, political, historical backdrop
+
+CRITICAL: Ensure NO material world-building from the treatment is missing.
+
+SECTION 4: CHAPTERS
+Generate {chapter_count} comprehensive chapter outlines.
+
+For each chapter:
+- number, title (evocative, specific)
+- pov, act, summary (3-4 sentences)
+- key_events: 8-10 specific plot beats
+- character_developments: 3-4 internal changes
+- relationship_beats: 2-3 relationship evolutions
+- tension_points: 2-3 stakes/urgency moments
+- sensory_details: 2-3 atmospheric elements
+- subplot_threads: 1-2 if applicable
+- word_count_target: distribute {total_words} across chapters
+
+Guidelines:
+- Each key_event should be specific and complete
+- Character developments show internal change
+- Relationship beats track evolving dynamics
+- Be specific with names, places, emotions
+- Act I: ~25% chapters (setup)
+- Act II: ~50% chapters (rising action)
+- Act III: ~25% chapters (climax, resolution){feedback_instruction}
+
+RETURN FORMAT:
+Return ONLY valid YAML (no markdown fences):
 ```yaml
-premise:
-  text: |
-    ... (keep existing premise unchanged)
-  metadata:
-    ... (keep existing metadata unchanged)
+metadata:
+  genre: "..."
+  # ... all metadata fields
 
-treatment:
-  text: |
-    ... (keep existing treatment unchanged)
+characters:
+  - name: "..."
+    role: "protagonist"
+    # ... all character fields
+
+world:
+  setting_overview: |
+    ...
+  # ... all world fields
 
 chapters:
   - number: 1
-    title: "Specific Evocative Title"
-    pov: "Character Name"
-    act: "Act I"
-    summary: "3-4 sentences describing what happens..."
-    key_events:
-      - "Opening hook/scene that draws reader in"
-      - "Inciting incident or triggering event"
-      - ...
-    character_developments:
-      - "Internal conflict or desire revealed"
-      - ...
-    relationship_beats:
-      - "How protagonist relates to another character"
-      - ...
-    tension_points:
-      - "What deadline or threat looms"
-      - ...
-    sensory_details:
-      - "Key visual or atmospheric element"
-      - ...
-    subplot_threads:
-      - "Secondary storyline progression"
-    word_count_target: 3000
-  - number: 2
-    # ... (continue for all {chapter_count} chapters)
+    title: "..."
+    # ... all chapter fields
 ```
 
-Do NOT wrap your response in additional markdown code fences (```).
-Return ONLY the YAML content with premise + treatment + chapters sections."""
+Do NOT wrap in markdown code fences.
+Return ONLY the YAML content with metadata+characters+world+chapters sections."""
 
         # Create multi-model generator
         multi_gen = MultiModelGenerator(self.client, self.project)
