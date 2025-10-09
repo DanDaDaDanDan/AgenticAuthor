@@ -611,7 +611,7 @@ CRITICAL: Generate exactly {count} distinct premises. Each must be substantially
                 model=self.model,
                 prompt=prompt,
                 temperature=0.9,  # High temp for creative diversity
-                display_field="premises",  # Stream the premises array
+                display_field="premise",  # Stream the "premise" field from first array element
                 display_label=f"Generating {count} premise options",
                 display_mode="array_first",  # Show first element as it streams
                 min_response_tokens=500 * count  # Estimate ~500 tokens per premise
