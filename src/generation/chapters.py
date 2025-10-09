@@ -19,7 +19,56 @@ DEFAULT_CHAPTERS_TEMPLATE = "DEPRECATED"
 
 
 class ChapterGenerator:
-    """Generator for chapter outlines (LOD2)."""
+    """
+    Generator for chapter outlines (LOD2).
+
+    TOKEN REQUIREMENTS:
+    ===================
+    The new self-contained chapters format requires significant tokens:
+
+    - Overhead: ~2,000 tokens
+      * metadata: ~500 tokens (genre, pacing, tone, themes, etc.)
+      * characters: ~1,000 tokens (3-5 full character profiles)
+      * world: ~500 tokens (setting, locations, systems)
+
+    - Per chapter: ~600-800 tokens each
+      * Rich outlines with 8-10 key_events, character developments,
+        relationship beats, tension points, sensory details
+
+    TOTAL NEEDED: overhead + (chapter_count * 700)
+
+    Examples:
+    - 5 chapters: 2,000 + (5 * 700) = 5,500 tokens
+    - 10 chapters: 2,000 + (10 * 700) = 9,000 tokens
+    - 20 chapters: 2,000 + (20 * 700) = 16,000 tokens
+
+    MODEL SELECTION:
+    - Small models (4k output): Can do ~2-3 chapters maximum
+    - Medium models (8k output): Can do ~8-9 chapters
+    - Large models (16k+ output): Can do full novels (20+ chapters)
+
+    WORD COUNT vs TOKEN COUNT:
+    ===========================
+    There's often confusion about these metrics:
+
+    - Word count: Human-readable metric (counted by split())
+    - Token count: LLM processing units (~0.75 tokens per English word)
+
+    Why they diverge:
+    - YAML structure adds tokens without adding "words"
+    - Indentation, colons, quotes are tokens but not words
+    - Numbers like "3100" are words but may be multiple tokens
+
+    Example from actual generation:
+    - Generated: 5,393 words (from split())
+    - Actual tokens: 3,749 tokens
+    - Ratio: 0.70 tokens/word (lower due to YAML overhead)
+
+    For chapters.yaml:
+    - ~35% of tokens are structural (YAML, keys, formatting)
+    - ~65% of tokens are actual content
+    - So "5,393 words" is actually ~3,500 content words + YAML structure
+    """
 
     def __init__(self, client: OpenRouterClient, project: Project, model: str):
         """
@@ -78,6 +127,56 @@ class ChapterGenerator:
         # Calculate chapter count if not provided
         if not chapter_count:
             chapter_count = self._calculate_chapter_count(total_words)
+
+        # Estimate token requirements for chapters generation
+        # Self-contained format needs:
+        # - metadata: ~500 tokens
+        # - characters: ~1000 tokens (3-5 characters with full profiles)
+        # - world: ~500 tokens
+        # - chapters: ~600-800 tokens each (rich outlines with 8-10 beats)
+        overhead_tokens = 2000  # metadata + characters + world
+        tokens_per_chapter = 700  # average for rich outline
+        estimated_tokens_needed = overhead_tokens + (chapter_count * tokens_per_chapter)
+
+        # Check model capabilities before generation
+        model_obj = await self.client.get_model(self.model)
+        if not model_obj:
+            raise Exception(f"Failed to fetch model capabilities for {self.model}")
+
+        max_output = model_obj.get_max_output_tokens()
+
+        # Warn if we're cutting it close or will definitely fail
+        if max_output and max_output < estimated_tokens_needed:
+            self.console.print(f"\n[yellow]⚠️  Token capacity warning:[/yellow]")
+            self.console.print(f"[dim]Estimated tokens needed: {estimated_tokens_needed:,}[/dim]")
+            self.console.print(f"[dim]Model output capacity: {max_output:,}[/dim]")
+            self.console.print(f"[dim]Shortfall: {estimated_tokens_needed - max_output:,} tokens[/dim]")
+            self.console.print(f"\n[yellow]Suggestions:[/yellow]")
+
+            # Calculate how many chapters we can safely generate
+            safe_chapter_count = max((max_output - overhead_tokens) // tokens_per_chapter, 1)
+            if safe_chapter_count < chapter_count:
+                self.console.print(f"  • Reduce to {safe_chapter_count} chapters for this model")
+                self.console.print(f"  • Or use a model with higher output capacity (8k+ tokens)")
+
+            # Find alternative models if available
+            models_list = await self.client.discover_models()
+            alternatives = []
+            for m in models_list.models[:20]:  # Check first 20 models
+                m_max = m.get_max_output_tokens()
+                if m_max and m_max >= estimated_tokens_needed:
+                    alternatives.append((m.id, m_max))
+
+            if alternatives:
+                best = alternatives[0]
+                self.console.print(f"  • Alternative: {best[0]} (supports {best[1]:,} tokens)")
+
+            self.console.print()
+
+            # Ask user to confirm
+            response = input(f"Continue anyway? Generation may be truncated. [y/N]: ")
+            if response.lower() != 'y':
+                raise Exception("Chapter generation cancelled by user")
 
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)

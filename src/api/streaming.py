@@ -748,6 +748,13 @@ class StreamHandler:
                         f"({token_count} tokens • {tokens_per_sec:.0f} t/s)[/dim]"
                     )
 
+        # If usage wasn't provided in stream (common with truncation), estimate from token_count
+        if usage.get('completion_tokens', 0) == 0 and token_count > 0:
+            # Stream was truncated or didn't include usage info
+            # Use our token count as completion tokens
+            usage['completion_tokens'] = token_count
+            usage['total_tokens'] = usage.get('prompt_tokens', 0) + token_count
+
         return {
             'content': content,
             'usage': usage,
