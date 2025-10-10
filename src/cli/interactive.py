@@ -801,28 +801,17 @@ class InteractiveSession:
         table.add_column("Command", style="cyan")
         table.add_column("Description")
 
-        commands = [
-            ("/help", "Show this help message"),
-            ("/new [name]", "Create new project"),
-            ("/open [path]", "Open existing project"),
-            ("/status", "Show project status"),
-            ("/model [name]", "Change or show current model"),
-            ("/models", "List available models"),
-            ("/generate <type>", "Generate content (premise/premises/concepts/treatment/chapters/prose)"),
-            ("/iterate <target>", "Set iteration target, then type feedback naturally"),
-            ("/sync [lod]", "Check and sync LODs (premise/treatment/chapters/prose)"),
-            ("/analyze [type]", "Run story analysis"),
-            ("/metadata [key] [value]", "View or set book metadata (title, author, etc.)"),
-            ("/export <format>", "Export book (rtf, markdown)"),
-            ("/git <command>", "View history or commit changes (status/log/diff/commit)"),
-            ("/config", "Show configuration"),
-            ("/clear", "Clear screen"),
-            ("/logs", "Show recent log entries"),
-            ("/exit or exit", "Exit the session"),
-        ]
+        # Get command descriptions from the completer
+        cmd_descriptions = create_command_descriptions()
 
-        for cmd, desc in commands:
-            table.add_row(cmd, desc)
+        # Sort commands alphabetically but put exit/quit at the end
+        sorted_commands = sorted(cmd_descriptions.items(),
+                                key=lambda x: (x[0] in ['exit', 'quit'], x[0]))
+
+        for cmd_name, cmd_info in sorted_commands:
+            usage = cmd_info.get('usage', f'/{cmd_name}')
+            desc = cmd_info.get('description', 'No description')
+            table.add_row(usage, desc)
 
         self._print(table)
         self._print("\n[bold]Natural Language Iteration:[/bold]")
