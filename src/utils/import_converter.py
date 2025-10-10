@@ -46,19 +46,26 @@ class StoryExportConverter:
         self._write_project_metadata(project_dir)
 
     def _write_premise(self, project_dir: Path) -> None:
-        """Write premise.md file."""
+        """Write premise_metadata.json file with premise text and taxonomy."""
         premise = self.data['premise']['formData']['premise']
-        premise_file = project_dir / 'premise.md'
-        premise_file.write_text(premise, encoding='utf-8')
-
-    def _write_taxonomy(self, project_dir: Path) -> None:
-        """Write premise_metadata.json file."""
         taxonomy = self.data['premise']['formData']['taxonomySelections']
-        taxonomy_file = project_dir / 'premise_metadata.json'
-        taxonomy_file.write_text(
-            json.dumps(taxonomy, indent=2, ensure_ascii=False),
+
+        # Build unified metadata structure
+        metadata = {
+            'premise': premise,
+            **taxonomy  # Merge taxonomy selections
+        }
+
+        metadata_file = project_dir / 'premise_metadata.json'
+        metadata_file.write_text(
+            json.dumps(metadata, indent=2, ensure_ascii=False),
             encoding='utf-8'
         )
+
+    def _write_taxonomy(self, project_dir: Path) -> None:
+        """Deprecated: Taxonomy is now written with premise in _write_premise()."""
+        # No-op: taxonomy is now part of premise_metadata.json
+        pass
 
     def _write_treatment(self, project_dir: Path) -> None:
         """Write treatment.md file from overview/stories."""

@@ -1393,8 +1393,11 @@ class InteractiveSession:
             self.console.print(f"[yellow]Detected full treatment ({analysis['word_count']} words)[/yellow]")
             self.console.print("[cyan]Preserving your treatment and generating parameters...[/cyan]")
 
-            # Use the treatment as the premise
-            self.project.save_premise(analysis['text'])
+            # Save the treatment as the premise (will be merged with taxonomy selections)
+            self.project.save_premise_metadata({
+                'premise': analysis['text'],
+                'genre': genre or self.project.metadata.genre
+            })
 
             # Generate only taxonomy selections
             generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)

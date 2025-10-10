@@ -128,13 +128,18 @@ class LODResponseParser:
             if 'premise' in data:
                 premise_data = data['premise']
                 if isinstance(premise_data, dict) and 'text' in premise_data:
-                    project.save_premise(premise_data['text'])
-                    updated_files.append('premise.md')
+                    # Build unified metadata structure
+                    metadata = {
+                        'premise': premise_data['text']
+                    }
 
-                    # Save metadata if present
+                    # Merge in any additional metadata fields
                     if 'metadata' in premise_data:
-                        self._save_premise_metadata(project, premise_data['metadata'])
-                        updated_files.append('premise_metadata.json')
+                        metadata.update(premise_data['metadata'])
+
+                    # Save to single source of truth
+                    project.save_premise_metadata(metadata)
+                    updated_files.append('premise_metadata.json')
 
             # Save treatment if present
             if 'treatment' in data:
@@ -181,9 +186,7 @@ class LODResponseParser:
         else:
             # Dry run: just track what would be updated
             if 'premise' in data:
-                updated_files.append('premise.md')
-                if data['premise'].get('metadata'):
-                    updated_files.append('premise_metadata.json')
+                updated_files.append('premise_metadata.json')
 
             if 'treatment' in data:
                 updated_files.append('treatment.md')
