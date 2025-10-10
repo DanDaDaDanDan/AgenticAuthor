@@ -104,13 +104,120 @@ git commit -m "work in progress"  # Commit working states with better descriptio
 
 1. Make changes to code
 2. Test that changes work
-3. Update relevant documentation
-4. Stage all changes: `git add .`
-5. Commit with descriptive message: `git commit -m "Type: Description"`
-6. Continue to next change
+3. **CRITICAL: Ultrathink and double-check implementation** (see section below)
+4. Update relevant documentation
+5. Stage all changes: `git add .`
+6. Commit with descriptive message: `git commit -m "Type: Description"`
+7. Continue to next change
 
 **DO NOT accumulate multiple unrelated changes before committing.**
 **Each logical change should be its own commit.**
+
+## CRITICAL: Ultrathink and Double-Check Implementation
+
+**After completing ANY feature work or bug fix, ALWAYS perform this verification:**
+
+### Step-by-Step Verification Process
+
+1. **Read All Modified Code**
+   - Read every file you changed completely
+   - Don't assume you remember what you wrote
+   - Fresh eyes catch bugs that seemed correct while coding
+
+2. **Check Edge Cases**
+   - Empty inputs (empty strings, empty lists, None values)
+   - Boundary conditions (0, 1, max values)
+   - Invalid inputs (wrong types, out of range)
+   - Error paths (file not found, network errors, timeouts)
+   - Cancellation (Ctrl+C, EOF, Enter to cancel)
+
+3. **Verify Integration Points**
+   - Does new code work with existing systems?
+   - Are all imports correct?
+   - Are all function signatures compatible?
+   - Is error handling consistent with rest of codebase?
+   - Are return types correct?
+
+4. **Check Documentation Updates**
+   - Help text updated?
+   - Command completions updated?
+   - Error messages clear and helpful?
+   - All references to the feature included?
+   - CLAUDE.md updated if adding new patterns?
+
+5. **Review Algorithm Logic**
+   - No infinite loops?
+   - No off-by-one errors?
+   - Proper deduplication?
+   - Thread-safe if concurrent?
+   - Memory leaks prevented?
+
+6. **Verify File Operations**
+   - Correct paths (absolute vs relative)?
+   - Proper encoding (UTF-8)?
+   - File handles closed (use `with` statements)?
+   - Directories exist before writing?
+   - Permissions checked?
+
+7. **Check User Experience**
+   - Clear error messages with actionable next steps?
+   - Consistent with existing UX patterns?
+   - Colors readable on different terminal themes?
+   - Keyboard interrupts handled gracefully?
+   - Progress feedback for long operations?
+
+8. **Test Scenarios Matrix**
+
+   Create mental test scenarios:
+   ```
+   | Scenario                  | Expected Result          | Verified |
+   |---------------------------|--------------------------|----------|
+   | Happy path                | Works correctly          | ✓        |
+   | Empty input               | Clear error or default   | ✓        |
+   | Invalid input             | Clear error message      | ✓        |
+   | Boundary (min)            | Handles correctly        | ✓        |
+   | Boundary (max)            | Handles correctly        | ✓        |
+   | Cancel operation          | Graceful exit            | ✓        |
+   | Files missing             | Clear error with path    | ✓        |
+   | Network error             | Retry or clear error     | ✓        |
+   ```
+
+9. **Check Git Commit**
+   - All new files staged?
+   - No accidentally committed debug code?
+   - No accidentally committed secrets?
+   - Commit message descriptive?
+   - No unrelated changes in commit?
+
+### Example Verification (Real Example)
+
+**Feature:** Concept mashup generator
+
+**Verification performed:**
+- ✅ Read concept_mashup.py line by line
+- ✅ Verified file loading handles UTF-8, empty files, missing files
+- ✅ Verified combination algorithm: deduplication works, no infinite loops, max_attempts safety valve
+- ✅ Verified CLI integration: count validation, error messages, display formatting
+- ✅ Tested edge cases: count=0, count>max, files missing, cancellation
+- ✅ Verified integration with premise generation: concept string passed correctly
+- ✅ Checked documentation: help text, command completer, error messages all updated
+- ✅ Verified git commit: misc/ files included, good commit message
+- ✅ No issues found, approved for merge
+
+### When to Skip This Step
+
+**NEVER.**
+
+Even for "trivial" changes, quick verification catches:
+- Typos in variable names
+- Copy-paste errors
+- Missing imports
+- Broken integration points
+- Poor error messages
+
+**Time investment:** 5-10 minutes per feature
+**Bugs prevented:** Often 2-3 per feature
+**ROI:** Massive
 
 ## Project Summary
 
