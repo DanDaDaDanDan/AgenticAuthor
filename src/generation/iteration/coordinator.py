@@ -569,31 +569,46 @@ You are modifying a short-form story. The premise and treatment provide the stor
             })
 
         elif target_type in ['chapter', 'prose']:
-            # Single chapter regeneration
-            chapter_num = self._extract_chapter_number(intent)
+            # Check if short-form story
+            if self.project.is_short_form():
+                # Regenerate entire short story
+                from ..short_story import ShortStoryGenerator
+                generator = ShortStoryGenerator(self.client, self.project, self.model)
 
-            if not chapter_num:
-                raise ValueError("Cannot determine which chapter to regenerate")
+                result = await generator.generate()
 
-            from ..prose import ProseGenerator
-            generator = ProseGenerator(self.client, self.project, self.model)
-
-            # Use multi-model competition if enabled
-            if self.settings and self.settings.multi_model_mode:
-                result = await generator.generate_chapter_with_competition(chapter_num)
+                changes.append({
+                    'type': 'regenerate',
+                    'target': 'story',
+                    'file': 'story.md',
+                    'word_count': len(result.split())
+                })
             else:
-                result = await generator.generate_chapter_sequential(chapter_num)
+                # Single chapter regeneration (long-form)
+                chapter_num = self._extract_chapter_number(intent)
 
-            # Save chapter
-            chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
-            chapter_file.write_text(result, encoding='utf-8')
+                if not chapter_num:
+                    raise ValueError("Cannot determine which chapter to regenerate")
 
-            changes.append({
-                'type': 'regenerate',
-                'target': f'chapter {chapter_num}',
-                'file': str(chapter_file.relative_to(self.project.path)),
-                'word_count': len(result.split())
-            })
+                from ..prose import ProseGenerator
+                generator = ProseGenerator(self.client, self.project, self.model)
+
+                # Use multi-model competition if enabled
+                if self.settings and self.settings.multi_model_mode:
+                    result = await generator.generate_chapter_with_competition(chapter_num)
+                else:
+                    result = await generator.generate_chapter_sequential(chapter_num)
+
+                # Save chapter
+                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                chapter_file.write_text(result, encoding='utf-8')
+
+                changes.append({
+                    'type': 'regenerate',
+                    'target': f'chapter {chapter_num}',
+                    'file': str(chapter_file.relative_to(self.project.path)),
+                    'word_count': len(result.split())
+                })
 
         else:
             raise ValueError(f"Regeneration not implemented for {target_type}")

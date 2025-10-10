@@ -153,30 +153,61 @@ class RTFExporter:
         return ''.join(parts)
 
     def _build_all_chapters(self) -> str:
-        """Build RTF for all chapters."""
+        """Build RTF for all chapters (or short story)."""
         parts = []
 
-        # Get chapters list for titles
-        chapters_yaml = self.project.get_chapters_yaml()
-        if chapters_yaml:
-            chapters = chapters_yaml.get('chapters', [])
+        # Check if short-form story
+        if self.project.is_short_form():
+            # Export single story.md file (no chapter structure)
+            story_text = self.project.get_story()
+            if not story_text:
+                raise ValueError("No story content found in story.md")
+
+            # Convert markdown to RTF (no chapter number/title)
+            paragraphs = self._markdown_to_paragraphs(story_text)
+
+            # Apply professional formatting
+            is_first = True
+            for para in paragraphs:
+                # Check if this is a scene break
+                if r"\qc * * *" in para:
+                    parts.append(para)
+                    parts.append("\n")
+                    is_first = True
+                    continue
+
+                # Remove indent from first paragraph or after scene break
+                if is_first and '\\fi360' in para:
+                    para = para.replace('\\fi360', '\\fi0')
+                    is_first = False
+
+                parts.append(para)
+                parts.append("\n")
+
+            return ''.join(parts)
         else:
-            chapters = self.project.get_chapters() or []
+            # Long-form: iterate over chapter files
+            # Get chapters list for titles
+            chapters_yaml = self.project.get_chapters_yaml()
+            if chapters_yaml:
+                chapters = chapters_yaml.get('chapters', [])
+            else:
+                chapters = self.project.get_chapters() or []
 
-        # Process each chapter file
-        for chapter_file in sorted(self.project.list_chapters()):
-            chapter_num = self._extract_chapter_number(chapter_file)
-            chapter_text = chapter_file.read_text(encoding='utf-8')
+            # Process each chapter file
+            for chapter_file in sorted(self.project.list_chapters()):
+                chapter_num = self._extract_chapter_number(chapter_file)
+                chapter_text = chapter_file.read_text(encoding='utf-8')
 
-            # Find chapter info
-            chapter_info = next((c for c in chapters if c.get('number') == chapter_num), None)
-            chapter_title = chapter_info.get('title', '') if chapter_info else ''
+                # Find chapter info
+                chapter_info = next((c for c in chapters if c.get('number') == chapter_num), None)
+                chapter_title = chapter_info.get('title', '') if chapter_info else ''
 
-            # Build chapter RTF
-            parts.append(self._build_chapter(chapter_num, chapter_title, chapter_text))
-            parts.append(self._page_break())
+                # Build chapter RTF
+                parts.append(self._build_chapter(chapter_num, chapter_title, chapter_text))
+                parts.append(self._page_break())
 
-        return ''.join(parts)
+            return ''.join(parts)
 
     def _build_chapter(self, number: int, title: str, text: str) -> str:
         """

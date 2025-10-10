@@ -100,35 +100,46 @@ class MarkdownExporter:
                 parts.append(section)
                 parts.append("\n\n---\n\n")
 
-        # Chapters
-        chapters_yaml = self.project.get_chapters_yaml()
-        if chapters_yaml:
-            chapters = chapters_yaml.get('chapters', [])
+        # Chapters (or short story)
+        if self.project.is_short_form():
+            # Export single story.md file (no chapter structure)
+            story_text = self.project.get_story()
+            if not story_text:
+                raise ValueError("No story content found in story.md")
+
+            # Add story content directly (no chapter headings)
+            parts.append(story_text)
+            parts.append("\n\n")
         else:
-            chapters = self.project.get_chapters() or []
+            # Long-form: iterate over chapter files
+            chapters_yaml = self.project.get_chapters_yaml()
+            if chapters_yaml:
+                chapters = chapters_yaml.get('chapters', [])
+            else:
+                chapters = self.project.get_chapters() or []
 
-        for chapter_file in sorted(self.project.list_chapters()):
-            chapter_num = self._extract_chapter_number(chapter_file)
-            chapter_text = chapter_file.read_text(encoding='utf-8')
+            for chapter_file in sorted(self.project.list_chapters()):
+                chapter_num = self._extract_chapter_number(chapter_file)
+                chapter_text = chapter_file.read_text(encoding='utf-8')
 
-            # Find chapter title
-            chapter_info = next((c for c in chapters if c.get('number') == chapter_num), None)
-            chapter_title = chapter_info.get('title', '') if chapter_info else ''
+                # Find chapter title
+                chapter_info = next((c for c in chapters if c.get('number') == chapter_num), None)
+                chapter_title = chapter_info.get('title', '') if chapter_info else ''
 
-            # Chapter heading
-            parts.append(f"# Chapter {chapter_num}")
-            if chapter_title:
-                parts.append(f": {chapter_title}")
-            parts.append("\n\n")
+                # Chapter heading
+                parts.append(f"# Chapter {chapter_num}")
+                if chapter_title:
+                    parts.append(f": {chapter_title}")
+                parts.append("\n\n")
 
-            # Strip markdown heading from chapter text if present
-            # Chapter files often start with "# Chapter X: Title" which we don't want to duplicate
-            import re
-            chapter_text = re.sub(r'^#\s+Chapter\s+\d+[:\s].*?$', '', chapter_text, flags=re.MULTILINE | re.IGNORECASE).strip()
+                # Strip markdown heading from chapter text if present
+                # Chapter files often start with "# Chapter X: Title" which we don't want to duplicate
+                import re
+                chapter_text = re.sub(r'^#\s+Chapter\s+\d+[:\s].*?$', '', chapter_text, flags=re.MULTILINE | re.IGNORECASE).strip()
 
-            # Chapter content
-            parts.append(chapter_text)
-            parts.append("\n\n")
+                # Chapter content
+                parts.append(chapter_text)
+                parts.append("\n\n")
 
         return ''.join(parts)
 

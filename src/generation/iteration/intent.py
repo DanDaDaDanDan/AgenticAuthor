@@ -173,6 +173,14 @@ class IntentAnalyzer:
             # Validate intent structure
             self._validate_intent(intent)
 
+            # Post-processing: map chapter references to prose for short stories
+            if project.is_short_form() and intent['target_type'] in ['chapter', 'chapters']:
+                # Short stories don't have chapters, map to prose
+                intent['target_type'] = 'prose'
+                # Clear chapter-specific target_id if present
+                if intent.get('target_id'):
+                    intent['target_id'] = None
+
             # Add original feedback
             intent['original_feedback'] = feedback
 

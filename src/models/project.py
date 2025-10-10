@@ -367,9 +367,10 @@ class Project:
         # Detect from target word count
         target_words = self.get_target_words()
         if target_words:
-            # Calculate expected chapter count (3,500 words per chapter)
-            expected_chapters = target_words // 3500
-            is_short = expected_chapters <= 2
+            # Short-form: ≤7,500 words (flash fiction + short story)
+            # Long-form: >7,500 words (novelette + novella + novel)
+            # This matches the taxonomy boundary between short_story and novelette
+            is_short = target_words <= 7500
 
             # Cache the result in metadata
             if self.metadata:

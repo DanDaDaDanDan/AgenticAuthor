@@ -100,6 +100,12 @@ class AnalysisCoordinator:
         # Get the actual content to analyze
         content = None
 
+        # Short story handling: redirect chapters analysis to prose
+        if self.project.is_short_form() and content_type in ['chapters', 'chapter']:
+            content_type = 'prose'
+            # Note: This allows /analyze chapters to work on short stories
+            # by analyzing the prose instead
+
         if content_type == 'premise':
             content = premise
 
@@ -139,24 +145,30 @@ class AnalysisCoordinator:
                     context['all_chapters'] = self._chapters_to_text(chapters)
 
         elif content_type == 'prose':
-            # Analyze specific prose chapter
-            chapter_num = int(target_id) if target_id else 1
-            chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
-            if chapter_file.exists():
-                content = chapter_file.read_text(encoding='utf-8')
+            # Analyze prose (short story or chapter)
+            if self.project.is_short_form():
+                # Short story: analyze story.md
+                content = self.project.get_story()
                 context['treatment'] = self.project.get_treatment()
+            else:
+                # Long-form: analyze specific chapter
+                chapter_num = int(target_id) if target_id else 1
+                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                if chapter_file.exists():
+                    content = chapter_file.read_text(encoding='utf-8')
+                    context['treatment'] = self.project.get_treatment()
 
-                # Get chapter outline for context
-                chapters = self.project.get_chapters()
-                if chapters:
-                    chapter = next(
-                        (c for c in chapters if c.get('number') == chapter_num),
-                        None
-                    )
-                    if chapter:
-                        context['chapter_outline'] = yaml.dump(
-                            chapter, default_flow_style=False
+                    # Get chapter outline for context
+                    chapters = self.project.get_chapters()
+                    if chapters:
+                        chapter = next(
+                            (c for c in chapters if c.get('number') == chapter_num),
+                            None
                         )
+                        if chapter:
+                            context['chapter_outline'] = yaml.dump(
+                                chapter, default_flow_style=False
+                            )
 
         return content, context
 
