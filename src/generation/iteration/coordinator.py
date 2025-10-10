@@ -188,11 +188,11 @@ class IterationCoordinator:
 
         # Check if we have the required content
         if target_lod == 'premise' and 'premise' not in context:
-            raise ValueError("No premise found. Generate premise first.")
+            raise ValueError("No premise found. Generate premise first with /generate premise")
         elif target_lod == 'treatment' and 'treatment' not in context:
-            raise ValueError("No treatment found. Generate treatment first.")
+            raise ValueError("No treatment found. Generate treatment first with /generate treatment")
         elif target_lod == 'chapters' and 'chapters' not in context:
-            raise ValueError("No chapters found. Generate chapters first.")
+            raise ValueError("No chapters.yaml found. Generate chapters first with /generate chapters")
 
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)

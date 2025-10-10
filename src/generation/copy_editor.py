@@ -53,10 +53,10 @@ class CopyEditor:
         Returns:
             Dict with chapters_edited count and backup directory
         """
-        chapters = self.project.list_chapters()
+        prose_files = self.project.list_chapters()
 
-        if not chapters:
-            raise ValueError("No chapters found. Generate prose first with /generate prose")
+        if not prose_files:
+            raise ValueError("No prose files found. Generate prose first with /generate prose")
 
         # Create timestamped backup directory
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

@@ -116,6 +116,9 @@ class InteractiveSession:
 
         completer = SlashCommandCompleter(command_descriptions, model_provider, genre_provider)
 
+        # Log available commands for debugging autocomplete
+        self.logger.debug(f"Autocomplete: {len(command_descriptions)} commands registered: {sorted(command_descriptions.keys())}")
+
         # Custom style - Claude Code aesthetic
         # Using muted, professional colors similar to Claude Code
         style = Style.from_dict({
@@ -2568,10 +2571,10 @@ class InteractiveSession:
             self.console.print("[red]No project open. Use /open <project> first.[/red]")
             return
 
-        # Check if we have chapters
-        chapters = self.project.list_chapters()
-        if not chapters:
-            self.console.print("[red]No chapters found. Generate prose first with /generate prose[/red]")
+        # Check if we have prose files (copyedit operates on prose, not chapters.yaml)
+        prose_files = self.project.list_chapters()
+        if not prose_files:
+            self.console.print("[red]No prose files found. Generate prose first with /generate prose[/red]")
             return
 
         # Check if we have a model
