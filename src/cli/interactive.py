@@ -1313,9 +1313,22 @@ class InteractiveSession:
             elif gen_type == "treatment":
                 await self._generate_treatment(options)
             elif gen_type == "chapters":
-                await self._generate_chapters(options)
+                # Check if short-form story
+                if self.project.is_short_form():
+                    self.console.print("[yellow]⚠  Short stories don't use chapters.yaml[/yellow]")
+                    self.console.print("[dim]Use /generate prose to write the complete story[/dim]")
+                    # Check if --force flag is present
+                    if "--force" in options:
+                        self.console.print("[dim]--force flag detected: proceeding with chapter generation[/dim]")
+                        await self._generate_chapters(options.replace("--force", "").strip())
+                else:
+                    await self._generate_chapters(options)
             elif gen_type == "prose":
-                await self._generate_prose(options)
+                # Route based on story type
+                if self.project.is_short_form():
+                    await self._generate_short_story_prose(options)
+                else:
+                    await self._generate_prose(options)
             elif gen_type == "marketing":
                 await self._generate_marketing(options)
             else:
@@ -1816,6 +1829,57 @@ class InteractiveSession:
                 self.console.print("[red]Invalid chapter number[/red]")
             except Exception as e:
                 self.console.print(f"[red]Error: {e}[/red]")
+
+    async def _generate_short_story_prose(self, options: str = ""):
+        """Generate complete short-form story prose."""
+        from ..generation import ShortStoryGenerator
+
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
+        # Check for treatment
+        if not self.project.get_treatment():
+            self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
+            return
+
+        # Check if there's already a story
+        if self.project.get_story():
+            self.console.print("[yellow]⚠  story.md already exists[/yellow]")
+            response = input("Regenerate? This will overwrite existing prose [y/N]: ")
+            if response.lower() != 'y':
+                self.console.print("[dim]Cancelled[/dim]")
+                return
+
+        # Get target word count for display
+        target_words = self.project.get_target_words()
+        if target_words:
+            if target_words < 1500:
+                story_type = "flash fiction"
+            elif target_words < 7500:
+                story_type = "short story"
+            else:
+                story_type = "novelette"
+            self.console.print(f"[cyan]Generating {story_type} (~{target_words:,} words target)...[/cyan]")
+        else:
+            self.console.print("[cyan]Generating short story...[/cyan]")
+
+        try:
+            generator = ShortStoryGenerator(self.client, self.project, model=self.settings.active_model)
+            result = await generator.generate()
+
+            if result:
+                word_count = len(result.split())
+
+                # Git commit
+                self._commit(f"Generate short story prose: {word_count:,} words")
+
+                self.console.print(f"[green]✅  Short story generated successfully[/green]")
+                self.console.print(f"[dim]Saved to story.md[/dim]")
+            else:
+                self.console.print("[red]Failed to generate story[/red]")
+
+        except Exception as e:
+            self.console.print(f"[red]Error: {e}[/red]")
 
     async def iterate_content(self, args: str):
         """Set iteration target for natural language feedback."""
