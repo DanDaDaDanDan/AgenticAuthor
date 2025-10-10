@@ -748,12 +748,17 @@ class StreamHandler:
                         f"({token_count} tokens • {tokens_per_sec:.0f} t/s)[/dim]"
                     )
 
-        # If usage wasn't provided in stream (common with truncation), estimate from token_count
-        if usage.get('completion_tokens', 0) == 0 and token_count > 0:
-            # Stream was truncated or didn't include usage info
-            # Use our token count as completion tokens
+        # If usage wasn't provided or is suspiciously low (common with truncation), estimate from token_count
+        reported_completion = usage.get('completion_tokens', 0)
+        if token_count > 0 and (reported_completion == 0 or reported_completion < token_count * 0.5):
+            # Stream was truncated or didn't include accurate usage info
+            # API sometimes reports 1 token or very low count when stream is truncated
+            # Use our counted tokens as completion tokens
             usage['completion_tokens'] = token_count
             usage['total_tokens'] = usage.get('prompt_tokens', 0) + token_count
+
+            if logger and reported_completion > 0:
+                logger.warning(f"API reported {reported_completion} completion tokens but we counted {token_count} - using our count")
 
         return {
             'content': content,

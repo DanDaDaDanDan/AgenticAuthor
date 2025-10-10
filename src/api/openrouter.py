@@ -49,18 +49,34 @@ class OpenRouterClient:
         await self.close()
 
     async def ensure_session(self):
-        """Ensure aiohttp session is created with appropriate timeouts for long-running streams."""
+        """Ensure aiohttp session is created with appropriate timeouts and keep-alive for long-running streams."""
         if not self._session:
+            # Configure TCP connector with keep-alive to prevent silent disconnections
+            # This helps maintain long-running connections for streaming responses
+            connector = aiohttp.TCPConnector(
+                enable_cleanup_closed=True,  # Clean up closed connections properly
+                force_close=False,           # Allow HTTP keep-alive
+                keepalive_timeout=60,        # Keep idle connections alive for 60s
+                limit=100,                   # Max total connections
+                limit_per_host=10            # Max connections per host
+            )
+
             # Configure timeouts optimized for long-running streaming requests
-            # - sock_connect: 30s max to establish connection
-            # - sock_read: 120s per chunk (model can take time between tokens)
+            # - connect: 30s max to establish connection
+            # - sock_read: 180s between chunks (increased from 120s)
             # - total: None (no limit on total request time for long generations)
+            #
+            # Note: sock_read is the critical timeout for streaming. It's the maximum
+            # time between receiving chunks. For very slow models or poor network
+            # conditions, chunks can be delayed. 180s is generous while still
+            # catching genuine connection failures.
             self._session = aiohttp.ClientSession(
+                connector=connector,
                 headers=self._get_headers(),
                 timeout=aiohttp.ClientTimeout(
                     total=None,          # No total timeout - allow long generations
                     connect=30,          # 30s to establish connection
-                    sock_read=120        # 120s between chunks (generous for slow models)
+                    sock_read=180        # 180s between chunks (3 min - very generous)
                 )
             )
 

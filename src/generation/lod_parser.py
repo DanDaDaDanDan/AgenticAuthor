@@ -551,6 +551,94 @@ class LODResponseParser:
             error_msg = "New chapters format validation failed:\n  - " + "\n  - ".join(errors)
             raise ValueError(error_msg)
 
+    def is_truncated_yaml(
+        self,
+        yaml_text: str,
+        target_lod: str,
+        expected_chapter_count: Optional[int] = None
+    ) -> tuple[bool, str, Dict[str, Any]]:
+        """
+        Detect if YAML generation was truncated due to connection drop or other issues.
+
+        Args:
+            yaml_text: The YAML content to check
+            target_lod: What LOD was being generated ('chapters', 'treatment', etc.)
+            expected_chapter_count: For chapters, how many were requested
+
+        Returns:
+            Tuple of (is_truncated, reason, metadata)
+            - is_truncated: True if truncation detected
+            - reason: Description of truncation type
+            - metadata: Additional info (last_complete_chapter, etc.)
+        """
+        metadata = {}
+
+        # Check for unterminated strings (common in mid-sentence truncation)
+        # Count quotes - should be even
+        double_quotes = yaml_text.count('"')
+        if double_quotes % 2 != 0:
+            # Find approximate location
+            lines = yaml_text.split('\n')
+            for i in range(len(lines) - 1, max(0, len(lines) - 10), -1):
+                if '"' in lines[i]:
+                    metadata['truncation_line'] = i + 1
+                    metadata['truncation_content'] = lines[i][:100]
+                    break
+            return (True, "unterminated_string", metadata)
+
+        # Check for incomplete YAML structure
+        if target_lod == 'chapters' and expected_chapter_count:
+            try:
+                # Try to parse what we have
+                data = yaml.safe_load(yaml_text)
+
+                if isinstance(data, dict):
+                    # Check if chapters section is completely missing
+                    if 'chapters' not in data:
+                        metadata['expected_chapters'] = expected_chapter_count
+                        metadata['actual_chapters'] = 0
+                        metadata['last_complete_chapter'] = 0
+                        # Check what sections we do have
+                        metadata['existing_sections'] = list(data.keys())
+                        return (True, "missing_chapters_section", metadata)
+
+                    # Chapters section exists, check if complete
+                    chapters = data['chapters']
+                    if isinstance(chapters, list):
+                        actual_count = len(chapters)
+                        metadata['expected_chapters'] = expected_chapter_count
+                        metadata['actual_chapters'] = actual_count
+                        metadata['last_complete_chapter'] = actual_count
+
+                        if actual_count < expected_chapter_count:
+                            return (True, f"incomplete_chapters", metadata)
+
+                        # Check if last chapter is complete
+                        if actual_count > 0:
+                            last_chapter = chapters[-1]
+                            required_fields = ['number', 'title', 'summary', 'key_events', 'word_count_target']
+                            missing = [f for f in required_fields if f not in last_chapter]
+
+                            if missing:
+                                metadata['last_complete_chapter'] = actual_count - 1
+                                metadata['incomplete_fields'] = missing
+                                return (True, "incomplete_last_chapter", metadata)
+            except yaml.YAMLError as e:
+                # YAML parse error often indicates truncation
+                metadata['yaml_error'] = str(e)
+                # Try to count completed chapters by pattern matching
+                chapter_pattern = '- number:'
+                actual_count = yaml_text.count(chapter_pattern)
+                if expected_chapter_count and actual_count < expected_chapter_count:
+                    metadata['expected_chapters'] = expected_chapter_count
+                    metadata['actual_chapters'] = actual_count
+                    # Conservative: if last occurrence is incomplete, use actual_count - 1
+                    metadata['last_complete_chapter'] = max(0, actual_count - 1)
+                    return (True, "yaml_parse_error_incomplete", metadata)
+
+        # No truncation detected
+        return (False, "", metadata)
+
     def _strip_markdown_fences(self, content: str) -> str:
         """
         Strip markdown code fences if LLM wrapped output in ```yaml or ``` blocks.
