@@ -64,15 +64,15 @@ class CopyEditor:
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         console.print(f"\n[cyan]═══ Copy Editing Pass ═══[/cyan]")
-        console.print(f"Chapters: {len(chapters)}")
+        console.print(f"Chapters: {len(prose_files)}")
         console.print(f"Model: {self.model}")
         console.print(f"Backup: {backup_dir.relative_to(self.project.path)}\n")
 
         edited_count = 0
         skipped_count = 0
 
-        for i, chapter_num in enumerate(chapters, 1):
-            console.print(f"\n[cyan]═══ Chapter {chapter_num}/{len(chapters)} ═══[/cyan]")
+        for i, chapter_num in enumerate(prose_files, 1):
+            console.print(f"\n[cyan]═══ Chapter {chapter_num}/{len(prose_files)} ═══[/cyan]")
 
             # Get original prose
             original = self.project.get_chapter(chapter_num)
@@ -124,7 +124,7 @@ class CopyEditor:
 
         # Summary
         console.print(f"\n[green]═══ Copy Editing Complete ═══[/green]")
-        console.print(f"Edited: {edited_count}/{len(chapters)} chapters")
+        console.print(f"Edited: {edited_count}/{len(prose_files)} chapters")
         if skipped_count > 0:
             console.print(f"Skipped: {skipped_count} chapters")
         console.print(f"Backup: {backup_dir.relative_to(self.project.path)}")
