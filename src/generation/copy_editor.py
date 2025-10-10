@@ -140,10 +140,9 @@ class CopyEditor:
         Build full READ-ONLY context for current chapter.
 
         Includes:
-        - premise.md (story premise)
-        - treatment.md (story treatment)
-        - chapters.yaml (chapter outlines, characters, world)
+        - chapters.yaml (self-contained: metadata, characters, world, chapter outlines)
         - ALL previously edited chapter prose
+        - ALL remaining original chapter prose (for forward references)
 
         Args:
             current_chapter_num: Chapter number being edited
@@ -151,31 +150,45 @@ class CopyEditor:
         Returns:
             Context dict with all reference material
         """
-        # Get story structure (read-only)
-        premise = self.project.get_premise()
-        treatment = self.project.get_treatment()
-        chapters_outline = self.project.get_chapters()
+        # Get chapters.yaml (self-contained structure)
+        chapters_yaml = self.project.get_chapters_yaml()
+        if not chapters_yaml:
+            # Legacy fallback
+            chapters_yaml = {'chapters': self.project.get_chapters()}
 
-        # Get all previously edited chapters
-        previous_chapters = []
+        # Get all chapter numbers
         all_chapters = self.project.list_chapters()
         current_index = all_chapters.index(current_chapter_num)
 
+        # Get edited chapters (before target)
+        edited_chapters = []
         for i in range(current_index):
             prev_chapter_num = all_chapters[i]
             if prev_chapter_num in self.edited_chapters:
-                previous_chapters.append({
+                edited_chapters.append({
                     'number': prev_chapter_num,
                     'text': self.edited_chapters[prev_chapter_num]
                 })
 
+        # Get ALL remaining original chapters (including target and after)
+        remaining_chapters = []
+        for i in range(current_index, len(all_chapters)):
+            chapter_num = all_chapters[i]
+            # Only include if not yet edited (will be original prose)
+            if chapter_num not in self.edited_chapters:
+                original_prose = self.project.get_chapter(chapter_num)
+                remaining_chapters.append({
+                    'number': chapter_num,
+                    'text': original_prose
+                })
+
         return {
-            'premise': premise,
-            'treatment': treatment,
-            'chapters_outline': chapters_outline,
-            'previous_edited_chapters': previous_chapters,
+            'chapters_yaml': chapters_yaml,
+            'edited_chapters': edited_chapters,
+            'remaining_chapters': remaining_chapters,
             'total_chapters': len(all_chapters),
-            'current_position': current_index + 1
+            'current_position': current_index + 1,
+            'current_chapter_num': current_chapter_num
         }
 
     async def _copy_edit_chapter(
@@ -226,24 +239,47 @@ class CopyEditor:
         Returns:
             Complete prompt string
         """
-        # Format previous chapters for context
-        previous_chapters_text = ""
-        if context['previous_edited_chapters']:
-            previous_chapters_text = "\n\n".join([
+        # Format edited chapters (already perfect)
+        edited_chapters_text = ""
+        if context['edited_chapters']:
+            edited_chapters_text = "\n\n".join([
                 f"### Chapter {ch['number']} (ALREADY COPY EDITED)\n\n{ch['text']}"
-                for ch in context['previous_edited_chapters']
+                for ch in context['edited_chapters']
             ])
+
+        # Format remaining original chapters (for forward references)
+        remaining_chapters_text = ""
+        if context['remaining_chapters']:
+            # Don't include the current chapter in remaining (it's what we're editing)
+            remaining_for_context = [ch for ch in context['remaining_chapters'] if ch['number'] != chapter_num]
+            if remaining_for_context:
+                remaining_chapters_text = "\n\n".join([
+                    f"### Chapter {ch['number']} (ORIGINAL - NOT YET EDITED)\n\n{ch['text']}"
+                    for ch in remaining_for_context
+                ])
+
+        # Get current chapter text from remaining
+        current_chapter_text = chapter_text
+        for ch in context['remaining_chapters']:
+            if ch['number'] == chapter_num:
+                current_chapter_text = ch['text']
+                break
 
         # Extract character info from chapters.yaml for easy reference
         characters_info = ""
-        if context['chapters_outline'] and 'characters' in context['chapters_outline']:
-            chars = context['chapters_outline']['characters']
+        chapters_yaml = context['chapters_yaml']
+        if chapters_yaml and 'characters' in chapters_yaml:
+            chars = chapters_yaml['characters']
             char_list = []
             for char in chars:
                 name = char.get('name', 'Unknown')
                 role = char.get('role', '')
                 char_list.append(f"- {name} ({role})")
             characters_info = "\n".join(char_list)
+
+        # Serialize chapters.yaml for context
+        import yaml
+        chapters_yaml_str = yaml.dump(chapters_yaml, sort_keys=False, allow_unicode=True)
 
         return f"""You are a professional copy editor performing a final editing pass on a novel.
 
@@ -261,12 +297,12 @@ COPY EDITING SCOPE - CRITICAL GUIDELINES
     - Names, physical descriptions, ages
     - Pronoun consistency (especially with unisex names!)
     - Character voice and speech patterns
-  • Timeline contradictions with previous chapters
+  • Timeline contradictions with other chapters
   • Unclear or ambiguous sentences that confuse readers
   • Inconsistent terminology or proper nouns
   • Dialogue formatting issues
   • Awkward or confusing sentence structures
-  • Factual continuity errors with previous chapters
+  • Factual continuity errors with other chapters
 
 ✗ YOU MUST NOT CHANGE:
   • Plot events or story structure
@@ -274,7 +310,6 @@ COPY EDITING SCOPE - CRITICAL GUIDELINES
   • Dialogue CONTENT (only fix formatting/grammar)
   • Author's narrative voice or stylistic choices
   • Scene order, pacing, or dramatic beats
-  • Word count significantly (target: within ±5%)
   • Creative choices that aren't actual errors
 
 ═══════════════════════════════════════════════════════════════
@@ -282,7 +317,7 @@ CRITICAL: PRONOUN CONSISTENCY
 ═══════════════════════════════════════════════════════════════
 
 Pay special attention to character pronouns:
-- If a character has a unisex name (Alex, Jordan, Sam, etc.), verify pronouns match previous chapters
+- If a character has a unisex name (Alex, Jordan, Sam, etc.), verify pronouns match other chapters
 - Check for accidental pronoun switches within a chapter
 - Ensure "they" is used consistently if character is non-binary
 - Flag any ambiguous pronoun usage that could confuse readers
@@ -295,36 +330,42 @@ Example issues to catch:
 ✓ "Sam and Jordan talked. Sam agreed with Jordan." (clear)
 
 ═══════════════════════════════════════════════════════════════
-STORY CONTEXT (for continuity checking - READ ONLY)
+STORY STRUCTURE (chapters.yaml - self-contained reference)
 ═══════════════════════════════════════════════════════════════
 
-PREMISE:
-{context['premise']}
+```yaml
+{chapters_yaml_str}
+```
 
-TREATMENT (excerpt):
-{context['treatment'][:2000]}{'...' if len(context['treatment']) > 2000 else ''}
+This contains:
+- metadata: genre, tone, themes, pacing, narrative style
+- characters: full profiles, backgrounds, motivations, arcs, relationships
+- world: setting, locations, systems, atmosphere
+- chapters: detailed outlines for all chapters
 
-CHARACTERS (from chapters.yaml):
-{characters_info if characters_info else 'No character list available'}
+Use this for:
+- Character consistency (names, descriptions, pronouns, relationships)
+- World-building details
+- Timeline and plot progression
+- Thematic consistency
 
 ═══════════════════════════════════════════════════════════════
-PREVIOUSLY EDITED CHAPTERS (for consistency - READ ONLY)
+EDITED CHAPTERS (perfect versions for consistency reference)
 ═══════════════════════════════════════════════════════════════
 
-{previous_chapters_text if previous_chapters_text else "This is the first chapter - no previous chapters yet."}
+{edited_chapters_text if edited_chapters_text else "No chapters edited yet - this is the first chapter."}
 
-Review the above chapters carefully for:
-- Character names, descriptions, and pronouns
-- Terminology and spelling of proper nouns
-- Timeline and sequence of events
-- Character relationships and dynamics
-- Established world-building details
+═══════════════════════════════════════════════════════════════
+REMAINING CHAPTERS (original versions for forward reference)
+═══════════════════════════════════════════════════════════════
+
+{remaining_chapters_text if remaining_chapters_text else "No remaining chapters - this is the last chapter."}
 
 ═══════════════════════════════════════════════════════════════
 CURRENT CHAPTER PROSE TO EDIT (Chapter {chapter_num})
 ═══════════════════════════════════════════════════════════════
 
-{chapter_text}
+{current_chapter_text}
 
 ═══════════════════════════════════════════════════════════════
 EDITING PROCESS
@@ -465,13 +506,11 @@ REMEMBER:
             warnings.append("⚠ CRITICAL: No edited chapter returned")
             return warnings
 
-        # Word count verification
+        # Word count verification (info only, not a warning)
+        # Copy editing focuses on correctness, not hitting exact word counts
         orig_words = len(original.split())
         edit_words = len(edited.split())
-        change_pct = abs(edit_words - orig_words) / orig_words * 100 if orig_words > 0 else 0
-
-        if change_pct > 5:
-            warnings.append(f"⚠ Word count changed by {change_pct:.1f}% (should be ≤5%)")
+        # change_pct calculated but not used for warnings
 
         # Paragraph structure verification
         orig_paras = original.count('\n\n')
