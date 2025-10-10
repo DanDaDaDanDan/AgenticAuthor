@@ -19,6 +19,7 @@ class ProjectMetadata(BaseModel):
     model: Optional[str] = Field(None, description="Primary model used")
     word_count: int = Field(0, description="Total word count")
     chapter_count: int = Field(0, description="Number of chapters")
+    story_type: Optional[str] = Field(None, description="Story type: short_form or long_form")
     status: str = Field("draft", description="Project status")
     tags: List[str] = Field(default_factory=list, description="Project tags")
     iteration_target: Optional[str] = Field(None, description="Current iteration target (premise/treatment/chapters/prose)")
@@ -78,6 +79,11 @@ class Project:
     def chapters_dir(self) -> Path:
         """Get path to chapters directory."""
         return self.path / "chapters"
+
+    @property
+    def story_file(self) -> Path:
+        """Get path to story.md file (for short-form stories)."""
+        return self.path / "story.md"
 
     @property
     def analysis_dir(self) -> Path:
@@ -262,6 +268,118 @@ class Project:
         if not self.chapters_dir.exists():
             return []
         return sorted(self.chapters_dir.glob("chapter-*.md"))
+
+    def get_story(self) -> Optional[str]:
+        """
+        Load short-form story content from story.md.
+
+        Returns:
+            Story content or None if not found
+        """
+        if self.story_file.exists():
+            return self.story_file.read_text(encoding='utf-8')
+        return None
+
+    def save_story(self, content: str):
+        """
+        Save short-form story content to story.md.
+
+        Args:
+            content: Story prose content
+        """
+        self.story_file.write_text(content, encoding='utf-8')
+
+        # Update word count and timestamp
+        if self.metadata:
+            self.metadata.word_count = len(content.split())
+            self.metadata.update_timestamp()
+            self.save_metadata()
+
+    def get_target_words(self) -> Optional[int]:
+        """
+        Extract target word count from premise metadata or treatment.
+
+        Returns:
+            Target word count or None if not found
+        """
+        # Try premise metadata first
+        if self.premise_metadata_file.exists():
+            with open(self.premise_metadata_file) as f:
+                data = json.load(f)
+                # Check for target_word_count in taxonomy selections
+                taxonomy = data.get('taxonomy', {})
+                if isinstance(taxonomy, dict):
+                    length_scope = taxonomy.get('length_scope', {})
+                    if isinstance(length_scope, dict):
+                        word_range = length_scope.get('word_range', '')
+                        # Parse word range like "1,500-7,500"
+                        if word_range:
+                            parts = word_range.replace(',', '').split('-')
+                            if len(parts) == 2:
+                                try:
+                                    # Use midpoint of range
+                                    low = int(parts[0])
+                                    high = int(parts[1])
+                                    return (low + high) // 2
+                                except ValueError:
+                                    pass
+
+        # Try chapters.yaml metadata
+        chapters_yaml = self.get_chapters_yaml()
+        if chapters_yaml:
+            metadata = chapters_yaml.get('metadata', {})
+            target = metadata.get('target_word_count')
+            if target:
+                return int(target)
+
+        # Fallback: estimate from treatment length
+        treatment = self.get_treatment()
+        if treatment:
+            # Typical treatment is ~2-5% of final length
+            treatment_words = len(treatment.split())
+            return treatment_words * 20  # Rough 5% estimate
+
+        return None
+
+    def is_short_form(self) -> bool:
+        """
+        Detect if this is a short-form story (≤2 chapters).
+
+        Short-form stories (flash fiction, short story) should use story.md
+        instead of chapters.yaml structure.
+
+        Returns:
+            True if short-form (≤2 chapters), False otherwise
+        """
+        # Check cached story_type in metadata
+        if self.metadata and self.metadata.story_type:
+            return self.metadata.story_type == 'short_form'
+
+        # Detect from files (for backward compatibility)
+        # If story.md exists, it's short-form
+        if self.story_file.exists():
+            return True
+
+        # If chapters/ directory exists with files, it's long-form
+        if self.chapters_dir.exists() and list(self.chapters_dir.glob('chapter-*.md')):
+            return False
+
+        # Detect from target word count
+        target_words = self.get_target_words()
+        if target_words:
+            # Calculate expected chapter count (3,500 words per chapter)
+            expected_chapters = target_words // 3500
+            is_short = expected_chapters <= 2
+
+            # Cache the result in metadata
+            if self.metadata:
+                self.metadata.story_type = 'short_form' if is_short else 'long_form'
+                self.save_metadata()
+
+            return is_short
+
+        # Default: if no information, assume long-form for safety
+        return False
 
     def get_analysis(self, analysis_type: str) -> Optional[str]:
         """
