@@ -215,8 +215,7 @@ books/                      # All projects root
 │   │   └── debug/           # Debug output
 │   ├── config.yaml          # Project configuration (including book_metadata)
 │   ├── frontmatter.md       # Frontmatter template (title page, copyright, dedication, etc.)
-│   ├── premise.md           # Story premise (LOD3)
-│   ├── premise_metadata.json # Taxonomy selections
+│   ├── premise_metadata.json # Story premise (LOD3) + taxonomy - Single source of truth
 │   ├── treatment.md         # Story treatment (LOD2)
 │   ├── chapters.yaml        # Self-contained chapter context (metadata, characters, world, outlines)
 │   ├── chapters/            # Full prose (LOD0)
@@ -507,7 +506,7 @@ Generate multiple premise options and select one (batch generation).
   - Each premise is unique and diverse
   - Interactive numbered selection after generation
   - All candidates saved to `premises_candidates.json` for reference
-  - Selected premise saved to `premise.md`
+  - Selected premise saved to `premise_metadata.json`
   - Shows premise text (truncated) and hook for each option
   - Auto-commits to git with selection noted
 - Examples:
@@ -603,7 +602,7 @@ Targets:
 - `prose` - Delete all chapter prose files (chapter-XX.md)
 - `chapters` - Delete chapters.yaml + cascade to prose
 - `treatment` - Delete treatment.md + cascade to chapters and prose
-- `premise` - Delete premise.md, premise_metadata.json + cascade to all downstream content
+- `premise` - Delete premise_metadata.json + cascade to all downstream content
 
 Features:
 - Confirmation prompt before deletion

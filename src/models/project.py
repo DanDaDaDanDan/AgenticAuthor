@@ -137,14 +137,66 @@ class Project:
             )
 
     def get_premise(self) -> Optional[str]:
-        """Load premise content."""
+        """
+        Load premise content.
+
+        Reads from premise_metadata.json (single source of truth).
+        Falls back to premise.md for backward compatibility with old projects.
+        """
+        # Try new format first (JSON only)
+        metadata = self.get_premise_metadata()
+        if metadata and 'premise' in metadata:
+            return metadata['premise']
+
+        # Fall back to old format (premise.md) for backward compatibility
         if self.premise_file.exists():
             return self.premise_file.read_text(encoding='utf-8')
+
+        return None
+
+    def get_premise_metadata(self) -> Optional[Dict[str, Any]]:
+        """
+        Load full premise metadata including taxonomy selections.
+
+        Returns dict with: premise, protagonist, antagonist, stakes, hook, themes, selections
+        Returns None if file doesn't exist.
+        """
+        if self.premise_metadata_file.exists():
+            with open(self.premise_metadata_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
         return None
 
     def save_premise(self, content: str):
-        """Save premise content."""
+        """
+        DEPRECATED: Use save_premise_metadata() instead.
+
+        This method is kept for backward compatibility but should not be used.
+        It only saves premise.md which creates duplication and inconsistency.
+        """
+        # For backward compatibility, still write premise.md
+        # But warn that this is deprecated
+        import warnings
+        warnings.warn(
+            "save_premise() is deprecated. Use save_premise_metadata() to save premise with full metadata.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.premise_file.write_text(content, encoding='utf-8')
+        if self.metadata:
+            self.metadata.update_timestamp()
+
+    def save_premise_metadata(self, metadata: Dict[str, Any]):
+        """
+        Save premise metadata (single source of truth).
+
+        Args:
+            metadata: Dict with premise, protagonist, antagonist, stakes, hook, themes, selections
+
+        Writes only to premise_metadata.json. Does NOT write premise.md.
+        """
+        with open(self.premise_metadata_file, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2)
+
         if self.metadata:
             self.metadata.update_timestamp()
             self.save_metadata()

@@ -632,18 +632,12 @@ class InteractiveSession:
                     )
 
                     if regen_result and 'premise' in regen_result:
-                        new_premise = regen_result['premise']
-
-                        # Save new premise
-                        self.project.save_premise(new_premise)
-
-                        # Save updated taxonomy
-                        with open(premise_metadata_file, 'w') as f:
-                            json.dump(updated_taxonomy, f, indent=2)
+                        # Save new premise with metadata
+                        self.project.save_premise_metadata(regen_result)
 
                         self._print("[green]✓ Premise regenerated[/green]")
                         self._print()
-                        self._print(f"[bold]{new_premise}[/bold]")
+                        self._print(f"[bold]{regen_result['premise']}[/bold]")
 
                         # Git commit
                     self._commit("Update taxonomy and regenerate premise")
@@ -716,18 +710,12 @@ class InteractiveSession:
                 )
 
                 if regen_result and 'premise' in regen_result:
-                    new_premise = regen_result['premise']
-
-                    # Save new premise
-                    self.project.save_premise(new_premise)
-
-                    # Save updated taxonomy
-                    with open(premise_metadata_file, 'w') as f:
-                        json.dump(updated_taxonomy, f, indent=2)
+                    # Save new premise with metadata
+                    self.project.save_premise_metadata(regen_result)
 
                     self._print("[green]✓ Premise regenerated with new taxonomy[/green]")
                     self._print()
-                    self._print(f"[bold]{new_premise}[/bold]")
+                    self._print(f"[bold]{regen_result['premise']}[/bold]")
                     self._print()
 
                     # Git commit
@@ -1598,12 +1586,8 @@ class InteractiveSession:
             with open(self.project.premises_file, 'w') as f:
                 json.dump(candidates_data, f, indent=2)
 
-            # Save selected premise to premise.md
-            self.project.save_premise(selected_premise['premise'])
-
-            # Save metadata
-            with open(self.project.premise_metadata_file, 'w') as f:
-                json.dump(selected_premise, f, indent=2)
+            # Save selected premise with metadata
+            self.project.save_premise_metadata(selected_premise)
 
             # Display selected premise
             self.console.print(f"\n[green]✓ Premise #{selected_num} selected[/green]\n")

@@ -330,19 +330,17 @@ agentic           # Start REPL (main interface)
 **File Structure (Short Story):**
 ```
 books/my-short-story/
-├── premise.md
-├── premise_metadata.json
+├── premise_metadata.json  ← Single source of truth (text + taxonomy)
 ├── treatment.md
-└── story.md          ← Single complete story (no chapters/)
+└── story.md               ← Single complete story (no chapters/)
 ```
 
 **vs. Novel Structure:**
 ```
 books/my-novel/
-├── premise.md
-├── premise_metadata.json
+├── premise_metadata.json  ← Single source of truth (text + taxonomy)
 ├── treatment.md
-├── chapters.yaml     ← Full metadata + outlines
+├── chapters.yaml          ← Full metadata + outlines
 └── chapters/
     ├── chapter-01.md
     ├── chapter-02.md
@@ -612,8 +610,7 @@ books/                      # All projects root
 │   │   ├── premise_history.json # Generation history
 │   │   └── debug/           # Debug output
 │   ├── config.yaml          # Project configuration
-│   ├── premise.md           # LOD3
-│   ├── premise_metadata.json # Taxonomy selections
+│   ├── premise_metadata.json # LOD3 - Single source of truth (premise text + taxonomy)
 │   ├── treatment.md         # LOD2
 │   ├── chapters.yaml        # LOD2 - Self-contained (metadata, characters, world, outlines)
 │   ├── chapters/            # LOD0 prose
@@ -745,6 +742,7 @@ process(data)  # No conditionals needed
 - Tab completion works for commands, genres, and models
 - **Test suite:** Removed in v0.3.0 (needs rebuilding for new architecture)
 - **All generation requires:** premise → treatment → chapters → prose (fail if missing)
+- **Premise storage:** Single source of truth in `premise_metadata.json` (text + taxonomy). Old projects with `premise.md` are supported via backward compatibility.
 
 ## Repository Structure
 

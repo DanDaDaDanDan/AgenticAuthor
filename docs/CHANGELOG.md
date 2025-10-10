@@ -145,6 +145,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensures `/iterate chapters` works correctly with new multi-phase generation
 
 ### Changed
+- **Premise Storage Consolidation** 📦
+  - **Single source of truth**: premise_metadata.json contains both premise text AND taxonomy selections
+  - **Eliminated premise.md**: No longer generated (was duplicate of text in premise_metadata.json)
+  - Backward compatibility: Old projects with premise.md still work (reads from .md if .json missing text)
+  - Methods updated:
+    - `Project.get_premise()` reads from JSON first, fallback to .md
+    - `Project.save_premise_metadata()` saves full structure (replaces separate .md + .json writes)
+    - `Project.save_premise()` deprecated with warning
+  - All generators updated to use save_premise_metadata()
+  - Documentation updated across CLAUDE.md, USER_GUIDE.md, DEVELOPER_GUIDE.md
+  - Import/conversion utilities (lod_parser.py, import_converter.py) still support premise.md for legacy data
 - **Self-Contained Chapters Architecture** 🏗️
   - chapters.yaml now includes ALL context for prose generation:
     - `metadata`: Genre, tone, themes, narrative_style, target_word_count, etc.

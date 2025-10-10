@@ -158,7 +158,7 @@ except ValueError as e:
    - Methods:
      - `build_context(project, target_lod, include_downstream)` - Assembles context
      - `to_yaml_string(context)` - Serializes to YAML for LLM
-   - Loads: premise.md, treatment.md, chapters.yaml, chapters/*.md
+   - Loads: premise_metadata.json, treatment.md, chapters.yaml, chapters/*.md
 
 2. **LODResponseParser** (`src/generation/lod_parser.py`)
    - Splits LLM's unified YAML back to individual files
@@ -327,14 +327,14 @@ result = cull_manager.cull_chapters()  # Deletes chapters.yaml + prose
 result = cull_manager.cull_treatment()  # Deletes treatment.md + downstream
 
 # Delete premise (cascades to all)
-result = cull_manager.cull_premise()  # Deletes premise.md + all downstream
+result = cull_manager.cull_premise()  # Deletes premise_metadata.json + all downstream
 ```
 
 Cascade rules:
 - **prose**: Delete chapter-XX.md files only
 - **chapters**: Delete chapters.yaml → cascade to prose
 - **treatment**: Delete treatment.md → cascade to chapters + prose
-- **premise**: Delete premise.md, premise_metadata.json → cascade to all
+- **premise**: Delete premise_metadata.json → cascade to all
 
 ### Adding New Features
 
@@ -816,7 +816,7 @@ chapters:
     # ... detailed outline
 ```
 
-**This makes premise.md and treatment.md historical artifacts.**
+**This makes treatment.md a historical artifact. premise_metadata.json is still used for premise text + taxonomy.**
 
 ### Context Patterns by Operation
 
@@ -2242,7 +2242,7 @@ def is_short_story_project(project: Project) -> bool:
 
 | Aspect | Short Story | Novel |
 |--------|-------------|-------|
-| File structure | premise.md + treatment.md + story.md | premise.md + treatment.md + chapters.yaml + chapters/*.md |
+| File structure | premise_metadata.json + treatment.md + story.md | premise_metadata.json + treatment.md + chapters.yaml + chapters/*.md |
 | Generation flow | 3 steps (premise → treatment → story) | 4 steps (premise → treatment → chapters → prose) |
 | Prompts | Unity of effect, single-sitting | Chapter arcs, long-form pacing |
 | Iteration | Direct patching of story.md | Chapter-level or prose-level patches |

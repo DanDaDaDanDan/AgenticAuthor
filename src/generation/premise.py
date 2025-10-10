@@ -345,12 +345,7 @@ Return JSON with this structure:
 
             # Save to project
             if result and 'premise' in result:
-                self.project.save_premise(result['premise'])
-
-                # Save full metadata
-                metadata_path = self.project.path / "premise_metadata.json"
-                with open(metadata_path, 'w') as f:
-                    json.dump(result, f, indent=2)
+                self.project.save_premise_metadata(result)
 
                 # Git commit (if git manager available)
                 # Note: Git integration would be handled by the CLI layer
@@ -517,11 +512,7 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
 
         # Save updated premise
         if result and 'premise' in result:
-            self.project.save_premise(result['premise'])
-
-            # Save metadata
-            with open(metadata_path, 'w') as f:
-                json.dump(result, f, indent=2)
+            self.project.save_premise_metadata(result)
 
             # Git commit (if git manager available)
             # Note: Git integration would be handled by the CLI layer
