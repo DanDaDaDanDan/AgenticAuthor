@@ -66,16 +66,20 @@ class CopyEditor:
         backup_dir = self.project.path / '.agentic' / 'backups' / f'copy_edit_{timestamp}'
         backup_dir.mkdir(parents=True, exist_ok=True)
 
-        console.print(f"\n[cyan]═══ Copy Editing Pass ═══[/cyan]")
-        console.print(f"Chapters: {len(chapter_nums)}")
-        console.print(f"Model: {self.model}")
-        console.print(f"Backup: {backup_dir.relative_to(self.project.path)}\n")
+        console.print(f"\n[bold cyan]{'═'*70}[/bold cyan]")
+        console.print(f"[bold cyan]{'  '*10}COPY EDITING PASS{'  '*10}[/bold cyan]")
+        console.print(f"[bold cyan]{'═'*70}[/bold cyan]")
+        console.print(f"\n  [dim]• Chapters to edit: {len(chapter_nums)}[/dim]")
+        console.print(f"  [dim]• Model: {self.model}[/dim]")
+        console.print(f"  [dim]• Backup: {backup_dir.relative_to(self.project.path)}[/dim]\n")
 
         edited_count = 0
         skipped_count = 0
 
         for chapter_num in chapter_nums:
-            console.print(f"\n[cyan]═══ Chapter {chapter_num}/{len(chapter_nums)} ═══[/cyan]")
+            console.print(f"\n[cyan]{'═'*70}[/cyan]")
+            console.print(f"[bold cyan]Copy Editing Chapter {chapter_num} of {len(chapter_nums)}[/bold cyan]")
+            console.print(f"[cyan]{'═'*70}[/cyan]\n")
 
             # Get original prose
             original = self.project.get_chapter(chapter_num)
@@ -87,12 +91,14 @@ class CopyEditor:
             # Build full context with ALL previously edited chapters
             context = self._build_full_context(chapter_num)
 
-            # Copy edit this chapter
+            # Copy edit this chapter (streams edited text in real-time)
             result = await self._copy_edit_chapter(
                 chapter_num=chapter_num,
                 chapter_text=original,
                 context=context
             )
+
+            console.print()  # Blank line after streaming
 
             # Verify quality
             warnings = self._verify_edit_quality(original, result)
@@ -117,20 +123,30 @@ class CopyEditor:
             # Save checkpoint
             self._save_checkpoint(chapter_num, result, backup_dir)
 
-            # Show success
-            stats = result['statistics']
-            console.print(f"[green]✓ Chapter {chapter_num} edited[/green]")
-            console.print(f"  {stats['total_errors_fixed']} total fixes")
-            console.print(f"  {stats['word_count_change_percent']:.1f}% word count change")
+            # Show success with statistics
+            stats = result.get('statistics', {})
+            console.print(f"\n[green]✓ Chapter {chapter_num} copy edited successfully[/green]")
+
+            total_fixes = stats.get('total_errors_fixed', 0)
+            word_change = stats.get('word_count_change_percent', 0)
+
+            if total_fixes > 0:
+                console.print(f"  [dim]• {total_fixes} total edits made[/dim]")
+            if abs(word_change) > 0.1:
+                console.print(f"  [dim]• Word count: {word_change:+.1f}%[/dim]")
+
+            console.print(f"  [dim]• Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
 
             edited_count += 1
 
         # Summary
-        console.print(f"\n[green]═══ Copy Editing Complete ═══[/green]")
-        console.print(f"Edited: {edited_count}/{len(chapter_nums)} chapters")
+        console.print(f"\n[bold green]{'═'*70}[/bold green]")
+        console.print(f"[bold green]✓ Copy Editing Complete[/bold green]")
+        console.print(f"[bold green]{'═'*70}[/bold green]")
+        console.print(f"\n  [green]• Successfully edited: {edited_count}/{len(chapter_nums)} chapters[/green]")
         if skipped_count > 0:
-            console.print(f"Skipped: {skipped_count} chapters")
-        console.print(f"Backup: {backup_dir.relative_to(self.project.path)}")
+            console.print(f"  [yellow]• Skipped: {skipped_count} chapters[/yellow]")
+        console.print(f"  [dim]• Backup location: {backup_dir.relative_to(self.project.path)}[/dim]\n")
 
         return {
             'chapters_edited': edited_count,
@@ -215,12 +231,14 @@ class CopyEditor:
         # Build comprehensive prompt
         prompt = self._build_copy_edit_prompt(chapter_num, chapter_text, context)
 
-        # Call LLM with low temperature for precision
+        # Call LLM with streaming enabled to show edited text as it's generated
         result = await self.client.json_completion(
             model=self.model,
             prompt=prompt,
             temperature=0.3,  # Low temp for precision and consistency
+            display_field="edited_chapter",  # Stream the edited chapter text
             display_label=f"Copy editing chapter {chapter_num}",
+            display_mode="field",  # Extract and display just the edited_chapter field
             min_response_tokens=8000  # Full chapter + detailed changes
         )
 
