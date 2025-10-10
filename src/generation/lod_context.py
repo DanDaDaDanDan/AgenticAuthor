@@ -88,15 +88,18 @@ class LODContextBuilder:
 
         if context_level == 'chapters' and not include_downstream:
             # Chapter iteration: ONLY chapters.yaml (self-contained)
+            # Return flat structure directly (not nested under 'chapters' key)
             chapters_yaml = project.get_chapters_yaml()
             if chapters_yaml:
-                context['chapters'] = chapters_yaml
+                # Return the full chapters.yaml structure at top level
+                # This has: metadata, characters, world, chapters
+                return chapters_yaml
             else:
-                # Legacy format fallback
+                # Legacy format fallback - nest under 'chapters' key
                 chapters = project.get_chapters()
                 if chapters:
-                    context['chapters'] = chapters
-            return context
+                    return {'chapters': chapters}
+            return {}
 
         # For all other cases, use the old logic:
 

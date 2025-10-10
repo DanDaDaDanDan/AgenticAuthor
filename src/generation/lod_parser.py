@@ -147,13 +147,17 @@ class LODResponseParser:
             if 'chapters' in data:
                 # Detect format: NEW self-contained has metadata/characters/world at top level
                 if 'metadata' in data and 'characters' in data and 'world' in data:
-                    # NEW self-contained format - save entire structure
+                    # NEW self-contained format (flat) - save entire structure
                     project.save_chapters_yaml(data)
                     updated_files.append('chapters.yaml')
                 else:
-                    # OLD/LEGACY format - only chapters section
+                    # Could be OLD/LEGACY format or nested format
                     chapters = data['chapters']
-                    if isinstance(chapters, dict):
+                    if isinstance(chapters, dict) and 'metadata' in chapters:
+                        # Nested new format (backward compat): chapters: {metadata, characters, world, chapters}
+                        project.save_chapters_yaml(chapters)
+                        updated_files.append('chapters.yaml')
+                    elif isinstance(chapters, dict):
                         # Dict format (could be partial new format)
                         project.save_chapters_yaml(chapters)
                         updated_files.append('chapters.yaml')

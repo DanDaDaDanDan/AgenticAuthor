@@ -737,16 +737,8 @@ class StreamHandler:
                 self.console.file.write("\n")  # Add newline at end
                 self.console.file.flush()
 
-                # For silent mode, show summary stats at the end
-                if display_mode == "silent" and token_count > 0:
-                    elapsed = time.time() - start_time
-                    tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
-                    word_count = len(content.split()) if content else 0
-
-                    self.console.print(
-                        f"\n[dim]✓ Generated {word_count:,} words in {elapsed:.1f}s "
-                        f"({token_count} tokens • {tokens_per_sec:.0f} t/s)[/dim]"
-                    )
+                # For silent mode, show summary stats at the end (but wait for usage correction first)
+                pass  # Summary will be shown after usage correction
 
         # If usage wasn't provided or is suspiciously low (common with truncation), estimate from token_count
         reported_completion = usage.get('completion_tokens', 0)
@@ -759,6 +751,19 @@ class StreamHandler:
 
             if logger and reported_completion > 0:
                 logger.warning(f"API reported {reported_completion} completion tokens but we counted {token_count} - using our count")
+
+        # NOW show summary with corrected usage (for silent mode)
+        if display and display_mode == "silent" and token_count > 0:
+            elapsed = time.time() - start_time
+            # Use the corrected completion_tokens from usage, not our counted tokens
+            actual_completion_tokens = usage.get('completion_tokens', token_count)
+            tokens_per_sec = actual_completion_tokens / elapsed if elapsed > 0 else 0
+            word_count = len(content.split()) if content else 0
+
+            self.console.print(
+                f"\n[dim]✓ Generated {word_count:,} words in {elapsed:.1f}s "
+                f"({actual_completion_tokens} tokens • {tokens_per_sec:.0f} t/s)[/dim]"
+            )
 
         return {
             'content': content,

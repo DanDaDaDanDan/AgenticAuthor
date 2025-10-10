@@ -8,6 +8,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Multi-Phase Chapter Generation System** 🚀
+  - Three-phase generation for improved reliability:
+    - Phase 1: Foundation (metadata + characters + world) ~2,000 tokens, ~30-45s
+    - Phase 2: Chapter Batches (adaptive batching based on model capacity) ~30-60s per batch
+    - Phase 3: Assembly (merge and validation)
+  - Adaptive batch sizing:
+    - Large models (16k+): 8 chapters per batch
+    - Medium models (8-16k): 5 chapters per batch
+    - Small models (4-8k): 3 chapters per batch
+    - Very small models (<4k): 2 chapters per batch
+  - Full context passing to every batch:
+    - Complete premise + treatment in every call
+    - Foundation (metadata, characters, world) in every batch
+    - Previous chapter summaries for narrative continuity
+  - Progress saving after each phase (`chapters.partial.foundation.yaml`, `chapters.partial.batch_1.yaml`, etc.)
+  - Incremental success - don't lose everything on network drop
+  - Batch retry logic (2 attempts per batch)
+  - Benefits over single-shot:
+    - 4x shorter streams (30-60s vs 3+ minutes)
+    - Network drop only loses current batch, not entire generation
+    - Can inspect/iterate on partial results
+    - Clear progress indicators
+- **Automatic Resume on Truncation** 🔄
+  - Detects YAML truncation from network drops
+  - Analyzes partial generation to find last complete chapter
+  - Automatically resumes for missing chapters with custom prompt
+  - Merges partial + continuation with validation
+  - Token efficient: Resume saves ~25-30% vs full retry
+  - Works for chapters section only (limitation: can't resume if truncation in foundation)
+  - Handles unterminated strings and incomplete YAML gracefully
+  - Three-level recovery: parse as-is → fix YAML → pattern matching
+- **Enhanced Network Reliability** 🌐
+  - TCP keep-alive configuration in OpenRouter client
+  - Increased sock_read timeout: 120s → 180s
+  - HTTP keep-alive enabled with connection pooling
+  - Better handling of silent connection drops
+  - Fixed usage statistics display when stream truncates
+
+### Fixed
+- **Chapter Count Calculation** 🔢
+  - Removed arbitrary min (8) and max (30) chapter limits
+  - Changed from 3,000 to 3,500 words per chapter target
+  - Simple division-based calculation: `total_words // 3500`
+  - Naturally scales from novellas (2 chapters) to epics (57 chapters)
+  - Multi-phase generation can handle any chapter count
+- **Act Determination Bug** 🎭
+  - Fixed bug where batch generation used wrong total for act calculation
+  - Now passes `total_chapters` parameter to `_generate_chapter_batch()`
+  - Correct act boundaries across all batches (Act I: 25%, Act II: 50%, Act III: 25%)
+- **Analysis Compatibility** 🔍
+  - Fixed analyzer to handle both list and dict formats for `systems_and_rules` and `social_context`
+  - Maintains backward compatibility with old chapters.yaml format
+  - New format uses structured lists with system/description fields
+- **Token Count Display** 📊
+  - Fixed inconsistency between streaming display and usage line
+  - Now shows actual API completion tokens instead of counted tokens
+  - Summary displayed after usage correction for accurate numbers
+  - Fixed "1684 tokens" vs "4832 tokens" discrepancy
+- **Chapter Iteration Compatibility** 🔄
+  - Fixed LODContextBuilder to return flat structure for chapter iteration
+  - Previously nested chapters.yaml under 'chapters' key, breaking parser detection
+  - Now returns: `{metadata: ..., characters: ..., world: ..., chapters: [...]}`
+  - Parser updated to handle both flat and nested formats for backward compatibility
+  - Ensures `/iterate chapters` works correctly with new multi-phase generation
+
+### Changed
 - **Self-Contained Chapters Architecture** 🏗️
   - chapters.yaml now includes ALL context for prose generation:
     - `metadata`: Genre, tone, themes, narrative_style, target_word_count, etc.

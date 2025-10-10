@@ -123,9 +123,23 @@ class ChapterGenerator:
         self.parser = LODResponseParser()
 
     def _calculate_chapter_count(self, total_words: int) -> int:
-        """Calculate recommended chapter count based on word count."""
-        avg_chapter_length = 3000  # Typical chapter length
-        return max(8, min(30, total_words // avg_chapter_length))
+        """
+        Calculate chapter count based on target words per chapter.
+
+        Uses simple division with no arbitrary min/max limits.
+        Multi-phase generation can handle any chapter count.
+
+        Args:
+            total_words: Target total word count for the book
+
+        Returns:
+            Number of chapters (minimum 1)
+        """
+        target_words_per_chapter = 3500  # Target words per chapter
+        chapter_count = total_words // target_words_per_chapter
+
+        # Only enforce minimum of 1 chapter (can't be 0)
+        return max(1, chapter_count)
 
     def _find_last_complete_chapter(self, yaml_text: str) -> Dict[str, Any]:
         """
