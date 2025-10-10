@@ -154,9 +154,16 @@ class ScaleDetector:
         E.g., adjusting 20 pieces of dialog across 10 chapters = patch (localized changes)
         vs. rewriting chapter structure = regenerate (fundamental change)
 
+        NOTE: Premise iteration is handled at coordinator level and always uses regenerate.
+        This method should not be called for premise, but if it is, treat as regenerate.
+
         Returns:
             "patch", "regenerate", or "unclear"
         """
+        # Premise should always regenerate (handled in coordinator, but adding here for safety)
+        if intent.get('target_type') == 'premise':
+            return "regenerate"
+
         # Explicit keywords indicate regeneration
         feedback = intent.get('original_feedback', '').lower()
         if any(kw in feedback for kw in self.REGEN_KEYWORDS):

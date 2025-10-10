@@ -119,6 +119,11 @@ class IterationCoordinator:
 
     async def _determine_scale(self, intent: Dict[str, Any]) -> str:
         """Determine if change should be patch or regenerate."""
+        # CRITICAL: Premise should ALWAYS be regenerated, never patched
+        # Premise is too short and fundamental to use patch approach
+        if intent.get('target_type') == 'premise':
+            return "regenerate"
+
         # First, try heuristic detection
         scale = self.scale_detector.detect_scale(intent)
 
