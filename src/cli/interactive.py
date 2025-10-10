@@ -2566,9 +2566,12 @@ class InteractiveSession:
         """
         Copy edit all chapter prose with full accumulated context.
 
+        Edits all chapters sequentially, auto-applying changes.
+        Creates timestamped backup before starting.
+
         Usage:
-            /copyedit           # Edit all chapters with preview
-            /copyedit --auto    # Auto-apply without preview
+            /copyedit           # Edit all chapters (asks for confirmation)
+            /copyedit --auto    # Edit all chapters (no confirmation)
         """
         if not self.project:
             self.console.print("[red]No project open. Use /open <project> first.[/red]")
