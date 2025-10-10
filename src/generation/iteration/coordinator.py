@@ -500,19 +500,19 @@ You are modifying a short-form story. The premise and treatment provide the stor
             from ..premise import PremiseGenerator
             generator = PremiseGenerator(self.client, self.project, self.model)
 
-            # Extract new requirements from intent
-            concept = intent.get('original_feedback', '')
+            # Extract feedback from intent
+            feedback = intent.get('original_feedback', '')
 
-            result = await generator.generate(user_input=concept)
+            # Use iterate() method which is designed for premise iteration
+            # This loads current premise and applies feedback, unlike generate() which creates new premise
+            result = await generator.iterate(feedback)
 
-            # Save premise
-            self.project.save_premise(result['premise'])
-
+            # premise.iterate() already saves to project, just extract info for changes
             changes.append({
                 'type': 'regenerate',
                 'target': 'premise',
                 'file': 'premise.md',
-                'word_count': len(result['premise'].split())
+                'word_count': len(result.get('premise', '').split())
             })
 
         elif target_type == 'treatment':

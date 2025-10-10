@@ -474,20 +474,26 @@ Return JSON with only the selections:
         prompt = f"""Current premise:
 {current_premise}
 
-Current metadata:
+Current metadata (including taxonomy selections):
 {json.dumps(current_metadata, indent=2)}
 
 User feedback: {feedback}
 
-Please revise the premise based on this feedback. Maintain the same JSON structure as before:
+Please revise the premise based on this feedback. Return the complete JSON structure including all existing fields:
 {{
     "premise": "The revised 2-3 sentence premise",
     "protagonist": "Updated protagonist description",
     "antagonist": "Updated antagonist description",
     "stakes": "Updated stakes",
     "hook": "Updated unique hook",
-    "themes": ["theme1", "theme2", "theme3"]
-}}"""
+    "themes": ["theme1", "theme2", "theme3"],
+    "selections": {{
+        // Keep existing taxonomy selections unless feedback specifically asks to change them
+        // Include all categories from current metadata
+    }}
+}}
+
+IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback specifically requests changes to story parameters."""
 
         # Generate revision
         # Get model from project or use default
@@ -506,7 +512,7 @@ Please revise the premise based on this feedback. Maintain the same JSON structu
             display_field="premise",
             display_label="Revising premise",
             # No max_tokens - let it use full available context
-            min_response_tokens=800  # Premises need substantial space
+            min_response_tokens=1200  # Premises + full taxonomy selections need substantial space
         )
 
         # Save updated premise
