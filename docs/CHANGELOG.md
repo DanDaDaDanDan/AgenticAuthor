@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Concept Mashup Generator** 🎬
+  - Creative premise ideas from movie + modifier combinations
+  - `/generate concepts [count]` command (default 50, range 1-100)
+  - 300 movies × 103 modifiers = 30,900 possible concepts
+  - Examples: "Star Wars with lawyers", "Toy Story in space"
+  - Interactive numbered selection
+  - Selected concept feeds into premise generation with auto-genre detection
+  - Data files: `misc/movies.txt`, `misc/story-modifiers.txt`
+  - ConceptMashupGenerator class in `src/generation/concept_mashup.py`
+  - Duplicate detection ensures unique combinations
+  - Tab completion for `/generate concepts` command
+- **Comprehensive Documentation Updates** 📚
+  - Updated USER_GUIDE.md with all recent features (short story, concepts, multi-phase)
+  - Updated DEVELOPER_GUIDE.md with implementation patterns
+  - Added short story workflow documentation
+  - Added concept mashup integration guide
+  - Added multi-phase chapter generation architecture details
+  - Organized features by importance and recency
 - **Short Story Workflow** 📖
   - Automatic detection: Stories with ≤2 expected chapters use simplified flow
   - Single-file generation: story.md instead of chapters/ directory
@@ -512,6 +530,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Target 1.0.0**: Q1 2025 - Full feature release with complete generation pipeline
 
 ## Current Implementation Status
+
+## ✅ Recently Completed (Unreleased)
+
+### Short Story Workflow
+- [x] Auto-detection based on word count and taxonomy
+- [x] ShortStoryGenerator class implementation
+- [x] Single-file generation (story.md)
+- [x] Streamlined flow (premise → treatment → story)
+- [x] Optimized prompts for short-form
+- [x] Iteration support via diff-based patching
+- [x] Export compatibility (RTF and Markdown)
+- [x] Force flag for overriding auto-detection
+- [x] Status display shows story type
+
+### Concept Mashup Generator
+- [x] ConceptMashupGenerator class
+- [x] Load movies and modifiers from data files
+- [x] Generate unique random combinations
+- [x] Interactive numbered selection
+- [x] Integration with premise generation
+- [x] Tab completion for command
+- [x] Statistics and validation
+- [x] Error handling for missing data files
+
+### Multi-Phase Chapter Generation
+- [x] Three-phase generation system (Foundation → Batches → Assembly)
+- [x] Adaptive batch sizing based on model capacity
+- [x] Full context passing to every batch
+- [x] Progress saving after each phase
+- [x] Auto-resume on network drops
+- [x] Batch retry logic
+- [x] Token efficiency improvements
+- [x] Clear progress indicators
+
+### Documentation
+- [x] USER_GUIDE.md updated with recent features
+- [x] DEVELOPER_GUIDE.md updated with implementation patterns
+- [x] CHANGELOG.md entries for all recent work
+- [x] Short story workflow documentation
+- [x] Concept mashup integration guide
+- [x] Multi-phase chapter generation architecture
 
 ## ✅ Recently Completed (v0.3.0)
 

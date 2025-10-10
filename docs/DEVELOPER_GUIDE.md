@@ -625,6 +625,35 @@ graph TB
 - Escape RTF special characters BEFORE adding RTF codes (critical bug fix)
 - Metadata validation (title and author required for export)
 - Default export paths based on book title
+- **Supports both short and long form** (v0.3.0+)
+
+### 7. Short Story System (`src/generation/short_story.py`)
+- **short_story.py**: ShortStoryGenerator for optimized short-form prose
+- **Auto-detection**: Based on target word count (≤7,500) or taxonomy (length_scope)
+- **Single file generation**: story.md instead of chapters/ directory
+- **Streamlined flow**: premise → treatment → story.md (skips chapters.yaml)
+- **Optimized prompts**: Emphasize unity of effect, single-sitting experience
+- **File structure differences**: Uses story.md for short form vs chapters/ for novels
+
+**Key Design Decisions:**
+- Detection thresholds: flash fiction (500-1,500), short story (1,500-7,500), novelette (7,500-17,500)
+- Skip chapter generation entirely for short form
+- Iteration support via diff-based patching
+- Backward compatible with existing chapter-based projects
+- Force flag available to override auto-detection
+
+### 8. Concept Mashup System (`src/generation/concept_mashup.py`)
+- **ConceptMashupGenerator**: Combines movies with story modifiers for creative premise ideas
+- **Data sources**: 300 movies (misc/movies.txt) × 103 modifiers (misc/story-modifiers.txt)
+- **Combination generation**: Random unique pairings with safety limits
+- **Output format**: Numbered list with movie, modifier, and combined concept
+
+**Key Design Decisions:**
+- 30,900 possible unique combinations (movies × modifiers)
+- Default 50 combinations, configurable 1-100
+- Duplicate detection via set tracking
+- Safety limit: max_attempts = count × 10
+- Returns structured list: [{number, movie, modifier, concept}]
 
 ## Data Flow
 
@@ -1982,3 +2011,216 @@ class CustomGenerator(BaseGenerator):
         )
         return self.process_response(response)
 ```
+
+### Short Story Generation Pattern
+
+```python
+from src.generation.short_story import ShortStoryGenerator
+from src.models import Project
+
+# Auto-detection based on word count
+project = Project("books/my-story")
+generator = ShortStoryGenerator(client, project, model)
+
+# Check if short story based on target word count
+is_short_story = project.get_target_word_count() <= 7500
+
+if is_short_story:
+    # Generate directly to story.md (no chapters.yaml)
+    story_text = await generator.generate(temperature=0.7)
+    # Saved to: books/my-story/story.md
+else:
+    # Use chapter-based generation
+    prose_gen = ProseGenerator(client, project, model)
+    # Generates to: books/my-story/chapters/
+```
+
+**Short Story Detection Logic:**
+
+```python
+def is_short_story_project(project: Project) -> bool:
+    """
+    Determine if project should use short story workflow.
+
+    Checks (in order):
+    1. Taxonomy length_scope field
+    2. Target word count from config
+    3. Existing story.md file
+    """
+    # Check taxonomy
+    metadata = project.get_premise_metadata()
+    if metadata:
+        length_scope = metadata.get('taxonomySelections', {}).get('length_scope', [])
+        if 'flash-fiction' in length_scope or 'short-story' in length_scope:
+            return True
+
+    # Check word count
+    target_words = project.get_target_word_count()
+    if target_words and target_words <= 7500:
+        return True
+
+    # Check for existing story.md
+    story_file = project.path / 'story.md'
+    if story_file.exists():
+        return True
+
+    return False
+```
+
+**Key Differences from Novel Generation:**
+
+| Aspect | Short Story | Novel |
+|--------|-------------|-------|
+| File structure | premise.md + treatment.md + story.md | premise.md + treatment.md + chapters.yaml + chapters/*.md |
+| Generation flow | 3 steps (premise → treatment → story) | 4 steps (premise → treatment → chapters → prose) |
+| Prompts | Unity of effect, single-sitting | Chapter arcs, long-form pacing |
+| Iteration | Direct patching of story.md | Chapter-level or prose-level patches |
+| Export | Single story.md → RTF | Combined chapters/*.md → RTF |
+
+### Concept Mashup Generator Pattern
+
+```python
+from src.generation.concept_mashup import ConceptMashupGenerator
+from pathlib import Path
+
+# Initialize with base directory
+generator = ConceptMashupGenerator(base_dir=Path("D:/AgenticAuthor"))
+
+# Load data files
+movies = generator.load_movies()  # From misc/movies.txt
+modifiers = generator.load_modifiers()  # From misc/story-modifiers.txt
+
+# Get statistics
+stats = generator.get_stats()
+print(f"Movies: {stats['movie_count']}")
+print(f"Modifiers: {stats['modifier_count']}")
+print(f"Max combinations: {stats['max_combinations']}")
+
+# Generate random combinations (default 50)
+concepts = generator.generate_combinations(count=50)
+
+# Display to user for selection
+for concept in concepts:
+    print(f"{concept['number']}. {concept['concept']}")
+    print(f"   Movie: {concept['movie']}")
+    print(f"   Modifier: {concept['modifier']}")
+
+# User selects one, then generate full premise
+selected = concepts[user_choice - 1]
+premise_gen = PremiseGenerator(client, project, model)
+result = await premise_gen.generate(
+    user_input=selected['concept'],
+    genre=None  # Auto-detect
+)
+```
+
+**Integration with Premise Generation:**
+
+The concept mashup is used as the initial seed for premise generation. The flow is:
+
+1. Generate 50 movie+modifier concepts
+2. User selects one
+3. Selected concept becomes the `user_input` for premise generation
+4. LLM auto-detects genre from concept
+5. LLM expands concept into full premise with taxonomy
+
+Example:
+```
+Concept: "Star Wars with lawyers"
+→ Auto-detected genre: "science-fiction"
+→ Generated premise: "In a galaxy where interstellar disputes are settled in courtrooms rather than battlefields, a young lawyer discovers evidence that threatens to unravel the legal system..."
+```
+
+### Multi-Phase Chapter Generation Pattern
+
+```python
+from src.generation.chapters import ChapterGenerator
+
+generator = ChapterGenerator(client, project, model)
+
+# Generate chapters with multi-phase system
+result = await generator.generate()
+
+# Phase breakdown:
+# 1. Foundation phase (~2,000 tokens, 30-45s)
+#    - Metadata (genre, themes, pacing, etc.)
+#    - Characters (profiles with arcs, relationships)
+#    - World (setting, locations, systems, social context)
+#    Saved to: chapters.partial.foundation.yaml
+
+# 2. Batched chapters phase (adaptive batching)
+#    - Batch size determined by model capacity:
+#      * Large models (16k+): 8 chapters per batch
+#      * Medium models (8-16k): 5 chapters per batch
+#      * Small models (4-8k): 3 chapters per batch
+#      * Very small (<4k): 2 chapters per batch
+#    - Each batch includes FULL context:
+#      * Complete premise + treatment
+#      * Foundation (metadata, characters, world)
+#      * Previous chapter summaries
+#    - Streaming display: 30-60s per batch
+#    Saved to: chapters.partial.batch_1.yaml, chapters.partial.batch_2.yaml, etc.
+
+# 3. Assembly phase
+#    - Merge all partial files
+#    - Validate structure
+#    - Save to final chapters.yaml
+```
+
+**Adaptive Batch Sizing:**
+
+```python
+def _determine_batch_size(self, model_obj) -> int:
+    """
+    Calculate optimal batch size based on model output capacity.
+
+    Conservative estimates to ensure completion:
+    - Large models (16k+): 8 chapters
+    - Medium models (8-16k): 5 chapters
+    - Small models (4-8k): 3 chapters
+    - Very small (<4k): 2 chapters
+    """
+    max_output = model_obj.get_max_output_tokens()
+
+    if max_output >= 16000:
+        return 8  # ~2000 tokens per chapter
+    elif max_output >= 8000:
+        return 5  # ~1600 tokens per chapter
+    elif max_output >= 4000:
+        return 3  # ~1333 tokens per chapter
+    else:
+        return 2  # ~2000 tokens per chapter
+```
+
+**Auto-Resume on Network Drop:**
+
+```python
+# If network drops during batch generation, auto-resume:
+try:
+    batch_result = await self._generate_chapter_batch(...)
+except YAMLTruncationError as e:
+    # Analyze what we got
+    last_complete = e.last_complete_chapter
+
+    # Resume from next chapter
+    remaining_chapters = chapters[last_complete + 1:]
+
+    # Generate continuation with context
+    continuation = await self._generate_continuation(
+        foundation=foundation,
+        completed_chapters=chapters[:last_complete + 1],
+        remaining_chapters=remaining_chapters
+    )
+
+    # Merge partial + continuation
+    final = merge_partials([partial, continuation])
+```
+
+**Benefits of Multi-Phase Generation:**
+
+1. **Shorter Streams**: 30-60s per batch vs 3+ minutes for full generation
+2. **Better Reliability**: Network drops only lose current batch, not everything
+3. **Incremental Progress**: Can inspect/iterate on partial results
+4. **Token Efficiency**: Auto-resume saves ~25-30% tokens vs full retry
+5. **Better Context**: Each batch gets full context (not truncated by token limits)
+6. **Clear Progress**: User sees exactly which batch is generating

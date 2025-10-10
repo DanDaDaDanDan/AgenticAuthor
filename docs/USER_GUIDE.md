@@ -11,23 +11,49 @@ AI-powered iterative book generation with natural language feedback and git-back
 - **Smart Genre System**: Genre-specific taxonomies and parameters
 - **Model Flexibility**: Switch between AI models on the fly
 
-### ✨ New Features (v0.3.0)
+### ✨ New Features (v0.3.0+)
+- **Short Story Workflow** 📖
+  - Auto-detection for stories ≤7,500 words (flash fiction, short stories)
+  - Single file generation (story.md) instead of chapters/
+  - Optimized prompts for short-form (unity of effect, single-sitting experience)
+  - Direct iteration on complete story
+  - Export works seamlessly for both short and long form
+
+- **Concept Mashup Generator** 🎬
+  - Creative premise ideas from movie + modifier combinations
+  - 300 movies × 103 modifiers = 30,900 possible concepts!
+  - Examples: "Star Wars with lawyers", "Toy Story in space"
+  - Generate 50 combinations by default (1-100 configurable)
+  - Select one → generates full premise with taxonomy
+
+- **Multi-Phase Chapter Generation** 🚀
+  - Reliable chapter generation with automatic resume
+  - Three phases: Foundation → Batched Chapters → Assembly
+  - Adaptive batching (2-8 chapters per batch based on model)
+  - Full context in every batch
+  - Auto-resume on network drops (saves 25-30% tokens vs retry)
+  - 4x shorter streams (30-60s vs 3+ min)
+
 - **Interactive Editors**
   - Full-screen model selector with live fuzzy search
   - Interactive taxonomy editor with checkbox selection
   - Keyboard navigation (↑↓, SPACE, TAB, ENTER, ESC)
+
 - **Automatic Genre Detection**
   - LLM auto-detects genre from concept
   - No manual selection needed
   - High accuracy with confidence scoring
+
 - **Taxonomy Iteration**
   - Modify story parameters and regenerate premise
   - Natural language feedback for taxonomy changes
   - Interactive checkbox editor for precise control
+
 - **Strict Model Enforcement**
   - Single user-selected model for ALL operations
   - No fallback models - clear error messages
   - Ensures consistent cost and quality
+
 - **Multi-Model Competition Mode** 🏆
   - Run 3+ models in parallel (tournament mode)
   - Judge model evaluates and picks winner
