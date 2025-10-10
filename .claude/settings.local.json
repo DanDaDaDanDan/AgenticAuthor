@@ -25,7 +25,8 @@
       "WebFetch(domain:kdp.amazon.com)",
       "WebFetch(domain:blog.reedsy.com)",
       "Bash(set PYTHONPATH=.)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

@@ -216,17 +216,40 @@ class AnalysisCoordinator:
                 for loc in key_locations:
                     lines.append(f"  - {loc.get('name', 'Unknown')}: {loc.get('description', 'N/A')}")
 
-            systems = world.get('systems_and_rules', {})
+            systems = world.get('systems_and_rules', [])
             if systems:
                 lines.append("\nSystems and Rules:")
-                for key, value in systems.items():
-                    lines.append(f"  - {key}: {value}")
+                # Handle both list format (new) and dict format (legacy)
+                if isinstance(systems, list):
+                    for system in systems:
+                        if isinstance(system, dict):
+                            system_name = system.get('system', 'Unknown')
+                            system_desc = system.get('description', 'N/A')
+                            lines.append(f"  - {system_name}: {system_desc}")
+                        else:
+                            lines.append(f"  - {system}")
+                else:
+                    # Legacy dict format
+                    for key, value in systems.items():
+                        lines.append(f"  - {key}: {value}")
 
-            social_context = world.get('social_context', {})
+            social_context = world.get('social_context', [])
             if social_context:
                 lines.append("\nSocial Context:")
-                for key, value in social_context.items():
-                    lines.append(f"  - {key}: {value}")
+                # Handle both list format (new) and dict format (legacy)
+                if isinstance(social_context, list):
+                    for context in social_context:
+                        if isinstance(context, dict):
+                            # If it's a dict, format it
+                            for key, value in context.items():
+                                lines.append(f"  - {key}: {value}")
+                        else:
+                            # If it's a string, just add it
+                            lines.append(f"  - {context}")
+                else:
+                    # Legacy dict format
+                    for key, value in social_context.items():
+                        lines.append(f"  - {key}: {value}")
             lines.append("")
 
         # CHAPTERS SECTION

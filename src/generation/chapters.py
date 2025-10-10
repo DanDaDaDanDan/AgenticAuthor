@@ -511,7 +511,8 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         previous_summaries: List[Dict[str, str]],
         start_chapter: int,
         end_chapter: int,
-        words_per_chapter: int
+        words_per_chapter: int,
+        total_chapters: int
     ) -> List[Dict[str, Any]]:
         """
         Generate a batch of chapters with full context.
@@ -523,6 +524,7 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
             start_chapter: First chapter number to generate (inclusive)
             end_chapter: Last chapter number to generate (inclusive)
             words_per_chapter: Target words per chapter
+            total_chapters: Total number of chapters in the complete book
 
         Returns:
             List of chapter dicts
@@ -545,7 +547,6 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
 
         # Determine act for these chapters
         # Simple heuristic: first 25% = Act I, middle 50% = Act II, last 25% = Act III
-        total_chapters = end_chapter  # Assume we're generating all chapters eventually
         act_1_end = total_chapters * 0.25
         act_2_end = total_chapters * 0.75
 
@@ -1030,7 +1031,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                             previous_summaries=previous_summaries,
                             start_chapter=start_ch,
                             end_chapter=end_ch,
-                            words_per_chapter=words_per_chapter
+                            words_per_chapter=words_per_chapter,
+                            total_chapters=chapter_count
                         )
                         break  # Success
                     except Exception as e:
