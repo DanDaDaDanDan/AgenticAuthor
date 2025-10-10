@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Short Story Workflow** 📖
+  - Automatic detection: Stories with ≤2 expected chapters use simplified flow
+  - Single-file generation: story.md instead of chapters/ directory
+  - Skip chapters.yaml: goes directly premise → treatment → story.md
+  - ShortStoryGenerator class for optimized short-form prose
+  - Prompts emphasize unity of effect and single-sitting experience
+  - Iteration support: diff-based patching of story.md
+  - Detection from taxonomy (length_scope) or word count (≤7,500)
+  - Status display shows story type (Flash Fiction/Short Story/Novelette)
+  - Force flag: `/generate chapters --force` to override auto-detection
+  - Supports flash fiction (500-1,500), short story (1,500-7,500), novelette (7,500-17,500)
+  - File structure: premise.md + treatment.md + story.md (no chapters.yaml)
+  - Backward compatible: existing projects with chapters/ continue to work
 - **Multi-Phase Chapter Generation System** 🚀
   - Three-phase generation for improved reliability:
     - Phase 1: Foundation (metadata + characters + world) ~2,000 tokens, ~30-45s

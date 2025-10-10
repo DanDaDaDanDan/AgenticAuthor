@@ -144,6 +144,14 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
   - Patch: Fast unified diffs for targeted edits (10-15x faster)
   - Regenerate: Full AI regeneration for structural changes
   - Existing chapters included in iteration prompt for true modification
+- **Short Story Workflow** 📖 - Simplified flow for short-form stories (≤2 chapters)
+  - Automatic detection: ≤2 chapters = short-form (flash fiction, short story, novelette)
+  - Single file: story.md instead of chapters/ directory
+  - Skip chapters.yaml: goes directly from treatment → prose
+  - Optimized prompts: emphasizes unity of effect, single-sitting experience
+  - Iteration: diff-based patching of story.md with full context
+  - Status display: shows story type and word count instead of chapter count
+  - Force flag: `--force` on /generate chapters to override detection
 
 **Previous Features (v0.2.0)**:
 - Genre-specific taxonomy support (11 genres with autocomplete)
@@ -178,6 +186,60 @@ agentic           # Start REPL (main interface)
 /multimodel config # Configure competition models and judge
 /logs             # View recent log entries
 /help             # Show all commands
+```
+
+## Short Story Workflow
+
+**For stories ≤ 7,500 words (flash fiction, short stories, novelettes):**
+
+```bash
+# 1. Create project and select short story length
+/new my-short-story
+/model grok-4-fast  # Select model
+/generate premise "a brief concept"
+/iterate taxonomy   # Select "short_story" in length_scope category
+
+# 2. Generate treatment (structural outline)
+/generate treatment
+
+# 3. Generate complete story (single file)
+/generate prose     # Creates story.md (NOT chapters!)
+
+# 4. Iterate on story
+"Make the ending more ambiguous"
+"Add more sensory details in the opening"
+"Change protagonist's motivation"
+
+# 5. Check status
+/status  # Shows "Type: Short Story (~3,500 words target)"
+         # Story: ✓  (3,200 words)
+
+# 6. Export
+/metadata title "My Short Story"
+/metadata author "Your Name"
+/export rtf my-story.rtf
+```
+
+**File Structure (Short Story):**
+```
+books/my-short-story/
+├── premise.md
+├── premise_metadata.json
+├── treatment.md
+└── story.md          ← Single complete story (no chapters/)
+```
+
+**vs. Novel Structure:**
+```
+books/my-novel/
+├── premise.md
+├── premise_metadata.json
+├── treatment.md
+├── chapters.yaml     ← Full metadata + outlines
+└── chapters/
+    ├── chapter-01.md
+    ├── chapter-02.md
+    └── ...
 ```
 
 ## Testing After Changes

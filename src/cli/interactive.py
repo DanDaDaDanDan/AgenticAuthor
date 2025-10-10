@@ -1012,11 +1012,30 @@ class InteractiveSession:
         table.add_column("Property", style="cyan")
         table.add_column("Value")
 
+        # Detect story type
+        is_short_form = self.project.is_short_form()
+        target_words = self.project.get_target_words()
+
         # Add project info
         if self.project.metadata:
             table.add_row("Created", str(self.project.metadata.created_at)[:19])
             table.add_row("Updated", str(self.project.metadata.updated_at)[:19])
             table.add_row("Genre", self.project.metadata.genre or "Not set")
+
+            # Show story type
+            if is_short_form:
+                if target_words:
+                    if target_words < 1500:
+                        story_type = "Flash Fiction"
+                    elif target_words < 7500:
+                        story_type = "Short Story"
+                    else:
+                        story_type = "Novelette"
+                    table.add_row("Type", f"{story_type} (~{target_words:,} words target)")
+                else:
+                    table.add_row("Type", "Short Story")
+            else:
+                table.add_row("Type", "Novel")
 
             # Show model(s) - check if multi-model mode is active
             if self.settings.multi_model_mode:
@@ -1026,12 +1045,14 @@ class InteractiveSession:
                 table.add_row("Model", self.project.metadata.model or self.settings.active_model or "Not set")
 
             table.add_row("Words", str(self.project.metadata.word_count))
-            table.add_row("Chapters", str(self.project.metadata.chapter_count))
+            if not is_short_form:
+                table.add_row("Chapters", str(self.project.metadata.chapter_count))
             table.add_row("Status", self.project.metadata.status)
 
         # Check what exists
         has_premise = self.project.premise_file.exists()
         has_treatment = self.project.treatment_file.exists()
+        has_story = self.project.story_file.exists()
         has_outlines = self.project.chapters_file.exists()
         num_chapters = len(self.project.list_chapters())
 
@@ -1039,29 +1060,39 @@ class InteractiveSession:
         table.add_row("Premise", "✓ " if has_premise else "✗ ")
         table.add_row("Treatment", "✓ " if has_treatment else "✗ ")
 
-        # Show chapters with enhanced info from new format
-        if has_outlines:
-            chapters_yaml = self.project.get_chapters_yaml()
-            if chapters_yaml:
-                # New self-contained format - show additional info
-                metadata = chapters_yaml.get('metadata', {})
-                characters = chapters_yaml.get('characters', [])
-                world = chapters_yaml.get('world', {})
-                chapters = chapters_yaml.get('chapters', [])
-
-                outline_info = f"✓  ({len(chapters)} chapters"
-                if metadata.get('genre'):
-                    outline_info += f", {metadata.get('genre')}"
-                if len(characters) > 0:
-                    outline_info += f", {len(characters)} chars"
-                outline_info += ")"
-                table.add_row("Outlines", outline_info)
+        # Show different info based on story type
+        if is_short_form:
+            # Short story: show story.md status
+            if has_story:
+                story_content = self.project.get_story()
+                word_count = len(story_content.split()) if story_content else 0
+                table.add_row("Story", f"✓  ({word_count:,} words)")
             else:
-                table.add_row("Outlines", "✓ ")
+                table.add_row("Story", "✗ ")
         else:
-            table.add_row("Outlines", "✗ ")
+            # Novel: show chapters.yaml and prose chapters
+            if has_outlines:
+                chapters_yaml = self.project.get_chapters_yaml()
+                if chapters_yaml:
+                    # New self-contained format - show additional info
+                    metadata = chapters_yaml.get('metadata', {})
+                    characters = chapters_yaml.get('characters', [])
+                    world = chapters_yaml.get('world', {})
+                    chapters = chapters_yaml.get('chapters', [])
 
-        table.add_row("Prose Chapters", str(num_chapters))
+                    outline_info = f"✓  ({len(chapters)} chapters"
+                    if metadata.get('genre'):
+                        outline_info += f", {metadata.get('genre')}"
+                    if len(characters) > 0:
+                        outline_info += f", {len(characters)} chars"
+                    outline_info += ")"
+                    table.add_row("Outlines", outline_info)
+                else:
+                    table.add_row("Outlines", "✓ ")
+            else:
+                table.add_row("Outlines", "✗ ")
+
+            table.add_row("Prose Chapters", str(num_chapters))
 
         self.console.print(table)
 
