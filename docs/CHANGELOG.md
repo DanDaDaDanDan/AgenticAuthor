@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Professional Copy Editing System** ✏️
+  - `/copyedit [--auto]` command for comprehensive copy editing pass
+  - Sequential processing of all chapter prose files with accumulated context
+  - Context architecture: chapters.yaml + edited chapters + remaining original chapters
+  - Pronoun consistency detection (special focus on unisex names: Alex, Jordan, Sam)
+  - Continuity checking across all chapters (character details, timeline, terminology)
+  - Forward reference support (all remaining chapters visible during editing)
+  - Quality verification: paragraph structure, dialogue markers, scene breaks
+  - Preview system with statistics before applying changes
+  - Timestamped backups (`.agentic/backups/copy_edit_YYYYMMDD_HHMMSS/`)
+  - Checkpoint saving for resume capability
+  - Temperature 0.3 for precision over creativity
+  - Token usage constant (~200k): redistributes between edited and original
+  - CopyEditor class in `src/generation/copy_editor.py`
+  - Comprehensive prompt with clear editing scope and examples
+  - Integration with CLI command system
+  - Git commit after completion
 - **Concept Mashup Generator** 🎬
   - Creative premise ideas from movie + modifier combinations
   - `/generate concepts [count]` command (default 50, range 1-100)
@@ -78,6 +95,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed usage statistics display when stream truncates
 
 ### Fixed
+- **Premise Iteration** 🔧
+  - **Critical Fix**: Premise iteration now always uses "regenerate" strategy, never "patch"
+  - Added explicit check in `IterationCoordinator._determine_scale()` to return "regenerate" for premise
+  - Added defensive check in `ScaleDetector._apply_heuristics()` for premise target type
+  - Reason: Premise is too short (2-3 sentences) for diff-based patching
+  - **Critical Fix**: Coordinator now calls `generator.iterate()` instead of `generator.generate()`
+  - `iterate()` method designed specifically for premise iteration with feedback
+  - `generate()` creates brand new premise from scratch (wrong for iteration)
+  - **Critical Fix**: Premise iteration now preserves taxonomy selections
+  - Updated `premise.iterate()` to request full JSON including `selections` field
+  - Added explicit instruction to preserve existing taxonomy unless feedback changes it
+  - Increased `min_response_tokens` from 800 to 1200 for complete response
+  - Fixes issue where taxonomy selections were lost during iteration
+  - Fixes "stuff is cut off" issue - response was incomplete
+- **Copy Editor Context Architecture** 🏗️
+  - Removed premise.md and treatment.md from copy editor context (no longer needed)
+  - Added ALL remaining original chapters for forward reference support
+  - Updated context structure to use self-contained chapters.yaml
+  - chapters.yaml contains everything: metadata, characters, world, chapter outlines
+  - premise.md and treatment.md are historical artifacts after multi-phase generation
+  - Token usage stays constant (~200k) instead of growing
+  - Removed word count change warning (copy editing focuses on correctness, not length)
+  - Deleted unused SEQUENTIAL_PROSE_TEMPLATE from prose.py (85 lines of dead code)
 - **Chapter Count Calculation** 🔢
   - Removed arbitrary min (8) and max (30) chapter limits
   - Changed from 3,000 to 3,500 words per chapter target
@@ -564,13 +604,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [x] Token efficiency improvements
 - [x] Clear progress indicators
 
+### Copy Editing System
+- [x] CopyEditor class implementation
+- [x] Sequential processing with accumulated context
+- [x] Context architecture: chapters.yaml + edited + remaining chapters
+- [x] Pronoun consistency detection (unisex names)
+- [x] Continuity checking across all chapters
+- [x] Forward reference support (all chapters visible)
+- [x] Quality verification with preview
+- [x] Timestamped backups and checkpoints
+- [x] CLI integration (/copyedit command)
+- [x] Git commit after completion
+
+### Premise Iteration Fixes
+- [x] Always use "regenerate" strategy (not "patch")
+- [x] Call generator.iterate() (not generator.generate())
+- [x] Preserve taxonomy selections in response
+- [x] Increased token allocation (800→1200)
+- [x] Fixed "cut off" response issue
+- [x] Fixed taxonomy data loss issue
+
+### Context Architecture Improvements
+- [x] Documented self-contained chapters.yaml
+- [x] Clarified premise.md/treatment.md as historical artifacts
+- [x] Defined context patterns by operation type
+- [x] Copy editor uses full story context (edited + remaining)
+- [x] Removed dead code (SEQUENTIAL_PROSE_TEMPLATE)
+- [x] Removed word count warnings from copy editing
+
 ### Documentation
 - [x] USER_GUIDE.md updated with recent features
 - [x] DEVELOPER_GUIDE.md updated with implementation patterns
+- [x] DEVELOPER_GUIDE.md context architecture section added
 - [x] CHANGELOG.md entries for all recent work
 - [x] Short story workflow documentation
 - [x] Concept mashup integration guide
 - [x] Multi-phase chapter generation architecture
+- [x] Copy editing system documentation
+- [x] Premise iteration fixes documented
 
 ## ✅ Recently Completed (v0.3.0)
 

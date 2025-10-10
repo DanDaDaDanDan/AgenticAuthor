@@ -655,6 +655,54 @@ graph TB
 - Safety limit: max_attempts = count × 10
 - Returns structured list: [{number, movie, modifier, concept}]
 
+### 9. Copy Editing System (`src/generation/copy_editor.py`)
+- **CopyEditor**: Professional copy editing pass for chapter prose files
+- **Sequential processing**: Edits chapters 1→N with accumulated context
+- **Full story context**: chapters.yaml + edited chapters + remaining original chapters
+- **Pronoun consistency**: Special focus on unisex names (Alex, Jordan, Sam, etc.)
+- **Continuity checking**: Cross-chapter character, timeline, terminology consistency
+- **Forward references**: All remaining chapters visible during editing
+
+**Key Design Decisions:**
+- Temperature 0.3 (precision over creativity)
+- Context architecture: chapters.yaml (self-contained) + all prose (edited + original)
+- Token usage constant (~200k): redistributes between edited and original
+- No word count warnings (copy editing focuses on correctness, not length)
+- Quality verification: paragraph structure, dialogue markers, scene breaks
+- Preview system with statistics before applying changes
+- Timestamped backups and checkpoint saving for resume capability
+
+**Context Evolution:**
+```python
+# Chapter 1
+context = {
+    'chapters_yaml': {...},  # Self-contained structure
+    'edited_chapters': [],   # None yet
+    'remaining_chapters': [ch1, ch2, ..., ch20]  # All original
+}
+
+# Chapter 10
+context = {
+    'chapters_yaml': {...},
+    'edited_chapters': [ch1...ch9],  # Perfect versions
+    'remaining_chapters': [ch10, ch11, ..., ch20]  # Original
+}
+
+# Chapter 20
+context = {
+    'chapters_yaml': {...},
+    'edited_chapters': [ch1...ch19],  # Perfect versions
+    'remaining_chapters': [ch20]  # Last original
+}
+```
+
+**Why Full Context:**
+- Forward references: ch5 might reference ch15
+- Foreshadowing detection
+- Timeline consistency across entire story
+- Character arc visibility
+- Token usage stays constant (just redistributes)
+
 ## Data Flow
 
 ### Generation Flow
@@ -726,6 +774,129 @@ AgenticAuthor/
 3. **Progressive Refinement**: LOD approach from outline to prose
 4. **Fail Gracefully**: Intent checking prevents misunderstandings
 5. **Human-Readable**: All storage in Markdown/YAML
+
+## Context Architecture
+
+### Self-Contained chapters.yaml
+
+After multi-phase chapter generation, **chapters.yaml is self-contained** and contains everything needed for prose operations:
+
+```yaml
+metadata:
+  genre: fantasy
+  tone: dark
+  themes: [redemption, sacrifice, power]
+  pacing: moderate
+  narrative_style: third person limited
+  target_word_count: 80000
+
+characters:
+  - name: Sarah Chen
+    role: protagonist
+    background: Former soldier turned detective
+    motivation: Redemption for past mistakes
+    arc: From cynicism to hope
+    relationships:
+      - character: Marcus
+        type: mentor
+        dynamic: trust
+
+world:
+  setting: Near-future megacity
+  locations: [Undercity, Corporate Towers, Wasteland]
+  systems: [Neural implants, Corporate hierarchy]
+  atmosphere: Cyberpunk noir
+
+chapters:
+  - number: 1
+    title: The Case
+    summary: Sarah takes on a case that will change everything
+    key_events: [...]
+    character_developments: [...]
+    # ... detailed outline
+```
+
+**This makes premise.md and treatment.md historical artifacts.**
+
+### Context Patterns by Operation
+
+**Initial Prose Generation** (Forward-Only Context):
+```python
+# When generating chapter 5
+context = {
+    'chapters_yaml': {...},           # Self-contained structure
+    'previous_prose': [ch1, ch2, ch3, ch4]  # For continuity
+}
+# Can't see future chapters (don't exist yet)
+```
+
+**Prose Iteration** (Full Story Context):
+```python
+# When iterating chapter 5
+context = {
+    'chapters_yaml': {...},
+    'all_prose': [ch1, ch2, ..., ch20]  # FULL context
+}
+# See entire story for continuity checking
+```
+
+**Copy Editing** (Full Story with Edited/Original Split):
+```python
+# When editing chapter 5
+context = {
+    'chapters_yaml': {...},
+    'edited_chapters': [ch1, ch2, ch3, ch4],  # Perfect versions
+    'remaining_chapters': [ch5, ch6, ..., ch20]  # Original
+}
+# Edited chapters = perfect reference
+# Remaining chapters = forward references
+```
+
+**Chapter Outline Operations:**
+```python
+# When iterating chapters.yaml
+context = {
+    'chapters_yaml': {...}  # Just the structure
+}
+# Working at outline level, prose not needed
+```
+
+### Why Different Patterns?
+
+**Generation** uses forward-only because:
+- Future chapters don't exist yet
+- Can only build on what's already written
+
+**Iteration/Copy Editing** use full story because:
+- Need to check continuity across entire story
+- Chapter 5 might reference chapter 15 (foreshadowing)
+- Timeline must be consistent from ch1 to ch20
+
+### Token Efficiency
+
+Copy editing token usage stays constant:
+```
+Chapter 1:  yaml(2k) + original_all(200k) = 202k
+Chapter 10: yaml(2k) + edited_1-9(90k) + original_10-20(110k) = 202k
+Chapter 20: yaml(2k) + edited_1-19(190k) + original_20(10k) = 202k
+```
+
+Just redistributes between edited and original - doesn't grow!
+
+### Premise Iteration Special Case
+
+**Premise iteration always uses "regenerate" strategy:**
+- Premise is too short (2-3 sentences) for diff-based patching
+- Uses `PremiseGenerator.iterate()` method (not patch system)
+- Loads current premise + metadata (including taxonomy selections)
+- LLM returns complete new version with all fields preserved
+- Temperature 0.5 for controlled iteration
+
+**CRITICAL:** Premise iteration must:
+1. Always return "regenerate" scale (not "patch")
+2. Call `generator.iterate(feedback)` not `generator.generate()`
+3. Request full JSON including `selections` field
+4. Allocate sufficient tokens (1200+) for complete response
 
 ## Security Considerations
 

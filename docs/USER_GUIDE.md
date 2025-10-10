@@ -68,6 +68,16 @@ AI-powered iterative book generation with natural language feedback and git-back
   - Frontmatter template system (title page, copyright, dedication, acknowledgments)
   - Variable replacement in templates ({{title}}, {{author}}, etc.)
 
+- **Professional Copy Editing** ✏️
+  - Comprehensive copy editing pass for all chapter prose
+  - Sequential processing with full story context
+  - Pronoun consistency detection (especially unisex names)
+  - Continuity checking across all chapters
+  - Forward reference support (later chapters visible during editing)
+  - Quality verification with preview before applying
+  - Timestamped backups and checkpoint saving
+  - Temperature 0.3 for precision
+
 ### Previous Features (v0.2.0)
 - **Enhanced Premise Generation**
   - Genre-specific taxonomy support
@@ -714,6 +724,65 @@ When you first set metadata, a `frontmatter.md` template is created with:
 - Copyright section with standard legal text
 - Dedication section (placeholder)
 - Acknowledgments section (placeholder)
+
+---
+
+#### `/copyedit [--auto]`
+Professional copy editing pass for all chapter prose files.
+
+**What It Does:**
+- Edits ONLY chapter prose files (`chapters/chapter-XX.md`)
+- Uses chapters.yaml as self-contained reference (metadata, characters, world, outlines)
+- Passes ALL chapters for full story context (edited + remaining original)
+- Processes chapters sequentially with accumulated context
+- Creates timestamped backup before editing
+- Shows preview with statistics before applying (unless --auto)
+
+**What It Fixes:**
+- Grammar errors (subject-verb agreement, tense consistency)
+- Spelling mistakes and typos
+- Punctuation errors (commas, semicolons, dialogue formatting)
+- Inconsistent character details across chapters
+- Pronoun consistency (especially unisex names like Alex, Jordan, Sam)
+- Timeline contradictions
+- Unclear or ambiguous sentences
+- Dialogue formatting issues
+- Factual continuity errors
+
+**What It Does NOT Change:**
+- Plot events or story structure
+- Character personalities, motivations, or arcs
+- Dialogue content (only fixes formatting/grammar)
+- Author's narrative voice or stylistic choices
+- Scene order, pacing, or dramatic beats
+
+**Context Architecture:**
+```
+Chapter 1: chapters.yaml + [ch1, ch2, ..., ch20] (all original)
+Chapter 2: chapters.yaml + [edited_ch1] + [ch2, ch3, ..., ch20] (original)
+Chapter N: chapters.yaml + [edited_ch1...N-1] + [chN, chN+1, ...] (original)
+```
+
+Token usage stays constant (~200k) - just redistributes between edited and original.
+
+**Examples:**
+```bash
+/copyedit           # Edit all chapters with preview
+/copyedit --auto    # Auto-apply without preview
+```
+
+**Preview Display:**
+- Statistics (word count, errors fixed, changes)
+- Summary of changes made
+- Continuity fixes applied
+- Pronoun consistency tracking
+- Quality warnings (if any)
+
+**Configuration:**
+- Temperature: 0.3 (precision over creativity)
+- Backup location: `.agentic/backups/copy_edit_YYYYMMDD_HHMMSS/`
+- Checkpoint saving for resume capability
+- Git commit after completion
 
 Edit `frontmatter.md` to customize sections. Use variables like {{title}}, {{author}}, etc. for automatic replacement during export.
 
