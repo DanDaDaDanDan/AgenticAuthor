@@ -218,6 +218,52 @@ class LODContextBuilder:
 
         return context
 
+    def build_short_story_context(
+        self,
+        project: Project,
+        target_lod: str
+    ) -> Dict[str, Any]:
+        """
+        Build context for short-form story iteration.
+
+        Short stories don't use chapters.yaml, so context is simpler:
+        - premise + metadata
+        - treatment
+        - prose (story.md content if exists)
+
+        Args:
+            project: Current project
+            target_lod: Target LOD being iterated (premise/treatment/prose)
+
+        Returns:
+            Dict with premise, treatment, and optionally prose
+        """
+        context = {}
+
+        # Always include premise (foundation)
+        if target_lod in ['premise', 'treatment', 'prose']:
+            premise = project.get_premise()
+            if premise:
+                metadata = self._load_premise_metadata(project)
+                context['premise'] = {
+                    'text': premise,
+                    'metadata': metadata
+                }
+
+        # Include treatment if iterating treatment or prose
+        if target_lod in ['treatment', 'prose']:
+            treatment = project.get_treatment()
+            if treatment:
+                context['treatment'] = {'text': treatment}
+
+        # Include story prose if iterating prose
+        if target_lod == 'prose':
+            story = project.get_story()
+            if story:
+                context['prose'] = story
+
+        return context
+
     def to_yaml_string(self, context: Dict[str, Any]) -> str:
         """Serialize context to YAML string for LLM."""
         return yaml.dump(context, default_flow_style=False, sort_keys=False, allow_unicode=True)

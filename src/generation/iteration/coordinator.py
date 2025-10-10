@@ -148,6 +148,7 @@ class IterationCoordinator:
         ITERATION STRATEGIES:
         - Prose: Diff-based patching (most efficient, line-level changes)
         - Chapters/Treatment/Premise: YAML replacement (simple, maintains consistency)
+        - Short-form prose: Diff-based patching of story.md (no chapters)
 
         Current approach sends full context and asks LLM to return updated YAML.
         This is token-intensive but ensures full consistency and is simple to implement.
@@ -166,7 +167,11 @@ class IterationCoordinator:
 
         # Special handling for prose iteration (diff-based - efficient)
         if target_lod == 'prose':
-            return await self._execute_prose_patch(intent, show_preview)
+            # Check if short-form story
+            if self.project.is_short_form():
+                return await self._execute_short_story_patch(intent, show_preview)
+            else:
+                return await self._execute_prose_patch(intent, show_preview)
 
         # For other LODs, use YAML-based replacement (simple but complete)
         # Build unified context up to (and including) target LOD
@@ -369,6 +374,115 @@ You are modifying chapter {chapter_num}. All other chapters are provided for con
             if backup_path.exists():
                 chapter_file.write_text(backup_path.read_text(encoding='utf-8'), encoding='utf-8')
             raise ValueError(f"Failed to apply prose patch: {str(e)}")
+
+    async def _execute_short_story_patch(
+        self,
+        intent: Dict[str, Any],
+        show_preview: bool = False
+    ) -> list:
+        """
+        Execute diff-based iteration on short-form story (story.md).
+
+        For short stories, the entire story is in one file, so context is simpler.
+        """
+        changes = []
+
+        # Check if story exists
+        if not self.project.story_file.exists():
+            raise ValueError("No story found. Generate story first with /generate prose")
+
+        # Read original content
+        original_content = self.project.get_story()
+        if not original_content:
+            raise ValueError("Story file is empty")
+
+        # Build short story context
+        context = self.context_builder.build_short_story_context(
+            project=self.project,
+            target_lod='prose'
+        )
+
+        # Serialize context to YAML
+        context_yaml = self.context_builder.to_yaml_string(context)
+
+        # Build additional context for diff generation
+        additional_context = f"""Story Context:
+
+```yaml
+{context_yaml}
+```
+
+You are modifying a short-form story. The premise and treatment provide the story structure."""
+
+        # Create backup for undo
+        backup_path = self.project.path / '.agentic' / 'debug' / 'story.backup.md'
+        backup_path.parent.mkdir(parents=True, exist_ok=True)
+        backup_path.write_text(original_content, encoding='utf-8')
+
+        # Generate diff
+        try:
+            diff = await self.diff_generator.generate_diff(
+                original=original_content,
+                intent=intent,
+                file_path='story.md',
+                context=additional_context
+            )
+
+            # Get diff statistics
+            stats = self.diff_generator.get_diff_statistics(diff)
+
+            # Show preview if requested
+            if show_preview:
+                preview = self.diff_generator.create_preview(original_content, diff)
+                print("\n=== Diff Preview ===")
+                print(preview)
+                print("\n=== Statistics ===")
+                print(f"Lines added: {stats['added']}")
+                print(f"Lines removed: {stats['removed']}")
+                print(f"Lines changed: {stats['changed']}")
+                print(f"Total changes: {stats['total_changes']}")
+
+                # Ask for confirmation
+                response = input("\nApply these changes? [y/N]: ")
+                if response.lower() != 'y':
+                    return [{
+                        'type': 'patch',
+                        'status': 'cancelled',
+                        'message': 'User cancelled changes'
+                    }]
+
+            # Apply diff
+            modified_content = self.diff_generator.apply_diff(original_content, diff)
+
+            # Save modified content
+            self.project.save_story(modified_content)
+
+            # Build change info
+            change_info = {
+                'type': 'short_story_patch',
+                'updated_files': ['story.md'],
+                'backup_path': str(backup_path.relative_to(self.project.path)),
+                'statistics': stats,
+                'word_count_before': len(original_content.split()),
+                'word_count_after': len(modified_content.split())
+            }
+
+            changes.append(change_info)
+
+            # Display statistics
+            print(f"\n✓ Applied {stats['total_changes']} line changes to story")
+            print(f"  +{stats['added']} lines added")
+            print(f"  -{stats['removed']} lines removed")
+            print(f"  Backup saved to: {change_info['backup_path']}")
+            print(f"  To undo: copy backup back to story.md")
+
+            return changes
+
+        except Exception as e:
+            # Restore from backup on error
+            if backup_path.exists():
+                self.project.story_file.write_text(backup_path.read_text(encoding='utf-8'), encoding='utf-8')
+            raise ValueError(f"Failed to apply story patch: {str(e)}")
 
     async def _execute_regenerate(self, intent: Dict[str, Any]) -> list:
         """Execute full regeneration."""
