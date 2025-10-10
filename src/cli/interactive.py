@@ -2591,7 +2591,7 @@ class InteractiveSession:
         # Confirm before starting
         if not auto_apply:
             self.console.print(f"\n[yellow]⚠ Copy Editing Pass[/yellow]")
-            self.console.print(f"This will edit {len(chapters)} chapter prose files.")
+            self.console.print(f"This will edit {len(prose_files)} chapter prose files.")
             self.console.print(f"Model: {self.settings.active_model}")
             self.console.print(f"A backup will be created before editing.\n")
 
