@@ -78,6 +78,7 @@ class InteractiveSession:
             'analyze': self.analyze_story,
             'metadata': self.manage_metadata,
             'export': self.export_story,
+            'copyedit': self.copyedit_story,
             'git': self.git_command,
             'config': self.show_config,
             'clear': self.clear_screen,
@@ -2581,6 +2582,69 @@ class InteractiveSession:
 
         # Commit the export
         self._commit(f"Export to Markdown: {result_path.name}")
+
+    async def copyedit_story(self, args: str):
+        """
+        Copy edit all chapter prose with full accumulated context.
+
+        Usage:
+            /copyedit           # Edit all chapters with preview
+            /copyedit --auto    # Auto-apply without preview
+        """
+        if not self.project:
+            self.console.print("[red]No project open. Use /open <project> first.[/red]")
+            return
+
+        # Check if we have chapters
+        chapters = self.project.list_chapters()
+        if not chapters:
+            self.console.print("[red]No chapters found. Generate prose first with /generate prose[/red]")
+            return
+
+        # Check if we have a model
+        if not self.settings.active_model:
+            self.console.print("[red]No model selected. Use /model <model-name> first.[/red]")
+            return
+
+        # Parse arguments
+        auto_apply = '--auto' in args
+
+        # Confirm before starting
+        if not auto_apply:
+            self.console.print(f"\n[yellow]⚠ Copy Editing Pass[/yellow]")
+            self.console.print(f"This will edit {len(chapters)} chapter prose files.")
+            self.console.print(f"Model: {self.settings.active_model}")
+            self.console.print(f"A backup will be created before editing.\n")
+
+            response = input("Continue? [y/N]: ").strip().lower()
+            if response != 'y':
+                self.console.print("[yellow]Cancelled[/yellow]")
+                return
+
+        try:
+            # Create copy editor
+            from ..generation.copy_editor import CopyEditor
+            copy_editor = CopyEditor(self.client, self.project, self.settings.active_model)
+
+            # Run copy editing pass
+            result = await copy_editor.copy_edit_all_chapters(
+                show_preview=not auto_apply,
+                auto_apply=auto_apply
+            )
+
+            # Show results
+            self.console.print(f"\n[green]✓ Copy editing complete![/green]")
+            self.console.print(f"Edited: {result['chapters_edited']} chapters")
+            if result.get('chapters_skipped', 0) > 0:
+                self.console.print(f"Skipped: {result['chapters_skipped']} chapters")
+            self.console.print(f"Backup: {Path(result['backup_dir']).relative_to(self.project.path)}")
+
+            # Commit the changes
+            self._commit(f"Copy editing pass complete ({result['chapters_edited']} chapters)")
+
+        except Exception as e:
+            self.console.print(f"[red]Copy editing failed: {str(e)}[/red]")
+            self.logger.exception("Copy editing error")
 
     def git_command(self, args: str):
         """Run git command on shared repository."""

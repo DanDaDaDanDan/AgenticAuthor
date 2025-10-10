@@ -240,6 +240,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Export book to RTF or Markdown',
             'usage': '/export <rtf|markdown> [filename]'
         },
+        'copyedit': {
+            'description': 'Copy edit all chapter prose',
+            'usage': '/copyedit [--auto]'
+        },
         'git': {
             'description': 'View git history and commit manual changes',
             'usage': '/git <status|log|diff|commit [message]>'
