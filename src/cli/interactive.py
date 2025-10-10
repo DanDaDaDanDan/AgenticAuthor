@@ -2586,10 +2586,10 @@ class InteractiveSession:
             return
 
         # Parse arguments
-        auto_apply = '--auto' in args
+        skip_confirmation = '--auto' in args
 
-        # Confirm before starting
-        if not auto_apply:
+        # Confirm before starting (unless --auto flag provided)
+        if not skip_confirmation:
             chapter_count = len(prose_files)
             self.console.print(f"\n[yellow]⚠ Copy Editing Pass[/yellow]")
             self.console.print(f"This will edit {chapter_count} chapter prose files.")
@@ -2606,10 +2606,10 @@ class InteractiveSession:
             from ..generation.copy_editor import CopyEditor
             copy_editor = CopyEditor(self.client, self.project, self.settings.active_model)
 
-            # Run copy editing pass
+            # Run copy editing pass (always auto-apply, no per-chapter prompts)
             result = await copy_editor.copy_edit_all_chapters(
-                show_preview=not auto_apply,
-                auto_apply=auto_apply
+                show_preview=False,  # Never show preview prompt
+                auto_apply=True      # Always auto-apply all chapters
             )
 
             # Show results
