@@ -819,7 +819,7 @@ class InteractiveSession:
             ("/status", "Show project status"),
             ("/model [name]", "Change or show current model"),
             ("/models", "List available models"),
-            ("/generate <type>", "Generate content (premise/treatment/chapters/prose)"),
+            ("/generate <type>", "Generate content (premise/premises/concepts/treatment/chapters/prose)"),
             ("/iterate <target>", "Set iteration target, then type feedback naturally"),
             ("/sync [lod]", "Check and sync LODs (premise/treatment/chapters/prose)"),
             ("/analyze [type]", "Run story analysis"),
@@ -1341,6 +1341,9 @@ class InteractiveSession:
             elif gen_type == "premises":
                 # Batch premise generation
                 await self._generate_premises_batch(options)
+            elif gen_type == "concepts":
+                # Concept mashup generation
+                await self._generate_concept_mashup(options)
             elif gen_type == "treatment":
                 await self._generate_treatment(options)
             elif gen_type == "chapters":
@@ -1364,7 +1367,7 @@ class InteractiveSession:
                 await self._generate_marketing(options)
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
-                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing[/dim]")
+                self.console.print("[dim]Valid types: premise, premises, concepts, treatment, chapters, prose, marketing[/dim]")
         except Exception as e:
             self.console.print(f"[red]Generation failed: {e}[/red]")
 
@@ -1630,6 +1633,88 @@ class InteractiveSession:
 
         except Exception as e:
             self.console.print(f"[red]Failed to generate premises: {e}[/red]")
+
+    async def _generate_concept_mashup(self, args: str = ""):
+        """Generate movie + modifier mashup concepts."""
+        from ..generation.concept_mashup import ConceptMashupGenerator
+
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
+        # Parse count argument (default 50)
+        count = 50
+        if args.strip():
+            try:
+                count = int(args.strip())
+                if count < 1 or count > 100:
+                    self.console.print("[yellow]Count must be between 1 and 100[/yellow]")
+                    return
+            except ValueError:
+                self.console.print("[red]Invalid count. Usage: /generate concepts [count][/red]")
+                return
+
+        try:
+            # Generate combinations
+            mashup_gen = ConceptMashupGenerator()
+            concepts = mashup_gen.generate_combinations(count)
+
+            if not concepts:
+                self.console.print("[red]Failed to generate concepts[/red]")
+                return
+
+            actual_count = len(concepts)
+
+            # Display header
+            self.console.print()
+            self.console.rule("[cyan]Concept Mashup Options[/cyan]")
+            self.console.print()
+
+            # Display concepts in numbered list
+            for concept in concepts:
+                # Alternate colors for readability
+                if concept['number'] % 2 == 0:
+                    self.console.print(f"[dim]{concept['number']:2}.[/dim] {concept['concept']}")
+                else:
+                    self.console.print(f"[cyan]{concept['number']:2}.[/cyan] [bold]{concept['concept']}[/bold]")
+
+            self.console.print()
+            self.console.rule(style="dim")
+
+            # User selection
+            try:
+                choice = input(f"\nSelect a concept (1-{actual_count}) or press Enter to cancel: ").strip()
+
+                if not choice:
+                    self.console.print("[dim]Cancelled[/dim]")
+                    return
+
+                selected_num = int(choice)
+
+                if selected_num < 1 or selected_num > actual_count:
+                    self.console.print(f"[red]Invalid selection. Must be between 1 and {actual_count}[/red]")
+                    return
+
+            except (ValueError, KeyboardInterrupt, EOFError):
+                self.console.print("[dim]Cancelled[/dim]")
+                return
+
+            # Get the selected concept
+            selected_concept = concepts[selected_num - 1]
+
+            # Display selection
+            self.console.print()
+            self.console.print(f"[green]✓ Selected:[/green] [bold]{selected_concept['concept']}[/bold]")
+            self.console.print()
+
+            # Feed into premise generation
+            self.console.print("[cyan]Generating premise based on this concept...[/cyan]")
+            await self._generate_premise(selected_concept['concept'])
+
+        except FileNotFoundError as e:
+            self.console.print(f"[red]Data files not found: {e}[/red]")
+            self.console.print("[dim]Expected files: misc/movies.txt, misc/story-modifiers.txt[/dim]")
+        except Exception as e:
+            self.console.print(f"[red]Failed to generate concept mashup: {e}[/red]")
 
     async def _confirm(self, message: str) -> bool:
         """Ask user for yes/no confirmation."""
