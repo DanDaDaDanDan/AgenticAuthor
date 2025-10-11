@@ -2308,7 +2308,7 @@ class InteractiveSession:
             self._print("[yellow]⚠  API client not initialized[/yellow]")
             return
 
-        if not self.model:
+        if not self.settings.active_model:
             self._print("[yellow]⚠  No model selected. Use /model to select a model first.[/yellow]")
             return
 
@@ -2321,7 +2321,7 @@ class InteractiveSession:
             self._print("[cyan]Analyzing chapters and assigning word count targets...[/cyan]")
 
             # Create assigner
-            assigner = WordCountAssigner(self.client, self.project, self.model)
+            assigner = WordCountAssigner(self.client, self.project, self.settings.active_model)
 
             # Assign word counts
             result = await assigner.assign_word_counts()
