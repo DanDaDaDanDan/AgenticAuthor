@@ -2566,12 +2566,11 @@ class InteractiveSession:
         """
         Copy edit all chapter prose with full accumulated context.
 
-        Edits all chapters sequentially, auto-applying changes.
+        Edits all chapters sequentially, auto-applying all changes.
         Creates timestamped backup before starting.
 
         Usage:
-            /copyedit           # Edit all chapters (asks for confirmation)
-            /copyedit --auto    # Edit all chapters (no confirmation)
+            /copyedit           # Edit all chapters
         """
         if not self.project:
             self.console.print("[red]No project open. Use /open <project> first.[/red]")
@@ -2588,21 +2587,11 @@ class InteractiveSession:
             self.console.print("[red]No model selected. Use /model <model-name> first.[/red]")
             return
 
-        # Parse arguments
-        skip_confirmation = '--auto' in args
-
-        # Confirm before starting (unless --auto flag provided)
-        if not skip_confirmation:
-            chapter_count = len(prose_files)
-            self.console.print(f"\n[yellow]⚠ Copy Editing Pass[/yellow]")
-            self.console.print(f"This will edit {chapter_count} chapter prose files.")
-            self.console.print(f"Model: {self.settings.active_model}")
-            self.console.print(f"A backup will be created before editing.\n")
-
-            response = input("Continue? [y/N]: ").strip().lower()
-            if response != 'y':
-                self.console.print("[yellow]Cancelled[/yellow]")
-                return
+        # Show info before starting
+        chapter_count = len(prose_files)
+        self.console.print(f"\n[cyan]Copy Editing Pass[/cyan]")
+        self.console.print(f"Editing {chapter_count} chapter prose files with {self.settings.active_model}")
+        self.console.print(f"[dim]Backup will be created automatically[/dim]\n")
 
         try:
             # Create copy editor
