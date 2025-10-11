@@ -253,7 +253,8 @@ Choose the single best-fitting genre from the available list. If the concept cou
         user_input: Optional[str] = None,
         genre: Optional[str] = None,
         template: Optional[str] = None,
-        premise_history: Optional[PremiseHistory] = None
+        premise_history: Optional[PremiseHistory] = None,
+        length_scope: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Generate a story premise with taxonomy selections.
@@ -263,6 +264,7 @@ Choose the single best-fitting genre from the available list. If the concept cou
             genre: Story genre (defaults to project genre)
             template: Optional custom template (uses default if not provided)
             premise_history: History tracker for avoiding repetition
+            length_scope: Target story length (flash_fiction, short_story, novelette, novella, novel, epic)
 
         Returns:
             Dict containing premise, metadata, and taxonomy selections
@@ -287,6 +289,20 @@ Choose the single best-fitting genre from the available list. If the concept cou
         if user_input and user_input.strip():
             guidance_context = f'USER GUIDANCE: "{user_input}"\nIncorporate this concept into the premise.\n\n'
 
+        # Add length guidance if specified
+        length_context = ""
+        if length_scope:
+            length_names = {
+                'flash_fiction': 'flash fiction (500-1,500 words)',
+                'short_story': 'short story (1,500-7,500 words)',
+                'novelette': 'novelette (7,500-17,500 words)',
+                'novella': 'novella (17,500-40,000 words)',
+                'novel': 'novel (40,000-120,000 words)',
+                'epic': 'epic (120,000+ words)'
+            }
+            length_desc = length_names.get(length_scope, length_scope)
+            length_context = f'TARGET LENGTH: {length_desc}\nEnsure the premise scope matches this target length.\n\n'
+
         # Build category JSON example
         json_structure = "{\n"
         for i, category in enumerate(category_options.keys()):
@@ -298,7 +314,7 @@ Choose the single best-fitting genre from the available list. If the concept cou
 
         prompt = f"""Generate a compelling fiction premise for the {genre} genre.
 
-{guidance_context}{history_context}
+{guidance_context}{length_context}{history_context}
 
 AVAILABLE TAXONOMY OPTIONS:
 {chr(10).join([f'{cat}: {", ".join(opts[:10])}{"..." if len(opts) > 10 else ""}'
@@ -311,6 +327,7 @@ REQUIREMENTS:
 4. Ensure all selections work cohesively together
 5. You may create custom values if needed for the story
 6. Identify 3-5 unique elements that make this story distinctive
+{f'7. IMPORTANT: Ensure premise scope is appropriate for {length_scope.replace("_", " ")} length' if length_scope else ''}
 
 Return JSON with this structure:
 {{
@@ -351,6 +368,13 @@ Return JSON with this structure:
                 # Add original concept to metadata if user_input was provided
                 if user_input:
                     result['original_concept'] = user_input
+
+                # Ensure length_scope is in the selections if it was specified
+                if length_scope:
+                    if 'selections' not in result:
+                        result['selections'] = {}
+                    # Ensure length_scope is set in the selections
+                    result['selections']['length_scope'] = [length_scope]
 
                 self.project.save_premise_metadata(result)
 

@@ -1357,34 +1357,67 @@ class InteractiveSession:
         # Ensure git repo exists
         self._ensure_git_repo()
 
-        # Parse input for genre and concept
-        parts = user_input.strip().split(None, 1)
         genre = None
         concept = ""
+        length_scope = None
 
-        if parts:
-            # Check if first part is a genre
-            normalized = self.taxonomy_loader.normalize_genre(parts[0])
-            if normalized != 'general' or parts[0].lower() in ['custom', 'general']:
-                genre = parts[0]
-                concept = parts[1] if len(parts) > 1 else ""
-            else:
-                # First part is not a genre, treat all as concept
-                concept = user_input
+        # NEW FLOW: Interactive questions if no input provided
+        if not user_input.strip():
+            # 1. Ask for concept
+            self.console.print("\n[cyan]Story Concept:[/cyan]")
+            try:
+                concept = input("> ").strip()
+                if not concept:
+                    self.console.print("[yellow]Cancelled[/yellow]")
+                    return
+            except (KeyboardInterrupt, EOFError):
+                self.console.print("[yellow]Cancelled[/yellow]")
+                return
 
-        # If no genre specified
-        if not genre:
-            if concept:
-                # Auto-detect genre from concept
-                self.console.print("[dim]Detecting genre from concept...[/dim]")
+            # 2. Ask for genre (with auto-detect option)
+            genre = await self._select_genre_interactive(allow_auto_detect=True)
+            if not genre:
+                return  # User cancelled
+
+            # Handle auto-detect
+            if genre == 'auto-detect':
+                self.console.print("\n[dim]Detecting genre from concept...[/dim]")
                 generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
                 genre = await generator.detect_genre(concept)
-                self.console.print(f"[cyan]→ Detected genre: {genre}[/cyan]\n")
-            else:
-                # Interactive selection
-                genre = await self._select_genre_interactive()
-                if not genre:
-                    return  # User cancelled
+                self.console.print(f"[cyan]→ Detected genre: {genre}[/cyan]")
+
+            # 3. Ask for story length
+            length_scope = await self._select_length_interactive()
+            if not length_scope:
+                return  # User cancelled
+
+        else:
+            # OLD FLOW: Parse command-line input (backwards compatible)
+            parts = user_input.strip().split(None, 1)
+
+            if parts:
+                # Check if first part is a genre
+                normalized = self.taxonomy_loader.normalize_genre(parts[0])
+                if normalized != 'general' or parts[0].lower() in ['custom', 'general']:
+                    genre = parts[0]
+                    concept = parts[1] if len(parts) > 1 else ""
+                else:
+                    # First part is not a genre, treat all as concept
+                    concept = user_input
+
+            # If no genre specified, auto-detect or ask
+            if not genre:
+                if concept:
+                    # Auto-detect genre from concept
+                    self.console.print("[dim]Detecting genre from concept...[/dim]")
+                    generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
+                    genre = await generator.detect_genre(concept)
+                    self.console.print(f"[cyan]→ Detected genre: {genre}[/cyan]\n")
+                else:
+                    # Interactive selection
+                    genre = await self._select_genre_interactive()
+                    if not genre:
+                        return  # User cancelled
 
         # Analyze the input to see if it's already a treatment
         analysis = PremiseAnalyzer.analyze(concept)
@@ -1423,13 +1456,15 @@ class InteractiveSession:
         else:
             # Normal premise generation
             self.console.rule(style="dim")
-            self.console.print(f"[cyan]Generating {genre or 'general'} premise...[/cyan]\n")
+            length_display = f" ({length_scope.replace('_', ' ')})" if length_scope else ""
+            self.console.print(f"[cyan]Generating {genre or 'general'} premise{length_display}...[/cyan]\n")
 
             generator = PremiseGenerator(self.client, self.project, model=self.settings.active_model)
             result = await generator.generate(
                 user_input=concept if concept else None,
                 genre=genre or self.project.metadata.genre,
-                premise_history=self.premise_history
+                premise_history=self.premise_history,
+                length_scope=length_scope  # Pass the selected length
             )
 
             if result and 'premise' in result:
@@ -1724,27 +1759,73 @@ class InteractiveSession:
         except (KeyboardInterrupt, EOFError):
             return False
 
-    async def _select_genre_interactive(self):
+    async def _select_genre_interactive(self, allow_auto_detect: bool = False):
         """Interactive genre selection."""
         genres = self.taxonomy_loader.get_available_genres()
 
         self.console.print("\n[cyan]Select a genre:[/cyan]")
-        for i, genre in enumerate(genres, 1):
+
+        offset = 0
+        if allow_auto_detect:
+            self.console.print(f"  {1:2}. Auto-detect from concept")
+            offset = 1
+
+        for i, genre in enumerate(genres, 1 + offset):
             display_name = genre.replace('-', ' ').title()
             self.console.print(f"  {i:2}. {display_name}")
 
-        self.console.print(f"  {len(genres) + 1:2}. Custom")
+        custom_idx = len(genres) + 1 + offset
+        self.console.print(f"  {custom_idx:2}. Custom")
 
         try:
-            choice = input("\nSelect (1-{}) or Enter to cancel: ".format(len(genres) + 1))
+            choice = input("\nSelect (1-{}) or Enter to cancel: ".format(custom_idx))
             if not choice:
                 return None
 
             idx = int(choice) - 1
+
+            if allow_auto_detect and idx == 0:
+                return 'auto-detect'
+
+            # Adjust for auto-detect offset
+            if allow_auto_detect:
+                idx -= 1
+
             if 0 <= idx < len(genres):
                 return genres[idx]
             elif idx == len(genres):
                 return 'custom'
+            else:
+                self.console.print("[red]Invalid selection[/red]")
+                return None
+
+        except (ValueError, KeyboardInterrupt):
+            return None
+
+    async def _select_length_interactive(self):
+        """Interactive story length selection."""
+        # Length options from base taxonomy
+        length_options = [
+            ('flash_fiction', 'Flash Fiction', '500-1,500 words, ~5 min read'),
+            ('short_story', 'Short Story', '1,500-7,500 words, ~15-30 min read'),
+            ('novelette', 'Novelette', '7,500-17,500 words, ~45-90 min read'),
+            ('novella', 'Novella', '17,500-40,000 words, ~2-4 hours'),
+            ('novel', 'Novel', '40,000-120,000 words, ~6-12 hours'),
+            ('epic', 'Epic', '120,000+ words, ~12+ hours'),
+        ]
+
+        self.console.print("\n[cyan]Select story length:[/cyan]")
+        for i, (key, name, desc) in enumerate(length_options, 1):
+            self.console.print(f"  {i}. {name:20} [dim]({desc})[/dim]")
+
+        try:
+            choice = input(f"\nSelect (1-{len(length_options)}) or Enter to cancel: ")
+            if not choice:
+                return None
+
+            idx = int(choice) - 1
+            if 0 <= idx < len(length_options):
+                return length_options[idx][0]  # Return the key
             else:
                 self.console.print("[red]Invalid selection[/red]")
                 return None
