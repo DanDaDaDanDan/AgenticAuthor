@@ -26,7 +26,10 @@
       "WebFetch(domain:blog.reedsy.com)",
       "Bash(set PYTHONPATH=.)",
       "Bash(awk:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(//Users/vogel/**)",
+      "Bash(git -C ./books show 04d3e64:steampunk-moon/chapters.yaml)",
+      "Read(//private/tmp/**)"
     ],
     "deny": [],
     "ask": []
