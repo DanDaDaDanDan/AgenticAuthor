@@ -586,14 +586,52 @@ Apply natural language feedback to existing content or taxonomy.
   - `/iterate chapters` → "Add foreshadowing to chapters 4,8" - Regenerate (minutes)
 
 #### `/analyze [type]`
-Analyze story for quality and issues.
+Analyze story for quality and issues with confidence scoring.
 
-Types:
-- `commercial` - Commercial viability (0-100%)
-- `plot` - Plot hole detection
-- `characters` - Character consistency
-- `world` - World-building coherence
-- `all` - Run all analyses
+**Types:**
+- `premise` - Analyze premise quality
+- `treatment` - Analyze treatment structure
+- `chapters` - Analyze chapter outlines
+- `prose` - Analyze chapter prose (specify chapter number)
+- `all` - Run comprehensive analysis
+
+**New Features (Revamped Analysis):**
+- **Confidence Scores**: Every issue includes confidence percentage (0-100%)
+  - Only reports issues with >70% confidence
+  - Self-critical evaluation: "Better to miss a minor issue than report a false positive"
+  - Reduces false positives and focuses on genuine problems
+- **Path to A+ Grade**: Specific recommendations to reach A/A+ rating
+  - Current assessment explaining grade
+  - Actionable recommendations with confidence scores
+  - System can say "unable to determine" if no clear path exists
+- **8 Analysis Dimensions**:
+  - Plot & Structure (holes, pacing, foreshadowing)
+  - Character (consistency, arcs, motivation)
+  - World-Building (logic, coherence, systems)
+  - Dialogue (naturalism, voice, subtext)
+  - Prose & Style (clarity, engagement, active voice)
+  - Theme (coherence, symbols, integration)
+  - Narrative Technique (POV, tense, hooks)
+  - Commercial Viability (market fit, target audience)
+- **0-7 Issues Maximum**: Quality over quantity
+- **Severity Classification**: CRITICAL, HIGH only
+- **Markdown Reports**: Saved to `analysis/` with git SHA tracking
+
+**Examples:**
+```bash
+/analyze premise              # Analyze premise quality
+/analyze treatment            # Analyze treatment structure
+/analyze prose 1              # Analyze chapter 1 prose
+/analyze chapters             # Analyze all chapter outlines
+```
+
+**Report Includes:**
+- Overall Grade (A through F) and Score (0-10)
+- Issue list with confidence percentages and severity
+- Dimension scores (Plot: 8.5/10, Character: 7.0/10, etc.)
+- Positive highlights
+- **Path to A+**: What's holding story back and how to improve it
+- Saved to `analysis/[type]-[timestamp].md`
 
 #### `/cull <target>`
 Delete generated content with cascade deletion.

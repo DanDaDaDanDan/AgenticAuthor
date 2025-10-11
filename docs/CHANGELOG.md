@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Analysis System Revamp** 🎯
+  - Added confidence scores (0-100%) to all analysis issues
+  - Confidence requirement: Only report issues with >70% confidence
+  - Self-critical evaluation: "Better to miss a minor issue than report a false positive"
+  - New "Path to A+ Grade" section:
+    - Current assessment explaining why story isn't A+ yet
+    - Specific recommendations with confidence scores
+    - Option to say "unable to determine" if no clear path exists
+  - Updated prompt with 5 new confidence requirements instructions
+  - Updated JSON response structure to include confidence fields
+  - Updated CLI display to show confidence percentages
+  - Updated markdown reports to include confidence scores and path to A+
+  - Goal: Focus on genuine improvements rather than endlessly finding issues
+
 ### Added
 - **Professional Copy Editing System** ✏️
   - `/copyedit [--auto]` command for comprehensive copy editing pass

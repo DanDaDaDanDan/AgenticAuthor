@@ -26,6 +26,7 @@ class Issue:
     description: str  # What's wrong
     impact: str  # How this affects the story
     suggestion: str  # How to fix it
+    confidence: int = 100  # Confidence percentage (0-100)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -35,7 +36,8 @@ class Issue:
             'location': self.location,
             'description': self.description,
             'impact': self.impact,
-            'suggestion': self.suggestion
+            'suggestion': self.suggestion,
+            'confidence': self.confidence
         }
 
 
@@ -56,6 +58,40 @@ class Strength:
 
 
 @dataclass
+class Recommendation:
+    """Represents a recommendation for reaching A+ grade."""
+    description: str  # Specific actionable step
+    confidence: int  # Confidence percentage (0-100)
+    rationale: str  # Why this would help
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            'description': self.description,
+            'confidence': self.confidence,
+            'rationale': self.rationale
+        }
+
+
+@dataclass
+class PathToAPlus:
+    """Represents path to A+ grade analysis."""
+    current_assessment: str  # Why current grade was given
+    recommendations: List[Recommendation] = field(default_factory=list)
+    unable_to_determine: bool = False  # True if no clear path
+    reasoning: Optional[str] = None  # Explanation if unable to determine
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            'current_assessment': self.current_assessment,
+            'recommendations': [r.to_dict() for r in self.recommendations],
+            'unable_to_determine': self.unable_to_determine,
+            'reasoning': self.reasoning
+        }
+
+
+@dataclass
 class AnalysisResult:
     """Result from a single analyzer."""
     dimension: str  # e.g., "Plot & Structure"
@@ -64,10 +100,11 @@ class AnalysisResult:
     issues: List[Issue] = field(default_factory=list)
     strengths: List[Strength] = field(default_factory=list)
     notes: List[str] = field(default_factory=list)  # Additional observations
+    path_to_a_plus: Optional[PathToAPlus] = None  # Path to A+ grade
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        return {
+        result = {
             'dimension': self.dimension,
             'score': self.score,
             'summary': self.summary,
@@ -75,6 +112,9 @@ class AnalysisResult:
             'strengths': [s.to_dict() for s in self.strengths],
             'notes': self.notes
         }
+        if self.path_to_a_plus:
+            result['path_to_a_plus'] = self.path_to_a_plus.to_dict()
+        return result
 
 
 class BaseAnalyzer:

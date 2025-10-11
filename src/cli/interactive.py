@@ -2318,7 +2318,8 @@ class InteractiveSession:
                     'LOW': 'dim'
                 }.get(issue['severity'], 'white')
 
-                self.console.print(f"  {i}. [{severity_color}][{issue['severity']}][/{severity_color}] {issue['category']}")
+                confidence = issue.get('confidence', 100)
+                self.console.print(f"  {i}. [{severity_color}][{issue['severity']}][/{severity_color}] {issue['category']} [dim]({confidence}% confidence)[/dim]")
                 self.console.print(f"     Location: [dim]{issue['location']}[/dim]")
                 self.console.print(f"     Issue: {issue['description']}")
                 self.console.print(f"     Fix: [green]{issue['suggestion']}[/green]")
@@ -2329,6 +2330,33 @@ class InteractiveSession:
             self.console.print("[bold]✓ Positive Highlights:[/bold]")
             for strength in result['highlights'][:3]:
                 self.console.print(f"  • {strength['description']}")
+            self.console.print()
+
+        # Path to A+ section
+        if 'path_to_a_plus' in result and result['path_to_a_plus']:
+            path = result['path_to_a_plus']
+            self.console.print("[bold cyan]🎯 Path to A+ Grade:[/bold cyan]")
+
+            # Current assessment
+            if path.get('current_assessment'):
+                self.console.print(f"\n[bold]Current Assessment:[/bold]")
+                self.console.print(f"  {path['current_assessment']}\n")
+
+            # Unable to determine
+            if path.get('unable_to_determine'):
+                self.console.print("[yellow]Unable to determine clear path to A+ grade.[/yellow]")
+                if path.get('reasoning'):
+                    self.console.print(f"[dim]{path['reasoning']}[/dim]")
+            else:
+                # Recommendations
+                if path.get('recommendations'):
+                    self.console.print("[bold]Recommendations:[/bold]")
+                    for i, rec in enumerate(path['recommendations'], 1):
+                        confidence = rec.get('confidence', 0)
+                        self.console.print(f"  {i}. {rec['description']} [dim]({confidence}% confidence)[/dim]")
+                        if rec.get('rationale'):
+                            self.console.print(f"     [dim]→ {rec['rationale']}[/dim]")
+
             self.console.print()
 
         # Report saved

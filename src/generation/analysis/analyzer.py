@@ -305,7 +305,7 @@ class AnalysisCoordinator:
         priority_issues = all_issues
 
         # Build result dict
-        return {
+        result_dict = {
             'content_type': content_type,
             'target_id': target_id,
             'timestamp': datetime.now(timezone.utc).isoformat(),
@@ -320,6 +320,12 @@ class AnalysisCoordinator:
             'critical_issues': len([i for i in all_issues if i.severity == Severity.CRITICAL]),
             'high_issues': len([i for i in all_issues if i.severity == Severity.HIGH]),
         }
+
+        # Add path_to_a_plus if present
+        if result.path_to_a_plus:
+            result_dict['path_to_a_plus'] = result.path_to_a_plus.to_dict()
+
+        return result_dict
 
     def _score_to_grade(self, score: float) -> str:
         """Convert score to letter grade."""
@@ -439,7 +445,8 @@ class AnalysisCoordinator:
             if dimension['issues']:
                 lines.append("#### Issues Found")
                 for issue in dimension['issues']:
-                    lines.append(f"- ⚠️ **[{issue['severity']}] {issue['category']}**")
+                    confidence = issue.get('confidence', 100)
+                    lines.append(f"- ⚠️ **[{issue['severity']}] {issue['category']}** _(Confidence: {confidence}%)_")
                     lines.append(f"  - **Location**: {issue['location']}")
                     lines.append(f"  - **Issue**: {issue['description']}")
                     lines.append(f"  - **Impact**: {issue['impact']}")
@@ -464,6 +471,42 @@ class AnalysisCoordinator:
                 loc = f" ({strength['location']})" if strength.get('location') else ""
                 lines.append(f"- {strength['description']}{loc}")
             lines.append("")
+            lines.append("---")
+            lines.append("")
+
+        # Path to A+ Grade
+        if 'path_to_a_plus' in aggregated and aggregated['path_to_a_plus']:
+            path = aggregated['path_to_a_plus']
+            lines.append("## 🎯 Path to A+ Grade")
+            lines.append("")
+
+            # Current assessment
+            if path.get('current_assessment'):
+                lines.append("### Current Assessment")
+                lines.append("")
+                lines.append(path['current_assessment'])
+                lines.append("")
+
+            # Recommendations or unable to determine
+            if path.get('unable_to_determine'):
+                lines.append("### Analysis")
+                lines.append("")
+                lines.append("⚠️ Unable to determine clear path to A+ grade.")
+                lines.append("")
+                if path.get('reasoning'):
+                    lines.append(f"**Reasoning**: {path['reasoning']}")
+                    lines.append("")
+            else:
+                if path.get('recommendations'):
+                    lines.append("### Recommendations")
+                    lines.append("")
+                    for i, rec in enumerate(path['recommendations'], 1):
+                        confidence = rec.get('confidence', 0)
+                        lines.append(f"{i}. **{rec['description']}** _(Confidence: {confidence}%)_")
+                        if rec.get('rationale'):
+                            lines.append(f"   - {rec['rationale']}")
+                        lines.append("")
+
             lines.append("---")
             lines.append("")
 
