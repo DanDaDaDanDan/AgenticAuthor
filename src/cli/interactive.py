@@ -2237,7 +2237,7 @@ class InteractiveSession:
             self._print("  [bold]/cull prose[/bold]       - Delete all prose files")
             self._print("  [bold]/cull chapters[/bold]    - Delete chapters.yaml + prose")
             self._print("  [bold]/cull treatment[/bold]   - Delete treatment.md + chapters + prose")
-            self._print("  [bold]/cull premise[/bold]     - Delete premise.md + all downstream")
+            self._print("  [bold]/cull premise[/bold]     - Delete premise_metadata.json + all downstream")
             return
 
         target = args.strip().lower()

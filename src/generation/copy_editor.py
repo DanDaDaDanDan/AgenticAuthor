@@ -22,7 +22,7 @@ class CopyEditor:
     Edits prose files (chapters/chapter-XX.md) sequentially, passing ALL
     previously edited chapters as context for maximum consistency.
 
-    Does NOT edit: premise.md, treatment.md, or chapters.yaml
+    Does NOT edit: premise_metadata.json, treatment.md, or chapters.yaml
     """
 
     def __init__(self, client: OpenRouterClient, project: Project, model: str):
@@ -504,7 +504,7 @@ Return JSON with this exact structure:
 
 REMEMBER:
 - This is copy editing the PROSE ONLY, NOT creative rewriting
-- You are NOT editing premise.md, treatment.md, or chapters.yaml - those are read-only reference
+- You are NOT editing premise_metadata.json, treatment.md, or chapters.yaml - those are read-only reference
 - Preserve the author's voice and creative choices
 - Fix errors and ensure consistency
 - When in doubt about a creative choice vs an error, flag it for review

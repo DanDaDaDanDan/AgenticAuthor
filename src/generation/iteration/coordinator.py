@@ -511,7 +511,7 @@ You are modifying a short-form story. The premise and treatment provide the stor
             changes.append({
                 'type': 'regenerate',
                 'target': 'premise',
-                'file': 'premise.md',
+                'file': 'premise_metadata.json',
                 'word_count': len(result.get('premise', '').split())
             })
 
