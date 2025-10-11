@@ -339,8 +339,9 @@ Return JSON with this structure:
                 model=model,
                 prompt=prompt,
                 temperature=0.9,  # Higher temp for creativity
-                display_field="premise",
+                display_field="premise",  # Keep for label, but mode="full" shows everything
                 display_label="Generating premise",
+                display_mode="full",  # Stream entire JSON (all fields including selections/taxonomy)
                 # No max_tokens - let it use full available context
                 min_response_tokens=800  # Premises need substantial space
             )
