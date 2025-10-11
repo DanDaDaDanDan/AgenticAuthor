@@ -925,7 +925,7 @@ Full-screen checkbox interface for precise taxonomy control:
 |-----|--------|
 | `Enter` | Submit input |
 | `Shift+Enter` | New line in multi-line input |
-| `Escape` | Stop current generation |
+| `Escape` | Clear current input line |
 | `Ctrl+C` | Exit application (with confirmation) |
 | `Ctrl+L` | Clear screen |
 | `Up/Down` | Navigate command history |

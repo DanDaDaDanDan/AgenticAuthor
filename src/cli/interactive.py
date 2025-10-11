@@ -169,6 +169,11 @@ class InteractiveSession:
                     # Cancel the completion menu
                     buff.cancel_completion()
 
+        @kb.add('escape')
+        def _(event):
+            """Clear the current input when Escape is pressed."""
+            event.current_buffer.reset()
+
         # Create session with project-local history
         history_file = Path('.agentic') / 'history'
         history_file.parent.mkdir(exist_ok=True)

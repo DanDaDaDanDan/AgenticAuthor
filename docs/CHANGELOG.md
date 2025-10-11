@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Improved
+- **REPL Keybinding**: Escape key now clears current input line
+  - Press Escape to instantly clear typed text in the prompt
+  - Updated documentation to reflect actual Escape behavior
+  - Improves user experience when starting over with input
+
 ### Added
 - **Interactive Premise Generation with Length Selection** 📏
   - `/generate premise` now asks three upfront questions when run without arguments:
