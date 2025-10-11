@@ -121,15 +121,10 @@ class StreamHandler:
             logger.debug(f"Stream handler: mode={mode}, display_field={display_field}, display_label={display_label}")
             logger.debug(f"Stream handler: model_name={model_name}, model_obj provided={'YES' if model_obj else 'NO'}")
 
-        # Use Live display for non-interfering status updates
-        status_text_obj = Text(f"{display_label}...", style="cyan")
-        live_display = Live(
-            status_text_obj,
-            console=self.console,
-            refresh_per_second=4,  # Reasonable refresh rate
-            transient=True  # Disappears when done
-        )
-        live_display.__enter__()
+        # NO Live display - it interferes with streaming content causing garbled output
+        # Just show a simple message at the start
+        self.console.print(f"[cyan]{display_label}...[/cyan]")
+        self.console.print()  # Blank line for readability
 
         try:
             event_count = 0
@@ -323,19 +318,8 @@ class StreamHandler:
                                         display_content += char
                                 last_processed_idx = len(full_content)
 
-                            # Update status display (batched - only every 10 tokens to reduce interference)
-                            if token_count % 10 == 0 or token_count == 1:
-                                elapsed = time.time() - start_time
-                                tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
-
-                                # Update Live display with new Text object
-                                status_msg = f"{display_label} with {model_name} • {elapsed:.1f}s • {token_count} tokens"
-                                if tokens_per_sec > 0:
-                                    status_msg += f" • {tokens_per_sec:.0f} t/s"
-                                status_text_obj.plain = status_msg  # Update text in-place
-                                live_display.update(status_text_obj)
-
-                            # Stream content to console (scrollable)
+                            # NO status display updates - they cause garbling
+                            # Just stream content to console (scrollable)
                             # Only print if we have new content extracted
                             if token and display_content:
                                 # Track what we've already printed
@@ -373,10 +357,15 @@ class StreamHandler:
                     continue
 
         finally:
-            live_display.__exit__(None, None, None)
             # Add newline after streaming content
             if display_content:
                 self.console.print()
+
+            # Show completion message with stats
+            elapsed = time.time() - start_time
+            tokens_per_sec = token_count / elapsed if elapsed > 0 else 0
+            word_count = len(display_content.split()) if display_content else 0
+            self.console.print(f"\n[dim]✓ {word_count:,} words generated in {elapsed:.1f}s ({tokens_per_sec:.0f} t/s)[/dim]\n")
 
             # Log streaming completion
             if logger:
