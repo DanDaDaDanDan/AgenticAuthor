@@ -353,7 +353,9 @@ class ChapterGenerator:
         context_yaml: str,
         taxonomy_data: Dict[str, Any],
         total_words: int,
-        chapter_count: int
+        chapter_count: int,
+        original_concept: str = '',
+        unique_elements: List[str] = None
     ) -> Dict[str, Any]:
         """
         Generate ONLY the foundation (metadata + characters + world), no chapters.
@@ -363,6 +365,8 @@ class ChapterGenerator:
             taxonomy_data: Taxonomy selections
             total_words: Target total word count
             chapter_count: Number of chapters (for metadata)
+            original_concept: Original user concept (verbatim)
+            unique_elements: LLM-identified unique story elements
 
         Returns:
             Dict with metadata, characters, world sections
@@ -370,8 +374,45 @@ class ChapterGenerator:
         from ..utils.logging import get_logger
         logger = get_logger()
 
+        if unique_elements is None:
+            unique_elements = []
+
         if logger:
             logger.debug(f"Generating foundation (metadata + characters + world)")
+
+        # Build unique elements context
+        unique_context = ""
+        if original_concept or unique_elements:
+            unique_context = "\n\nORIGINAL CONCEPT & UNIQUE ELEMENTS:\n"
+            if original_concept:
+                unique_context += f'Original Concept: "{original_concept}"\n'
+                unique_context += "This reference should inform the scale, tone, and setting of the story.\n"
+            if unique_elements:
+                unique_context += f"Unique Elements: {', '.join(unique_elements)}\n"
+                unique_context += "These elements must be central to character design, world-building, and chapter planning.\n"
+
+        # Build metadata YAML example with optional fields
+        metadata_yaml_example = f"""metadata:
+  genre: "..."
+  subgenre: "..."
+  tone: "..."
+  pacing: "..."
+  themes:
+    - "..."
+  story_structure: "..."
+  narrative_style: "..."
+  target_audience: "..."
+  target_word_count: {total_words}
+  setting_period: "..."
+  setting_location: "..."
+  content_warnings: []"""
+
+        if original_concept:
+            metadata_yaml_example += f'\n  original_concept: "{original_concept}"'
+        if unique_elements:
+            metadata_yaml_example += '\n  core_unique_elements:'
+            for elem in unique_elements:
+                metadata_yaml_example += f'\n    - "{elem}"'
 
         prompt = f"""Generate the FOUNDATION for a chapter structure. This is PART 1 of multi-phase generation.
 
@@ -379,7 +420,7 @@ INPUT CONTEXT:
 ```yaml
 {context_yaml}
 ```
-
+{unique_context}
 TASK:
 Create ONLY the metadata + characters + world sections. DO NOT generate chapters yet.
 
@@ -396,6 +437,8 @@ Generate high-level story parameters:
 - setting_period (e.g., "contemporary", "historical", "future")
 - setting_location (e.g., "urban", "rural", "multiple")
 - content_warnings: list any if applicable
+{"- original_concept: " + json.dumps(original_concept) if original_concept else ""}
+{"- core_unique_elements: " + json.dumps(unique_elements) if unique_elements else ""}
 
 SECTION 2: CHARACTERS
 Extract ALL major characters from the treatment with COMPLETE profiles.
@@ -422,20 +465,7 @@ Provide:
 RETURN FORMAT:
 Return ONLY valid YAML (no markdown fences):
 
-metadata:
-  genre: "..."
-  subgenre: "..."
-  tone: "..."
-  pacing: "..."
-  themes:
-    - "..."
-  story_structure: "..."
-  narrative_style: "..."
-  target_audience: "..."
-  target_word_count: {total_words}
-  setting_period: "..."
-  setting_location: "..."
-  content_warnings: []
+{metadata_yaml_example}
 
 characters:
   - name: "..."
@@ -989,6 +1019,11 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             # Get taxonomy
             taxonomy_data = self.project.get_taxonomy() or {}
 
+            # Extract original concept and unique elements from premise metadata
+            premise_metadata = context.get('premise', {}).get('metadata', {})
+            original_concept = premise_metadata.get('original_concept', '')
+            unique_elements = premise_metadata.get('unique_elements', [])
+
             # Get model capabilities
             model_obj = await self.client.get_model(self.model)
             if not model_obj:
@@ -1007,7 +1042,9 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 context_yaml=context_yaml,
                 taxonomy_data=taxonomy_data,
                 total_words=total_words,
-                chapter_count=chapter_count
+                chapter_count=chapter_count,
+                original_concept=original_concept,
+                unique_elements=unique_elements
             )
 
             # Save foundation immediately

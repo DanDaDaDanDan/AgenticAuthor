@@ -95,13 +95,28 @@ class TreatmentGenerator:
         # Extract premise metadata for template if needed
         premise_metadata = context['premise'].get('metadata', {})
 
+        # Extract original concept and unique elements if available
+        original_concept = premise_metadata.get('original_concept', '')
+        unique_elements = premise_metadata.get('unique_elements', [])
+
+        # Build unique elements context
+        unique_context = ""
+        if original_concept or unique_elements:
+            unique_context = "\n\nORIGINAL CONCEPT & UNIQUE ELEMENTS:\n"
+            if original_concept:
+                unique_context += f'Original Concept: "{original_concept}"\n'
+                unique_context += "This reference should inform the scale, tone, and epic scope of the treatment.\n"
+            if unique_elements:
+                unique_context += f"Unique Elements: {', '.join(unique_elements)}\n"
+                unique_context += "Ensure these elements are woven throughout and expanded upon in the treatment.\n"
+
         # Build prompt
         prompt = f"""Here is the current book content for context:
 
 ```yaml
 {context_yaml}
 ```
-
+{unique_context}
 Generate a detailed treatment (LOD2) based on the premise above.
 
 Target: {target_words} words
@@ -109,7 +124,7 @@ Target: {target_words} words
 Guidelines:
 1. Expand the world and characters
 2. Outline the three-act structure clearly
-3. Maintain the core premise essence
+3. Maintain the core premise essence and unique elements
 4. Act I (25%): Setup, ordinary world, inciting incident
 5. Act II (50%): Rising action, midpoint turn, complications
 6. Act III (25%): Climax, resolution, denouement
@@ -214,12 +229,27 @@ Return ONLY the treatment section."""
         premise_metadata = context['premise'].get('metadata', {})
         context_yaml = self.context_builder.to_yaml_string(context)
 
+        # Extract original concept and unique elements if available
+        original_concept = premise_metadata.get('original_concept', '')
+        unique_elements = premise_metadata.get('unique_elements', [])
+
+        # Build unique elements context
+        unique_context = ""
+        if original_concept or unique_elements:
+            unique_context = "\n\nORIGINAL CONCEPT & UNIQUE ELEMENTS:\n"
+            if original_concept:
+                unique_context += f'Original Concept: "{original_concept}"\n'
+                unique_context += "This reference should inform the scale, tone, and epic scope of the treatment.\n"
+            if unique_elements:
+                unique_context += f"Unique Elements: {', '.join(unique_elements)}\n"
+                unique_context += "Ensure these elements are woven throughout and expanded upon in the treatment.\n"
+
         # Build prompt (same as generate() method)
         prompt = f"""Here is the current book content for context:
 
 ```yaml
 {context_yaml}```
-
+{unique_context}
 Generate a detailed treatment (LOD2) based on the premise above.
 
 Target: {target_words} words
@@ -227,7 +257,7 @@ Target: {target_words} words
 Guidelines:
 1. Expand the world and characters
 2. Outline the three-act structure clearly
-3. Maintain the core premise essence
+3. Maintain the core premise essence and unique elements
 4. Act I (25%): Setup, ordinary world, inciting incident
 5. Act II (50%): Rising action, midpoint turn, complications
 6. Act III (25%): Climax, resolution, denouement

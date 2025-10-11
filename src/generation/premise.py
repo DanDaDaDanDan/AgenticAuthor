@@ -310,6 +310,7 @@ REQUIREMENTS:
 3. Select appropriate values from EACH category above
 4. Ensure all selections work cohesively together
 5. You may create custom values if needed for the story
+6. Identify 3-5 unique elements that make this story distinctive
 
 Return JSON with this structure:
 {{
@@ -319,6 +320,7 @@ Return JSON with this structure:
   "stakes": "What the protagonist stands to gain/lose",
   "hook": "What makes this unique",
   "themes": ["theme1", "theme2", "theme3"],
+  "unique_elements": ["element1", "element2", "element3"],
   "selections": {json_structure}
 }}"""
 
@@ -345,6 +347,10 @@ Return JSON with this structure:
 
             # Save to project
             if result and 'premise' in result:
+                # Add original concept to metadata if user_input was provided
+                if user_input:
+                    result['original_concept'] = user_input
+
                 self.project.save_premise_metadata(result)
 
                 # Git commit (if git manager available)
@@ -581,6 +587,7 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
 3. Unique hook that sets it apart from the other premises
 4. Must be substantially different from the other {count-1} premise{"s" if count > 2 else ""}
 5. Ensure variety across all {count} options
+6. Identify 3-5 unique elements that make each premise distinctive
 
 TAXONOMY OPTIONS (select appropriate values for each premise):
 {taxonomy_display}
@@ -595,6 +602,7 @@ Return JSON with this EXACT structure:
       "stakes": "What the protagonist stands to gain/lose",
       "hook": "What makes this unique",
       "themes": ["theme1", "theme2", "theme3"],
+      "unique_elements": ["element1", "element2", "element3"],
       "selections": {json_structure}
     }}
     // ... {count-1} more unique premises (total of {count})
@@ -628,9 +636,12 @@ CRITICAL: Generate exactly {count} distinct premises. Each must be substantially
                 if logger:
                     logger.warning(f"LLM returned {len(premises)} premises instead of requested {count}")
 
-            # Add number field to each premise for reference
+            # Add number field and original_concept to each premise for reference
             for i, premise in enumerate(premises, 1):
                 premise['number'] = i
+                # Add original concept if user_input was provided
+                if user_input:
+                    premise['original_concept'] = user_input
 
             return premises
 
