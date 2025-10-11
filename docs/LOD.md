@@ -28,8 +28,7 @@ The story generation system uses a progressive refinement approach, starting fro
 #### File Storage (On Disk)
 ```
 project/
-├── premise.md              # LOD3 - Core concept
-├── premise_metadata.json   # Taxonomy selections
+├── premise_metadata.json   # LOD3 - Core concept + taxonomy selections
 ├── treatment.md            # LOD2 - Narrative arc
 ├── chapters.yaml           # LOD2 - Chapter outlines
 └── chapters/               # LOD0 - Full prose
@@ -38,11 +37,13 @@ project/
     └── ...
 ```
 
+**Note:** Old projects may have `premise.md` for backward compatibility, but new projects use only `premise_metadata.json` as single source of truth.
+
 #### LLM View (Unified YAML)
 ```yaml
 premise:
   text: |
-    [Premise content from premise.md]
+    [Premise content from premise_metadata.json]
   metadata:
     protagonist: "..."
     antagonist: "..."
