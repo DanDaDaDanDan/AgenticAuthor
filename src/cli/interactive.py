@@ -1437,16 +1437,26 @@ class InteractiveSession:
                 self.console.print(result['premise'])
                 self.console.print()  # Blank line
 
-                # Print metadata
+                # Print all metadata fields except taxonomy (selections)
+                if 'protagonist' in result:
+                    self.console.print(f"[dim]Protagonist: {result['protagonist']}[/dim]")
+                if 'antagonist' in result:
+                    self.console.print(f"[dim]Antagonist: {result['antagonist']}[/dim]")
+                if 'stakes' in result:
+                    self.console.print(f"[dim]Stakes: {result['stakes']}[/dim]")
                 if 'hook' in result:
                     self.console.print(f"[dim]Hook: {result['hook']}[/dim]")
                 if 'themes' in result:
                     self.console.print(f"[dim]Themes: {', '.join(result['themes'])}[/dim]")
+                if 'unique_elements' in result:
+                    self.console.print(f"[dim]Unique Elements: {', '.join(result['unique_elements'])}[/dim]")
+                if 'original_concept' in result:
+                    self.console.print(f"[dim]Original Concept: {result['original_concept']}[/dim]")
 
                 self.console.print()  # Blank line
                 self.console.rule(style="dim")
                 self.console.print("[green]✓  Premise generated[/green]")
-                self.console.print("[dim]Saved to premise.md[/dim]")
+                self.console.print("[dim]Saved to premise_metadata.json[/dim]")
 
                 # Git commit
                 self._commit(f"Generate premise: {genre or 'general'}")
@@ -1589,16 +1599,26 @@ class InteractiveSession:
             self.console.print(selected_premise['premise'])
             self.console.print()
 
-            # Print metadata
+            # Print all metadata fields except taxonomy (selections)
+            if 'protagonist' in selected_premise:
+                self.console.print(f"[dim]Protagonist: {selected_premise['protagonist']}[/dim]")
+            if 'antagonist' in selected_premise:
+                self.console.print(f"[dim]Antagonist: {selected_premise['antagonist']}[/dim]")
+            if 'stakes' in selected_premise:
+                self.console.print(f"[dim]Stakes: {selected_premise['stakes']}[/dim]")
             if 'hook' in selected_premise:
                 self.console.print(f"[dim]Hook: {selected_premise['hook']}[/dim]")
             if 'themes' in selected_premise:
                 self.console.print(f"[dim]Themes: {', '.join(selected_premise['themes'])}[/dim]")
+            if 'unique_elements' in selected_premise:
+                self.console.print(f"[dim]Unique Elements: {', '.join(selected_premise['unique_elements'])}[/dim]")
+            if 'original_concept' in selected_premise:
+                self.console.print(f"[dim]Original Concept: {selected_premise['original_concept']}[/dim]")
 
             self.console.print()
             self.console.rule(style="dim")
             self.console.print(f"[green]✓ Premise generated and saved[/green]")
-            self.console.print(f"[dim]Selected premise saved to premise.md[/dim]")
+            self.console.print(f"[dim]Selected premise saved to premise_metadata.json[/dim]")
             self.console.print(f"[dim]All {actual_count} candidates saved to premises_candidates.json[/dim]")
 
             # Git commit
