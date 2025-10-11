@@ -62,6 +62,21 @@ Files are automatically deleted based on what was modified:
 
 This maintains consistency: if you change a high level, downstream content
 becomes invalid and must be regenerated.
+
+Partial Chapter Updates
+========================
+CRITICAL: When LLM returns only SOME chapters (e.g., chapters 4,7,11 during
+iteration), the parser must MERGE them into the existing chapters.yaml structure,
+NOT replace the entire file.
+
+Problem: If LLM returns [ch4, ch7, ch11] and we blindly overwrite chapters.yaml,
+we lose the metadata, characters, and world sections.
+
+Solution: _save_chapters_list() detects partial updates by comparing chapter
+counts and intelligently merges:
+- Partial update (3 new < 16 existing): Merge new chapters, keep rest
+- Complete replacement (16+ new >= 16 existing): Replace chapters list
+- Always preserve metadata, characters, world sections in self-contained format
 """
 
 import json
@@ -167,9 +182,9 @@ class LODResponseParser:
                         project.save_chapters_yaml(chapters)
                         updated_files.append('chapters.yaml')
                     elif isinstance(chapters, list):
-                        # Legacy list format - save as list to chapters.yaml
-                        with open(project.chapters_file, 'w', encoding='utf-8') as f:
-                            yaml.dump(chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+                        # List format - could be partial update or legacy full list
+                        # CRITICAL: Check if this is a partial update before clobbering!
+                        self._save_chapters_list(project, chapters)
                         updated_files.append('chapters.yaml')
 
             # Save prose if present
@@ -405,6 +420,92 @@ class LODResponseParser:
                 return True
 
         return False
+
+    def _save_chapters_list(self, project: Project, new_chapters: List[Dict[str, Any]]):
+        """
+        Save a list of chapters, intelligently merging partial updates.
+
+        CRITICAL BUG FIX: When LLM returns only updated chapters (e.g., chapters 4,7,11),
+        we must merge them into the existing chapters.yaml structure, NOT overwrite
+        the entire file. Otherwise we lose metadata, characters, and world sections.
+
+        Args:
+            project: Current project
+            new_chapters: List of chapter dicts from LLM
+
+        Strategy:
+            1. If chapters.yaml exists with full structure (metadata, characters, world, chapters),
+               merge new chapters into existing structure
+            2. If chapters.yaml is just a list (legacy), replace with new list
+            3. If chapters.yaml doesn't exist, create as list (legacy format)
+        """
+        chapters_file = project.chapters_file
+
+        if not chapters_file.exists():
+            # No existing file - save as list (legacy format)
+            with open(chapters_file, 'w', encoding='utf-8') as f:
+                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            return
+
+        # Load existing chapters.yaml
+        try:
+            with open(chapters_file, 'r', encoding='utf-8') as f:
+                existing = yaml.safe_load(f)
+        except Exception as e:
+            # If we can't read existing file, just overwrite with new data
+            with open(chapters_file, 'w', encoding='utf-8') as f:
+                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            return
+
+        # Check format of existing file
+        if isinstance(existing, list):
+            # Legacy list format - replace entire list
+            with open(chapters_file, 'w', encoding='utf-8') as f:
+                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            return
+
+        elif isinstance(existing, dict) and 'metadata' in existing and 'characters' in existing and 'world' in existing:
+            # NEW self-contained format - MERGE chapters intelligently
+            existing_chapters_list = existing.get('chapters', [])
+
+            # Build map of new chapters by number
+            new_ch_map = {ch['number']: ch for ch in new_chapters if 'number' in ch}
+
+            # Detect if this is a partial update
+            new_ch_numbers = sorted(new_ch_map.keys())
+            existing_ch_numbers = sorted([ch['number'] for ch in existing_chapters_list if 'number' in ch])
+
+            is_partial = len(new_ch_numbers) < len(existing_ch_numbers)
+
+            if is_partial:
+                # PARTIAL UPDATE: Merge new chapters into existing list
+                merged_chapters = []
+                for old_ch in existing_chapters_list:
+                    ch_num = old_ch.get('number')
+                    if ch_num in new_ch_map:
+                        # Replace with updated version
+                        merged_chapters.append(new_ch_map[ch_num])
+                    else:
+                        # Keep existing version
+                        merged_chapters.append(old_ch)
+
+                # Update the chapters list in existing structure
+                existing['chapters'] = merged_chapters
+
+                # Save merged structure
+                with open(chapters_file, 'w', encoding='utf-8') as f:
+                    yaml.dump(existing, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            else:
+                # COMPLETE REPLACEMENT: New list has all or more chapters
+                existing['chapters'] = new_chapters
+
+                # Save updated structure
+                with open(chapters_file, 'w', encoding='utf-8') as f:
+                    yaml.dump(existing, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        else:
+            # Unknown format - replace with new data
+            with open(chapters_file, 'w', encoding='utf-8') as f:
+                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     def _save_premise_metadata(self, project: Project, metadata: Dict[str, Any]):
         """Save premise metadata to premise_metadata.json."""
