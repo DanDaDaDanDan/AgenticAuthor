@@ -138,6 +138,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed usage statistics display when stream truncates
 
 ### Fixed
+- **CRITICAL: Partial Chapter Update Merge** 🚨
+  - Fixed catastrophic data loss bug when LLM returns partial chapter updates during iteration
+  - **Problem**: When LLM returned only updated chapters (e.g., chapters 4,7,11 of 11 total), parser blindly overwrote chapters.yaml, losing metadata, characters, world, and all other chapters
+  - **Example**: steampunk-moon project corrupted from 931 lines (full structure) to 551 lines (only 3 chapters)
+  - **Root cause**: `lod_parser.py` lines 169-173 fell into "legacy list format" branch and directly dumped list to file
+  - **Fix**: Added `_save_chapters_list()` method (85 lines) that intelligently detects partial updates:
+    - Compares new chapter count vs existing chapter count
+    - If partial (3 < 11): MERGE updated chapters into existing structure, preserve metadata/characters/world
+    - If complete (11+ >= 11): Replace chapters list only, still preserve structure sections
+    - Always maintains self-contained format integrity
+  - **Prevents**: Data loss during chapter iteration, need for manual git restoration
+  - **Testing**: Manual verification confirmed correct detection and merge behavior
 - **Premise Iteration** 🔧
   - **Critical Fix**: Premise iteration now always uses "regenerate" strategy, never "patch"
   - Added explicit check in `IterationCoordinator._determine_scale()` to return "regenerate" for premise
