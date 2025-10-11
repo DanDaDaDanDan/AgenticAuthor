@@ -471,8 +471,23 @@ Reset to default configuration.
 
 #### `/generate premise [genre] [concept]`
 Generate story premise (LOD3) with genre-specific support.
+
+**🌟 NEW: Interactive Guided Mode** - Run `/generate premise` with no arguments:
+1. **Story Concept** - Enter your story idea
+2. **Genre** - Select from list or choose "Auto-detect"
+3. **Story Length** - Choose target length (flash fiction → epic)
+
+**Length Options:**
+- Flash Fiction: 500-1,500 words (~5 min read)
+- Short Story: 1,500-7,500 words (~15-30 min read)
+- Novelette: 7,500-17,500 words (~45-90 min read)
+- Novella: 17,500-40,000 words (~2-4 hours)
+- Novel: 40,000-120,000 words (~6-12 hours)
+- Epic: 120,000+ words (~12+ hours)
+
+**Traditional Command-Line Mode** - Provide arguments directly:
 - **genre** (optional): Genre for the story (fantasy, sci-fi, romance, etc.)
-  - **Auto-detection** (NEW): If concept provided without genre, LLM auto-detects it
+  - **Auto-detection**: If concept provided without genre, LLM auto-detects it
   - Tab completion available: `/generate premise fan` → `fantasy`
   - Interactive selection if neither provided
   - Aliases supported: `sci-fi` → `science-fiction`, `ya` → `young-adult`
@@ -481,18 +496,23 @@ Generate story premise (LOD3) with genre-specific support.
   - Standard (20-100 words) for enhancement
   - Detailed (100-200 words) for structuring
   - Treatment (200+ words) preserved with taxonomy extraction
-- Features:
-  - **Automatic genre detection** - no manual selection needed
-  - Genre-specific taxonomies and parameters
-  - Smart input detection (premise vs treatment)
-  - History tracking to avoid repetition
-  - Creates premise with metadata (protagonist, antagonist, stakes, themes)
-  - Auto-commits to git
-- Examples:
-  - `/generate premise` - Interactive genre selection
-  - `/generate premise fantasy` - Fantasy premise with random concept
-  - `/generate premise fantasy "a world where magic is illegal"` - Specific concept
-  - `/generate premise "a detective story"` - Auto-detects genre (NEW)
+
+Features:
+- **Interactive guided flow** - asks upfront questions for better premises
+- **Length-aware generation** - premise scope matches target length
+- **Automatic genre detection** - no manual selection needed
+- Genre-specific taxonomies and parameters
+- Smart input detection (premise vs treatment)
+- History tracking to avoid repetition
+- Creates premise with metadata (protagonist, antagonist, stakes, themes)
+- Length automatically saved to taxonomy for treatment/chapters
+- Auto-commits to git
+
+Examples:
+- `/generate premise` - Interactive guided mode (RECOMMENDED)
+- `/generate premise fantasy` - Fantasy premise with random concept
+- `/generate premise fantasy "a world where magic is illegal"` - Specific concept
+- `/generate premise "a detective story"` - Auto-detects genre
 
 #### `/generate premises <count> [genre] [concept]`
 Generate multiple premise options and select one (batch generation).

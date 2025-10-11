@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Interactive Premise Generation with Length Selection** 📏
+  - `/generate premise` now asks three upfront questions when run without arguments:
+    1. Story concept - enter your idea
+    2. Genre - select from list or choose "Auto-detect"
+    3. Story length - choose from 6 options (flash fiction → epic)
+  - Length options with word counts and reading times:
+    - Flash Fiction: 500-1,500 words (~5 min)
+    - Short Story: 1,500-7,500 words (~15-30 min)
+    - Novelette: 7,500-17,500 words (~45-90 min)
+    - Novella: 17,500-40,000 words (~2-4 hours)
+    - Novel: 40,000-120,000 words (~6-12 hours)
+    - Epic: 120,000+ words (~12+ hours)
+  - New `_select_length_interactive()` method shows all options with descriptions
+  - `_select_genre_interactive()` updated with auto-detect as first option
+  - `PremiseGenerator.generate()` accepts `length_scope` parameter
+  - Length guidance included in premise generation prompt
+  - Length automatically saved to taxonomy selections for treatment/chapters
+  - Backwards compatible: command-line syntax still works
+  - Display shows selected length during generation
+  - Goal: Better premises that match target story length from the start
+
 ### Changed
 - **Analysis System Revamp** 🎯
   - Added confidence scores (0-100%) to all analysis issues
