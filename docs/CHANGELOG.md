@@ -14,6 +14,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improves user experience when starting over with input
 
 ### Added
+- **Intelligent Word Count Assignment** 📊
+  - `/wordcount` command assigns word count targets to chapters based on content
+  - Analyzes chapter complexity, key events, and narrative structure
+  - Uses LLM to intelligently distribute word counts across chapters
+  - Considers story pacing (climax chapters longer, setup shorter)
+  - Ensures total matches desired book length from taxonomy
+  - Word count ranges by book length:
+    - Flash Fiction: 300-1,500 words
+    - Short Story: 1,500-7,500 words
+    - Novelette: 7,500-20,000 words
+    - Novella: 20,000-50,000 words
+    - Novel: 50,000-110,000 words
+    - Epic: 110,000-200,000 words
+  - Shows before/after comparison with deltas
+  - Auto-commits changes to git
+  - WordCountAssigner class in `src/generation/wordcount.py`
+  - Typical chapters: 2,000-5,000 words (setup shorter, climax longer)
+  - Use cases: after chapter generation, balancing pacing, adjusting book length
+
 - **Interactive Premise Generation with Length Selection** 📏
   - `/generate premise` now asks three upfront questions when run without arguments:
     1. Story concept - enter your idea

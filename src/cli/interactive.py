@@ -76,6 +76,7 @@ class InteractiveSession:
             'iterate': self.iterate_content,
             'cull': self.cull_content,
             'analyze': self.analyze_story,
+            'wordcount': self.assign_word_counts,
             'metadata': self.manage_metadata,
             'export': self.export_story,
             'copyedit': self.copyedit_story,
@@ -2296,6 +2297,62 @@ class InteractiveSession:
             self._print(f"[red]✗ Error:[/red] {str(e)}")
             if self.session_logger:
                 self.session_logger.log_error(e, "Cull failed")
+
+    async def assign_word_counts(self, args: str = ""):
+        """Assign word count targets to chapters based on content and book length."""
+        if not self.project:
+            self._print("[yellow]⚠  No project loaded[/yellow]")
+            return
+
+        if not self.client:
+            self._print("[yellow]⚠  API client not initialized[/yellow]")
+            return
+
+        if not self.model:
+            self._print("[yellow]⚠  No model selected. Use /model to select a model first.[/yellow]")
+            return
+
+        # Import WordCountAssigner
+        from ..generation.wordcount import WordCountAssigner
+
+        self._ensure_git_repo()
+
+        try:
+            self._print("[cyan]Analyzing chapters and assigning word count targets...[/cyan]")
+
+            # Create assigner
+            assigner = WordCountAssigner(self.client, self.project, self.model)
+
+            # Assign word counts
+            result = await assigner.assign_word_counts()
+
+            # Display results
+            self._print(f"\n[green]✓ Word count targets assigned[/green]")
+            self._print(f"[dim]Book length:[/dim] {result['book_length']}")
+            self._print(f"[dim]Target range:[/dim] {result['target_range'][0]:,} - {result['target_range'][1]:,} words")
+            self._print(f"[dim]Total assigned:[/dim] {result['total_target']:,} words")
+
+            # Show changes
+            if result['changes']:
+                self._print(f"\n[bold]Updated {len(result['changes'])} chapter(s):[/bold]")
+                for ch_num, old_target, new_target in result['changes']:
+                    if old_target == 0:
+                        self._print(f"  Chapter {ch_num}: [green]{new_target:,} words[/green]")
+                    else:
+                        change = new_target - old_target
+                        change_str = f"+{change:,}" if change > 0 else f"{change:,}"
+                        self._print(f"  Chapter {ch_num}: {old_target:,} → [green]{new_target:,}[/green] ({change_str})")
+            else:
+                self._print("[dim]No changes needed[/dim]")
+
+            # Commit changes
+            self._commit("Assign word count targets to chapters")
+            self._print(f"\n[green]✓ Changes committed[/green]")
+
+        except Exception as e:
+            self._print(f"[red]✗ Error:[/red] {str(e)}")
+            if self.session_logger:
+                self.session_logger.log_error(e, "Word count assignment failed")
 
     async def analyze_story(self, args: str):
         """Run story analysis."""

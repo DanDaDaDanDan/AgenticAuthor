@@ -676,6 +676,54 @@ Examples:
 - `/cull chapters` - Remove chapters and prose, keep treatment
 - `/cull treatment` - Remove treatment, chapters, and prose
 
+#### `/wordcount`
+Intelligently assign word count targets to chapters based on content and book length.
+
+**What It Does:**
+- Analyzes each chapter's summary, key events, and complexity
+- Uses LLM to assign appropriate word count targets
+- Ensures total matches your desired book length (from taxonomy)
+- Considers narrative pacing (climax chapters longer, setup shorter)
+
+**Prerequisites:**
+- Must have chapters.yaml (run `/generate chapters` first)
+- Must have selected a model (`/model`)
+
+**How It Works:**
+1. Reads book length from taxonomy (flash fiction → epic)
+2. Analyzes each chapter's content and complexity
+3. Assigns proportional word counts based on:
+   - Chapter complexity (more events = more words)
+   - Narrative pacing (climax vs setup)
+   - Story structure (opening, middle, climax, resolution)
+4. Ensures total is within target range
+5. Updates chapters.yaml with new targets
+6. Auto-commits changes
+
+**Output:**
+- Shows before/after comparison for each chapter
+- Displays total target word count
+- Lists changes with deltas (+500, -200, etc.)
+
+**Examples:**
+```bash
+/wordcount   # Analyze and assign word counts
+```
+
+**Word Count Ranges by Book Length:**
+- Flash Fiction: 300-1,500 words
+- Short Story: 1,500-7,500 words
+- Novelette: 7,500-20,000 words
+- Novella: 20,000-50,000 words
+- Novel: 50,000-110,000 words
+- Epic: 110,000-200,000 words
+
+**Use Cases:**
+- After generating chapters, before writing prose
+- When chapter word counts are too uniform
+- When adjusting book length (shorter/longer)
+- To balance pacing across chapters
+
 ### Utility Commands
 
 #### `/git <command>`

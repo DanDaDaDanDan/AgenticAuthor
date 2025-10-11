@@ -264,6 +264,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Toggle or configure multi-model competition mode',
             'usage': '/multimodel [config|add|remove|judge|reset]'
         },
+        'wordcount': {
+            'description': 'Assign word count targets to chapters based on content',
+            'usage': '/wordcount'
+        },
         'exit': {
             'description': 'Exit the application',
             'usage': '/exit'
