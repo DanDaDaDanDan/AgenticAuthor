@@ -8,8 +8,8 @@ from typing import Dict, List, Any, Optional
 import yaml
 from pathlib import Path
 
-from models import Project
-from api.client import APIClient
+from ..models import Project
+from ..api import OpenRouterClient
 
 
 class WordCountAssigner:
@@ -26,7 +26,7 @@ class WordCountAssigner:
         'series': (200000, 500000)
     }
 
-    def __init__(self, client: APIClient, project: Project, model: str):
+    def __init__(self, client: OpenRouterClient, project: Project, model: str):
         """
         Initialize word count assigner.
 
