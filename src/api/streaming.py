@@ -157,13 +157,16 @@ class StreamHandler:
                             # Mode-specific field detection
                             if token and not field_found:
                                 if mode == "array_first":
-                                    # Look for array start and first object
+                                    # Phase 1: Look for array start (once)
                                     if not array_started and '[' in full_content:
                                         array_started = True
                                         array_idx = full_content.find('[')
                                         if logger:
                                             logger.debug(f"Array detected at position {array_idx}")
-                                        # Look for first { after [
+
+                                    # Phase 2: Look for first object after array (keep checking until found)
+                                    if array_started and not in_first_object:
+                                        array_idx = full_content.find('[')
                                         after_bracket = full_content[array_idx + 1:]
                                         if '{' in after_bracket:
                                             first_object_depth = 0
@@ -175,10 +178,7 @@ class StreamHandler:
                                             if logger:
                                                 logger.debug(f"First object detected at position {obj_start}")
 
-                                            # Now look for the display_field within first object
-                                            # This will be extracted in the next iteration
-
-                                    # If we're in the first object, look for the field (search from start, not last_processed_idx)
+                                    # Phase 3: If we're in the first object, look for the field (search from start, not last_processed_idx)
                                     if in_first_object and not in_value and not field_found:
                                         field_pattern = f'"{display_field}":'
                                         field_pattern_spaced = f'"{display_field}" :'
