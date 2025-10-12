@@ -27,6 +27,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User can still override: `/generate chapters 95000`
 
 ### Fixed
+- **Prose Generation: Logger Error, Retry Logic, Word Count Adherence** 📝
+  - Fixed three critical issues with `/generate prose` command
+  - **Issue 1: Logger not defined error**
+    - **Problem**: Chapter 15 failed with "name 'logger' is not defined"
+    - **Root cause**: `handle_sse_stream_with_status()` in streaming.py:757 used logger but didn't import it
+    - **Solution**: Added logger imports at method start (same pattern as handle_json_stream_with_display)
+    - Fixed: src/api/streaming.py lines 588-593
+  - **Issue 2: No retry on failure**
+    - **Problem**: Prose generation stopped immediately on first error, no retry attempts
+    - **Symptom**: "Stopping sequential generation due to error" after Chapter 15 failed
+    - **Solution**: Added retry mechanism with exponential backoff (2 attempts, 2s/4s delays)
+    - Shows clear feedback: "🔄 Retry 1/2 for Chapter N..."
+    - Fixed: src/generation/prose.py lines 436-478
+  - **Issue 3: LLMs drastically under-generating word counts**
+    - **Problem**: Chapters targeted 3,800-4,510 words but averaged only 2,484 words (55-65% of target)
+    - **Example**: 14 chapters should be ~56,040 words, generated only 34,775 words (62% of target)
+    - **Root cause**: LLMs routinely ignore word count instructions buried in prompts
+    - **Solution**: Completely rewrote prose generation prompt with prominent word count emphasis:
+      - CRITICAL REQUIREMENT banner at top with target word count
+      - Word count repeated 8+ times with "MANDATORY" and "NOT negotiable" language
+      - Practical guidance: "If event feels done but under target, you rushed it"
+      - Explicit instructions on how to hit target (show vs summarize, dialogue, sensory details)
+      - Final reminder: "Do not stop early. Write the FULL chapter"
+    - Fixed: src/generation/prose.py lines 268-359
+  - **Impact**: Chapter failures will retry automatically, word counts should be much closer to targets
+
 - **Removed 5-Minute Timeout on Generation** ⏱️
   - Removed hard 5-minute timeout on feedback processing (chapter generation, iteration)
   - **Problem**: Long operations like chapter generation (10-15 minutes) were timing out prematurely
