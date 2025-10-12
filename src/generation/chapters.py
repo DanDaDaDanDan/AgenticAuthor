@@ -123,18 +123,19 @@ class ChapterGenerator:
         self.context_builder = LODContextBuilder()
         self.parser = LODResponseParser()
 
-    def _calculate_structure(self, total_words: int, pacing: str) -> Dict:
+    def _calculate_structure(self, total_words: int, pacing: str, length_scope: Optional[str] = None) -> Dict:
         """
         Calculate complete story structure using DepthCalculator.
 
         Args:
             total_words: Target total word count for the book
             pacing: Pacing from taxonomy (fast, moderate, slow)
+            length_scope: Optional taxonomy length_scope (overrides auto-detection)
 
         Returns:
             Dict with form, chapter_count, base_we, etc.
         """
-        return DepthCalculator.calculate_structure(total_words, pacing)
+        return DepthCalculator.calculate_structure(total_words, pacing, length_scope=length_scope)
 
     def _find_last_complete_chapter(self, yaml_text: str) -> Dict[str, Any]:
         """
@@ -552,11 +553,12 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         end_chapter: int,
         words_per_chapter: int,
         total_chapters: int,
-        base_we: int,
+        form: str,
+        pacing: str,
         events_per_chapter: List[int]
     ) -> List[Dict[str, Any]]:
         """
-        Generate a batch of chapters with full context.
+        Generate a batch of chapters with full context and act-aware word targets.
 
         Args:
             context_yaml: Full premise + treatment as YAML
@@ -564,9 +566,10 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
             previous_summaries: Summaries of chapters generated so far
             start_chapter: First chapter number to generate (inclusive)
             end_chapter: Last chapter number to generate (inclusive)
-            words_per_chapter: Average words per chapter (may vary by event count)
+            words_per_chapter: Average words per chapter (for display only)
             total_chapters: Total number of chapters in the complete book
-            base_we: Base words per event (from form + pacing)
+            form: Story form (novella, novel, epic)
+            pacing: Pacing taxonomy (fast, moderate, slow)
             events_per_chapter: List of event counts for each chapter in batch
 
         Returns:
@@ -600,12 +603,18 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         else:
             default_act = "Act III"
 
-        # Build per-chapter event and word specifications
+        # Build per-chapter event and word specifications (act-aware)
         chapter_specs = []
         for i, ch_num in enumerate(range(start_chapter, end_chapter + 1)):
             events = events_per_chapter[i]
-            word_target = events * base_we
-            chapter_specs.append(f"Chapter {ch_num}: {events} events × {base_we} w/e = {word_target:,} words")
+            # Calculate act-aware words per event for this chapter
+            act = DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
+            act_we = DepthCalculator.get_act_words_per_event(form, pacing, act)
+            word_target = events * act_we
+
+            # Show which act for context
+            act_display = act.replace('act', 'Act ')
+            chapter_specs.append(f"Chapter {ch_num} ({act_display}): {events} events × {act_we} w/e = {word_target:,} words")
 
         specs_text = '\n'.join(chapter_specs)
 
@@ -626,30 +635,35 @@ PREVIOUS CHAPTERS (summaries only):
 {previous_yaml if previous_yaml else "# No previous chapters - this is the first batch"}
 ```
 
-STORY DEPTH ARCHITECTURE:
-This story uses {base_we} words per event (based on form + pacing).
-Event counts vary by act position to create narrative rhythm:
+STORY DEPTH ARCHITECTURE (ACT-AWARE):
+This story varies depth by act position to create narrative rhythm.
+Each chapter's word target is calculated using act-specific words-per-event:
 
 {specs_text}
+
+Note: Act I (setup) uses slightly lower w/e for efficiency
+      Act II (rising action) uses baseline w/e
+      Act III (climax) uses HIGHER w/e for emotional depth
 
 TASK:
 Generate {batch_size} comprehensive chapter outlines, numbered {start_chapter} through {end_chapter}.
 
-For each chapter, follow the EVENT COUNT specified above (varies by act position):
+For each chapter, follow the EXACT specifications above:
 - number: {start_chapter}, {start_chapter + 1}, ... {end_chapter} (CRITICAL: number sequentially from {start_chapter})
 - title: evocative, specific
 - pov: character name
 - act: "{default_act}" (or adjust based on story flow)
 - summary: 3-4 sentences
-- key_events: MATCH THE EVENT COUNT specified above for this chapter (e.g., Ch{start_chapter} needs {events_per_chapter[0]} events)
+- key_events: MATCH THE EVENT COUNT specified above for this chapter
   * Each event should be specific and complete
-  * Events will be developed into ~{base_we} words each during prose generation
+  * Events will be developed with act-appropriate depth during prose generation
+  * Act III events need MORE depth even though there are fewer of them
 - character_developments: 3-4 internal changes
 - relationship_beats: 2-3 relationship evolutions
 - tension_points: 2-3 stakes/urgency moments
 - sensory_details: 2-3 atmospheric elements
 - subplot_threads: 1-2 if applicable
-- word_count_target: CALCULATE as (event_count × {base_we}) using the spec above
+- word_count_target: USE THE EXACT TARGET from the spec above (already calculated with act-aware w/e)
 
 Guidelines:
 - Maintain consistency with the foundation (characters, world, metadata)
@@ -677,7 +691,7 @@ Return ONLY a YAML list of chapters (no markdown fences):
     - "..."
   subplot_threads:
     - "..."
-  word_count_target: {events_per_chapter[0] * base_we}  # {events_per_chapter[0]} events × {base_we} w/e
+  word_count_target: {DepthCalculator.get_act_words_per_event(form, pacing, DepthCalculator.get_act_for_chapter(start_chapter, total_chapters)) * events_per_chapter[0]}  # USE EXACT VALUE FROM SPEC ABOVE
 
 [Continue for all chapters {start_chapter} through {end_chapter}]
 
@@ -1022,13 +1036,14 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             if 'treatment' not in context:
                 raise Exception("No treatment found. Generate treatment first with /generate treatment")
 
-            # Get taxonomy for pacing
+            # Get taxonomy for pacing and length_scope
             taxonomy_data = self.project.get_taxonomy() or {}
             pacing = taxonomy_data.get('pacing', 'moderate')
+            length_scope = taxonomy_data.get('length_scope')  # May be None
 
             # Calculate story structure (form, chapters, events, base_we)
             if not chapter_count:
-                structure = self._calculate_structure(total_words, pacing)
+                structure = self._calculate_structure(total_words, pacing, length_scope)
                 chapter_count = structure['chapter_count']
                 form = structure['form']
                 base_we = structure['base_we']
@@ -1040,11 +1055,11 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 )
 
                 if logger:
-                    logger.debug(f"Story structure: {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e")
+                    logger.debug(f"Story structure: {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e (baseline)")
                     logger.debug(f"Event distribution: {events_distribution}")
             else:
                 # User specified chapter count - use it but still calculate structure
-                structure = self._calculate_structure(total_words, pacing)
+                structure = self._calculate_structure(total_words, pacing, length_scope)
                 form = structure['form']
                 base_we = structure['base_we']
                 total_events = structure['total_events']
@@ -1055,7 +1070,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 )
 
                 if logger:
-                    logger.debug(f"Story structure (user-specified chapters): {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e")
+                    logger.debug(f"Story structure (user-specified chapters): {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e (baseline)")
 
             self.console.print(f"\n[cyan]Story Structure:[/cyan] {form.replace('_', ' ').title()}, {chapter_count} chapters, {base_we} words/event")
 
@@ -1130,7 +1145,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                             end_chapter=end_ch,
                             words_per_chapter=words_per_chapter,
                             total_chapters=chapter_count,
-                            base_we=base_we,
+                            form=form,
+                            pacing=pacing,
                             events_per_chapter=batch_events
                         )
                         break  # Success

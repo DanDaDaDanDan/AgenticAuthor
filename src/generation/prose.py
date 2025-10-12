@@ -279,9 +279,14 @@ Generate {word_count_target:,} words of polished narrative prose for:
 - POV: {current_chapter.get('pov', 'N/A')}
 - Act: {current_chapter.get('act', 'N/A')}
 
-SCENE DEVELOPMENT (CRITICAL):
+SCENE DEVELOPMENT (CRITICAL - ACT-AWARE):
 You have {num_events} key events to cover in {word_count_target:,} words.
 This means AVERAGE of ~{avg_we} words per event.
+
+NOTE: This chapter is in {current_chapter.get('act', 'N/A')}.
+- Act I chapters: Efficient setup (slightly faster pacing)
+- Act II chapters: Standard development
+- Act III chapters: DEEPER, more emotional intensity per event
 
 Vary depth based on dramatic importance:
 

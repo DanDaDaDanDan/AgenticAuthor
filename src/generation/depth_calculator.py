@@ -73,6 +73,7 @@ class DepthCalculator:
     }
 
     # Event variation by act (for novels/epics with three-act structure)
+    # More events in Act I for setup, fewer in Act III for focused climax
     ACT_EVENT_MULTIPLIERS = {
         'novella': {
             'act1': 1.0,  # Uniform across acts
@@ -80,14 +81,34 @@ class DepthCalculator:
             'act3': 1.0
         },
         'novel': {
-            'act1': 1.3,  # More events in setup (8 vs 6 baseline)
-            'act2': 1.0,  # Standard events in rising action (6)
-            'act3': 0.7   # Fewer, deeper events in climax (4)
+            'act1': 1.3,  # More events in setup (world-building, character intro)
+            'act2': 1.0,  # Standard events in rising action
+            'act3': 0.7   # Fewer events in climax (focused on main conflict)
         },
         'epic': {
-            'act1': 1.4,
+            'act1': 1.4,  # Many events (complex world, multiple threads)
+            'act2': 1.0,  # Standard
+            'act3': 0.6   # Very focused climax
+        }
+    }
+
+    # Words-per-event variation by act (CRITICAL for climax depth)
+    # Climaxes need DEPTH even with fewer events - this multiplies base_we
+    ACT_WE_MULTIPLIERS = {
+        'novella': {
+            'act1': 1.0,  # Uniform depth
             'act2': 1.0,
-            'act3': 0.6
+            'act3': 1.0
+        },
+        'novel': {
+            'act1': 0.95,  # Slightly more efficient (many events to cover)
+            'act2': 1.00,  # Standard depth
+            'act3': 1.35   # Much deeper (emotional intensity, detail, pacing)
+        },
+        'epic': {
+            'act1': 0.93,  # Very efficient (massive world-building to cover)
+            'act2': 1.00,  # Standard
+            'act3': 1.40   # Very deep climax (multiple threads converging)
         }
     }
 
@@ -117,7 +138,7 @@ class DepthCalculator:
     @classmethod
     def get_base_words_per_event(cls, form: str, pacing: str) -> int:
         """
-        Get typical words per event for given form and pacing.
+        Get typical words per event for given form and pacing (baseline, no act adjustment).
 
         Args:
             form: Story form (novella, novel, epic)
@@ -138,6 +159,27 @@ class DepthCalculator:
 
         # Fallback
         return 800
+
+    @classmethod
+    def get_act_words_per_event(cls, form: str, pacing: str, act: str) -> int:
+        """
+        Get words per event for specific act (includes act-based depth multiplier).
+
+        Args:
+            form: Story form (novella, novel, epic)
+            pacing: Pacing taxonomy value (fast, moderate, slow)
+            act: Act identifier ('act1', 'act2', 'act3')
+
+        Returns:
+            Act-adjusted words per event (integer)
+        """
+        base_we = cls.get_base_words_per_event(form, pacing)
+
+        # Get act multiplier
+        we_multipliers = cls.ACT_WE_MULTIPLIERS.get(form, cls.ACT_WE_MULTIPLIERS.get('novel', {}))
+        multiplier = we_multipliers.get(act, 1.0)
+
+        return int(base_we * multiplier)
 
     @classmethod
     def get_words_per_event_range(cls, form: str, pacing: str) -> Tuple[int, int, int]:
@@ -162,11 +204,34 @@ class DepthCalculator:
         return (700, 1000, 850)
 
     @classmethod
+    def get_act_for_chapter(cls, chapter_number: int, total_chapters: int) -> str:
+        """
+        Determine which act a chapter belongs to based on position.
+
+        Args:
+            chapter_number: Chapter number (1-indexed)
+            total_chapters: Total number of chapters
+
+        Returns:
+            Act identifier ('act1', 'act2', 'act3')
+        """
+        act_1_end = int(total_chapters * 0.25)
+        act_2_end = int(total_chapters * 0.75)
+
+        if chapter_number <= act_1_end:
+            return 'act1'
+        elif chapter_number <= act_2_end:
+            return 'act2'
+        else:
+            return 'act3'
+
+    @classmethod
     def calculate_structure(
         cls,
         target_words: int,
         pacing: str = 'moderate',
-        form_override: Optional[str] = None
+        form_override: Optional[str] = None,
+        length_scope: Optional[str] = None
     ) -> Dict:
         """
         Calculate complete story structure parameters.
@@ -175,20 +240,27 @@ class DepthCalculator:
             target_words: Target total word count
             pacing: Pacing taxonomy value (fast, moderate, slow)
             form_override: Optional explicit form (overrides detection)
+            length_scope: Optional taxonomy length_scope (preferred over detection)
 
         Returns:
             Dict with:
                 - form: Detected/specified form
-                - base_we: Typical words per event
+                - base_we: Typical words per event (Act II baseline)
                 - we_range: (min, max, typical) words per event
                 - total_events: Calculated number of events needed
                 - chapter_count: Recommended number of chapters
                 - avg_events_per_chapter: Average events per chapter
                 - chapter_length_target: Target words per chapter
-                - act_multipliers: Event count multipliers by act
+                - act_event_multipliers: Event count multipliers by act
+                - act_we_multipliers: Words-per-event multipliers by act
         """
-        # Determine form
-        form = form_override if form_override else cls.detect_form(target_words)
+        # Determine form (priority: form_override > length_scope > detection)
+        if form_override:
+            form = form_override
+        elif length_scope and length_scope in cls.FORM_RANGES:
+            form = length_scope
+        else:
+            form = cls.detect_form(target_words)
 
         # Get words per event
         base_we = cls.get_base_words_per_event(form, pacing)
@@ -215,18 +287,21 @@ class DepthCalculator:
         # Calculate average events per chapter
         avg_events_per_chapter = total_events / chapter_count if chapter_count > 0 else total_events
 
-        # Get act multipliers for event distribution
-        act_multipliers = cls.ACT_EVENT_MULTIPLIERS.get(form, cls.ACT_EVENT_MULTIPLIERS['novel'])
+        # Get act multipliers for event distribution and depth
+        act_event_multipliers = cls.ACT_EVENT_MULTIPLIERS.get(form, cls.ACT_EVENT_MULTIPLIERS['novel'])
+        act_we_multipliers = cls.ACT_WE_MULTIPLIERS.get(form, cls.ACT_WE_MULTIPLIERS['novel'])
 
         return {
             'form': form,
-            'base_we': base_we,
+            'base_we': base_we,  # Act II baseline
             'we_range': we_range,
             'total_events': total_events,
             'chapter_count': chapter_count,
             'avg_events_per_chapter': round(avg_events_per_chapter, 1),
             'chapter_length_target': chapter_length_target,
-            'act_multipliers': act_multipliers
+            'act_event_multipliers': act_event_multipliers,
+            'act_we_multipliers': act_we_multipliers,
+            'pacing': pacing  # Include for downstream use
         }
 
     @classmethod
@@ -250,15 +325,7 @@ class DepthCalculator:
             Number of events for this chapter
         """
         # Determine act
-        act_1_end = int(total_chapters * 0.25)
-        act_2_end = int(total_chapters * 0.75)
-
-        if chapter_number <= act_1_end:
-            act = 'act1'
-        elif chapter_number <= act_2_end:
-            act = 'act2'
-        else:
-            act = 'act3'
+        act = cls.get_act_for_chapter(chapter_number, total_chapters)
 
         # Get multiplier
         multipliers = cls.ACT_EVENT_MULTIPLIERS.get(form, cls.ACT_EVENT_MULTIPLIERS['novel'])
@@ -269,6 +336,37 @@ class DepthCalculator:
 
         # Ensure minimum
         return max(3, events)
+
+    @classmethod
+    def calculate_chapter_word_target(
+        cls,
+        chapter_number: int,
+        total_chapters: int,
+        event_count: int,
+        form: str,
+        pacing: str
+    ) -> int:
+        """
+        Calculate word count target for a chapter using act-aware depth.
+
+        Args:
+            chapter_number: Chapter number (1-indexed)
+            total_chapters: Total number of chapters
+            event_count: Number of events in this chapter
+            form: Story form
+            pacing: Pacing taxonomy value
+
+        Returns:
+            Word count target for this chapter
+        """
+        # Determine act
+        act = cls.get_act_for_chapter(chapter_number, total_chapters)
+
+        # Get act-aware words per event
+        act_we = cls.get_act_words_per_event(form, pacing, act)
+
+        # Calculate target
+        return event_count * act_we
 
     @classmethod
     def distribute_events_across_chapters(

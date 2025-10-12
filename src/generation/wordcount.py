@@ -42,17 +42,17 @@ class WordCountAssigner:
 
     async def assign_word_counts(self) -> Dict[str, Any]:
         """
-        Assign word count targets to all chapters based on event counts.
+        Assign word count targets to all chapters based on event counts with act-aware depth.
 
-        Uses the depth architecture: word_count_target = event_count × base_we
-        where base_we is calculated from form + pacing.
+        Uses the depth architecture: word_count_target = event_count × act_we
+        where act_we is calculated from form + pacing + act position.
 
         Returns:
             Dictionary with:
                 - 'chapters': List of chapters with updated word_count_target
                 - 'total_target': Total target word count
                 - 'book_length': Detected book length category
-                - 'changes': List of (chapter_num, old_target, new_target) tuples
+                - 'changes': List of (chapter_num, old_target, new_target, act) tuples
 
         Raises:
             Exception: If chapters.yaml doesn't exist or has wrong format
@@ -76,21 +76,30 @@ class WordCountAssigner:
         if not chapters:
             raise Exception("No chapters found in chapters.yaml")
 
-        # Get target word count and pacing from metadata
+        # Get target word count, pacing, and length_scope from metadata
         target_word_count = metadata.get('target_word_count', 50000)
         pacing = metadata.get('pacing', 'moderate')
 
-        # Calculate base words per event
-        form = DepthCalculator.detect_form(target_word_count)
-        base_we = DepthCalculator.get_base_words_per_event(form, pacing)
+        # Get length_scope from taxonomy if available
+        taxonomy = self.project.get_taxonomy() or {}
+        length_scope = taxonomy.get('length_scope')
 
-        print(f"\nCalculating word counts:")
+        # Calculate structure (respects length_scope if provided)
+        structure = DepthCalculator.calculate_structure(
+            target_word_count, pacing, length_scope=length_scope
+        )
+        form = structure['form']
+        base_we = structure['base_we']  # Act II baseline
+        total_chapters = len(chapters)
+
+        print(f"\nCalculating word counts (act-aware):")
         print(f"  Form: {form.replace('_', ' ').title()}")
         print(f"  Pacing: {pacing}")
-        print(f"  Base words/event: {base_we}")
+        print(f"  Base words/event: {base_we} (Act II baseline)")
+        print(f"  Act multipliers: Act I={structure['act_we_multipliers']['act1']:.2f}x, Act II={structure['act_we_multipliers']['act2']:.2f}x, Act III={structure['act_we_multipliers']['act3']:.2f}x")
         print()
 
-        # Calculate word counts based on actual event counts
+        # Calculate word counts based on actual event counts + act position
         new_targets = {}
         changes = []
 
@@ -103,14 +112,17 @@ class WordCountAssigner:
             key_events = chapter.get('key_events', [])
             event_count = len(key_events)
 
-            # Calculate word target: events × base_we
-            new_target = event_count * base_we
+            # Calculate act-aware word target
+            act = DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
+            act_we = DepthCalculator.get_act_words_per_event(form, pacing, act)
+            new_target = event_count * act_we
 
             # Track changes
             old_target = chapter.get('word_count_target', 0)
             if old_target != new_target:
-                changes.append((ch_num, old_target, new_target))
-                print(f"  Chapter {ch_num}: {event_count} events × {base_we} w/e = {new_target:,} words (was {old_target:,})")
+                act_display = act.replace('act', 'Act ')
+                changes.append((ch_num, old_target, new_target, act_display))
+                print(f"  Chapter {ch_num} ({act_display}): {event_count} events × {act_we} w/e = {new_target:,} words (was {old_target:,})")
 
             # Update chapter
             chapter['word_count_target'] = new_target
