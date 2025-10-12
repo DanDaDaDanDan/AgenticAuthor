@@ -460,8 +460,8 @@ class OpenRouterClient:
         Returns:
             Parsed JSON response
         """
-        # Add JSON instruction to system prompt
-        json_instruction = "You must respond with valid JSON only. No markdown, no explanation, just JSON."
+        # Add JSON instruction to system prompt - explicitly forbid markdown fences
+        json_instruction = "You must respond with valid JSON only. Return ONLY the JSON object. Do NOT wrap in markdown code fences (```json or ```). No explanation, no markdown formatting, just the raw JSON."
         if system_prompt:
             system_prompt = f"{system_prompt}\n\n{json_instruction}"
         else:

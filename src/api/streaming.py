@@ -269,10 +269,26 @@ class StreamHandler:
 
                                 elif mode == "full":
                                     # Show entire JSON as it streams
+                                    # Strip markdown fences in real-time for clean display
                                     field_found = True
                                     in_value = True
                                     last_processed_idx = 0
-                                    display_content = full_content
+                                    # Clean display: strip markdown fences if present
+                                    cleaned = full_content
+                                    if cleaned.startswith("```json\n"):
+                                        cleaned = cleaned[8:]  # Remove ```json\n (8 chars)
+                                    elif cleaned.startswith("```json"):
+                                        cleaned = cleaned[7:]  # Remove ```json (7 chars)
+                                    elif cleaned.startswith("```\n"):
+                                        cleaned = cleaned[4:]  # Remove ```\n (4 chars)
+                                    elif cleaned.startswith("```"):
+                                        cleaned = cleaned[3:]  # Remove ``` (3 chars)
+                                    # Remove trailing fence if complete
+                                    if cleaned.endswith("\n```"):
+                                        cleaned = cleaned[:-4]  # Remove \n``` (4 chars)
+                                    elif cleaned.endswith("```"):
+                                        cleaned = cleaned[:-3]  # Remove ``` (3 chars)
+                                    display_content = cleaned
 
                                 else:  # mode == "field" (default)
                                     # Check if we now have the field pattern
