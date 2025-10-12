@@ -703,6 +703,174 @@ context = {
 - Character arc visibility
 - Token usage stays constant (just redistributes)
 
+### 10. Depth Calculator System (`src/generation/depth_calculator.py`)
+- **DepthCalculator**: Centralized calculation of story depth (words per event) based on form and pacing
+- **Act-aware depth architecture**: Varies words-per-event by three-act position to ensure appropriate climax intensity
+- **Form detection**: Automatic detection of story form (flash fiction → series) from target word count
+- **Independent axes**: Treats complexity (event count) and depth (words/event) as separate variables
+
+**Key Design Decisions:**
+- **Mathematical vs LLM**: Deterministic formulas instead of LLM-based word count assignment
+  - Benefits: Free, consistent, transparent, predictable
+  - Trade-offs: Can't assess complexity beyond event count
+- **Act multipliers**: Two independent multiplier systems:
+  - `ACT_EVENT_MULTIPLIERS`: Varies event count by act (Act I: 1.3×, Act II: 1.0×, Act III: 0.7×)
+  - `ACT_WE_MULTIPLIERS`: Varies words-per-event by act (Act I: 0.95×, Act II: 1.0×, Act III: 1.35×)
+- **Form-specific behavior**: Multipliers vary by form (novella: uniform, novel: moderate, epic: strong)
+- **Edge case handling**: Special logic for small chapter counts (≤3 chapters)
+- **Taxonomy integration**: Respects user's explicit `length_scope` preference over auto-detection
+
+**Architecture Constants:**
+```python
+# Form boundaries (word counts)
+FORM_RANGES = {
+    'flash_fiction': (300, 1500),
+    'short_story': (1500, 7500),
+    'novelette': (7500, 20000),
+    'novella': (20000, 50000),
+    'novel': (50000, 110000),
+    'epic': (110000, 200000),
+    'series': (200000, 500000)
+}
+
+# Base words per event by form and pacing
+# Format: {form: {pacing: (min_we, max_we, typical_we)}}
+WORDS_PER_EVENT = {
+    'novel': {
+        'fast': (650, 950, 800),
+        'moderate': (800, 1100, 950),
+        'slow': (1000, 1400, 1200)
+    },
+    # ... other forms
+}
+
+# Act multipliers for novels
+ACT_EVENT_MULTIPLIERS = {
+    'novel': {'act1': 1.3, 'act2': 1.0, 'act3': 0.7}
+}
+
+ACT_WE_MULTIPLIERS = {
+    'novel': {'act1': 0.95, 'act2': 1.00, 'act3': 1.35}
+}
+```
+
+**Core API Methods:**
+```python
+# Detect form from word count
+DepthCalculator.detect_form(target_words: int) -> str
+
+# Get baseline words per event (Act II)
+DepthCalculator.get_base_words_per_event(form: str, pacing: str) -> int
+
+# Get act-adjusted words per event
+DepthCalculator.get_act_words_per_event(form: str, pacing: str, act: str) -> int
+
+# Determine act from chapter position
+DepthCalculator.get_act_for_chapter(ch_num: int, total_chapters: int) -> str
+
+# Calculate complete story structure
+DepthCalculator.calculate_structure(
+    target_words: int,
+    pacing: str = 'moderate',
+    form_override: Optional[str] = None,
+    length_scope: Optional[str] = None
+) -> Dict
+
+# Calculate word target for specific chapter
+DepthCalculator.calculate_chapter_word_target(
+    chapter_number: int,
+    total_chapters: int,
+    event_count: int,
+    form: str,
+    pacing: str
+) -> int
+
+# Distribute events across all chapters
+DepthCalculator.distribute_events_across_chapters(
+    total_events: int,
+    chapter_count: int,
+    form: str
+) -> list
+```
+
+**Usage in Generation Pipeline:**
+```python
+# In chapters.py - chapter generation
+from src.generation.depth_calculator import DepthCalculator
+
+# Calculate structure
+structure = DepthCalculator.calculate_structure(
+    target_words=80000,
+    pacing='moderate',
+    length_scope=taxonomy.get('length_scope')
+)
+# Returns: form, base_we, total_events, chapter_count, multipliers
+
+# Distribute events across chapters
+events_dist = DepthCalculator.distribute_events_across_chapters(
+    total_events=structure['total_events'],
+    chapter_count=structure['chapter_count'],
+    form=structure['form']
+)
+
+# For each chapter batch, calculate act-aware targets
+for ch_num in range(1, total_chapters + 1):
+    act = DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
+    act_we = DepthCalculator.get_act_words_per_event(form, pacing, act)
+    word_target = events_dist[ch_num - 1] * act_we
+    # Use word_target in generation prompt
+```
+
+```python
+# In wordcount.py - recalculate word targets
+from src.generation.depth_calculator import DepthCalculator
+
+# For each chapter, recalculate with actual event counts
+for chapter in chapters:
+    ch_num = chapter['number']
+    event_count = len(chapter['key_events'])  # Actual events in outline
+
+    # Get act-aware words per event
+    act = DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
+    act_we = DepthCalculator.get_act_words_per_event(form, pacing, act)
+
+    # Calculate new target
+    new_target = event_count * act_we
+    chapter['word_count_target'] = new_target
+```
+
+**Why This Architecture:**
+
+*Problem*: With flat words-per-event, Act III chapters were 40% shorter than Act I, making climaxes feel rushed and underweight.
+
+*Solution*: Independent complexity and depth axes allow Act III to have:
+- **Fewer events** (0.7× multiplier) - focused conflict
+- **Deeper events** (1.35× multiplier) - emotional intensity
+
+*Result*: Act III chapters are slightly shorter overall (-5.5%) but much more intense per event, ensuring climaxes feel substantial.
+
+**Example (80K Novel, Moderate Pacing):**
+```
+Before Fix:
+- Act I: 5 events × 950 w/e = 4,750 words/chapter
+- Act III: 3 events × 950 w/e = 2,850 words/chapter (-40%)
+- Climaxes felt rushed
+
+After Fix:
+- Act I: 5 events × 902 w/e = 4,510 words/chapter
+- Act III: 3 events × 1,282 w/e = 3,846 words/chapter (-15%)
+- Climaxes have appropriate emotional depth
+```
+
+**Integration Points:**
+1. **Chapter Generation** (`/generate chapters`): Uses depth calculator for event distribution and word targets
+2. **Word Count Assignment** (`/wordcount`): Recalculates targets based on actual event counts with act awareness
+3. **Prose Generation** (`/generate prose`): Reminds LLM about act-specific depth expectations in prompts
+
+**Forward-Looking Only:**
+- Affects new generations only (doesn't modify existing content)
+- Users can regenerate chapters to apply new calculations
+
 ## Data Flow
 
 ### Generation Flow

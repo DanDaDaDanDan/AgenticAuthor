@@ -919,6 +919,206 @@ Epic: 100,000+ words
 - **Thriller**: 120% chapter count for faster pacing
 - **Romance**: Standard pacing with emotional beats
 
+### Act-Aware Depth Architecture
+
+The system uses a sophisticated **act-aware depth architecture** that ensures climaxes have appropriate emotional weight and intensity. This addresses a critical issue where Act III chapters would feel rushed and underweight compared to setup chapters.
+
+#### The Problem
+
+With flat words-per-event calculations across all acts:
+- Act III has **fewer events** (focused conflict) but **same depth** per event as Act I
+- Result: Act III chapters are significantly **shorter** than Act I chapters
+- Impact: Climaxes feel rushed, lack emotional intensity, fail to meet reader expectations
+
+**Example (80K novel, flat calculation):**
+- Act I: 5 events × 950 w/e = 4,750 words/chapter
+- Act III: 3 events × 950 w/e = 2,850 words/chapter
+- **Act III is 40% SHORTER** than Act I - climaxes feel rushed!
+
+#### The Solution: Independent Complexity and Depth Axes
+
+The system treats **event count** (complexity) and **words per event** (depth) as **independent variables**:
+
+1. **Complexity Axis (Event Distribution)**
+   - Controlled by `ACT_EVENT_MULTIPLIERS`
+   - Act I: More events (setup, world-building, character intro)
+   - Act II: Standard events (rising action)
+   - Act III: Fewer events (focused conflict)
+
+2. **Depth Axis (Words Per Event)**
+   - Controlled by `ACT_WE_MULTIPLIERS`
+   - Act I: Slightly more efficient (many events to cover)
+   - Act II: Standard depth (baseline)
+   - Act III: Much deeper (emotional intensity, detail, pacing)
+
+**Formula:**
+```
+word_count_target = event_count × words_per_event
+                  = (avg_events × act_event_mult) × (base_we × act_we_mult)
+```
+
+#### Act Multipliers by Form
+
+**Novels (50,000-110,000 words):**
+```python
+ACT_EVENT_MULTIPLIERS = {
+    'act1': 1.3,   # More events for setup
+    'act2': 1.0,   # Standard events
+    'act3': 0.7    # Fewer events, focused climax
+}
+
+ACT_WE_MULTIPLIERS = {
+    'act1': 0.95,  # Efficient (many events to cover)
+    'act2': 1.00,  # Standard depth (baseline)
+    'act3': 1.35   # Much deeper (emotional intensity)
+}
+```
+
+**Epics (110,000-200,000 words):**
+```python
+ACT_EVENT_MULTIPLIERS = {
+    'act1': 1.4,   # Many events (complex world, multiple threads)
+    'act2': 1.0,   # Standard
+    'act3': 0.6    # Very focused climax
+}
+
+ACT_WE_MULTIPLIERS = {
+    'act1': 0.93,  # Very efficient (massive world-building)
+    'act2': 1.00,  # Standard
+    'act3': 1.40   # Very deep (multiple threads converging)
+}
+```
+
+**Novellas (20,000-50,000 words):**
+```python
+# Uniform distribution (no act variation)
+ACT_EVENT_MULTIPLIERS = {'act1': 1.0, 'act2': 1.0, 'act3': 1.0}
+ACT_WE_MULTIPLIERS = {'act1': 1.0, 'act2': 1.0, 'act3': 1.0}
+```
+
+#### Act Boundaries
+
+Chapters are assigned to acts based on their position in the story:
+
+**Standard Distribution (4+ chapters):**
+- Act I: First 25% of chapters (minimum 1 chapter)
+- Act II: Middle 50% of chapters
+- Act III: Final 25% of chapters (minimum 1 chapter)
+
+**Small Chapter Counts (≤3 chapters):**
+- 1 chapter: Act I only
+- 2 chapters: Act I, Act III (no Act II)
+- 3 chapters: Act I, Act II, Act III (one chapter each)
+
+This ensures proper act distribution even for short-form stories.
+
+#### Concrete Example: 80K Novel
+
+**Input Parameters:**
+- Target: 80,000 words
+- Form: Novel (auto-detected)
+- Pacing: Moderate (base_we = 950 words/event)
+- Chapters: 20
+
+**Calculations:**
+
+| Chapter | Act | Event Mult | Events | Depth Mult | W/E | Word Target |
+|---------|-----|------------|--------|------------|-----|-------------|
+| 1 | I | 1.3× | 5 | 0.95× | 902 | 4,510 |
+| 5 | I | 1.3× | 5 | 0.95× | 902 | 4,510 |
+| 10 | II | 1.0× | 4 | 1.00× | 950 | 3,800 |
+| 15 | II | 1.0× | 4 | 1.00× | 950 | 3,800 |
+| 18 | III | 0.7× | 3 | 1.35× | 1,282 | 3,846 |
+| 20 | III | 0.7× | 3 | 1.35× | 1,282 | 3,846 |
+
+**Results:**
+- Total: ~84,900 words (+6.1% vs target)
+- Act I avg: 4,510 words/chapter
+- Act II avg: 3,800 words/chapter
+- Act III avg: 3,846 words/chapter
+
+**Before Fix:**
+- Act III was 40% SHORTER than Act I (2,850 vs 4,750 words)
+- Climaxes felt rushed
+
+**After Fix:**
+- Act III is now comparable to Act I (3,846 vs 4,510 words, only 15% shorter)
+- Act III has appropriate emotional depth despite fewer events
+- Climaxes feel substantial and satisfying
+
+#### Net Effect on Chapter Length
+
+The combined effect of both multipliers:
+
+```
+Chapter length = events × we
+               = (avg × event_mult) × (base_we × we_mult)
+               = avg × base_we × (event_mult × we_mult)
+
+Act I:   avg × base_we × (1.3 × 0.95) = 1.235× → +23.5% vs Act II
+Act II:  avg × base_we × (1.0 × 1.0)  = 1.000× → baseline
+Act III: avg × base_we × (0.7 × 1.35) = 0.945× → -5.5% vs Act II
+```
+
+**Key Insight:** Act III is **slightly shorter overall** but **much more intense** per event. The reduced event count is compensated by increased depth, ensuring climaxes don't feel rushed.
+
+#### Integration with Generation Pipeline
+
+1. **Chapter Generation** (`/generate chapters`):
+   - Calculates act-aware event distribution across all chapters
+   - Each chapter gets events = avg_events × act_event_multiplier
+   - Each chapter gets word_target = events × act_words_per_event
+   - Prompt includes act context for LLM awareness
+
+2. **Word Count Assignment** (`/wordcount`):
+   - Recalculates word targets based on actual event counts
+   - Uses act-aware words_per_event for each chapter's act
+   - Shows act position in change log
+
+3. **Prose Generation** (`/generate prose`):
+   - Reminds LLM about act-specific depth expectations
+   - Act I: "Efficient setup"
+   - Act II: "Standard development"
+   - Act III: "DEEPER, more emotional intensity per event"
+
+#### Why Mathematical vs LLM?
+
+The system uses **deterministic mathematical formulas** instead of LLM-based word count assignment:
+
+**Benefits:**
+- **Deterministic**: Same input → same output (predictable)
+- **Free**: No API calls (cost-effective)
+- **Transparent**: Users can see and understand the formula
+- **Consistent**: No variation between runs
+- **Sufficient**: Act multipliers provide the key insight (climaxes need depth)
+
+**Trade-offs:**
+- Can't assess complexity beyond event count
+- No nuanced judgment of dramatic peaks
+
+**Decision:** Mathematical is sufficient for 90% of cases. LLM refinement could be added as optional enhancement if needed.
+
+#### Implementation
+
+The act-aware architecture is implemented in `src/generation/depth_calculator.py`:
+
+**Key Methods:**
+```python
+DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
+# Returns: 'act1', 'act2', or 'act3'
+
+DepthCalculator.get_act_words_per_event(form, pacing, act)
+# Returns: act-adjusted words per event (int)
+
+DepthCalculator.calculate_chapter_word_target(ch_num, total_chapters, event_count, form, pacing)
+# Returns: word_count_target for chapter (int)
+```
+
+**Forward-Looking Only:**
+- This architecture affects NEW generations only
+- Existing content is not modified
+- Users can regenerate chapters to apply new calculations
+
 ## Quality Control
 
 ### Validation Points

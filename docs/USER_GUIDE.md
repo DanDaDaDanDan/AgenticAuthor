@@ -677,52 +677,106 @@ Examples:
 - `/cull treatment` - Remove treatment, chapters, and prose
 
 #### `/wordcount`
-Intelligently assign word count targets to chapters based on content and book length.
+Intelligently recalculate word count targets for chapters using act-aware depth architecture.
 
 **What It Does:**
-- Analyzes each chapter's summary, key events, and complexity
-- Uses LLM to assign appropriate word count targets
-- Ensures total matches your desired book length (from taxonomy)
-- Considers narrative pacing (climax chapters longer, setup shorter)
+- Recalculates word targets based on actual event counts in each chapter
+- Uses **act-aware depth architecture** to ensure appropriate climax intensity
+- Applies mathematical formulas (no LLM calls - free and deterministic)
+- Considers three-act structure and narrative pacing automatically
 
 **Prerequisites:**
-- Must have chapters.yaml (run `/generate chapters` first)
-- Must have selected a model (`/model`)
+- Must have chapters.yaml with key_events (run `/generate chapters` first)
+- No model selection needed (uses pure mathematics)
 
-**How It Works:**
-1. Reads book length from taxonomy (flash fiction → epic)
-2. Analyzes each chapter's content and complexity
-3. Assigns proportional word counts based on:
-   - Chapter complexity (more events = more words)
-   - Narrative pacing (climax vs setup)
-   - Story structure (opening, middle, climax, resolution)
-4. Ensures total is within target range
-5. Updates chapters.yaml with new targets
-6. Auto-commits changes
+**How It Works - The Act-Aware Architecture:**
+
+AgenticAuthor uses a sophisticated system that treats **complexity** (event count) and **depth** (words per event) as independent variables:
+
+1. **Detects Story Form**: Automatically identifies form from your target word count or taxonomy
+   - Flash Fiction (300-1,500) → Novelette (7,500-20,000) → Novel (50,000-110,000) → Epic (110,000-200,000)
+
+2. **Applies Base Pacing**: Uses your pacing selection to set baseline depth
+   - Fast: 800 words/event (for action-heavy stories)
+   - Moderate: 950 words/event (balanced development)
+   - Slow: 1,200 words/event (deep exploration)
+
+3. **Adjusts by Act Position**: Applies act-specific multipliers for proper three-act pacing
+   - **Act I** (first 25% of chapters):
+     - More events (1.3×) - setup, world-building, character intro
+     - Slightly efficient depth (0.95×) - many events to cover
+   - **Act II** (middle 50% of chapters):
+     - Standard events (1.0×) - rising action
+     - Standard depth (1.0×) - baseline development
+   - **Act III** (final 25% of chapters):
+     - Fewer events (0.7×) - focused conflict
+     - **Much deeper** (1.35×) - emotional intensity, detail, pacing
+
+4. **Calculates Per Chapter**: For each chapter, word target = events × act_words_per_event
+   - Example (80K novel, moderate pacing):
+     - Chapter 1 (Act I): 5 events × 902 w/e = 4,510 words
+     - Chapter 10 (Act II): 4 events × 950 w/e = 3,800 words
+     - Chapter 18 (Act III): 3 events × 1,282 w/e = 3,846 words
+
+**Why This Architecture?**
+
+Traditional flat calculations made climaxes feel rushed:
+- Act III had fewer events (focused conflict)
+- But same depth per event as setup chapters
+- Result: Climaxes were 40% SHORTER than Act I - underweight!
+
+With act-aware depth:
+- Act III has fewer events BUT deeper development per event
+- Climaxes are slightly shorter overall (-5.5%) but much more intense
+- Reader expectations met - climaxes feel substantial
+
+**What You'll See:**
+```
+Calculating word counts (act-aware):
+  Form: Novel
+  Pacing: moderate
+  Base words/event: 950 (Act II baseline)
+  Act multipliers: Act I=0.95x, Act II=1.00x, Act III=1.35x
+
+  Chapter 1 (Act I): 5 events × 902 w/e = 4,510 words (was 4,000)
+  Chapter 10 (Act II): 4 events × 950 w/e = 3,800 words (was 3,500)
+  Chapter 18 (Act III): 3 events × 1,282 w/e = 3,846 words (was 2,500)
+
+Total: 84,900 words across 20 chapters
+```
 
 **Output:**
-- Shows before/after comparison for each chapter
-- Displays total target word count
-- Lists changes with deltas (+500, -200, etc.)
+- Shows form, pacing, and multipliers used
+- Lists each chapter with act position and calculation
+- Displays before/after comparison with deltas
+- Shows total target word count
+- Updates chapters.yaml automatically
+- Auto-commits changes
 
 **Examples:**
 ```bash
-/wordcount   # Analyze and assign word counts
+/wordcount   # Recalculate all chapter word targets
 ```
 
-**Word Count Ranges by Book Length:**
+**When to Use:**
+- After editing chapter outlines (adding/removing events)
+- When chapter word counts seem off
+- After changing pacing in taxonomy
+- To see act-aware calculation applied to your story
+
+**Mathematical vs LLM:**
+This command uses deterministic mathematical formulas instead of LLM analysis:
+- **Benefits**: Free (no API calls), consistent (same input = same output), transparent (see the math)
+- **Trade-offs**: Can't assess complexity beyond event count
+- **Result**: Fast, predictable, and sufficient for 90% of cases
+
+**Word Count Ranges by Story Form:**
 - Flash Fiction: 300-1,500 words
 - Short Story: 1,500-7,500 words
 - Novelette: 7,500-20,000 words
 - Novella: 20,000-50,000 words
 - Novel: 50,000-110,000 words
 - Epic: 110,000-200,000 words
-
-**Use Cases:**
-- After generating chapters, before writing prose
-- When chapter word counts are too uniform
-- When adjusting book length (shorter/longer)
-- To balance pacing across chapters
 
 ### Utility Commands
 

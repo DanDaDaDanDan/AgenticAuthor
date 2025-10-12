@@ -665,6 +665,7 @@ def _commit(self, message: str):
 
 - `src/generation/taxonomies.py` - Genre taxonomy system and premise analysis
 - `src/generation/premise.py` - Premise generation with auto-detection, taxonomy iteration
+- `src/generation/depth_calculator.py` - **Act-aware depth architecture** for word count calculation (mathematical, no LLM)
 - `src/generation/multi_model.py` - Multi-model competition coordinator with judging logic
 - `src/generation/iteration/` - Natural language feedback processing (coordinator, intent, diff, scale)
 - `src/generation/cull.py` - Content deletion manager with cascade (prose → chapters → treatment → premise)

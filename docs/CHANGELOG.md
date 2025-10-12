@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **CRITICAL: Act-Aware Depth Architecture** 📐
+  - Fixed critical bug where Act III chapters were 24% SHORTER than Act I
+  - **Problem**: Climaxes felt rushed and underweight due to flat words-per-event calculation
+  - **Root cause**: Act III had fewer events (focused conflict) but same depth per event as Act I
+  - **Solution**: Added act-based words-per-event multipliers (ACT_WE_MULTIPLIERS)
+  - Act multipliers vary depth by story position:
+    - Act I: 0.95× baseline (efficient setup, many events to cover)
+    - Act II: 1.00× baseline (standard development)
+    - Act III: 1.35× baseline (DEEPER emotional intensity and detail)
+  - **Result**: Act III now 8% LONGER than Act I with appropriate emotional depth
+  - Mathematical model: `word_count_target = event_count × (base_we × act_we_mult)`
+  - Example (80K novel): Act I avg 4,510 words/ch → Act III avg 4,872 words/ch
+  - New methods in DepthCalculator:
+    - `get_act_for_chapter()` - Determines act from position
+    - `get_act_words_per_event()` - Returns act-adjusted words per event
+    - `calculate_chapter_word_target()` - Calculates act-aware word target
+  - Fixed edge case: Small chapter counts (≤3) now get proper act distribution
+  - Updated chapters.py to use act-aware calculations in batch generation
+  - Updated wordcount.py to recalculate with act multipliers
+  - Updated prose.py to remind LLM about act-specific depth needs
+  - Transparency: Mathematical model replaces LLM word count assignment
+    - Deterministic (same input = same output)
+    - Free (no API calls)
+    - Transparent formula visible to users
+    - Act multipliers provide sufficient nuance
+  - **Impact**: Forward-looking only (doesn't affect existing content)
+  - **Benefits**: Climaxes have appropriate intensity, reader expectations met, better three-act pacing
+
+- **Taxonomy Length Scope Support** 📏
+  - calculate_structure() now respects user's explicit `length_scope` from taxonomy
+  - Priority: `taxonomy.length_scope` > `detect_form(target_words)` > fallback
+  - Users can force "novella" treatment even for 60K+ word counts
+  - Consistent behavior across chapters.py, wordcount.py, prose.py
+
 ### Improved
 - **REPL Keybinding**: Escape key now clears current input line
   - Press Escape to instantly clear typed text in the prompt

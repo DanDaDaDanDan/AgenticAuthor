@@ -215,8 +215,19 @@ class DepthCalculator:
         Returns:
             Act identifier ('act1', 'act2', 'act3')
         """
-        act_1_end = int(total_chapters * 0.25)
-        act_2_end = int(total_chapters * 0.75)
+        # For very small chapter counts, use simple distribution
+        if total_chapters <= 3:
+            if chapter_number == 1:
+                return 'act1'
+            elif chapter_number == total_chapters:
+                return 'act3'
+            else:
+                return 'act2'
+
+        # For larger counts, use percentage-based boundaries
+        # Ensure at least 1 chapter in Act I and Act III
+        act_1_end = max(1, int(total_chapters * 0.25))
+        act_2_end = min(total_chapters - 1, int(total_chapters * 0.75))
 
         if chapter_number <= act_1_end:
             return 'act1'
