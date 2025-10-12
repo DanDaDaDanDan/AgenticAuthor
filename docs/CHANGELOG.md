@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **JSON Markdown Fences in Streaming** 📺
+  - Fixed issue where JSON responses wrapped in \`\`\`json fences were visible during streaming
+  - **Problem**: Users saw ugly markdown code fences (\`\`\`json...\`\`\`) during premise generation
+  - **Root cause 1**: streaming.py displayed raw content with fences, cleanup happened AFTER streaming
+  - **Root cause 2**: No prompt instruction telling LLMs to avoid markdown formatting
+  - **Solution 1**: Real-time fence stripping in streaming.py during mode="full" (lines 270-291)
+  - **Solution 2**: Added explicit prompt instruction "Do NOT wrap in markdown code fences" in openrouter.py:464
+  - **Result**: Clean JSON display during streaming, dual protection (prompt + cleanup)
+  - Dual approach ensures clean display even if LLM ignores instructions
+
 - **CRITICAL: Act-Aware Depth Architecture** 📐
   - Fixed critical bug where Act III chapters were 24% SHORTER than Act I
   - **Problem**: Climaxes felt rushed and underweight due to flat words-per-event calculation
