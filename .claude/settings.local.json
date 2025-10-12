@@ -34,7 +34,8 @@
       "Bash(do wc:*)",
       "Bash(done)",
       "Bash(for:*)",
-      "Bash(paste -:*)"
+      "Bash(paste -:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []
