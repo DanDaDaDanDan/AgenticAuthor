@@ -479,53 +479,49 @@ class InteractiveSession:
             self.console.rule(f"[bold cyan]Iteration{target_info}[/bold cyan]", style="cyan")
             self._print()
 
-            # Process feedback with aggressive timeout
-            import asyncio
+            # Process feedback (no timeout - chapter generation can take 10+ minutes)
             try:
-                result = await asyncio.wait_for(
-                    coordinator.process_feedback(
-                        feedback=feedback,
-                        auto_commit=True,
-                        show_preview=False
-                    ),
-                    timeout=300.0  # 5 minute hard timeout
+                result = await coordinator.process_feedback(
+                    feedback=feedback,
+                    auto_commit=True,
+                    show_preview=False
                 )
-            except asyncio.TimeoutError:
-                self._print(f"\n[red]✗ Operation timed out after 5 minutes[/red]")
-                self._print(f"[yellow]This suggests an API issue - the server is not responding.[/yellow]")
-                self._print(f"[yellow]Check your network connection or try a different model.[/yellow]")
-                return
 
-            # Display results
-            if result['success']:
-                self._display_iteration_success(result)
+                # Display results
+                if result['success']:
+                    self._display_iteration_success(result)
 
-                # Commit changes BEFORE LOD sync (if there were any)
-                if result.get('changes'):
-                    intent = result.get('intent', {})
-                    scale = result.get('scale', 'patch')
+                    # Commit changes BEFORE LOD sync (if there were any)
+                    if result.get('changes'):
+                        intent = result.get('intent', {})
+                        scale = result.get('scale', 'patch')
 
-                    # Generate commit message
-                    action = intent.get('action', 'update').replace('_', ' ')
-                    target = intent.get('target_type', 'content')
-                    if intent.get('target_id'):
-                        target = f"{target} {intent['target_id']}"
+                        # Generate commit message
+                        action = intent.get('action', 'update').replace('_', ' ')
+                        target = intent.get('target_type', 'content')
+                        if intent.get('target_id'):
+                            target = f"{target} {intent['target_id']}"
 
-                    if scale == "patch":
-                        message = f"Iterate {target}: {action}"
-                    else:
-                        message = f"Regenerate {target}: {action}"
+                        if scale == "patch":
+                            message = f"Iterate {target}: {action}"
+                        else:
+                            message = f"Regenerate {target}: {action}"
 
-                    self._commit(message)
+                        self._commit(message)
 
-            elif result.get('needs_clarification'):
-                self._display_clarification_request(result)
-            else:
-                error_msg = result.get('error', 'Unknown error')
-                self._print(f"\n[red]✗ Error:[/red] {error_msg}")
-                # Log error to main log file for debugging
+                elif result.get('needs_clarification'):
+                    self._display_clarification_request(result)
+                else:
+                    error_msg = result.get('error', 'Unknown error')
+                    self._print(f"\n[red]✗ Error:[/red] {error_msg}")
+                    # Log error to main log file for debugging
+                    if self.session_logger:
+                        self.session_logger.log(f"Iteration error: {error_msg}", "ERROR")
+
+            except Exception as e:
+                self._print(f"\n[red]✗ Error processing feedback:[/red] {str(e)}")
                 if self.session_logger:
-                    self.session_logger.log(f"Iteration error: {error_msg}", "ERROR")
+                    self.session_logger.log_error(e, "Iteration failed")
 
         except Exception as e:
             self._print(f"\n[red]✗ Error processing feedback:[/red] {str(e)}")

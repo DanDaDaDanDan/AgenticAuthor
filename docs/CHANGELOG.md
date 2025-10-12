@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User can still override: `/generate chapters 95000`
 
 ### Fixed
+- **Removed 5-Minute Timeout on Generation** ⏱️
+  - Removed hard 5-minute timeout on feedback processing (chapter generation, iteration)
+  - **Problem**: Long operations like chapter generation (10-15 minutes) were timing out prematurely
+  - **Symptom**: "Operation timed out after 5 minutes" error during chapter generation
+  - **Root cause**: `asyncio.wait_for()` wrapper with 300-second limit in interactive.py:491
+  - **Solution**: Removed timeout wrapper - let operations run as long as needed
+  - **Why safe**: API client has proper timeouts (180s between chunks, catches real connection failures)
+  - **Impact**: Chapter generation can now complete without artificial time limits
+  - Note: sock_read timeout (180s between chunks) is still active as safety valve
+
 - **Taxonomy Loading and Form Detection** 🔧
   - Fixed schema mismatch where `Project.get_taxonomy()` looked for 'taxonomy' key but metadata uses 'selections'
   - **Problem**: Chapter generation ignored user's taxonomy length_scope selection (e.g., "novel"), falling back to word-count detection
