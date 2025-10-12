@@ -383,48 +383,68 @@ class Project:
 
     def get_target_words(self) -> Optional[int]:
         """
-        Extract target word count from premise metadata or treatment.
+        Get target word count using intelligent defaults based on taxonomy.
+
+        Priority:
+        1. Stored value in chapters.yaml metadata (from previous generation)
+        2. Calculate from taxonomy (length_scope + genre)
+        3. None (caller should handle)
 
         Returns:
-            Target word count or None if not found
+            Target word count or None if cannot be determined
         """
-        # Try premise metadata first
-        if self.premise_metadata_file.exists():
-            with open(self.premise_metadata_file) as f:
-                data = json.load(f)
-                # Check for target_word_count in taxonomy selections
-                taxonomy = data.get('taxonomy', {})
-                if isinstance(taxonomy, dict):
-                    length_scope = taxonomy.get('length_scope', {})
-                    if isinstance(length_scope, dict):
-                        word_range = length_scope.get('word_range', '')
-                        # Parse word range like "1,500-7,500"
-                        if word_range:
-                            parts = word_range.replace(',', '').split('-')
-                            if len(parts) == 2:
-                                try:
-                                    # Use midpoint of range
-                                    low = int(parts[0])
-                                    high = int(parts[1])
-                                    return (low + high) // 2
-                                except ValueError:
-                                    pass
-
-        # Try chapters.yaml metadata
+        # Try stored value in chapters.yaml first (most reliable)
         chapters_yaml = self.get_chapters_yaml()
-        if chapters_yaml:
+        if chapters_yaml and isinstance(chapters_yaml, dict):
             metadata = chapters_yaml.get('metadata', {})
             target = metadata.get('target_word_count')
             if target:
                 return int(target)
 
-        # Fallback: estimate from treatment length
-        treatment = self.get_treatment()
-        if treatment:
-            # Typical treatment is ~2-5% of final length
-            treatment_words = len(treatment.split())
-            return treatment_words * 20  # Rough 5% estimate
+        # Calculate from taxonomy if available
+        if self.premise_metadata_file.exists():
+            with open(self.premise_metadata_file) as f:
+                data = json.load(f)
 
+                # Get selections (taxonomy)
+                selections = data.get('selections', {})
+                if selections:
+                    # Extract length_scope
+                    length_scope = selections.get('length_scope')
+                    if isinstance(length_scope, list) and length_scope:
+                        length_scope = length_scope[0]
+
+                    # Extract genre (with fallback detection from taxonomy)
+                    genre = data.get('genre')
+                    if not genre and self.metadata:
+                        genre = self.metadata.genre
+
+                    # Infer genre from taxonomy selections if not explicitly set
+                    if not genre:
+                        # Check for genre-specific subgenre selections
+                        if 'fantasy_subgenre' in selections:
+                            genre = 'fantasy'
+                        elif 'mystery_subgenre' in selections:
+                            genre = 'mystery'
+                        elif 'romance_subgenre' in selections:
+                            genre = 'romance'
+                        elif 'scifi_subgenre' in selections:
+                            genre = 'science-fiction'
+                        elif 'horror_subgenre' in selections:
+                            genre = 'horror'
+                        elif 'literary_style' in selections:
+                            genre = 'literary-fiction'
+                        elif 'historical_period' in selections:
+                            genre = 'historical-fiction'
+                        else:
+                            genre = 'general'
+
+                    if length_scope:
+                        # Use DepthCalculator to get intelligent default
+                        from ..generation.depth_calculator import DepthCalculator
+                        return DepthCalculator.get_default_word_count(length_scope, genre)
+
+        # No information available
         return None
 
     def is_short_form(self) -> bool:

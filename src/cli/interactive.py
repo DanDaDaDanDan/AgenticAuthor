@@ -1931,7 +1931,7 @@ class InteractiveSession:
 
         # Parse options (chapter count or word count)
         chapter_count = None
-        total_words = 50000
+        total_words = None  # Let generator calculate smart default
 
         if options:
             parts = options.split()

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Intelligent Word Count Defaults** 📊
+  - Smart default word counts based on length_scope + genre
+  - **Problem**: Hardcoded 50K default was minimum for novels, not typical; no genre considerations
+  - **Solution**: Genre-aware defaults using form midpoints and industry-standard modifiers
+  - **Form defaults** (midpoints): novel=80K, novella=35K, epic=155K, short_story=4.5K
+  - **Genre modifiers**: fantasy/sci-fi +15%, mystery/horror/thriller -5 to -8%, YA -15%, literary +10%
+  - **Examples**:
+    - Mystery novel: 80K × 0.95 = 76,000 words
+    - Fantasy novel: 80K × 1.15 = 92,000 words
+    - YA novel: 80K × 0.85 = 68,000 words
+    - Epic fantasy: 155K × 1.15 = 178,250 words
+  - **Priority**: Stored value (chapters.yaml) > calculated from taxonomy > fallback
+  - **Genre inference**: Auto-detects from taxonomy subgenre selections if not explicitly set
+  - Removed unreliable "treatment × 20" estimation
+  - New method: `DepthCalculator.get_default_word_count(length_scope, genre)`
+  - Updated: chapters.py, interactive.py, project.py
+  - User can still override: `/generate chapters 95000`
+
 ### Fixed
 - **Taxonomy Loading and Form Detection** 🔧
   - Fixed schema mismatch where `Project.get_taxonomy()` looked for 'taxonomy' key but metadata uses 'selections'

@@ -35,7 +35,8 @@
       "Bash(done)",
       "Bash(for:*)",
       "Bash(paste -:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

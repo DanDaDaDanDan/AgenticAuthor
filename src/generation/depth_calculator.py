@@ -112,6 +112,77 @@ class DepthCalculator:
         }
     }
 
+    # Default word count targets by form (midpoints of ranges)
+    # These represent typical/recommended lengths for each form
+    FORM_DEFAULTS = {
+        'flash_fiction': 900,      # Midpoint of 300-1,500
+        'short_story': 4500,       # Midpoint of 1,500-7,500
+        'novelette': 13750,        # Midpoint of 7,500-20,000
+        'novella': 35000,          # Midpoint of 20,000-50,000
+        'novel': 80000,            # Midpoint of 50,000-110,000 (typical, not minimum)
+        'epic': 155000,            # Midpoint of 110,000-200,000
+        'series': 275000           # Midpoint of 200,000-500,000
+    }
+
+    # Genre modifiers (percentage adjustments to base word count)
+    # Based on publishing industry standards and genre expectations
+    GENRE_MODIFIERS = {
+        'fantasy': 1.15,              # +15% for worldbuilding
+        'science-fiction': 1.15,      # +15% for worldbuilding
+        'mystery': 0.95,              # -5% for tight pacing
+        'horror': 0.92,               # -8% for tension/pace
+        'romance': 1.00,              # baseline
+        'literary-fiction': 1.10,     # +10% for deeper prose
+        'historical-fiction': 1.08,   # +8% for period detail
+        'contemporary-fiction': 1.00, # baseline
+        'young-adult': 0.85,          # -15% (YA is shorter)
+        'urban-fantasy': 1.05,        # +5% (less worldbuilding than epic fantasy)
+        'romantasy': 1.12,            # +12% (romance + fantasy elements)
+        'thriller': 0.95,             # -5% for tight pacing
+        'general': 1.00               # baseline for unspecified genre
+    }
+
+    @classmethod
+    def get_default_word_count(cls, length_scope: str, genre: Optional[str] = None) -> int:
+        """
+        Calculate intelligent default word count based on length_scope and genre.
+
+        Uses form midpoints adjusted by genre-specific modifiers to provide
+        realistic targets aligned with publishing industry standards.
+
+        Args:
+            length_scope: Story form (novel, novella, epic, etc.)
+            genre: Optional genre for modifier (e.g., 'fantasy', 'mystery')
+
+        Returns:
+            Recommended word count target
+
+        Examples:
+            >>> get_default_word_count('novel', 'fantasy')
+            92000  # 80,000 × 1.15
+            >>> get_default_word_count('novel', 'mystery')
+            76000  # 80,000 × 0.95
+            >>> get_default_word_count('novella', None)
+            35000  # Baseline midpoint
+        """
+        # Get base word count for form
+        base = cls.FORM_DEFAULTS.get(length_scope, cls.FORM_DEFAULTS['novel'])
+
+        # Apply genre modifier if provided
+        if genre:
+            # Normalize genre (handle variations like 'mystery-thriller' → 'mystery')
+            genre_lower = genre.lower().replace('_', '-')
+            modifier = cls.GENRE_MODIFIERS.get(genre_lower, 1.0)
+
+            # Check partial matches (e.g., 'mystery-thriller' matches 'mystery')
+            if modifier == 1.0 and '-' in genre_lower:
+                base_genre = genre_lower.split('-')[0]
+                modifier = cls.GENRE_MODIFIERS.get(base_genre, 1.0)
+        else:
+            modifier = 1.0
+
+        return int(base * modifier)
+
     @classmethod
     def detect_form(cls, target_words: int) -> str:
         """

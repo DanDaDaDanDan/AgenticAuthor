@@ -993,7 +993,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
     async def generate(
         self,
         chapter_count: Optional[int] = None,
-        total_words: int = 50000,
+        total_words: Optional[int] = None,
         template: Optional[str] = None,
         feedback: Optional[str] = None
     ) -> List[ChapterOutline]:
@@ -1013,7 +1013,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
 
         Args:
             chapter_count: Number of chapters (auto-calculated if not provided)
-            total_words: Target total word count
+            total_words: Target total word count (auto-calculated if not provided)
             template: Optional custom template (currently unused in multi-phase)
             feedback: Optional user feedback to incorporate (for iteration)
 
@@ -1036,8 +1036,33 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             if 'treatment' not in context:
                 raise Exception("No treatment found. Generate treatment first with /generate treatment")
 
-            # Get taxonomy for pacing and length_scope
+            # Get taxonomy and genre for smart defaults
             taxonomy_data = self.project.get_taxonomy() or {}
+            premise_metadata = context.get('premise', {}).get('metadata', {})
+
+            # Extract genre (with fallback detection from taxonomy)
+            genre = premise_metadata.get('genre')
+            if not genre and self.project.metadata:
+                genre = self.project.metadata.genre
+
+            # Infer genre from taxonomy selections if not explicitly set
+            if not genre:
+                if 'fantasy_subgenre' in taxonomy_data:
+                    genre = 'fantasy'
+                elif 'mystery_subgenre' in taxonomy_data:
+                    genre = 'mystery'
+                elif 'romance_subgenre' in taxonomy_data:
+                    genre = 'romance'
+                elif 'scifi_subgenre' in taxonomy_data:
+                    genre = 'science-fiction'
+                elif 'horror_subgenre' in taxonomy_data:
+                    genre = 'horror'
+                elif 'literary_style' in taxonomy_data:
+                    genre = 'literary-fiction'
+                elif 'historical_period' in taxonomy_data:
+                    genre = 'historical-fiction'
+                else:
+                    genre = 'general'
 
             # Extract pacing (handle list format from taxonomy)
             pacing_value = taxonomy_data.get('pacing', 'moderate')
@@ -1052,6 +1077,30 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 length_scope = length_scope_value[0]
             else:
                 length_scope = length_scope_value if isinstance(length_scope_value, str) else None
+
+            # Calculate total_words if not provided
+            if total_words is None:
+                # Try stored value first (from previous generation)
+                chapters_yaml = self.project.get_chapters_yaml()
+                if chapters_yaml and isinstance(chapters_yaml, dict):
+                    metadata = chapters_yaml.get('metadata', {})
+                    stored_target = metadata.get('target_word_count')
+                    if stored_target:
+                        total_words = int(stored_target)
+                        if logger:
+                            logger.debug(f"Using stored target_word_count: {total_words}")
+
+                # Calculate intelligent default if no stored value
+                if total_words is None:
+                    if length_scope:
+                        total_words = DepthCalculator.get_default_word_count(length_scope, genre)
+                        if logger:
+                            logger.debug(f"Calculated default for {length_scope}/{genre}: {total_words} words")
+                    else:
+                        # Fallback: use 'novel' baseline
+                        total_words = DepthCalculator.get_default_word_count('novel', genre)
+                        if logger:
+                            logger.debug(f"Using fallback default for novel/{genre}: {total_words} words")
 
             # Calculate story structure (form, chapters, events, base_we)
             if not chapter_count:
@@ -1242,7 +1291,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
     async def generate_with_competition(
         self,
         chapter_count: Optional[int] = None,
-        total_words: int = 50000,
+        total_words: Optional[int] = None,
         template: Optional[str] = None,
         feedback: Optional[str] = None
     ) -> List[ChapterOutline]:
@@ -1251,7 +1300,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
 
         Args:
             chapter_count: Number of chapters (auto-calculated if not provided)
-            total_words: Target total word count
+            total_words: Target total word count (auto-calculated if not provided)
             template: Optional custom template
             feedback: Optional user feedback to incorporate (for iteration)
 
@@ -1259,6 +1308,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             List of winning ChapterOutline objects
         """
         from .multi_model import MultiModelGenerator
+        from ..utils.logging import get_logger
+        logger = get_logger()
 
         # Build context (premise + treatment for chapter generation)
         context = self.context_builder.build_context(
@@ -1272,6 +1323,65 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
         if 'treatment' not in context:
             raise Exception("No treatment found. Generate treatment first with /generate treatment")
 
+        # Get taxonomy and genre for smart defaults
+        taxonomy_data = self.project.get_taxonomy() or {}
+        premise_metadata = context.get('premise', {}).get('metadata', {})
+
+        # Extract genre (with fallback detection from taxonomy)
+        genre = premise_metadata.get('genre')
+        if not genre and self.project.metadata:
+            genre = self.project.metadata.genre
+
+        # Infer genre from taxonomy selections if not explicitly set
+        if not genre:
+            if 'fantasy_subgenre' in taxonomy_data:
+                genre = 'fantasy'
+            elif 'mystery_subgenre' in taxonomy_data:
+                genre = 'mystery'
+            elif 'romance_subgenre' in taxonomy_data:
+                genre = 'romance'
+            elif 'scifi_subgenre' in taxonomy_data:
+                genre = 'science-fiction'
+            elif 'horror_subgenre' in taxonomy_data:
+                genre = 'horror'
+            elif 'literary_style' in taxonomy_data:
+                genre = 'literary-fiction'
+            elif 'historical_period' in taxonomy_data:
+                genre = 'historical-fiction'
+            else:
+                genre = 'general'
+
+        # Extract length_scope (handle list format from taxonomy)
+        length_scope_value = taxonomy_data.get('length_scope')
+        if isinstance(length_scope_value, list) and length_scope_value:
+            length_scope = length_scope_value[0]
+        else:
+            length_scope = length_scope_value if isinstance(length_scope_value, str) else None
+
+        # Calculate total_words if not provided (same logic as generate())
+        if total_words is None:
+            # Try stored value first
+            chapters_yaml = self.project.get_chapters_yaml()
+            if chapters_yaml and isinstance(chapters_yaml, dict):
+                metadata = chapters_yaml.get('metadata', {})
+                stored_target = metadata.get('target_word_count')
+                if stored_target:
+                    total_words = int(stored_target)
+                    if logger:
+                        logger.debug(f"Using stored target_word_count: {total_words}")
+
+            # Calculate intelligent default if no stored value
+            if total_words is None:
+                if length_scope:
+                    total_words = DepthCalculator.get_default_word_count(length_scope, genre)
+                    if logger:
+                        logger.debug(f"Calculated default for {length_scope}/{genre}: {total_words} words")
+                else:
+                    # Fallback: use 'novel' baseline
+                    total_words = DepthCalculator.get_default_word_count('novel', genre)
+                    if logger:
+                        logger.debug(f"Using fallback default for novel/{genre}: {total_words} words")
+
         # Calculate chapter count if not provided
         if not chapter_count:
             chapter_count = self._calculate_chapter_count(total_words)
@@ -1283,10 +1393,6 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
         feedback_instruction = ""
         if feedback:
             feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nPlease incorporate the above feedback while generating the chapters."
-
-        # Use same prompt as normal generate() - self-contained format
-        # Get taxonomy from premise_metadata if available
-        taxonomy_data = self.project.get_taxonomy() or {}
 
         prompt = f"""Generate a comprehensive, self-contained chapter structure for a book.
 
