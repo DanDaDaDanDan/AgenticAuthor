@@ -1038,8 +1038,20 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
 
             # Get taxonomy for pacing and length_scope
             taxonomy_data = self.project.get_taxonomy() or {}
-            pacing = taxonomy_data.get('pacing', 'moderate')
-            length_scope = taxonomy_data.get('length_scope')  # May be None
+
+            # Extract pacing (handle list format from taxonomy)
+            pacing_value = taxonomy_data.get('pacing', 'moderate')
+            if isinstance(pacing_value, list) and pacing_value:
+                pacing = pacing_value[0]
+            else:
+                pacing = pacing_value if isinstance(pacing_value, str) else 'moderate'
+
+            # Extract length_scope (handle list format from taxonomy)
+            length_scope_value = taxonomy_data.get('length_scope')
+            if isinstance(length_scope_value, list) and length_scope_value:
+                length_scope = length_scope_value[0]
+            else:
+                length_scope = length_scope_value if isinstance(length_scope_value, str) else None
 
             # Calculate story structure (form, chapters, events, base_we)
             if not chapter_count:

@@ -82,7 +82,13 @@ class WordCountAssigner:
 
         # Get length_scope from taxonomy if available
         taxonomy = self.project.get_taxonomy() or {}
-        length_scope = taxonomy.get('length_scope')
+        length_scope_value = taxonomy.get('length_scope')
+
+        # Extract length_scope (handle list format from taxonomy)
+        if isinstance(length_scope_value, list) and length_scope_value:
+            length_scope = length_scope_value[0]
+        else:
+            length_scope = length_scope_value if isinstance(length_scope_value, str) else None
 
         # Calculate structure (respects length_scope if provided)
         structure = DepthCalculator.calculate_structure(
