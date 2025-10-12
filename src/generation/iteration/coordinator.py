@@ -491,21 +491,50 @@ You are modifying a short-form story. The premise and treatment provide the stor
 
     async def _execute_regenerate(self, intent: Dict[str, Any]) -> list:
         """Execute full regeneration."""
+        from ...utils.logging import get_logger
+        logger = get_logger()
+
         changes = []
 
         target_type = intent['target_type']
 
+        if logger:
+            logger.info(f"=== COORDINATOR: _execute_regenerate START ===")
+            logger.info(f"Target type: {target_type}")
+            logger.info(f"Intent: {intent}")
+
         # Import generators as needed
         if target_type == 'premise':
+            if logger:
+                logger.info("COORDINATOR: Premise iteration - importing PremiseGenerator")
+
             from ..premise import PremiseGenerator
             generator = PremiseGenerator(self.client, self.project, self.model)
 
             # Extract feedback from intent
             feedback = intent.get('original_feedback', '')
 
+            if logger:
+                logger.info(f"COORDINATOR: Extracted feedback: '{feedback}'")
+                logger.info(f"COORDINATOR: Calling generator.iterate()...")
+
             # Use iterate() method which is designed for premise iteration
             # This loads current premise and applies feedback, unlike generate() which creates new premise
-            result = await generator.iterate(feedback)
+            try:
+                result = await generator.iterate(feedback)
+
+                if logger:
+                    logger.info(f"COORDINATOR: generator.iterate() returned successfully")
+                    logger.debug(f"COORDINATOR: Result type: {type(result)}")
+                    if result:
+                        logger.debug(f"COORDINATOR: Result has {len(result)} fields")
+                        logger.debug(f"COORDINATOR: Result keys: {list(result.keys()) if isinstance(result, dict) else 'NOT A DICT'}")
+            except Exception as e:
+                if logger:
+                    logger.error(f"COORDINATOR: Exception in generator.iterate(): {type(e).__name__}: {e}")
+                    import traceback
+                    logger.error(f"COORDINATOR: Traceback: {traceback.format_exc()}")
+                raise
 
             # premise.iterate() already saves to project, just extract info for changes
             changes.append({
@@ -514,6 +543,10 @@ You are modifying a short-form story. The premise and treatment provide the stor
                 'file': 'premise_metadata.json',
                 'word_count': len(result.get('premise', '').split())
             })
+
+            if logger:
+                logger.info(f"COORDINATOR: Added change info to changes list")
+                logger.info(f"COORDINATOR: Word count: {len(result.get('premise', '').split())}")
 
         elif target_type == 'treatment':
             from ..treatment import TreatmentGenerator

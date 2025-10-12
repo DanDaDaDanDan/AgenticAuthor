@@ -194,12 +194,46 @@ class Project:
 
         Writes only to premise_metadata.json. Does NOT write premise.md.
         """
-        with open(self.premise_metadata_file, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2)
+        from ..utils.logging import get_logger
+        logger = get_logger()
 
-        if self.metadata:
-            self.metadata.update_timestamp()
-            self.save_metadata()
+        if logger:
+            logger.info(f"=== PROJECT: save_premise_metadata START ===")
+            logger.info(f"PROJECT: Writing to: {self.premise_metadata_file}")
+            logger.debug(f"PROJECT: Metadata keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'NOT A DICT'}")
+            if isinstance(metadata, dict) and 'premise' in metadata:
+                logger.debug(f"PROJECT: Premise length: {len(metadata['premise'])} chars")
+                logger.debug(f"PROJECT: Premise preview: {metadata['premise'][:100]}...")
+
+        try:
+            with open(self.premise_metadata_file, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, indent=2)
+
+            if logger:
+                logger.info(f"PROJECT: Successfully wrote premise_metadata.json")
+
+            if self.metadata:
+                self.metadata.update_timestamp()
+                self.save_metadata()
+
+                if logger:
+                    logger.info(f"PROJECT: Updated project metadata timestamp")
+
+        except Exception as e:
+            if logger:
+                logger.error(f"PROJECT: Exception while saving: {type(e).__name__}: {e}")
+                import traceback
+                logger.error(f"PROJECT: Traceback: {traceback.format_exc()}")
+            raise
+
+        if logger:
+            logger.info(f"=== PROJECT: save_premise_metadata END ===")
+            # Verify file was written
+            if self.premise_metadata_file.exists():
+                file_size = self.premise_metadata_file.stat().st_size
+                logger.info(f"PROJECT: File verified on disk: {file_size} bytes")
+            else:
+                logger.error(f"PROJECT: FILE NOT FOUND after write - this is a BUG!")
 
     def get_treatment(self) -> Optional[str]:
         """Load treatment content."""

@@ -484,10 +484,20 @@ Return JSON with only the selections:
         Returns:
             Updated premise dict
         """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.info(f"=== PREMISE ITERATION START ===")
+            logger.info(f"Feedback: {feedback}")
+
         # Load current premise
         current_premise = self.project.get_premise()
         if not current_premise:
             raise Exception("No premise found to iterate on")
+
+        if logger:
+            logger.debug(f"Current premise loaded: {len(current_premise)} chars")
 
         # Load metadata if exists
         metadata_path = self.project.path / "premise_metadata.json"
@@ -495,6 +505,9 @@ Return JSON with only the selections:
         if metadata_path.exists():
             with open(metadata_path, 'r') as f:
                 current_metadata = json.load(f)
+            if logger:
+                logger.debug(f"Loaded metadata with {len(current_metadata)} fields")
+                logger.debug(f"Metadata keys: {list(current_metadata.keys())}")
 
         # Create iteration prompt
         prompt = f"""Current premise:
@@ -531,22 +544,68 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
             settings = get_settings()
             model = settings.active_model
 
-        result = await self.client.json_completion(
-            model=model,
-            prompt=prompt,
-            temperature=0.5,  # Lower temp for controlled iteration
-            display_field="premise",
-            display_label="Revising premise",
-            # No max_tokens - let it use full available context
-            min_response_tokens=1200  # Premises + full taxonomy selections need substantial space
-        )
+        if logger:
+            logger.info(f"Using model: {model}")
+            logger.debug(f"Prompt length: {len(prompt)} chars")
+            logger.debug(f"Temperature: 0.5, min_response_tokens: 1200")
+
+        try:
+            if logger:
+                logger.info("Calling json_completion for premise iteration...")
+
+            result = await self.client.json_completion(
+                model=model,
+                prompt=prompt,
+                temperature=0.5,  # Lower temp for controlled iteration
+                display_field="premise",
+                display_label="Revising premise",
+                # No max_tokens - let it use full available context
+                min_response_tokens=1200  # Premises + full taxonomy selections need substantial space
+            )
+
+            if logger:
+                logger.info("json_completion returned successfully")
+                logger.debug(f"Result type: {type(result)}")
+                if result:
+                    logger.debug(f"Result keys: {list(result.keys()) if isinstance(result, dict) else 'NOT A DICT'}")
+                    if isinstance(result, dict) and 'premise' in result:
+                        logger.debug(f"New premise length: {len(result['premise'])} chars")
+                        logger.debug(f"New premise preview: {result['premise'][:100]}...")
+                else:
+                    logger.error("Result is None or empty!")
+
+        except Exception as e:
+            if logger:
+                logger.error(f"Exception during json_completion: {type(e).__name__}: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
 
         # Save updated premise
         if result and 'premise' in result:
-            self.project.save_premise_metadata(result)
+            if logger:
+                logger.info("Saving updated premise metadata...")
+
+            try:
+                self.project.save_premise_metadata(result)
+                if logger:
+                    logger.info("Successfully saved premise metadata")
+            except Exception as e:
+                if logger:
+                    logger.error(f"Failed to save premise metadata: {type(e).__name__}: {e}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
+                raise
 
             # Git commit (if git manager available)
             # Note: Git integration would be handled by the CLI layer
+        else:
+            if logger:
+                logger.error("Result missing 'premise' field - cannot save")
+                logger.error(f"Result content: {result}")
+
+        if logger:
+            logger.info("=== PREMISE ITERATION END ===")
 
         return result
 
