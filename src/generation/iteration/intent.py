@@ -128,13 +128,30 @@ class IntentAnalyzer:
         Raises:
             ValueError: If feedback is empty or intent cannot be parsed
         """
+        from ...utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.info("=== INTENT ANALYZER: analyze START ===")
+            logger.info(f"Feedback: {feedback}")
+            logger.info(f"Model: {self.model}")
+
         if not feedback or not feedback.strip():
             raise ValueError("Feedback cannot be empty")
 
         # Build context
+        if logger:
+            logger.info("INTENT: Building project context...")
+
         project_context = self._build_project_context(project)
 
+        if logger:
+            logger.debug(f"INTENT: Project context: {project_context}")
+
         # Render prompt
+        if logger:
+            logger.info("INTENT: Rendering prompt template...")
+
         template = Template(INTENT_ANALYSIS_TEMPLATE)
         prompt = template.render(
             project_name=project.name,
@@ -148,6 +165,9 @@ class IntentAnalyzer:
             feedback=feedback
         )
 
+        if logger:
+            logger.debug(f"INTENT: Prompt length: {len(prompt)} chars")
+
         # Call LLM for intent analysis
         messages = [
             {"role": "system", "content": "You are an expert at analyzing user intent. Always respond with valid JSON only."},
@@ -155,6 +175,9 @@ class IntentAnalyzer:
         ]
 
         try:
+            if logger:
+                logger.info("INTENT: Calling streaming_completion API...")
+
             response = await self.client.streaming_completion(
                 model=self.model,
                 messages=messages,
@@ -165,16 +188,39 @@ class IntentAnalyzer:
                 max_tokens=500
             )
 
+            if logger:
+                logger.info("INTENT: API call returned successfully")
+                logger.debug(f"INTENT: Response type: {type(response)}")
+
             content = response.get('content', '').strip()
 
+            if logger:
+                logger.debug(f"INTENT: Content length: {len(content)} chars")
+                logger.debug(f"INTENT: Content preview: {content[:200]}")
+
             # Try to extract JSON from response
+            if logger:
+                logger.info("INTENT: Parsing JSON response...")
+
             intent = self._parse_json_response(content)
 
+            if logger:
+                logger.info("INTENT: JSON parsed successfully")
+                logger.debug(f"INTENT: Intent keys: {list(intent.keys())}")
+
             # Validate intent structure
+            if logger:
+                logger.info("INTENT: Validating intent structure...")
+
             self._validate_intent(intent)
+
+            if logger:
+                logger.info("INTENT: Validation passed")
 
             # Post-processing: map chapter references to prose for short stories
             if project.is_short_form() and intent['target_type'] in ['chapter', 'chapters']:
+                if logger:
+                    logger.info("INTENT: Short-form project, mapping chapter -> prose")
                 # Short stories don't have chapters, map to prose
                 intent['target_type'] = 'prose'
                 # Clear chapter-specific target_id if present
@@ -184,9 +230,18 @@ class IntentAnalyzer:
             # Add original feedback
             intent['original_feedback'] = feedback
 
+            if logger:
+                logger.info(f"INTENT: Final intent type={intent['intent_type']}, target={intent['target_type']}, confidence={intent['confidence']}")
+                logger.info("=== INTENT ANALYZER: analyze END (SUCCESS) ===")
+
             return intent
 
         except Exception as e:
+            if logger:
+                logger.error(f"INTENT: Exception during analysis: {type(e).__name__}: {e}")
+                import traceback
+                logger.error(f"INTENT: Traceback: {traceback.format_exc()}")
+                logger.info("=== INTENT ANALYZER: analyze END (ERROR) ===")
             raise ValueError(f"Failed to analyze intent: {str(e)}")
 
     def _build_project_context(self, project: Project) -> Dict[str, Any]:

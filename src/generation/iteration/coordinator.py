@@ -70,6 +70,16 @@ class IterationCoordinator:
         Raises:
             ValueError: If feedback is invalid or cannot be processed
         """
+        from ...utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.info("="*60)
+            logger.info("=== COORDINATOR: process_feedback START ===")
+            logger.info(f"Feedback: {feedback}")
+            logger.info(f"Model: {self.model}")
+            logger.info(f"Default target: {self.default_target}")
+
         result = {
             'success': False,
             'feedback': feedback,
@@ -82,63 +92,146 @@ class IterationCoordinator:
 
         try:
             # Step 1: Analyze intent
+            if logger:
+                logger.info("COORDINATOR: Step 1 - Analyzing intent...")
+
             intent = await self.intent_analyzer.analyze(feedback, self.project)
             result['intent'] = intent
 
+            if logger:
+                logger.info(f"COORDINATOR: Intent analysis complete")
+                logger.info(f"  - Intent type: {intent.get('intent_type')}")
+                logger.info(f"  - Target type: {intent.get('target_type')}")
+                logger.info(f"  - Confidence: {intent.get('confidence')}")
+                logger.debug(f"  - Full intent: {intent}")
+
             # Step 2: Check confidence
+            if logger:
+                logger.info("COORDINATOR: Step 2 - Checking confidence...")
+
             if intent['confidence'] < 0.8:
+                if logger:
+                    logger.info(f"COORDINATOR: Low confidence ({intent['confidence']}), requesting clarification")
                 return self._request_clarification(intent, result)
 
+            if logger:
+                logger.info(f"COORDINATOR: Confidence OK ({intent['confidence']})")
+
             # Step 3: Handle non-iteration intents
+            if logger:
+                logger.info("COORDINATOR: Step 3 - Checking intent type...")
+
             if intent['intent_type'] == 'analyze':
+                if logger:
+                    logger.info("COORDINATOR: Intent is 'analyze', not yet implemented")
                 result['error'] = "Analysis system not yet implemented. Use /analyze command."
                 return result
 
             if intent['intent_type'] == 'clarify':
+                if logger:
+                    logger.info("COORDINATOR: Intent is 'clarify', requesting clarification")
                 return self._request_clarification(intent, result)
 
+            if logger:
+                logger.info(f"COORDINATOR: Intent type is '{intent['intent_type']}', proceeding")
+
             # Step 4: Detect scale
+            if logger:
+                logger.info("COORDINATOR: Step 4 - Detecting scale...")
+
             scale = await self._determine_scale(intent)
             result['scale'] = scale
 
+            if logger:
+                logger.info(f"COORDINATOR: Scale detected: {scale}")
+
             # Step 5: Execute based on scale
+            if logger:
+                logger.info(f"COORDINATOR: Step 5 - Executing {scale}...")
+
             if scale == "patch":
+                if logger:
+                    logger.info("COORDINATOR: Calling _execute_patch...")
                 changes = await self._execute_patch(intent, show_preview)
             else:
+                if logger:
+                    logger.info("COORDINATOR: Calling _execute_regenerate...")
                 changes = await self._execute_regenerate(intent)
+
+            if logger:
+                logger.info(f"COORDINATOR: Execution complete, {len(changes)} changes")
 
             result['changes'] = changes
             result['success'] = True
 
+            if logger:
+                logger.info("=== COORDINATOR: process_feedback END (SUCCESS) ===")
+                logger.info("="*60)
+
             return result
 
         except Exception as e:
+            if logger:
+                logger.error(f"COORDINATOR: Exception in process_feedback: {type(e).__name__}: {e}")
+                import traceback
+                logger.error(f"COORDINATOR: Traceback: {traceback.format_exc()}")
+                logger.info("=== COORDINATOR: process_feedback END (ERROR) ===")
+                logger.info("="*60)
             result['error'] = str(e)
             result['success'] = False
             return result
 
     async def _determine_scale(self, intent: Dict[str, Any]) -> str:
         """Determine if change should be patch or regenerate."""
+        from ...utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.info("COORDINATOR: _determine_scale called")
+            logger.info(f"  - Target type: {intent.get('target_type')}")
+
         # CRITICAL: Premise should ALWAYS be regenerated, never patched
         # Premise is too short and fundamental to use patch approach
         if intent.get('target_type') == 'premise':
+            if logger:
+                logger.info("COORDINATOR: Target is premise, returning 'regenerate'")
             return "regenerate"
 
         # First, try heuristic detection
+        if logger:
+            logger.info("COORDINATOR: Calling scale_detector.detect_scale (heuristic)...")
+
         scale = self.scale_detector.detect_scale(intent)
+
+        if logger:
+            logger.info(f"COORDINATOR: Heuristic scale: {scale}")
 
         # If unclear and we have content, ask the model
         if scale == "ask_model":
+            if logger:
+                logger.info("COORDINATOR: Scale unclear, getting target content...")
+
             content, content_type = self._get_target_content(intent)
 
             if content:
+                if logger:
+                    logger.info(f"COORDINATOR: Content found ({len(content)} chars), asking model for scale...")
+
                 scale_data = await self.scale_detector.ask_model_for_scale(
                     intent, content, content_type
                 )
                 scale = scale_data['scale']
+
+                if logger:
+                    logger.info(f"COORDINATOR: Model returned scale: {scale}")
             else:
                 # No content available, default to regenerate
+                if logger:
+                    logger.info("COORDINATOR: No content found, defaulting to 'regenerate'")
                 scale = "regenerate"
+
+        if logger:
+            logger.info(f"COORDINATOR: _determine_scale returning: {scale}")
 
         return scale
 
