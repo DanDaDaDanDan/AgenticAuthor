@@ -487,6 +487,8 @@ Return JSON with only the selections:
         from ..utils.logging import get_logger
         logger = get_logger()
 
+        print(f"\n[DEBUG] premise.iterate() CALLED - feedback: {feedback}")
+
         if logger:
             logger.info(f"=== PREMISE ITERATION START ===")
             logger.info(f"Feedback: {feedback}")
@@ -553,6 +555,8 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
             if logger:
                 logger.info("Calling json_completion for premise iteration...")
 
+            print(f"[DEBUG] About to call json_completion with model={model}, temp=0.5")
+
             result = await self.client.json_completion(
                 model=model,
                 prompt=prompt,
@@ -562,6 +566,8 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
                 # No max_tokens - let it use full available context
                 min_response_tokens=1200  # Premises + full taxonomy selections need substantial space
             )
+
+            print(f"[DEBUG] json_completion RETURNED - result type: {type(result)}")
 
             if logger:
                 logger.info("json_completion returned successfully")

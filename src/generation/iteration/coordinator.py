@@ -518,10 +518,14 @@ You are modifying a short-form story. The premise and treatment provide the stor
                 logger.info(f"COORDINATOR: Extracted feedback: '{feedback}'")
                 logger.info(f"COORDINATOR: Calling generator.iterate()...")
 
+            print(f"\n[DEBUG] coordinator: About to call generator.iterate('{feedback}')")
+
             # Use iterate() method which is designed for premise iteration
             # This loads current premise and applies feedback, unlike generate() which creates new premise
             try:
                 result = await generator.iterate(feedback)
+
+                print(f"[DEBUG] coordinator: generator.iterate() RETURNED")
 
                 if logger:
                     logger.info(f"COORDINATOR: generator.iterate() returned successfully")
