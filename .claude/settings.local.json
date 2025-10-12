@@ -29,7 +29,12 @@
       "Bash(find:*)",
       "Read(//Users/vogel/**)",
       "Bash(git -C ./books show 04d3e64:steampunk-moon/chapters.yaml)",
-      "Read(//private/tmp/**)"
+      "Read(//private/tmp/**)",
+      "Bash(for i in {01..11})",
+      "Bash(do wc:*)",
+      "Bash(done)",
+      "Bash(for:*)",
+      "Bash(paste -:*)"
     ],
     "deny": [],
     "ask": []
