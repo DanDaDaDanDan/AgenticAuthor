@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL: Premise Iteration Detection** 🔧
+  - Fixed intent analyzer incorrectly categorizing premise changes as "project" changes
+  - **Problem**: User changes like "change Maya Chen to Maya Trent" appeared successful but didn't actually update premise_metadata.json
+  - **Root cause**: Intent analyzer checked for `premise.md` (old format) instead of `premise_metadata.json` (new format introduced in v0.3.0)
+  - **Symptom**: Intent analyzer thought no premise existed (`has_premise: False`), so it marked character renames as project-level changes
+  - **Result**: Coordinator called `_execute_patch()` with `target_type='project'`, which doesn't handle premise updates
+  - **Solution**: Changed line 253 in `intent.py` from `project.premise_file.exists()` to `project.premise_metadata_file.exists() or project.premise_file.exists()`
+  - **Impact**: Premise iteration now works correctly - character names, protagonist changes, and all other premise modifications are properly detected and applied
+  - Added comprehensive logging throughout iteration flow for future debugging
+  - Backward compatible: Still checks `premise.md` as fallback for old projects
+
 - **JSON Markdown Fences in Streaming** 📺
   - Fixed issue where JSON responses wrapped in \`\`\`json fences were visible during streaming
   - **Problem**: Users saw ugly markdown code fences (\`\`\`json...\`\`\`) during premise generation
