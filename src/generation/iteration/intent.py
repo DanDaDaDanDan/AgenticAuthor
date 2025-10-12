@@ -249,7 +249,8 @@ class IntentAnalyzer:
         context = {
             'genre': project.metadata.genre if project.metadata else 'unknown',
             'status': project.metadata.status if project.metadata else 'draft',
-            'has_premise': project.premise_file.exists(),
+            # Check premise_metadata.json (new format), fallback to premise.md (old format)
+            'has_premise': project.premise_metadata_file.exists() or project.premise_file.exists(),
             'has_treatment': project.treatment_file.exists(),
             'chapter_count': 0,
             'prose_chapters': 0
