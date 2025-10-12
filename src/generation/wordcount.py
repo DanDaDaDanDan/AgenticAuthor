@@ -213,17 +213,18 @@ RULES:
 - The TOTAL across all chapters should be close to {target_midpoint:,} words
 - Be specific and intentional with your assignments
 
-OUTPUT FORMAT (JSON only, no explanation):
+OUTPUT FORMAT (valid JSON only, no explanation):
 {{
   "word_counts": {{
-    1: 3000,
-    2: 2500,
-    3: 4000,
-    ...
+    "1": 3000,
+    "2": 2500,
+    "3": 4000
   }},
   "total": 45000,
   "reasoning": "Brief explanation of your distribution strategy"
-}}"""
+}}
+
+IMPORTANT: Keys must be quoted strings. Do not include ellipsis (...) in the actual output."""
 
         return prompt
 
