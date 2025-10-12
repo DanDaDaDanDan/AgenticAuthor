@@ -13,6 +13,7 @@ from ..utils.tokens import estimate_tokens
 from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .lod_parser import LODResponseParser
+from .depth_calculator import DepthCalculator
 
 
 class ProseGenerator:
@@ -244,6 +245,25 @@ class ProseGenerator:
 
         # Build prose generation prompt
         word_count_target = current_chapter.get('word_count_target', 3000)
+        key_events = current_chapter.get('key_events', [])
+        num_events = len(key_events)
+
+        # Get form and pacing from metadata for depth guidance
+        pacing = metadata.get('pacing', 'moderate')
+        target_word_count = metadata.get('target_word_count', 50000)
+        form = DepthCalculator.detect_form(target_word_count)
+        base_we = DepthCalculator.get_base_words_per_event(form, pacing)
+
+        # Calculate scene depth guidance
+        depth_guidance = DepthCalculator.get_scene_depth_guidance(
+            num_events, word_count_target, form, pacing
+        )
+
+        avg_we = depth_guidance['avg_we']
+        setup_range = depth_guidance['setup_range']
+        standard_range = depth_guidance['standard_range']
+        climax_range = depth_guidance['climax_range']
+        example_dist = depth_guidance['distribution_example']
 
         prompt = f"""Generate full prose for a chapter using this self-contained story context.
 
@@ -254,10 +274,40 @@ STORY CONTEXT (chapters.yaml):
 {prev_summary}
 
 TASK:
-Generate ~{word_count_target} words of polished narrative prose for:
+Generate {word_count_target:,} words of polished narrative prose for:
 - Chapter {chapter_number}: "{current_chapter['title']}"
 - POV: {current_chapter.get('pov', 'N/A')}
 - Act: {current_chapter.get('act', 'N/A')}
+
+SCENE DEVELOPMENT (CRITICAL):
+You have {num_events} key events to cover in {word_count_target:,} words.
+This means AVERAGE of ~{avg_we} words per event.
+
+Vary depth based on dramatic importance:
+
+• Setup/transition scenes ({setup_range[0]}-{setup_range[1]} words):
+  - Quick establishment of new information
+  - Efficient scene-setting and transitions
+  - Move story forward without dwelling
+
+• Standard dramatic scenes ({standard_range[0]}-{standard_range[1]} words):
+  - Full development: dialogue with character reactions
+  - Show internal thoughts and emotional processing
+  - Include sensory details and atmosphere
+  - Build tension and pacing naturally
+  - Let dialogue breathe
+
+• Climactic/peak scenes ({climax_range[0]}-{climax_range[1]}+ words):
+  - Deep character work and emotional depth
+  - Immersive sensory detail
+  - Let crucial moments land before moving on
+  - Allow tension to build fully
+  - Give weight to major revelations/conflicts
+
+{example_dist}
+
+Identify which events are dramatic peaks and give them space to breathe.
+Don't rush through important moments. Each scene should feel complete.
 
 GUIDELINES:
 1. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
@@ -265,15 +315,15 @@ GUIDELINES:
 3. Use world-building details (locations, systems, atmosphere) to ground the scene
 4. Follow the chapter outline's key events, character developments, relationship beats
 5. Perfect continuity from previous chapters (if any)
-6. Target: ~{word_count_target} words
-7. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
+6. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
+7. TARGET: {word_count_target:,} words total = {num_events} events × ~{avg_we} w/e average
 
 Return ONLY the prose text. Do NOT include:
 - YAML formatting
 - Chapter headers (we'll add those)
 - Explanations or notes
 
-Just the flowing narrative prose (~{word_count_target} words)."""
+Just the flowing narrative prose ({word_count_target:,} words, developed at ~{avg_we} words per event)."""
 
         # Generate with API
         try:

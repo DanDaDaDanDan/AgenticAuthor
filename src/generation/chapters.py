@@ -12,6 +12,7 @@ from rich.console import Console
 from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .lod_parser import LODResponseParser
+from .depth_calculator import DepthCalculator
 
 
 # This template is deprecated - using inline prompt generation instead
@@ -122,24 +123,18 @@ class ChapterGenerator:
         self.context_builder = LODContextBuilder()
         self.parser = LODResponseParser()
 
-    def _calculate_chapter_count(self, total_words: int) -> int:
+    def _calculate_structure(self, total_words: int, pacing: str) -> Dict:
         """
-        Calculate chapter count based on target words per chapter.
-
-        Uses simple division with no arbitrary min/max limits.
-        Multi-phase generation can handle any chapter count.
+        Calculate complete story structure using DepthCalculator.
 
         Args:
             total_words: Target total word count for the book
+            pacing: Pacing from taxonomy (fast, moderate, slow)
 
         Returns:
-            Number of chapters (minimum 1)
+            Dict with form, chapter_count, base_we, etc.
         """
-        target_words_per_chapter = 3500  # Target words per chapter
-        chapter_count = total_words // target_words_per_chapter
-
-        # Only enforce minimum of 1 chapter (can't be 0)
-        return max(1, chapter_count)
+        return DepthCalculator.calculate_structure(total_words, pacing)
 
     def _find_last_complete_chapter(self, yaml_text: str) -> Dict[str, Any]:
         """
@@ -556,7 +551,9 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         start_chapter: int,
         end_chapter: int,
         words_per_chapter: int,
-        total_chapters: int
+        total_chapters: int,
+        base_we: int,
+        events_per_chapter: List[int]
     ) -> List[Dict[str, Any]]:
         """
         Generate a batch of chapters with full context.
@@ -567,8 +564,10 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
             previous_summaries: Summaries of chapters generated so far
             start_chapter: First chapter number to generate (inclusive)
             end_chapter: Last chapter number to generate (inclusive)
-            words_per_chapter: Target words per chapter
+            words_per_chapter: Average words per chapter (may vary by event count)
             total_chapters: Total number of chapters in the complete book
+            base_we: Base words per event (from form + pacing)
+            events_per_chapter: List of event counts for each chapter in batch
 
         Returns:
             List of chapter dicts
@@ -601,6 +600,15 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         else:
             default_act = "Act III"
 
+        # Build per-chapter event and word specifications
+        chapter_specs = []
+        for i, ch_num in enumerate(range(start_chapter, end_chapter + 1)):
+            events = events_per_chapter[i]
+            word_target = events * base_we
+            chapter_specs.append(f"Chapter {ch_num}: {events} events × {base_we} w/e = {word_target:,} words")
+
+        specs_text = '\n'.join(chapter_specs)
+
         prompt = f"""Generate chapters {start_chapter}-{end_chapter} for a book. This is part of multi-phase generation.
 
 FULL STORY CONTEXT:
@@ -618,28 +626,36 @@ PREVIOUS CHAPTERS (summaries only):
 {previous_yaml if previous_yaml else "# No previous chapters - this is the first batch"}
 ```
 
+STORY DEPTH ARCHITECTURE:
+This story uses {base_we} words per event (based on form + pacing).
+Event counts vary by act position to create narrative rhythm:
+
+{specs_text}
+
 TASK:
 Generate {batch_size} comprehensive chapter outlines, numbered {start_chapter} through {end_chapter}.
 
-For each chapter:
+For each chapter, follow the EVENT COUNT specified above (varies by act position):
 - number: {start_chapter}, {start_chapter + 1}, ... {end_chapter} (CRITICAL: number sequentially from {start_chapter})
 - title: evocative, specific
 - pov: character name
 - act: "{default_act}" (or adjust based on story flow)
 - summary: 3-4 sentences
-- key_events: 8-10 specific plot beats
+- key_events: MATCH THE EVENT COUNT specified above for this chapter (e.g., Ch{start_chapter} needs {events_per_chapter[0]} events)
+  * Each event should be specific and complete
+  * Events will be developed into ~{base_we} words each during prose generation
 - character_developments: 3-4 internal changes
 - relationship_beats: 2-3 relationship evolutions
 - tension_points: 2-3 stakes/urgency moments
 - sensory_details: 2-3 atmospheric elements
 - subplot_threads: 1-2 if applicable
-- word_count_target: ~{words_per_chapter} words
+- word_count_target: CALCULATE as (event_count × {base_we}) using the spec above
 
 Guidelines:
 - Maintain consistency with the foundation (characters, world, metadata)
 - Continue narrative flow from previous chapters
-- Each key_event should be specific and complete
 - Be specific with names, places, emotions
+- Event count varies by chapter position in three-act structure
 
 RETURN FORMAT:
 Return ONLY a YAML list of chapters (no markdown fences):
@@ -650,7 +666,7 @@ Return ONLY a YAML list of chapters (no markdown fences):
   act: "{default_act}"
   summary: "..."
   key_events:
-    - "..."
+    - "..."  # {events_per_chapter[0]} events total
   character_developments:
     - "..."
   relationship_beats:
@@ -661,7 +677,7 @@ Return ONLY a YAML list of chapters (no markdown fences):
     - "..."
   subplot_threads:
     - "..."
-  word_count_target: {words_per_chapter}
+  word_count_target: {events_per_chapter[0] * base_we}  # {events_per_chapter[0]} events × {base_we} w/e
 
 [Continue for all chapters {start_chapter} through {end_chapter}]
 
@@ -1006,18 +1022,45 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             if 'treatment' not in context:
                 raise Exception("No treatment found. Generate treatment first with /generate treatment")
 
-            # Calculate chapter count if not provided
-            if not chapter_count:
-                chapter_count = self._calculate_chapter_count(total_words)
+            # Get taxonomy for pacing
+            taxonomy_data = self.project.get_taxonomy() or {}
+            pacing = taxonomy_data.get('pacing', 'moderate')
 
-            if logger:
-                logger.debug(f"Multi-phase generation: {chapter_count} chapters, {total_words} words")
+            # Calculate story structure (form, chapters, events, base_we)
+            if not chapter_count:
+                structure = self._calculate_structure(total_words, pacing)
+                chapter_count = structure['chapter_count']
+                form = structure['form']
+                base_we = structure['base_we']
+                total_events = structure['total_events']
+
+                # Distribute events across chapters based on act structure
+                events_distribution = DepthCalculator.distribute_events_across_chapters(
+                    total_events, chapter_count, form
+                )
+
+                if logger:
+                    logger.debug(f"Story structure: {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e")
+                    logger.debug(f"Event distribution: {events_distribution}")
+            else:
+                # User specified chapter count - use it but still calculate structure
+                structure = self._calculate_structure(total_words, pacing)
+                form = structure['form']
+                base_we = structure['base_we']
+                total_events = structure['total_events']
+
+                # Distribute events across user-specified chapter count
+                events_distribution = DepthCalculator.distribute_events_across_chapters(
+                    total_events, chapter_count, form
+                )
+
+                if logger:
+                    logger.debug(f"Story structure (user-specified chapters): {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e")
+
+            self.console.print(f"\n[cyan]Story Structure:[/cyan] {form.replace('_', ' ').title()}, {chapter_count} chapters, {base_we} words/event")
 
             # Serialize context to YAML for prompts
             context_yaml = self.context_builder.to_yaml_string(context)
-
-            # Get taxonomy
-            taxonomy_data = self.project.get_taxonomy() or {}
 
             # Extract original concept and unique elements from premise metadata
             premise_metadata = context.get('premise', {}).get('metadata', {})
@@ -1072,6 +1115,9 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 # Create summaries of previous chapters for context
                 previous_summaries = self._summarize_chapters(all_chapters)
 
+                # Get events for this batch of chapters
+                batch_events = events_distribution[start_ch-1:end_ch]  # 0-indexed to 1-indexed
+
                 # Try batch generation with retry
                 batch_chapters = None
                 for attempt in range(2):  # Try twice
@@ -1083,7 +1129,9 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                             start_chapter=start_ch,
                             end_chapter=end_ch,
                             words_per_chapter=words_per_chapter,
-                            total_chapters=chapter_count
+                            total_chapters=chapter_count,
+                            base_we=base_we,
+                            events_per_chapter=batch_events
                         )
                         break  # Success
                     except Exception as e:

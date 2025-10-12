@@ -10,6 +10,7 @@ from pathlib import Path
 
 from ..models import Project
 from ..api import OpenRouterClient
+from .depth_calculator import DepthCalculator
 
 
 class WordCountAssigner:
@@ -41,7 +42,10 @@ class WordCountAssigner:
 
     async def assign_word_counts(self) -> Dict[str, Any]:
         """
-        Assign word count targets to all chapters.
+        Assign word count targets to all chapters based on event counts.
+
+        Uses the depth architecture: word_count_target = event_count × base_we
+        where base_we is calculated from form + pacing.
 
         Returns:
             Dictionary with:
@@ -72,23 +76,45 @@ class WordCountAssigner:
         if not chapters:
             raise Exception("No chapters found in chapters.yaml")
 
-        # Determine target book length
-        book_length_category, target_range = self._get_target_length(metadata)
+        # Get target word count and pacing from metadata
+        target_word_count = metadata.get('target_word_count', 50000)
+        pacing = metadata.get('pacing', 'moderate')
 
-        # Use LLM to assign word counts
-        new_targets = await self._analyze_and_assign(chapters, book_length_category, target_range)
+        # Calculate base words per event
+        form = DepthCalculator.detect_form(target_word_count)
+        base_we = DepthCalculator.get_base_words_per_event(form, pacing)
 
-        # Track changes
+        print(f"\nCalculating word counts:")
+        print(f"  Form: {form.replace('_', ' ').title()}")
+        print(f"  Pacing: {pacing}")
+        print(f"  Base words/event: {base_we}")
+        print()
+
+        # Calculate word counts based on actual event counts
+        new_targets = {}
         changes = []
-        for i, chapter in enumerate(chapters):
-            ch_num = chapter.get('number', i + 1)
-            old_target = chapter.get('word_count_target', 0)
-            new_target = new_targets.get(ch_num, 0)
 
+        for chapter in chapters:
+            ch_num = chapter.get('number')
+            if ch_num is None:
+                continue
+
+            # Count events in this chapter
+            key_events = chapter.get('key_events', [])
+            event_count = len(key_events)
+
+            # Calculate word target: events × base_we
+            new_target = event_count * base_we
+
+            # Track changes
+            old_target = chapter.get('word_count_target', 0)
             if old_target != new_target:
                 changes.append((ch_num, old_target, new_target))
+                print(f"  Chapter {ch_num}: {event_count} events × {base_we} w/e = {new_target:,} words (was {old_target:,})")
 
+            # Update chapter
             chapter['word_count_target'] = new_target
+            new_targets[ch_num] = new_target
 
         # Update chapters in original data structure
         chapters_data['chapters'] = chapters
@@ -99,12 +125,19 @@ class WordCountAssigner:
 
         total_target = sum(new_targets.values())
 
+        # Determine book length category for display
+        book_length_category, target_range = self._get_target_length(metadata)
+
+        print(f"\nTotal: {total_target:,} words across {len(chapters)} chapters")
+
         return {
             'chapters': chapters,
             'total_target': total_target,
             'book_length': book_length_category,
             'target_range': target_range,
-            'changes': changes
+            'changes': changes,
+            'base_we': base_we,
+            'form': form
         }
 
     def _get_target_length(self, metadata: Dict[str, Any]) -> tuple[str, tuple[int, int]]:
