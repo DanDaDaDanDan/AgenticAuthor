@@ -189,7 +189,7 @@ class InteractiveSession:
             completer=completer,
             style=style,
             multiline=False,
-            mouse_support=True,
+            mouse_support=False,  # Disable to allow text selection on Mac
             complete_while_typing=False,  # Only complete on Tab
             key_bindings=kb,
             enable_history_search=True

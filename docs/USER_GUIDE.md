@@ -314,9 +314,9 @@ result = await generator.generate(
 
 ## Troubleshooting
 
-### Mouse Selection Not Working
-- Windows Terminal: Hold Shift while dragging
-- Other terminals: Check terminal settings for mouse mode
+### Mouse Selection
+- Text selection with mouse is fully supported (click and drag to select)
+- Copy selected text with Cmd+C (Mac) or Ctrl+C (Windows/Linux)
 
 ### Tab Completion Not Working
 - Ensure you're using a compatible terminal

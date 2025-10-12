@@ -157,6 +157,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed usage statistics display when stream truncates
 
 ### Fixed
+- **Mouse Text Selection on Mac** 🖱️
+  - Fixed mouse selection not working in REPL
+  - Changed `mouse_support=True` to `False` in PromptSession (line 192)
+  - Text selection now works normally with click and drag
+  - Copy with Cmd+C (Mac) or Ctrl+C (Windows/Linux)
+  - Matches behavior of model_selector and taxonomy_editor which already had mouse_support=False
+  - Updated USER_GUIDE.md troubleshooting section
+
+- **Word Count Assignment API Call** 🔧
+  - Fixed `/wordcount` command calling non-existent `generate_text()` method
+  - Changed to use `json_completion()` which exists in OpenRouterClient
+  - Updated `_parse_response()` to handle dict instead of string (json_completion returns parsed JSON)
+  - Added try/except with fallback to equal distribution on LLM failure
+  - Fixed import: `from models import` → `from ..models import` (relative import)
+  - Fixed import: `from api.client import APIClient` → `from ..api import OpenRouterClient`
+  - Fixed model attribute: `self.model` → `self.settings.active_model` in interactive.py
+  - Matches established pattern: premise.py, treatment.py, chapters.py all use json_completion()
+
 - **CRITICAL: Partial Chapter Update Merge** 🚨
   - Fixed catastrophic data loss bug when LLM returns partial chapter updates during iteration
   - **Problem**: When LLM returned only updated chapters (e.g., chapters 4,7,11 of 11 total), parser blindly overwrote chapters.yaml, losing metadata, characters, world, and all other chapters
