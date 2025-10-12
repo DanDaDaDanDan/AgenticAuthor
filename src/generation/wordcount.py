@@ -147,18 +147,24 @@ class WordCountAssigner:
         # Build prompt for LLM
         prompt = self._build_prompt(chapters, book_length_category, target_range)
 
-        # Call LLM
-        response = await self.client.generate_text(
-            model=self.model,
-            prompt=prompt,
-            temperature=0.3,  # Lower temperature for more consistent results
-            max_tokens=4000
-        )
+        # Call LLM with json_completion (returns parsed dict)
+        try:
+            response_data = await self.client.json_completion(
+                model=self.model,
+                prompt=prompt,
+                temperature=0.3,  # Lower temperature for more consistent results
+                max_tokens=4000
+            )
 
-        # Parse response
-        word_counts = self._parse_response(response, chapters)
+            # Parse response data
+            word_counts = self._parse_response(response_data, chapters)
 
-        return word_counts
+            return word_counts
+
+        except Exception as e:
+            # If LLM fails, use fallback
+            print(f"Warning: LLM word count assignment failed ({e}), using equal distribution")
+            return self._fallback_equal_distribution(chapters)
 
     def _build_prompt(
         self,
@@ -223,54 +229,46 @@ OUTPUT FORMAT (JSON only, no explanation):
 
     def _parse_response(
         self,
-        response: str,
+        response: Dict[str, Any],
         chapters: List[Dict[str, Any]]
     ) -> Dict[int, int]:
         """
         Parse LLM response to extract word count assignments.
 
         Args:
-            response: LLM response text
+            response: LLM response dict (already parsed JSON)
             chapters: Original chapters list for validation
 
         Returns:
             Dictionary mapping chapter_number -> word_count_target
         """
-        import json
-        import re
-
-        # Try to extract JSON from response
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
-        if not json_match:
-            # Fallback: assign equal word counts
+        # Response is already parsed JSON dict from json_completion
+        if not isinstance(response, dict):
             return self._fallback_equal_distribution(chapters)
 
-        try:
-            data = json.loads(json_match.group())
-            word_counts_raw = data.get('word_counts', {})
+        word_counts_raw = response.get('word_counts', {})
 
-            # Convert string keys to int if needed
-            word_counts = {}
-            for k, v in word_counts_raw.items():
-                try:
-                    ch_num = int(k)
-                    word_count = int(v)
-                    word_counts[ch_num] = word_count
-                except (ValueError, TypeError):
-                    continue
-
-            # Validate we have all chapters
-            chapter_numbers = [ch.get('number') for ch in chapters if 'number' in ch]
-            for ch_num in chapter_numbers:
-                if ch_num not in word_counts:
-                    # Missing assignment, use fallback
-                    return self._fallback_equal_distribution(chapters)
-
-            return word_counts
-
-        except json.JSONDecodeError:
-            # Fallback: assign equal word counts
+        if not word_counts_raw:
             return self._fallback_equal_distribution(chapters)
+
+        # Convert string keys to int if needed
+        word_counts = {}
+        for k, v in word_counts_raw.items():
+            try:
+                ch_num = int(k)
+                word_count = int(v)
+                word_counts[ch_num] = word_count
+            except (ValueError, TypeError):
+                continue
+
+        # Validate we have all chapters
+        chapter_numbers = [ch.get('number') for ch in chapters if 'number' in ch]
+        for ch_num in chapter_numbers:
+            if ch_num not in word_counts:
+                # Missing assignment, use fallback
+                return self._fallback_equal_distribution(chapters)
+
+        return word_counts
 
     def _fallback_equal_distribution(self, chapters: List[Dict[str, Any]]) -> Dict[int, int]:
         """
