@@ -265,7 +265,16 @@ class ProseGenerator:
         climax_range = depth_guidance['climax_range']
         example_dist = depth_guidance['distribution_example']
 
-        prompt = f"""Generate full prose for a chapter using this self-contained story context.
+        prompt = f"""***** CRITICAL REQUIREMENT: {word_count_target:,} WORDS MINIMUM *****
+
+You MUST generate EXACTLY {word_count_target:,} words for this chapter.
+Do NOT stop early. Do NOT summarize. Write the FULL {word_count_target:,} words.
+
+Math check: {num_events} events × ~{avg_we} words per event = {word_count_target:,} words total
+
+***** END CRITICAL REQUIREMENT *****
+
+Generate full prose for a chapter using this self-contained story context.
 
 STORY CONTEXT (chapters.yaml):
 ```yaml
@@ -278,10 +287,14 @@ Generate {word_count_target:,} words of polished narrative prose for:
 - Chapter {chapter_number}: "{current_chapter['title']}"
 - POV: {current_chapter.get('pov', 'N/A')}
 - Act: {current_chapter.get('act', 'N/A')}
+- WORD COUNT REQUIREMENT: {word_count_target:,} words (NOT negotiable)
 
 SCENE DEVELOPMENT (CRITICAL - ACT-AWARE):
 You have {num_events} key events to cover in {word_count_target:,} words.
 This means AVERAGE of ~{avg_we} words per event.
+
+IMPORTANT: You must hit the {word_count_target:,} word target. This is NOT a suggestion.
+If you find yourself finishing early, you're rushing. Slow down and develop each scene fully.
 
 NOTE: This chapter is in {current_chapter.get('act', 'N/A')}.
 - Act I chapters: Efficient setup (slightly faster pacing)
@@ -294,6 +307,7 @@ Vary depth based on dramatic importance:
   - Quick establishment of new information
   - Efficient scene-setting and transitions
   - Move story forward without dwelling
+  - But still FULLY DEVELOP the scene - don't rush
 
 • Standard dramatic scenes ({standard_range[0]}-{standard_range[1]} words):
   - Full development: dialogue with character reactions
@@ -301,6 +315,7 @@ Vary depth based on dramatic importance:
   - Include sensory details and atmosphere
   - Build tension and pacing naturally
   - Let dialogue breathe
+  - DEVELOP each beat fully
 
 • Climactic/peak scenes ({climax_range[0]}-{climax_range[1]}+ words):
   - Deep character work and emotional depth
@@ -308,11 +323,13 @@ Vary depth based on dramatic importance:
   - Let crucial moments land before moving on
   - Allow tension to build fully
   - Give weight to major revelations/conflicts
+  - Really EXPAND these scenes
 
 {example_dist}
 
 Identify which events are dramatic peaks and give them space to breathe.
 Don't rush through important moments. Each scene should feel complete.
+REMEMBER: {word_count_target:,} words is your target. Write FULL scenes to hit this.
 
 GUIDELINES:
 1. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
@@ -321,14 +338,25 @@ GUIDELINES:
 4. Follow the chapter outline's key events, character developments, relationship beats
 5. Perfect continuity from previous chapters (if any)
 6. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
-7. TARGET: {word_count_target:,} words total = {num_events} events × ~{avg_we} w/e average
+7. **WORD COUNT: {word_count_target:,} words - This is MANDATORY. Count as you write.**
+
+How to hit {word_count_target:,} words:
+- Don't summarize scenes - show them in real time
+- Include full dialogue exchanges with reactions
+- Add sensory details (sights, sounds, smells, textures)
+- Show character internal thoughts and emotions
+- Let important moments breathe
+- If an event feels "done" but you're under {avg_we} words, you rushed it
 
 Return ONLY the prose text. Do NOT include:
 - YAML formatting
 - Chapter headers (we'll add those)
 - Explanations or notes
+- Word counts or comments
 
-Just the flowing narrative prose ({word_count_target:,} words, developed at ~{avg_we} words per event)."""
+Just the flowing narrative prose.
+
+FINAL REMINDER: {word_count_target:,} words. Do not stop early. Write the FULL chapter."""
 
         # Generate with API
         try:
@@ -433,27 +461,48 @@ Just the flowing narrative prose ({word_count_target:,} words, developed at ~{av
         # IMPORTANT: Generate chapters in order for sequential mode
         # Each chapter builds on the previous ones
         for chapter_num in range(start_chapter, end_chapter + 1):
-            try:
-                print(f"\n📖 Generating Chapter {chapter_num}/{end_chapter}...")
+            # Retry logic: up to 2 attempts per chapter
+            max_attempts = 2
+            attempt = 1
+            success = False
 
-                prose = await self.generate_chapter(
-                    chapter_number=chapter_num,
-                    narrative_style=narrative_style
-                )
-                results[chapter_num] = prose
+            while attempt <= max_attempts and not success:
+                try:
+                    if attempt > 1:
+                        print(f"\n🔄 Retry {attempt}/{max_attempts} for Chapter {chapter_num}...")
+                    else:
+                        print(f"\n📖 Generating Chapter {chapter_num}/{end_chapter}...")
 
-                # Show progress
-                print(f"✓ Chapter {chapter_num} complete")
+                    prose = await self.generate_chapter(
+                        chapter_number=chapter_num,
+                        narrative_style=narrative_style
+                    )
+                    results[chapter_num] = prose
+                    success = True
 
-                # Each chapter adds to context for next
-                if chapter_num < end_chapter:
-                    print(f"   Context updated for Chapter {chapter_num + 1}")
+                    # Show progress
+                    print(f"✓ Chapter {chapter_num} complete")
 
-            except Exception as e:
-                print(f"❌ Failed to generate Chapter {chapter_num}: {e}")
-                # We should stop if a chapter fails
-                # as later chapters depend on earlier ones
-                print("   Stopping sequential generation due to error")
+                    # Each chapter adds to context for next
+                    if chapter_num < end_chapter:
+                        print(f"   Context updated for Chapter {chapter_num + 1}")
+
+                except Exception as e:
+                    print(f"❌ Failed to generate Chapter {chapter_num}: {e}")
+                    if attempt < max_attempts:
+                        import asyncio
+                        wait_time = attempt * 2  # Exponential backoff: 2s, 4s, etc.
+                        print(f"   Waiting {wait_time}s before retry...")
+                        await asyncio.sleep(wait_time)
+                        attempt += 1
+                    else:
+                        # Final attempt failed
+                        print(f"   All {max_attempts} attempts failed for Chapter {chapter_num}")
+                        print("   Stopping sequential generation due to repeated errors")
+                        break
+
+            # If we exhausted retries, stop the entire generation
+            if not success:
                 break
 
         print(f"\n{'='*60}")

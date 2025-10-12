@@ -585,6 +585,13 @@ class StreamHandler:
             display: Whether to display output
             display_mode: Display mode - "status" (console.status), "live" (Live display), "simple" (plain), or "silent" (no status, just content)
         """
+        # Import loggers at method start
+        from ..utils.logging import get_logger
+        from ..utils.session_logger import get_session_logger
+
+        logger = get_logger()
+        session_logger = get_session_logger()
+
         content = ""
         usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         finish_reason = None
