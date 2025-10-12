@@ -173,6 +173,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed import: `from models import` → `from ..models import` (relative import)
   - Fixed import: `from api.client import APIClient` → `from ..api import OpenRouterClient`
   - Fixed model attribute: `self.model` → `self.settings.active_model` in interactive.py
+  - **Fixed JSON prompt example**: Quoted all keys (`"1": 3000` not `1: 3000`) - JSON spec requires quoted keys
+  - Added explicit instruction: "Keys must be quoted strings"
+  - Removed ellipsis from example to avoid confusion
   - Matches established pattern: premise.py, treatment.py, chapters.py all use json_completion()
 
 - **CRITICAL: Partial Chapter Update Merge** 🚨
