@@ -458,12 +458,22 @@ class InteractiveSession:
             self.console.rule(f"[bold cyan]Iteration{target_info}[/bold cyan]", style="cyan")
             self._print()
 
-            # Process feedback
-            result = await coordinator.process_feedback(
-                feedback=feedback,
-                auto_commit=True,
-                show_preview=False
-            )
+            # Process feedback with aggressive timeout
+            import asyncio
+            try:
+                result = await asyncio.wait_for(
+                    coordinator.process_feedback(
+                        feedback=feedback,
+                        auto_commit=True,
+                        show_preview=False
+                    ),
+                    timeout=300.0  # 5 minute hard timeout
+                )
+            except asyncio.TimeoutError:
+                self._print(f"\n[red]✗ Operation timed out after 5 minutes[/red]")
+                self._print(f"[yellow]This suggests an API issue - the server is not responding.[/yellow]")
+                self._print(f"[yellow]Check your network connection or try a different model.[/yellow]")
+                return
 
             # Display results
             if result['success']:

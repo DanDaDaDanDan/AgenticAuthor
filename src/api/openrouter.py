@@ -527,6 +527,9 @@ class OpenRouterClient:
             logger.debug(f"JSON API Request: will_use_display={'YES' if display_field else 'NO (no display_field)'}")
 
         try:
+            if logger:
+                logger.info(f"JSON API: Opening connection to {self.base_url}/chat/completions")
+
             async with self._session.post(
                 f"{self.base_url}/chat/completions",
                 json=request_data,
@@ -534,9 +537,13 @@ class OpenRouterClient:
             ) as response:
                 # Log response status
                 if logger:
+                    logger.info(f"JSON API: Connection established")
                     logger.debug(f"JSON API Response: status={response.status}, content_type={response.content_type}")
 
                 response.raise_for_status()
+
+                if logger:
+                    logger.info(f"JSON API: Status OK, starting to process response...")
 
                 # Use the JSON stream handler if we have a display field
                 if display_field:
