@@ -67,6 +67,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive logging throughout iteration flow for future debugging
   - Backward compatible: Still checks `premise.md` as fallback for old projects
 
+- **Streaming Display for Batch Premise Generation** 📺
+  - Fixed `/generate premises` command not showing streaming output during generation
+  - **Problem**: Users saw no output for 600+ tokens, then all results appeared at once
+  - **Symptom**: "NO DISPLAY CONTENT" warnings every 50 tokens in logs, no visible streaming
+  - **Root cause**: Array-first streaming mode only checked for first object `{` once when array `[` was detected
+  - **Detail**: If the `{` arrived in a later token batch after `[`, the `in_first_object` flag never got set, so field detection never ran
+  - **Solution**: Split array_first detection into 3 distinct phases
+    - Phase 1: Detect array start `[` (once)
+    - Phase 2: Detect first object `{` (continuously until found)
+    - Phase 3: Detect field `"premise":` (continuously until found)
+  - **Result**: Streaming output starts as soon as premise text begins generating
+  - **Impact**: Batch premise generation now provides real-time feedback instead of silent waiting
+  - Changed: src/api/streaming.py lines 159-182
+
 - **JSON Markdown Fences in Streaming** 📺
   - Fixed issue where JSON responses wrapped in \`\`\`json fences were visible during streaming
   - **Problem**: Users saw ugly markdown code fences (\`\`\`json...\`\`\`) during premise generation
