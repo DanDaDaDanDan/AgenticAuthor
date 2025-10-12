@@ -117,13 +117,17 @@ class DepthCalculator:
         """
         Determine story form based on target word count.
 
+        At boundary values (e.g., 50000), prefers the larger form (novel over novella).
+
         Args:
             target_words: Target total word count
 
         Returns:
             Form name (e.g., 'novel', 'novella')
         """
-        for form, (min_words, max_words) in cls.FORM_RANGES.items():
+        # Check ranges in reverse order to prefer larger forms at boundaries
+        for form in ['series', 'epic', 'novel', 'novella', 'novelette', 'short_story', 'flash_fiction']:
+            min_words, max_words = cls.FORM_RANGES[form]
             if min_words <= target_words <= max_words:
                 return form
 

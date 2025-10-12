@@ -615,7 +615,7 @@ class InteractiveSession:
             return
 
         with open(premise_metadata_file) as f:
-            current_taxonomy = json.load(f)
+            premise_metadata = json.load(f)
 
         # If no feedback provided, launch interactive editor
         if not feedback or feedback.strip() == "":
@@ -627,22 +627,25 @@ class InteractiveSession:
             taxonomy = taxonomy_loader.load_merged_taxonomy(genre)
             category_options = taxonomy_loader.get_category_options(taxonomy)
 
+            # Extract current selections from metadata
+            current_selections = premise_metadata.get('selections', {})
+
             # Run interactive editor
             try:
-                updated_taxonomy = run_taxonomy_editor(
+                updated_selections = run_taxonomy_editor(
                     taxonomy=taxonomy,
-                    current_selections=current_taxonomy,
+                    current_selections=current_selections,
                     category_options=category_options
                 )
 
-                if updated_taxonomy is None:
+                if updated_selections is None:
                     self._print("\n[yellow]Taxonomy editing cancelled[/yellow]")
                     return
 
                 # Check what changed
                 changes = []
-                for category, new_values in updated_taxonomy.items():
-                    old_values = current_taxonomy.get(category, [])
+                for category, new_values in updated_selections.items():
+                    old_values = current_selections.get(category, [])
                     if new_values != old_values:
                         changes.append(f"Changed {category.replace('_', ' ')}: {old_values} → {new_values}")
 
@@ -667,7 +670,7 @@ class InteractiveSession:
 
                     regen_result = await generator.regenerate_with_taxonomy(
                         user_input=premise,
-                        taxonomy_selections=updated_taxonomy,
+                        taxonomy_selections=updated_selections,
                         genre=genre
                     )
 
@@ -684,9 +687,10 @@ class InteractiveSession:
                     self._print("\n[green]✓ Committed to git[/green]")
 
                 else:
-                    # Just update taxonomy
+                    # Just update taxonomy - preserve full metadata structure
+                    premise_metadata['selections'] = updated_selections
                     with open(premise_metadata_file, 'w') as f:
-                        json.dump(updated_taxonomy, f, indent=2)
+                        json.dump(premise_metadata, f, indent=2)
 
                     self._print("[green]✓ Taxonomy updated[/green]")
 

@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Taxonomy Loading and Form Detection** 🔧
+  - Fixed schema mismatch where `Project.get_taxonomy()` looked for 'taxonomy' key but metadata uses 'selections'
+  - **Problem**: Chapter generation ignored user's taxonomy length_scope selection (e.g., "novel"), falling back to word-count detection
+  - **Symptom**: 50,000-word projects with "novel" selected were detected as "novella" instead
+  - **Root cause 1**: `get_taxonomy()` returned None because it looked for wrong JSON key ('taxonomy' vs 'selections')
+  - **Root cause 2**: Boundary condition - 50,000 words matched both novella (max) and novel (min), returned first match
+  - **Root cause 3**: Taxonomy save overwrote entire premise_metadata.json with just selections, losing premise text
+  - **Solution**:
+    - Changed `Project.get_taxonomy()` to return `data.get('selections')` (src/models/project.py:271)
+    - Fixed taxonomy save to preserve full metadata structure (src/cli/interactive.py:691-693)
+    - Changed `detect_form()` to check larger forms first, preferring novel over novella at boundaries (src/generation/depth_calculator.py:129)
+    - Taxonomy editor now receives explicit `selections` dict instead of full metadata (src/cli/interactive.py:631)
+  - **Result**: User's taxonomy selections are now respected, 50K words correctly identified as novel
+  - **Impact**: Affects all chapter generation using taxonomy length_scope
+  - Backward compatible with existing projects
+
 - **CRITICAL: Premise Iteration Detection** 🔧
   - Fixed intent analyzer incorrectly categorizing premise changes as "project" changes
   - **Problem**: User changes like "change Maya Chen to Maya Trent" appeared successful but didn't actually update premise_metadata.json

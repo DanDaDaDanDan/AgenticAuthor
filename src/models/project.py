@@ -264,11 +264,11 @@ class Project:
         return None
 
     def get_taxonomy(self) -> Optional[Dict[str, Any]]:
-        """Load taxonomy from premise metadata."""
+        """Load taxonomy selections from premise metadata."""
         if self.premise_metadata_file.exists():
             with open(self.premise_metadata_file) as f:
                 data = json.load(f)
-                return data.get('taxonomy')
+                return data.get('selections')
         return None
 
     def save_chapter_outlines(self, outlines: Dict[str, Any]):
