@@ -96,6 +96,10 @@ class Settings(BaseSettings):
         default=False,
         description="Enable verbose logging"
     )
+    last_opened_project: Optional[str] = Field(
+        default=None,
+        description="Last opened project name (auto-opened on startup)"
+    )
 
     # Multi-model competition mode
     multi_model_mode: bool = Field(
@@ -186,6 +190,7 @@ class Settings(BaseSettings):
             'streaming_output': self.streaming_output,
             'streaming_display_mode': self.streaming_display_mode,
             'verbose': self.verbose,
+            'last_opened_project': self.last_opened_project,  # Save last opened project
             'multi_model_mode': self.multi_model_mode,
             'competition_models': self.competition_models,
             'judge_model': self.judge_model

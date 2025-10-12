@@ -226,7 +226,7 @@ class InteractiveSession:
         self.git.add()
         self.git.commit(prefixed_message)
 
-    def load_project(self, path: Path):
+    def load_project(self, path: Path, auto_opened: bool = False):
         """Load a project from path."""
         try:
             self.project = Project(path)
@@ -242,13 +242,23 @@ class InteractiveSession:
             if treatment := self.project.get_treatment():
                 self.story.treatment = treatment
 
+            # Save as last opened project
+            self.settings.last_opened_project = self.project.name
+            self.settings.save_config_file(Path('config.yaml'))
+
             # Restore iteration target if set
             if self.project.metadata and self.project.metadata.iteration_target:
                 self.iteration_target = self.project.metadata.iteration_target
-                self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
+                if auto_opened:
+                    self._print(f"[dim]Auto-opened:[/dim] [bold]{self.project.name}[/bold]")
+                else:
+                    self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
                 self._print(f"[dim]Iteration target:[/dim] [cyan]{self.iteration_target}[/cyan]")
             else:
-                self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
+                if auto_opened:
+                    self._print(f"[dim]Auto-opened:[/dim] [bold]{self.project.name}[/bold]")
+                else:
+                    self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
 
         except Exception as e:
             self._print(f"[bold red]Error loading project:[/bold red] {e}")
@@ -283,6 +293,17 @@ class InteractiveSession:
 
         # Show welcome message
         self._show_welcome()
+
+        # Auto-open last opened project if set
+        if self.settings.last_opened_project and not self.project:
+            last_project_path = self.settings.books_dir / self.settings.last_opened_project
+            if last_project_path.exists() and (last_project_path / "project.yaml").exists():
+                self.load_project(last_project_path, auto_opened=True)
+            else:
+                # Project no longer exists, clear from settings
+                self.settings.last_opened_project = None
+                self.settings.save_config_file(Path('config.yaml'))
+                self._print("[dim]⚠  Last opened project no longer exists[/dim]")
 
         # Main REPL loop
         while self.running:

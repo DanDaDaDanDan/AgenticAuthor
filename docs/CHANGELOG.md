@@ -70,6 +70,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improves user experience when starting over with input
 
 ### Added
+- **Auto-Open Last Project** 🚀
+  - Automatically opens the last opened project on startup
+  - Saves `last_opened_project` to config.yaml whenever a project is loaded
+  - Displays "Auto-opened: [project-name]" message to distinguish from manual opens
+  - Gracefully handles missing projects (clears setting with warning)
+  - Improves workflow: no need to manually `/open` project every session
+  - Implemented in Settings class and InteractiveSession.run()
+
+
 - **Intelligent Word Count Assignment** 📊
   - `/wordcount` command assigns word count targets to chapters based on content
   - Analyzes chapter complexity, key events, and narrative structure
