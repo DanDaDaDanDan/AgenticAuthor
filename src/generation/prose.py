@@ -265,16 +265,7 @@ class ProseGenerator:
         climax_range = depth_guidance['climax_range']
         example_dist = depth_guidance['distribution_example']
 
-        prompt = f"""***** CRITICAL REQUIREMENT: {word_count_target:,} WORDS MINIMUM *****
-
-You MUST generate EXACTLY {word_count_target:,} words for this chapter.
-Do NOT stop early. Do NOT summarize. Write the FULL {word_count_target:,} words.
-
-Math check: {num_events} events × ~{avg_we} words per event = {word_count_target:,} words total
-
-***** END CRITICAL REQUIREMENT *****
-
-Generate full prose for a chapter using this self-contained story context.
+        prompt = f"""Generate full prose for a chapter using this self-contained story context.
 
 STORY CONTEXT (chapters.yaml):
 ```yaml
@@ -287,14 +278,10 @@ Generate {word_count_target:,} words of polished narrative prose for:
 - Chapter {chapter_number}: "{current_chapter['title']}"
 - POV: {current_chapter.get('pov', 'N/A')}
 - Act: {current_chapter.get('act', 'N/A')}
-- WORD COUNT REQUIREMENT: {word_count_target:,} words (NOT negotiable)
 
 SCENE DEVELOPMENT (CRITICAL - ACT-AWARE):
 You have {num_events} key events to cover in {word_count_target:,} words.
 This means AVERAGE of ~{avg_we} words per event.
-
-IMPORTANT: You must hit the {word_count_target:,} word target. This is NOT a suggestion.
-If you find yourself finishing early, you're rushing. Slow down and develop each scene fully.
 
 NOTE: This chapter is in {current_chapter.get('act', 'N/A')}.
 - Act I chapters: Efficient setup (slightly faster pacing)
@@ -307,7 +294,6 @@ Vary depth based on dramatic importance:
   - Quick establishment of new information
   - Efficient scene-setting and transitions
   - Move story forward without dwelling
-  - But still FULLY DEVELOP the scene - don't rush
 
 • Standard dramatic scenes ({standard_range[0]}-{standard_range[1]} words):
   - Full development: dialogue with character reactions
@@ -315,7 +301,6 @@ Vary depth based on dramatic importance:
   - Include sensory details and atmosphere
   - Build tension and pacing naturally
   - Let dialogue breathe
-  - DEVELOP each beat fully
 
 • Climactic/peak scenes ({climax_range[0]}-{climax_range[1]}+ words):
   - Deep character work and emotional depth
@@ -323,13 +308,11 @@ Vary depth based on dramatic importance:
   - Let crucial moments land before moving on
   - Allow tension to build fully
   - Give weight to major revelations/conflicts
-  - Really EXPAND these scenes
 
 {example_dist}
 
 Identify which events are dramatic peaks and give them space to breathe.
 Don't rush through important moments. Each scene should feel complete.
-REMEMBER: {word_count_target:,} words is your target. Write FULL scenes to hit this.
 
 GUIDELINES:
 1. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
@@ -338,25 +321,14 @@ GUIDELINES:
 4. Follow the chapter outline's key events, character developments, relationship beats
 5. Perfect continuity from previous chapters (if any)
 6. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
-7. **WORD COUNT: {word_count_target:,} words - This is MANDATORY. Count as you write.**
-
-How to hit {word_count_target:,} words:
-- Don't summarize scenes - show them in real time
-- Include full dialogue exchanges with reactions
-- Add sensory details (sights, sounds, smells, textures)
-- Show character internal thoughts and emotions
-- Let important moments breathe
-- If an event feels "done" but you're under {avg_we} words, you rushed it
+7. TARGET: {word_count_target:,} words total = {num_events} events × ~{avg_we} w/e average
 
 Return ONLY the prose text. Do NOT include:
 - YAML formatting
 - Chapter headers (we'll add those)
 - Explanations or notes
-- Word counts or comments
 
-Just the flowing narrative prose.
-
-FINAL REMINDER: {word_count_target:,} words. Do not stop early. Write the FULL chapter."""
+Just the flowing narrative prose ({word_count_target:,} words, developed at ~{avg_we} words per event)."""
 
         # Generate with API
         try:
