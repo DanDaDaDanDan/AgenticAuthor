@@ -1207,7 +1207,14 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             # Calculate and display expected total
             expected_total = total_scenes * base_ws
             variance_pct = ((expected_total / total_words) - 1) * 100 if total_words > 0 else 0
-            self.console.print(f"  Expected Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
+
+            if feedback:
+                # During iteration, LLM can adjust - show baseline with note
+                self.console.print(f"  Baseline Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
+                self.console.print(f"  [yellow]Note: LLM may adjust word count/chapter count based on feedback[/yellow]")
+            else:
+                # During generation, show expected output
+                self.console.print(f"  Expected Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
 
             # Serialize context to YAML for prompts
             context_yaml = self.context_builder.to_yaml_string(context)
