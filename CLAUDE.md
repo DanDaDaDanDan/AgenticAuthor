@@ -225,6 +225,35 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 
 **Key Innovation**: Natural language iteration with git-backed version control. Users simply describe what they want changed, and the system handles intent checking, execution, and auto-commits.
 
+**Critical Architecture: Scene-Based Word Count System** 🎬
+- **Problem Solved**: Old system achieved only 50-60% of target word counts (e.g., 2,300/3,800 words)
+- **Root Cause**: LLMs treated "key_events" as bullet point summaries (200-500 words) instead of full dramatic scenes
+- **Solution**: Complete refactoring to scene-based architecture with structured scene format
+
+**Scene Structure (New Format)**:
+```yaml
+scenes:
+  - scene: "Scene Title"              # Brief title (2-4 words)
+    location: "Where it happens"      # Setting
+    pov_goal: "What character wants"  # Character objective
+    conflict: "What prevents it"      # Obstacle
+    stakes: "What's at risk"          # Consequences
+    outcome: "How it resolves"        # Resolution
+    emotional_beat: "Internal change" # Character arc
+    sensory_focus:                    # Atmosphere
+      - "Sensory detail 1"
+      - "Sensory detail 2"
+    target_words: 1300                # Scene target (act-specific)
+```
+
+**Key Changes**:
+- **Math Layer** (depth_calculator.py): All constants renamed (WORDS_PER_EVENT → WORDS_PER_SCENE), +35-37% increases, scene clamping (2-4 per chapter)
+- **Chapter Generation** (chapters.py): 3 major prompts updated to generate structured scenes, emphasize "COMPLETE DRAMATIC UNITS"
+- **Prose Generation** (prose.py): Complete prompt rewrite with 4-part scene structure, SHOW vs TELL examples, MINIMUM (not average) word counts
+- **Backward Compatible**: All systems support both 'scenes' (new) and 'key_events' (old) formats
+
+**Expected Impact**: 80-100% word count achievement (vs 50-60% baseline), professional scene quality
+
 **Recent Major Features (v0.3.0 and Unreleased)**:
 - **Multi-Phase Chapter Generation** 🚀 - Reliable chapter generation with automatic resume
   - Three phases: Foundation (metadata/characters/world) → Batched Chapters → Assembly
@@ -665,7 +694,23 @@ def _commit(self, message: str):
 
 - `src/generation/taxonomies.py` - Genre taxonomy system and premise analysis
 - `src/generation/premise.py` - Premise generation with auto-detection, taxonomy iteration
-- `src/generation/depth_calculator.py` - **Act-aware depth architecture** for word count calculation (mathematical, no LLM)
+- `src/generation/depth_calculator.py` - **Scene-based depth architecture** with act-aware word count calculation (mathematical, no LLM)
+  - All methods use "scene" terminology: `get_base_words_per_scene()`, `get_act_words_per_scene()`, `distribute_scenes_across_chapters()`
+  - Constants: WORDS_PER_SCENE (1,100-1,600 w/s), ACT_SCENE_MULTIPLIERS, ACT_WS_MULTIPLIERS
+  - Scene clamping: 2-4 scenes per chapter (professional novel structure)
+  - +35-37% word targets vs old event-based system
+- `src/generation/chapters.py` - Chapter outline generation with structured scene format
+  - Generates 9-field scene structures (scene/location/pov_goal/conflict/stakes/outcome/emotional_beat/sensory_focus/target_words)
+  - Prompts emphasize "COMPLETE DRAMATIC UNITS (1,000-2,000 words), NOT bullet point summaries"
+  - Backward compatible: accepts both 'scenes' (new) and 'key_events' (old)
+- `src/generation/prose.py` - Prose generation with 4-part scene structure
+  - Scene-by-scene breakdown embedded in prompt
+  - 4-part structure: Setup (15-20%) → Development (40-50%) → Climax (15-20%) → Resolution (15-20%)
+  - SHOW vs TELL examples (50 words vs 380 words = 7.6x difference)
+  - Emphasizes MINIMUM (not average) word counts per scene
+- `src/generation/wordcount.py` - Word count assignment with scene-based calculations
+  - Uses `scene_count × act_ws` formula (was `event_count × act_we`)
+  - Supports both structured scenes and legacy key_events
 - `src/generation/multi_model.py` - Multi-model competition coordinator with judging logic
 - `src/generation/iteration/` - Natural language feedback processing (coordinator, intent, diff, scale)
 - `src/generation/cull.py` - Content deletion manager with cascade (prose → chapters → treatment → premise)
