@@ -1230,7 +1230,10 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             if feedback:
                 # During iteration, LLM can adjust - show baseline with note
                 self.console.print(f"  Baseline Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
-                self.console.print(f"  [yellow]Note: LLM may adjust word count/chapter count based on feedback[/yellow]")
+                self.console.print(f"\n[bold yellow]📝 Iteration Mode:[/bold yellow] LLM will analyze feedback and may adjust:")
+                self.console.print(f"   • Word count (currently {total_words:,})")
+                self.console.print(f"   • Chapter count (currently {chapter_count})")
+                self.console.print(f"   Changes will be shown after foundation generation")
             else:
                 # During generation, show expected output
                 self.console.print(f"  Expected Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
@@ -1278,15 +1281,18 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 llm_word_count = foundation_metadata.get('target_word_count')
                 llm_chapter_count = foundation_metadata.get('chapter_count')
 
+                # Track what changed
+                original_total_words = total_words
+                original_chapter_count = chapter_count
+                word_count_changed = False
+                chapter_count_changed = False
+
                 # Apply LLM's word count (if provided and different)
                 if llm_word_count:
                     llm_word_count = int(llm_word_count)
                     if llm_word_count != total_words:
-                        self.console.print(
-                            f"[yellow]→ LLM adjusted word count:[/yellow] "
-                            f"{total_words:,} → {llm_word_count:,} words"
-                        )
                         total_words = llm_word_count
+                        word_count_changed = True
                         if logger:
                             logger.info(f"Iteration: LLM adjusted word count to {total_words}")
 
@@ -1296,11 +1302,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                     # Validate reasonable range (1-100 chapters)
                     if 1 <= llm_chapter_count <= 100:
                         if llm_chapter_count != chapter_count:
-                            self.console.print(
-                                f"[yellow]→ LLM adjusted chapter count:[/yellow] "
-                                f"{chapter_count} → {llm_chapter_count} chapters"
-                            )
                             chapter_count = llm_chapter_count
+                            chapter_count_changed = True
                             if logger:
                                 logger.info(f"Iteration: LLM adjusted chapter count to {chapter_count}")
                     else:
@@ -1309,6 +1312,44 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                                 f"Iteration: LLM provided invalid chapter_count {llm_chapter_count}, "
                                 f"using calculated value {chapter_count}"
                             )
+
+                # Display adjustments (if any)
+                if word_count_changed or chapter_count_changed:
+                    self.console.print(f"\n[bold cyan]{'='*60}[/bold cyan]")
+                    self.console.print(f"[bold cyan]📊 LLM Structural Adjustments Based on Feedback[/bold cyan]")
+                    self.console.print(f"[bold cyan]{'='*60}[/bold cyan]")
+
+                    if word_count_changed:
+                        word_diff = total_words - original_total_words
+                        word_pct = (word_diff / original_total_words * 100) if original_total_words > 0 else 0
+                        direction = "↗" if word_diff > 0 else "↘"
+                        color = "green" if word_diff > 0 else "yellow"
+                        self.console.print(
+                            f"  [bold]Word Count:[/bold] [{color}]{original_total_words:,} → {total_words:,}[/{color}] "
+                            f"[{color}]{direction} {abs(word_pct):.1f}% ({word_diff:+,} words)[/{color}]"
+                        )
+
+                    if chapter_count_changed:
+                        chapter_diff = chapter_count - original_chapter_count
+                        direction = "↗" if chapter_diff > 0 else "↘"
+                        color = "green" if chapter_diff > 0 else "yellow"
+                        self.console.print(
+                            f"  [bold]Chapters:[/bold] [{color}]{original_chapter_count} → {chapter_count}[/{color}] "
+                            f"[{color}]{direction} {abs(chapter_diff)} chapters[/{color}]"
+                        )
+
+                    # Show impact summary
+                    if word_count_changed and chapter_count_changed:
+                        avg_before = original_total_words // original_chapter_count if original_chapter_count > 0 else 0
+                        avg_after = total_words // chapter_count if chapter_count > 0 else 0
+                        self.console.print(
+                            f"\n  [dim]Average chapter length: {avg_before:,} → {avg_after:,} words[/dim]"
+                        )
+
+                    self.console.print(f"[bold cyan]{'='*60}[/bold cyan]\n")
+                else:
+                    # No changes made - LLM kept existing structure
+                    self.console.print(f"\n[dim]→ LLM analysis: Current structure appropriate for feedback[/dim]\n")
 
                 # Recalculate structure with LLM's values (if any changed)
                 if llm_word_count or llm_chapter_count:
@@ -1435,7 +1476,28 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             if logger:
                 logger.debug(f"Successfully generated {len(all_chapters)} chapters with full context")
 
-            self.console.print(f"[green]✓[/green] Generation complete! {chapter_count} chapters saved to chapters.yaml")
+            # Display completion message with summary
+            self.console.print(f"[green]✓[/green] Generation complete!")
+
+            if feedback:
+                # Show iteration summary
+                self.console.print(f"\n[bold green]{'='*60}[/bold green]")
+                self.console.print(f"[bold green]✨ Iteration Complete![/bold green]")
+                self.console.print(f"[bold green]{'='*60}[/bold green]")
+
+                # Get final metadata for summary
+                final_metadata = final_data.get('metadata', {})
+                final_word_count = final_metadata.get('target_word_count', total_words)
+
+                self.console.print(f"  [bold]Final Structure:[/bold]")
+                self.console.print(f"    • Chapters: [cyan]{chapter_count}[/cyan]")
+                self.console.print(f"    • Target words: [cyan]{final_word_count:,}[/cyan]")
+                self.console.print(f"    • Saved to: [cyan]chapters.yaml[/cyan]")
+                self.console.print(f"\n  [dim]Your feedback has been incorporated into the structure[/dim]")
+                self.console.print(f"[bold green]{'='*60}[/bold green]")
+            else:
+                # Regular generation message
+                self.console.print(f"  [cyan]{chapter_count} chapters[/cyan] saved to [cyan]chapters.yaml[/cyan]")
 
             # Convert to ChapterOutline objects for backward compatibility
             chapters = []
