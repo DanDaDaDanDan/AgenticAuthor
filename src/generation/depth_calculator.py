@@ -1,10 +1,10 @@
 """
-Centralized calculation of story depth (words per event) based on form and pacing.
+Centralized calculation of story depth (words per scene) based on form and pacing.
 
-This module provides the core architecture for determining how many events a story needs
-and how deeply each event should be developed based on:
-- Form (novella, novel, epic) - determines COMPLEXITY (event count)
-- Pacing (fast, moderate, slow) - determines DEPTH (words per event)
+This module provides the core architecture for determining how many scenes a story needs
+and how deeply each scene should be developed based on:
+- Form (novella, novel, epic) - determines COMPLEXITY (scene count)
+- Pacing (fast, moderate, slow) - determines DEPTH (words per scene)
 
 These are independent axes that combine to produce the target word count.
 """
@@ -26,38 +26,39 @@ class DepthCalculator:
         'series': (200000, 500000)
     }
 
-    # Base words per event by form and pacing
-    # Format: {form: {pacing: (min_we, max_we, typical_we)}}
-    WORDS_PER_EVENT = {
+    # Base words per scene by form and pacing
+    # Format: {form: {pacing: (min_ws, max_ws, typical_ws)}}
+    # Updated 2025-10: Increased ~35% to align with professional scene structure (1,200-2,000w per scene)
+    WORDS_PER_SCENE = {
         'flash_fiction': {
-            'fast': (200, 300, 250),
-            'moderate': (250, 400, 325),
-            'slow': (350, 500, 425)
+            'fast': (270, 400, 340),          # +35% from (200, 300, 250)
+            'moderate': (340, 540, 440),      # +35% from (250, 400, 325)
+            'slow': (470, 675, 575)           # +35% from (350, 500, 425)
         },
         'short_story': {
-            'fast': (400, 600, 500),
-            'moderate': (500, 750, 625),
-            'slow': (650, 900, 775)
+            'fast': (540, 800, 675),          # +35% from (400, 600, 500)
+            'moderate': (675, 1010, 845),     # +35% from (500, 750, 625)
+            'slow': (875, 1215, 1045)         # +35% from (650, 900, 775)
         },
         'novelette': {
-            'fast': (550, 750, 650),
-            'moderate': (650, 850, 750),
-            'slow': (800, 1000, 900)
+            'fast': (740, 1010, 875),         # +35% from (550, 750, 650)
+            'moderate': (875, 1150, 1010),    # +35% from (650, 850, 750)
+            'slow': (1080, 1350, 1215)        # +35% from (800, 1000, 900)
         },
         'novella': {
-            'fast': (600, 850, 700),
-            'moderate': (750, 950, 850),
-            'slow': (900, 1150, 1000)
+            'fast': (810, 1150, 950),         # +35% from (600, 850, 700)
+            'moderate': (1010, 1285, 1150),   # +35% from (750, 950, 850)
+            'slow': (1215, 1550, 1350)        # +35% from (900, 1150, 1000)
         },
         'novel': {
-            'fast': (650, 950, 800),
-            'moderate': (800, 1100, 950),
-            'slow': (1000, 1400, 1200)
+            'fast': (900, 1300, 1100),        # +37% from (650, 950, 800)
+            'moderate': (1100, 1600, 1300),   # +37% from (800, 1100, 950)
+            'slow': (1400, 2000, 1600)        # +33% from (1000, 1400, 1200)
         },
         'epic': {
-            'fast': (700, 1050, 875),
-            'moderate': (900, 1200, 1050),
-            'slow': (1100, 1600, 1350)
+            'fast': (950, 1420, 1180),        # +35% from (700, 1050, 875)
+            'moderate': (1215, 1620, 1420),   # +35% from (900, 1200, 1050)
+            'slow': (1485, 2160, 1825)        # +35% from (1100, 1600, 1350)
         }
     }
 
@@ -72,36 +73,36 @@ class DepthCalculator:
         'series': 3500
     }
 
-    # Event variation by act (for novels/epics with three-act structure)
-    # More events in Act I for setup, fewer in Act III for focused climax
-    ACT_EVENT_MULTIPLIERS = {
+    # Scene variation by act (for novels/epics with three-act structure)
+    # More scenes in Act I for setup, fewer in Act III for focused climax
+    ACT_SCENE_MULTIPLIERS = {
         'novella': {
             'act1': 1.0,  # Uniform across acts
             'act2': 1.0,
             'act3': 1.0
         },
         'novel': {
-            'act1': 1.3,  # More events in setup (world-building, character intro)
-            'act2': 1.0,  # Standard events in rising action
-            'act3': 0.7   # Fewer events in climax (focused on main conflict)
+            'act1': 1.3,  # More scenes in setup (world-building, character intro)
+            'act2': 1.0,  # Standard scenes in rising action
+            'act3': 0.7   # Fewer scenes in climax (focused on main conflict)
         },
         'epic': {
-            'act1': 1.4,  # Many events (complex world, multiple threads)
+            'act1': 1.4,  # Many scenes (complex world, multiple threads)
             'act2': 1.0,  # Standard
             'act3': 0.6   # Very focused climax
         }
     }
 
-    # Words-per-event variation by act (CRITICAL for climax depth)
-    # Climaxes need DEPTH even with fewer events - this multiplies base_we
-    ACT_WE_MULTIPLIERS = {
+    # Words-per-scene variation by act (CRITICAL for climax depth)
+    # Climaxes need DEPTH even with fewer scenes - this multiplies base_ws
+    ACT_WS_MULTIPLIERS = {
         'novella': {
             'act1': 1.0,  # Uniform depth
             'act2': 1.0,
             'act3': 1.0
         },
         'novel': {
-            'act1': 0.95,  # Slightly more efficient (many events to cover)
+            'act1': 0.95,  # Slightly more efficient (many scenes to cover)
             'act2': 1.00,  # Standard depth
             'act3': 1.35   # Much deeper (emotional intensity, detail, pacing)
         },
@@ -211,16 +212,16 @@ class DepthCalculator:
             return 'epic'
 
     @classmethod
-    def get_base_words_per_event(cls, form: str, pacing: str) -> int:
+    def get_base_words_per_scene(cls, form: str, pacing: str) -> int:
         """
-        Get typical words per event for given form and pacing (baseline, no act adjustment).
+        Get typical words per scene for given form and pacing (baseline, no act adjustment).
 
         Args:
             form: Story form (novella, novel, epic)
             pacing: Pacing taxonomy value (fast, moderate, slow)
 
         Returns:
-            Typical words per event (integer)
+            Typical words per scene (integer)
         """
         # Normalize pacing
         pacing = pacing.lower()
@@ -228,17 +229,17 @@ class DepthCalculator:
             pacing = 'moderate'  # Default
 
         # Get typical value from ranges
-        if form in cls.WORDS_PER_EVENT and pacing in cls.WORDS_PER_EVENT[form]:
-            min_we, max_we, typical_we = cls.WORDS_PER_EVENT[form][pacing]
-            return typical_we
+        if form in cls.WORDS_PER_SCENE and pacing in cls.WORDS_PER_SCENE[form]:
+            min_ws, max_ws, typical_ws = cls.WORDS_PER_SCENE[form][pacing]
+            return typical_ws
 
-        # Fallback
-        return 800
+        # Fallback (updated for scene-based system)
+        return 1100
 
     @classmethod
-    def get_act_words_per_event(cls, form: str, pacing: str, act: str) -> int:
+    def get_act_words_per_scene(cls, form: str, pacing: str, act: str) -> int:
         """
-        Get words per event for specific act (includes act-based depth multiplier).
+        Get words per scene for specific act (includes act-based depth multiplier).
 
         Args:
             form: Story form (novella, novel, epic)
@@ -246,37 +247,37 @@ class DepthCalculator:
             act: Act identifier ('act1', 'act2', 'act3')
 
         Returns:
-            Act-adjusted words per event (integer)
+            Act-adjusted words per scene (integer)
         """
-        base_we = cls.get_base_words_per_event(form, pacing)
+        base_ws = cls.get_base_words_per_scene(form, pacing)
 
         # Get act multiplier
-        we_multipliers = cls.ACT_WE_MULTIPLIERS.get(form, cls.ACT_WE_MULTIPLIERS.get('novel', {}))
-        multiplier = we_multipliers.get(act, 1.0)
+        ws_multipliers = cls.ACT_WS_MULTIPLIERS.get(form, cls.ACT_WS_MULTIPLIERS.get('novel', {}))
+        multiplier = ws_multipliers.get(act, 1.0)
 
-        return int(base_we * multiplier)
+        return int(base_ws * multiplier)
 
     @classmethod
-    def get_words_per_event_range(cls, form: str, pacing: str) -> Tuple[int, int, int]:
+    def get_words_per_scene_range(cls, form: str, pacing: str) -> Tuple[int, int, int]:
         """
-        Get full range for words per event (min, max, typical).
+        Get full range for words per scene (min, max, typical).
 
         Args:
             form: Story form
             pacing: Pacing taxonomy value
 
         Returns:
-            Tuple of (min_we, max_we, typical_we)
+            Tuple of (min_ws, max_ws, typical_ws)
         """
         pacing = pacing.lower()
         if pacing not in ['fast', 'moderate', 'slow']:
             pacing = 'moderate'
 
-        if form in cls.WORDS_PER_EVENT and pacing in cls.WORDS_PER_EVENT[form]:
-            return cls.WORDS_PER_EVENT[form][pacing]
+        if form in cls.WORDS_PER_SCENE and pacing in cls.WORDS_PER_SCENE[form]:
+            return cls.WORDS_PER_SCENE[form][pacing]
 
-        # Fallback
-        return (700, 1000, 850)
+        # Fallback (updated for scene-based system)
+        return (950, 1350, 1150)
 
     @classmethod
     def get_act_for_chapter(cls, chapter_number: int, total_chapters: int) -> str:
@@ -331,14 +332,14 @@ class DepthCalculator:
         Returns:
             Dict with:
                 - form: Detected/specified form
-                - base_we: Typical words per event (Act II baseline)
-                - we_range: (min, max, typical) words per event
-                - total_events: Calculated number of events needed
+                - base_ws: Typical words per scene (Act II baseline)
+                - ws_range: (min, max, typical) words per scene
+                - total_scenes: Calculated number of scenes needed
                 - chapter_count: Recommended number of chapters
-                - avg_events_per_chapter: Average events per chapter
+                - avg_scenes_per_chapter: Average scenes per chapter
                 - chapter_length_target: Target words per chapter
                 - act_event_multipliers: Event count multipliers by act
-                - act_we_multipliers: Words-per-event multipliers by act
+                - act_ws_multipliers: Words-per-event multipliers by act
         """
         # Determine form (priority: form_override > length_scope > detection)
         if form_override:
@@ -348,12 +349,12 @@ class DepthCalculator:
         else:
             form = cls.detect_form(target_words)
 
-        # Get words per event
-        base_we = cls.get_base_words_per_event(form, pacing)
-        we_range = cls.get_words_per_event_range(form, pacing)
+        # Get words per scene
+        base_ws = cls.get_base_words_per_scene(form, pacing)
+        ws_range = cls.get_words_per_scene_range(form, pacing)
 
-        # Calculate total events needed
-        total_events = int(target_words / base_we)
+        # Calculate total scenes needed
+        total_scenes = int(target_words / base_ws)
 
         # Calculate chapter count
         chapter_length_target = cls.CHAPTER_LENGTH_TARGETS.get(form, 4000)
@@ -370,65 +371,65 @@ class DepthCalculator:
         elif form == 'epic':
             chapter_count = max(30, chapter_count)
 
-        # Calculate average events per chapter
-        avg_events_per_chapter = total_events / chapter_count if chapter_count > 0 else total_events
+        # Calculate average scenes per chapter
+        avg_scenes_per_chapter = total_scenes / chapter_count if chapter_count > 0 else total_scenes
 
         # Get act multipliers for event distribution and depth
-        act_event_multipliers = cls.ACT_EVENT_MULTIPLIERS.get(form, cls.ACT_EVENT_MULTIPLIERS['novel'])
-        act_we_multipliers = cls.ACT_WE_MULTIPLIERS.get(form, cls.ACT_WE_MULTIPLIERS['novel'])
+        act_event_multipliers = cls.ACT_SCENE_MULTIPLIERS.get(form, cls.ACT_SCENE_MULTIPLIERS['novel'])
+        act_ws_multipliers = cls.ACT_WS_MULTIPLIERS.get(form, cls.ACT_WS_MULTIPLIERS['novel'])
 
         return {
             'form': form,
-            'base_we': base_we,  # Act II baseline
-            'we_range': we_range,
-            'total_events': total_events,
+            'base_ws': base_ws,  # Act II baseline
+            'ws_range': ws_range,
+            'total_scenes': total_scenes,
             'chapter_count': chapter_count,
-            'avg_events_per_chapter': round(avg_events_per_chapter, 1),
+            'avg_scenes_per_chapter': round(avg_scenes_per_chapter, 1),
             'chapter_length_target': chapter_length_target,
-            'act_event_multipliers': act_event_multipliers,
-            'act_we_multipliers': act_we_multipliers,
+            'act_scene_multipliers': act_event_multipliers,
+            'act_ws_multipliers': act_ws_multipliers,
             'pacing': pacing  # Include for downstream use
         }
 
     @classmethod
-    def calculate_chapter_events(
+    def calculate_chapter_scenes(
         cls,
         chapter_number: int,
         total_chapters: int,
-        avg_events: float,
+        avg_scenes: float,
         form: str
     ) -> int:
         """
-        Calculate event count for a specific chapter based on act position.
+        Calculate scene count for a specific chapter based on act position.
 
         Args:
             chapter_number: Chapter number (1-indexed)
             total_chapters: Total number of chapters
-            avg_events: Average events per chapter
+            avg_scenes: Average scenes per chapter
             form: Story form
 
         Returns:
-            Number of events for this chapter
+            Number of scenes for this chapter
         """
         # Determine act
         act = cls.get_act_for_chapter(chapter_number, total_chapters)
 
         # Get multiplier
-        multipliers = cls.ACT_EVENT_MULTIPLIERS.get(form, cls.ACT_EVENT_MULTIPLIERS['novel'])
+        multipliers = cls.ACT_SCENE_MULTIPLIERS.get(form, cls.ACT_SCENE_MULTIPLIERS['novel'])
         multiplier = multipliers[act]
 
-        # Calculate events
-        events = int(avg_events * multiplier)
+        # Calculate scenes
+        scenes = int(avg_scenes * multiplier)
 
-        # Ensure minimum
-        return max(3, events)
+        # Ensure minimum (2-4 scenes per chapter)
+        return max(2, min(4, scenes))
 
     @classmethod
     def calculate_chapter_word_target(
         cls,
         chapter_number: int,
         total_chapters: int,
-        event_count: int,
+        scene_count: int,
         form: str,
         pacing: str
     ) -> int:
@@ -438,7 +439,7 @@ class DepthCalculator:
         Args:
             chapter_number: Chapter number (1-indexed)
             total_chapters: Total number of chapters
-            event_count: Number of events in this chapter
+            scene_count: Number of scenes in this chapter
             form: Story form
             pacing: Pacing taxonomy value
 
@@ -448,48 +449,48 @@ class DepthCalculator:
         # Determine act
         act = cls.get_act_for_chapter(chapter_number, total_chapters)
 
-        # Get act-aware words per event
-        act_we = cls.get_act_words_per_event(form, pacing, act)
+        # Get act-aware words per scene
+        act_ws = cls.get_act_words_per_scene(form, pacing, act)
 
         # Calculate target
-        return event_count * act_we
+        return scene_count * act_ws
 
     @classmethod
-    def distribute_events_across_chapters(
+    def distribute_scenes_across_chapters(
         cls,
-        total_events: int,
+        total_scenes: int,
         chapter_count: int,
         form: str
     ) -> list:
         """
-        Distribute events across all chapters based on act structure.
+        Distribute scenes across all chapters based on act structure.
 
         Args:
-            total_events: Total events to distribute
+            total_scenes: Total scenes to distribute
             chapter_count: Number of chapters
             form: Story form
 
         Returns:
-            List of event counts per chapter
+            List of scene counts per chapter
         """
-        avg_events = total_events / chapter_count
+        avg_scenes = total_scenes / chapter_count
 
         # Calculate initial distribution
         distribution = []
         for chapter_num in range(1, chapter_count + 1):
-            events = cls.calculate_chapter_events(
-                chapter_num, chapter_count, avg_events, form
+            scenes = cls.calculate_chapter_scenes(
+                chapter_num, chapter_count, avg_scenes, form
             )
-            distribution.append(events)
+            distribution.append(scenes)
 
-        # Normalize to match total_events exactly
+        # Normalize to match total_scenes exactly
         current_total = sum(distribution)
-        if current_total != total_events:
-            scale = total_events / current_total
-            distribution = [max(3, int(e * scale)) for e in distribution]
+        if current_total != total_scenes:
+            scale = total_scenes / current_total
+            distribution = [max(2, min(4, int(s * scale))) for s in distribution]
 
             # Adjust last chapter to hit exact total
-            diff = total_events - sum(distribution)
+            diff = total_scenes - sum(distribution)
             distribution[-1] += diff
 
         return distribution
@@ -497,7 +498,7 @@ class DepthCalculator:
     @classmethod
     def get_scene_depth_guidance(
         cls,
-        total_events: int,
+        total_scenes: int,
         word_target: int,
         form: str,
         pacing: str
@@ -506,20 +507,20 @@ class DepthCalculator:
         Generate guidance for scene depth variation within a chapter.
 
         Args:
-            total_events: Number of events in this chapter
+            total_scenes: Number of scenes in this chapter
             word_target: Target word count for chapter
             form: Story form
             pacing: Pacing taxonomy
 
         Returns:
             Dict with:
-                - avg_we: Average words per event
+                - avg_we: Average words per scene
                 - setup_range: (min, max) for setup scenes
                 - standard_range: (min, max) for standard scenes
                 - climax_range: (min, max) for climactic scenes
                 - distribution_example: Example distribution text
         """
-        avg_we = word_target // total_events if total_events > 0 else word_target
+        avg_we = word_target // total_scenes if total_scenes > 0 else word_target
 
         # Scene type ranges (as percentages of average)
         setup_range = (int(avg_we * 0.75), int(avg_we * 0.90))
@@ -527,28 +528,28 @@ class DepthCalculator:
         climax_range = (int(avg_we * 1.20), int(avg_we * 1.50))
 
         # Generate example distribution
-        if total_events <= 4:
-            # Few events - mostly standard/climax
+        if total_scenes <= 4:
+            # Few scenes - mostly standard/climax
             setup_count = 0
             climax_count = 1
-            standard_count = total_events - climax_count
-        elif total_events <= 7:
-            # Moderate events
+            standard_count = total_scenes - climax_count
+        elif total_scenes <= 7:
+            # Moderate scenes
             setup_count = 1
             climax_count = 1
-            standard_count = total_events - setup_count - climax_count
+            standard_count = total_scenes - setup_count - climax_count
         else:
-            # Many events
+            # Many scenes
             setup_count = 2
             climax_count = 1
-            standard_count = total_events - setup_count - climax_count
+            standard_count = total_scenes - setup_count - climax_count
 
         # Calculate words
         setup_words = setup_count * setup_range[1]
         standard_words = standard_count * ((standard_range[0] + standard_range[1]) // 2)
         climax_words = climax_count * climax_range[1]
 
-        example_text = f"""Example distribution for {total_events} events → {word_target:,} words:
+        example_text = f"""Example distribution for {total_scenes} scenes → {word_target:,} words:
 - {setup_count} setup scene{"s" if setup_count != 1 else ""} @ ~{setup_range[1]}w = {setup_words:,}
 - {standard_count} standard scene{"s" if standard_count != 1 else ""} @ ~{(standard_range[0] + standard_range[1]) // 2}w = {standard_words:,}
 - {climax_count} climax scene{"s" if climax_count != 1 else ""} @ ~{climax_range[1]}w = {climax_words:,}
