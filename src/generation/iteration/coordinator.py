@@ -668,15 +668,89 @@ You are modifying a short-form story. The premise and treatment provide the stor
         elif target_type == 'chapters':
             # Multiple chapters - regenerate all chapter outlines with feedback
             from ..chapters import ChapterGenerator
+            from ..depth_calculator import DepthCalculator
             generator = ChapterGenerator(self.client, self.project, self.model)
 
-            # Get current chapter count or use default
+            # Get current chapter count from existing chapters
             current_chapters = self.project.list_chapters()
             chapter_count = len(current_chapters) if current_chapters else None
 
-            # Get total words from treatment or use default
-            treatment = self.project.get_treatment()
-            total_words = len(treatment.split()) * 20 if treatment else 50000  # Rough estimate
+            # Get taxonomy data for intelligent word count calculation
+            taxonomy_data = self.project.get_taxonomy() or {}
+
+            # Extract genre from premise metadata
+            premise_data = self.project.get_premise_metadata()
+            if premise_data and isinstance(premise_data, dict):
+                premise_metadata = premise_data.get('metadata', {})
+                genre = premise_metadata.get('genre')
+            else:
+                genre = None
+
+            # Infer genre from taxonomy if not explicitly set
+            if not genre:
+                if 'fantasy_subgenre' in taxonomy_data:
+                    genre = 'fantasy'
+                elif 'mystery_subgenre' in taxonomy_data:
+                    genre = 'mystery'
+                elif 'romance_subgenre' in taxonomy_data:
+                    genre = 'romance'
+                elif 'scifi_subgenre' in taxonomy_data:
+                    genre = 'science-fiction'
+                elif 'horror_subgenre' in taxonomy_data:
+                    genre = 'horror'
+                elif 'literary_style' in taxonomy_data:
+                    genre = 'literary-fiction'
+                elif 'historical_period' in taxonomy_data:
+                    genre = 'historical-fiction'
+                else:
+                    genre = 'general'
+
+            # Extract length_scope from taxonomy
+            length_scope_value = taxonomy_data.get('length_scope')
+            if isinstance(length_scope_value, list) and length_scope_value:
+                length_scope = length_scope_value[0]
+            else:
+                length_scope = length_scope_value if isinstance(length_scope_value, str) else None
+
+            # Get total_words using same logic as generation (priority: stored > calculated default)
+            total_words = None
+
+            # Try stored value first (from previous generation)
+            chapters_yaml = self.project.get_chapters_yaml()
+            if chapters_yaml and isinstance(chapters_yaml, dict):
+                metadata = chapters_yaml.get('metadata', {})
+                stored_target = metadata.get('target_word_count')
+                if stored_target:
+                    total_words = int(stored_target)
+                    if logger:
+                        logger.debug(f"Iteration: Found stored target_word_count: {total_words}")
+
+                    # Validate stored target against current length_scope from taxonomy
+                    if length_scope:
+                        normalized_scope = length_scope.lower().replace(' ', '_')
+                        form_ranges = DepthCalculator.FORM_RANGES.get(normalized_scope)
+                        if form_ranges:
+                            min_words, max_words = form_ranges
+                            # If stored target is outside form range, recalculate
+                            if total_words < min_words or total_words > max_words:
+                                if logger:
+                                    logger.warning(
+                                        f"Iteration: Stored target {total_words:,} words is outside range for {length_scope} "
+                                        f"({min_words:,}-{max_words:,}). Recalculating..."
+                                    )
+                                total_words = None  # Force recalculation
+
+            # Calculate intelligent default if no stored value (or if invalidated)
+            if total_words is None:
+                if length_scope:
+                    total_words = DepthCalculator.get_default_word_count(length_scope, genre)
+                    if logger:
+                        logger.debug(f"Iteration: Calculated default for {length_scope}/{genre}: {total_words} words")
+                else:
+                    # Fallback: use 'novel' baseline
+                    total_words = DepthCalculator.get_default_word_count('novel', genre)
+                    if logger:
+                        logger.debug(f"Iteration: Using fallback default for novel/{genre}: {total_words} words")
 
             # Regenerate with feedback as guidance
             feedback_text = intent.get('description', '')
