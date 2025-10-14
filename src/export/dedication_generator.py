@@ -148,18 +148,28 @@ TASK:
 Rewrite the dedication with imagery and language that matches this book's style and genre.
 
 Core sentiment to preserve:
-- Family as anchors and constants
-- Gratitude for unwavering support
-- Love and connection as sources of strength
-- Appreciation for being reasons to create
+- Family as sources of joy and inspiration
+- Gratitude for love and connection
+- Celebration of shared happiness and warmth
+- Appreciation for inspiring creativity and passion
 
 {genre_guidance}
+
+CRITICAL - POSITIVE LANGUAGE ONLY:
+- Use ONLY positive, uplifting, celebratory language
+- NO references to struggle, chaos, difficulty, darkness, loss, or hardship
+- NO metaphors involving burden, weight, fixing, or saving
+- Focus on joy, inspiration, celebration, gratitude, and love
+- Frame family as sources of JOY and INSPIRATION (not rescue or stability from chaos)
+- Use words like: joy, celebration, inspiration, wonder, light, warmth, love, gratitude
+- AVOID words like: chaos, darkness, anchor (implies drift), steady (implies instability), save, fix, struggle
 
 IMPORTANT:
 - Keep dedication to 2-4 sentences (similar length to template)
 - Use literary, evocative language
 - Make it feel specific to this book's world/tone
 - Return ONLY the dedication text, no quotes, no explanations, no meta-commentary
+- Ensure NOTHING can be interpreted negatively or as implying the author or their life is chaotic/broken/difficult
 
 Example tone for {genre}:
 {self._get_genre_example(genre)}
@@ -172,60 +182,60 @@ Now write the dedication:"""
         """Get genre-specific writing guidance."""
         guidance_map = {
             'fantasy': """Genre guidance for FANTASY:
-- Use epic, mythological tone
-- Reference quests, journeys, magic, light/darkness
-- Metaphors: shields, swords, ancient trees, stars, forges
-- Tone: Grand but heartfelt, timeless
-- Examples: "steadfast as ancient oak," "forged in love's fire," "my true north star\"""",
+- Use epic, mythological tone celebrating wonder
+- Reference wonder, journeys, magic, light, enchantment, imagination
+- Metaphors: stars, ancient trees, illumination, sparks, forges of creation
+- Tone: Grand but heartfelt, timeless, celebratory
+- Examples: "wonder that sparks worlds," "forged in love's joy," "my guiding star\"""",
 
             'science-fiction': """Genre guidance for SCIENCE-FICTION:
-- Future-oriented, technological metaphors
-- Reference systems, networks, constants in flux, navigation
-- Metaphors: beacons, algorithms, gravity, orbits, coordinates
-- Tone: Precise but emotional, philosophical
-- Examples: "my constant in shifting variables," "gravity that grounds," "beacons in the void\"""",
+- Future-oriented, celebrating discovery and possibility
+- Reference discovery, exploration, innovation, potential, inspiration
+- Metaphors: constellations, horizons, sparks, illumination, pathways
+- Tone: Precise but emotional, philosophical, optimistic
+- Examples: "spark of discovery," "boundless horizons," "constellations of possibility\"""",
 
             'mystery': """Genre guidance for MYSTERY:
-- Sharp, observant language
-- Reference truth, clarity, patterns, answers
-- Metaphors: clues, evidence, certainty, foundations
-- Tone: Clear-eyed but warm, grateful
-- Examples: "the truth I return to," "evidence of love's endurance," "my certain answer\"""",
+- Sharp, observant language celebrating truth
+- Reference truth, clarity, discovery, wonder, revelation
+- Metaphors: illumination, discovery, clarity, insight
+- Tone: Clear-eyed but warm, grateful, celebratory
+- Examples: "truth that illuminates," "joy of discovery," "my cherished revelation\"""",
 
             'thriller': """Genre guidance for THRILLER:
-- Tense but heartfelt language
-- Reference safety, refuge, trust, survival
-- Metaphors: shelter, anchor, steady ground, safe harbor
-- Tone: Intense gratitude, awareness of danger/safety contrast
-- Examples: "my safe harbor," "the steady ground," "the ones who kept me human\"""",
+- Passionate, heartfelt language celebrating courage
+- Reference courage, excitement, triumph, passion, strength
+- Metaphors: fire, warmth, celebration, inspiration
+- Tone: Intense gratitude, celebrating courage and triumph
+- Examples: "inspiration for courage," "fuel for passion," "celebration of triumph\"""",
 
             'horror': """Genre guidance for HORROR:
-- Contrast darkness with light/hope
-- Reference humanity, sanity, warmth in cold worlds
-- Metaphors: light in darkness, warmth, tethers, humanity
-- Tone: Grateful for preserving humanity/sanity
-- Examples: "my tether to humanity," "light against the darkness," "warmth in endless night\"""",
+- Celebrate courage and imagination
+- Reference courage, creativity, imagination, transcendence, warmth
+- Metaphors: light, warmth, courage, creative fire
+- Tone: Grateful for inspiration and creative courage
+- Examples: "courage in every tale," "warmth of imagination," "love that transcends\"""",
 
             'romance': """Genre guidance for ROMANCE:
-- Emotional, intimate language
-- Reference heart, soul, love as foundation
-- Metaphors: heartbeats, home, belonging, completion
-- Tone: Deeply emotional, vulnerable
-- Examples: "the love that taught me," "my home and heartbeat," "the reason love stories matter\"""",
+- Emotional, intimate language celebrating love
+- Reference heart, soul, love, joy, connection
+- Metaphors: heartbeats, home, belonging, celebration
+- Tone: Deeply emotional, celebratory, joyful
+- Examples: "love that taught me joy," "my heart and home," "reason love stories inspire\"""",
 
             'historical-fiction': """Genre guidance for HISTORICAL FICTION:
-- Period-appropriate elevated language
-- Reference legacy, memory, roots, generations
-- Metaphors: foundations, heritage, threads through time
-- Tone: Reverent, aware of history's weight
-- Examples: "my living legacy," "roots that anchor," "the heritage I cherish\"""",
+- Period-appropriate elevated language celebrating heritage
+- Reference legacy, memory, heritage, generations, celebration
+- Metaphors: heritage, legacy, threads through time, treasures
+- Tone: Reverent, celebrating heritage and legacy
+- Examples: "my living legacy," "heritage I celebrate," "treasures I cherish\"""",
 
             'literary-fiction': """Genre guidance for LITERARY FICTION:
-- Lyrical, introspective language
-- Reference meaning, truth, humanity, complexity
-- Metaphors: mirrors, truth, depth, richness of life
-- Tone: Thoughtful, philosophical yet personal
-- Examples: "mirrors showing truth," "the meaning in chaos," "complexity made bearable\"""",
+- Lyrical, introspective language celebrating beauty
+- Reference meaning, truth, beauty, depth, joy, richness
+- Metaphors: beauty, truth, depth, illumination, richness of life
+- Tone: Thoughtful, philosophical yet personal, celebratory
+- Examples: "beauty in every truth," "depth that enriches," "joy that illuminates\"""",
         }
 
         return guidance_map.get(genre.lower(), f"""Genre guidance for {genre.upper()}:
@@ -237,21 +247,21 @@ Now write the dedication:"""
     def _get_genre_example(self, genre: str) -> str:
         """Get example dedication tone for genre."""
         examples = {
-            'fantasy': "To my family—my steadfast companions through every quest, the light that guides me home from darkest realms, and the magic that makes all stories worth telling.",
+            'fantasy': "To my family—the wonder that sparks every imagined world, the light that illuminates all my stories, and the magic that makes creation a joy.",
 
-            'science-fiction': "To my family—the constants in my ever-shifting variables, my gravity in the void, and the reason I believe in humanity's future.",
+            'science-fiction': "To my family—my inspiration for every imagined future, the spark of curiosity that fuels discovery, and the reason I celebrate humanity's boundless potential.",
 
-            'mystery': "To my family—the truth I return to when the world grows uncertain, my evidence that love endures, and my most reliable witnesses to life's mysteries.",
+            'mystery': "To my family—the joy of discovery in every moment, the truth that love illuminates all mysteries, and my cherished companions in wonder.",
 
-            'thriller': "To my family—my safe harbor in storms, the steady ground when everything shakes, and the ones who remind me what's worth fighting for.",
+            'thriller': "To my family—my inspiration for every courageous character, the warmth that fuels my passion for storytelling, and the ones who celebrate every triumph with me.",
 
-            'horror': "To my family—the light I carry against darkness, my tether to humanity when the world turns strange, and proof that love survives even horror.",
+            'horror': "To my family—the courage that inspires every tale, the warmth that lights my imagination, and proof that love transcends all stories.",
 
-            'romance': "To my family—the love that taught me how to write about love, my home when I'm lost, and the heartbeat beneath every word.",
+            'romance': "To my family—the love that taught me how to write about love, my heart and home, and the inspiration beneath every word.",
 
-            'historical-fiction': "To my family—my living legacy, the roots that anchor me through changing times, and the history I'm most proud to be part of.",
+            'historical-fiction': "To my family—my living legacy, the heritage I celebrate in every story, and the history I'm most proud to be part of.",
 
-            'literary-fiction': "To my family—the mirrors showing truth, the meaning I find in chaos, and the complexity of love that makes life bearable and beautiful.",
+            'literary-fiction': "To my family—the beauty in every truth I explore, the depth of love that enriches life, and the joy that makes every story meaningful.",
         }
 
-        return examples.get(genre.lower(), "To my family—my constants, my anchors, and my inspiration.")
+        return examples.get(genre.lower(), "To my family—my joy, my inspiration, and my celebration of love.")
