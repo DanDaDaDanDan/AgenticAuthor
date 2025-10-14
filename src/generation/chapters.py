@@ -357,7 +357,8 @@ class ChapterGenerator:
         total_words: int,
         chapter_count: int,
         original_concept: str = '',
-        unique_elements: List[str] = None
+        unique_elements: List[str] = None,
+        feedback: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Generate ONLY the foundation (metadata + characters + world), no chapters.
@@ -416,6 +417,11 @@ class ChapterGenerator:
             for elem in unique_elements:
                 metadata_yaml_example += f'\n    - "{elem}"'
 
+        # Iteration-specific instructions for word count flexibility
+        word_count_note = ""
+        if feedback:
+            word_count_note = " # Current target - adjust based on feedback if needed"
+
         prompt = f"""Generate the FOUNDATION for a chapter structure. This is PART 1 of multi-phase generation.
 
 INPUT CONTEXT:
@@ -435,7 +441,7 @@ Generate high-level story parameters:
 - story_structure (e.g., "three_act", "hero_journey")
 - narrative_style (e.g., "third_person_limited", "first_person")
 - target_audience (e.g., "adult", "young adult")
-- target_word_count: {total_words}
+- target_word_count: {total_words}{word_count_note}
 - setting_period (e.g., "contemporary", "historical", "future")
 - setting_location (e.g., "urban", "rural", "multiple")
 - content_warnings: list any if applicable
@@ -505,6 +511,10 @@ world:
 IMPORTANT: Return ONLY these three sections. DO NOT include a 'chapters:' section.
 Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
 
+        # Add feedback instruction if iterating
+        if feedback:
+            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: When generating the metadata, you may adjust the target_word_count if the feedback suggests it (e.g., 'consolidate/tighten' → reduce word count, 'expand' → increase word count)."
+
         # Generate foundation
         result = await self.client.streaming_completion(
             model=self.model,
@@ -561,7 +571,8 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         total_chapters: int,
         form: str,
         pacing: str,
-        scenes_per_chapter: List[int]
+        scenes_per_chapter: List[int],
+        feedback: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Generate a batch of chapters with full context and act-aware word targets.
@@ -727,6 +738,10 @@ Return ONLY a YAML list of chapters (no markdown fences):
 
 IMPORTANT: Use "scenes:" (with scene structure), NOT "key_events:" (old format).
 Do NOT wrap in markdown code fences. Return ONLY the YAML list."""
+
+        # Add feedback instruction if iterating
+        if feedback:
+            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the above feedback when generating chapters. You may adjust chapter count, scene count, and word targets if the feedback suggests it (e.g., 'consolidate chapters' → fewer chapters with tighter scenes, 'expand' → more chapters/scenes)."
 
         # Generate batch
         min_tokens = batch_size * 700  # Estimate: 700 tokens per chapter
@@ -1244,7 +1259,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 total_words=total_words,
                 chapter_count=chapter_count,
                 original_concept=original_concept,
-                unique_elements=unique_elements
+                unique_elements=unique_elements,
+                feedback=feedback
             )
 
             # Save foundation immediately
@@ -1289,7 +1305,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                             total_chapters=chapter_count,
                             form=form,
                             pacing=pacing,
-                            scenes_per_chapter=batch_scenes
+                            scenes_per_chapter=batch_scenes,
+                            feedback=feedback
                         )
                         break  # Success
                     except Exception as e:
