@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Scene-Based Word Count System** 🎬 **[MAJOR REFACTORING]**
+  - **Problem**: Current system achieves only 50-60% of target word counts (e.g., 2,300/3,800 words)
+  - **Root Cause**: LLMs treat "key_events" as bullet point summaries (200-500 words) instead of full dramatic scenes (1,200-2,000 words)
+  - **Solution**: Complete refactoring from event-based to scene-based architecture
+
+  **Mathematical Changes (depth_calculator.py)**:
+  - All constants renamed: `WORDS_PER_EVENT` → `WORDS_PER_SCENE`
+  - Word targets increased +35-37%:
+    - Novel moderate: 950 w/e → 1,300 w/s (+37%)
+    - Novel fast: 800 w/e → 1,100 w/s (+37%)
+    - Novel slow: 1,200 w/e → 1,600 w/s (+33%)
+  - Scene clamping: 2-4 scenes per chapter (not 6-10 events)
+  - All methods renamed: `get_base_words_per_scene()`, `get_act_words_per_scene()`, etc.
+  - Impact: 92K novel → 71 scenes ÷ 23 chapters = 3.1 scenes/chapter (was 4.2 events/chapter)
+
+  **Chapter Generation (chapters.py)**:
+  - Three major prompts updated with structured scene format:
+  - New 9-field scene structure in YAML:
+    ```yaml
+    scenes:
+      - scene: "Scene Title"
+        location: "Where it happens"
+        pov_goal: "What character wants"
+        conflict: "What prevents it"
+        stakes: "What's at risk"
+        outcome: "How it resolves"
+        emotional_beat: "Internal change"
+        sensory_focus: ["Detail 1", "Detail 2"]
+        target_words: 1300  # Act-specific
+    ```
+  - Prompts emphasize: "COMPLETE DRAMATIC UNITS (1,000-2,000 words), NOT bullet point summaries"
+  - Validation accepts both 'scenes' (new) and 'key_events' (old) for backward compatibility
+
+  **Prose Generation (prose.py)** - MOST CRITICAL CHANGES:
+  - Complete prompt rewrite with scene-by-scene breakdown
+  - 4-part scene structure: Setup (15-20%) → Development (40-50%) → Climax (15-20%) → Resolution (15-20%)
+  - Changed from "AVERAGE" to "MINIMUM" word counts (repeated emphasis)
+  - Added SHOW vs TELL example:
+    - ❌ TELLING: "Sarah was angry... She confronted him..." (50 words - rushed summary)
+    - ✅ SHOWING: Full dialogue scene with action/emotion (380 words - full scene) = 7.6x difference
+  - Multiple critical reminders:
+    - "COMPLETE DRAMATIC UNIT" (not summary)
+    - "Do NOT summarize or rush"
+    - "Let moments breathe"
+    - "SHOW character emotions through action, dialogue, physical reactions"
+    - "Include sensory details in EVERY scene"
+  - If using structured scenes, embeds full scene details in prompt before generation
+
+  **Supporting Systems**:
+  - wordcount.py: Updated for scene terminology, supports both formats
+  - All old method references removed from codebase
+  - Backward compatibility maintained throughout
+
+  **Expected Impact**:
+  - Word count achievement: 50-60% → 80-100% (+30-40 percentage points)
+  - Example chapter: 2,300 words → 3,040-3,800 words (+32-65%)
+  - Quality: 3/5 (micro-scenes) → 4/5 (full dramatic units)
+
+  **Files Modified**:
+  - `src/generation/depth_calculator.py` (commit 325c75d)
+  - `src/generation/chapters.py` (commit b239512)
+  - `src/generation/prose.py` (commit 51cff67)
+  - `src/generation/wordcount.py` (commit e050fe8)
+
+  **Documentation**:
+  - `docs/wordcount-rethink-2025.md` - 31K word comprehensive analysis
+  - `docs/wordcount-implementation-todo.md` - 18K word implementation plan
+  - `docs/wordcount-implementation-status.md` - Live progress tracking
+
 ### Added
 - **Intelligent Word Count Defaults** 📊
   - Smart default word counts based on length_scope + genre
