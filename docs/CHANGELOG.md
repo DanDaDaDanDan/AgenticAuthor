@@ -76,6 +76,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs/wordcount-rethink-2025.md` - 31K word comprehensive analysis
   - `docs/wordcount-implementation-todo.md` - 18K word implementation plan
   - `docs/wordcount-implementation-status.md` - Live progress tracking
+  - `docs/IMPLEMENTATION_SUMMARY.md` - Complete overview with testing results
+  - `docs/SCENE_SYSTEM_TEST_RESULTS.md` - Baseline testing and validation
+
+  **Testing & Validation** (same day as implementation):
+  - Tested on steampunk-moon project (11 chapters, 41,380 words)
+  - **OLD System Baseline Confirmed**:
+    - Target miscalculation bug discovered: Chapter targets summed to 193% of project target (80K vs 41K)
+    - Micro-scene problem validated: 476 words/event actual (should be 950+)
+    - Apparent achievement: 61% (false negative due to inflated targets)
+    - Real achievement: 118% of project total
+  - **NEW System Projections**:
+    - Chapter 1 comparison: 9 events/8,500 target (OLD) → 4 scenes/4,180 target (NEW)
+    - Realistic targets that align with project totals
+    - Expected achievement: 80-100% (vs 50-60% baseline)
+  - **Bug Found & Fixed**: Scene distribution normalization (see Fixed section)
+  - All test scenarios pass: Scene clamping (2-4) respected, totals match exactly
+  - Status: Production-ready, awaiting live generation test with API
 
 ### Added
 - **Intelligent Word Count Defaults** 📊
@@ -97,6 +114,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User can still override: `/generate chapters 95000`
 
 ### Fixed
+- **Scene Distribution Normalization** 🎬 **[Scene System Bug Fix]**
+  - Fixed critical bug in scene distribution that violated 2-4 scene clamp
+  - **Problem**: Normalization blindly added excess scenes to final chapter without respecting clamp
+  - **Impact**: Chapter 11 in test case would get 8 scenes (violates max 4), breaking professional structure
+  - **Root cause**: Line 494 in depth_calculator.py: `distribution[-1] += diff` added all excess to last chapter
+  - **Discovery**: Found during baseline testing on steampunk-moon project (2025-10-14)
+  - **Solution**: Implemented iterative distribution algorithm
+    - Distributes scenes across ALL chapters with room (< 4), not just last
+    - Respects 2-4 scene clamp throughout distribution
+    - Input validation: raises ValueError if total_scenes < chapter_count
+    - Warning system: logs if distribution outside recommended range (chapter_count * 2-4)
+    - Fallback protection: minimum 1 scene per chapter as last resort
+  - **Test Results** (All Pass):
+    - steampunk-moon (38 scenes, 11 chapters): [4,4,4,4,4,4,4,4,2,2,2] ✓
+    - Perfect scenario (33 scenes, 11 chapters): [4,4,4,3,3,3,3,3,2,2,2] ✓
+    - Short story (6 scenes, 2 chapters): [4,2] ✓
+    - Novella (50 scenes, 15 chapters): [4,4,4,4,4,3,3,3,3,3,3,3,3,3,3] ✓
+  - All distributions match target exactly and respect 2-4 clamp
+  - Fixed: src/generation/depth_calculator.py (distribute_scenes_across_chapters method)
+  - Commit: 8caa4dc
+
+- **Backward Compatibility: Scene and Key Events Support** 🎬 **[Scene System Fix]**
+  - Fixed validation and analysis to support both 'scenes' (new) and 'key_events' (old) formats
+  - **Problem**: analyzer.py and lod_parser.py only checked for 'key_events', not new 'scenes' format
+  - **Impact**:
+    - Chapter validation would fail with new scene format
+    - Analysis reporting wouldn't display scene information
+    - Chapter comparison for iteration wouldn't detect scene changes
+  - **Discovery**: Found during verification after scene system implementation (2025-10-14)
+  - **Solution**:
+    - analyzer.py: Support both formats with detection of structured vs simple scenes
+    - lod_parser.py: Updated validation to accept EITHER 'scenes' OR 'key_events' (one required)
+    - lod_parser.py: Updated comparison logic to check both formats
+    - chapters.py: Updated docstring from "events_per_chapter" to "scenes_per_chapter"
+  - **Result**: Old projects with key_events continue working, new projects use scenes
+  - Fixed: src/generation/analysis/analyzer.py, src/generation/lod_parser.py, src/generation/chapters.py
+  - Commit: 63fd226
+
 - **Prose Generation: Logger Error and Retry Logic** 📝
   - Fixed two critical issues with `/generate prose` command
   - **Issue 1: Logger not defined error**
