@@ -118,18 +118,98 @@
 
 ---
 
-## 🔄 IN PROGRESS: Phase 2 Part 2 - prose.py
+## ✅ COMPLETED: Phase 2 Part 2 - prose.py
 
-### Next Critical File to Update
+**Commit**: 51cff67
 
-**Priority 2: prose.py** (~600 lines)
-- [ ] Update prose generation prompts (lines ~268-331)
-  - Scene-by-scene breakdown
-  - 4-part scene structure (setup, development, climax, resolution)
-  - SHOW vs TELL examples
-  - Words-per-scene targets (not average, but minimum)
-- [ ] Update context building
-  - Use scene structure from chapters.yaml
+### What Was Changed
+
+**1. Variables & Logic Updated**:
+- `key_events` → `scenes` (with backward compatibility)
+- `num_events` → `num_scenes`
+- `avg_we` → `avg_ws`
+- `base_we` → `base_ws`
+- Added `uses_structured_scenes` boolean to detect new vs old format
+
+**2. Scene-by-Scene Breakdown (lines 271-286)**:
+If using structured scenes format, embeds detailed breakdown in prompt:
+```
+Scene 1: "Scene Title"
+  Location: ...
+  POV Goal: ...
+  Conflict: ...
+  Stakes: ...
+  Outcome: ...
+  Emotional Beat: ...
+  Sensory Focus: ...
+  TARGET: 1,300 words MINIMUM (this is a full dramatic scene)
+```
+
+**3. Prompt Completely Rewritten (lines 288-383)**:
+
+**4-Part Scene Structure Added**:
+1. **SETUP (15-20%)**: Establish location, time, presence; ground in sensory environment
+2. **DEVELOPMENT (40-50%)**: Action, dialogue, obstacles, tension, show reactions
+3. **CLIMAX (15-20%)**: Peak moment, decision, revelation, emotional turning point
+4. **RESOLUTION (15-20%)**: Aftermath, character processing, bridge to next scene
+
+**MINIMUM Words Emphasis**:
+- Changed from "AVERAGE of ~X words" to "MINIMUM X words per scene"
+- Setup scenes: 300-600 words **minimum**
+- Standard scenes: 700-1,200 words **minimum**
+- Climactic scenes: 1,000-1,600+ words **minimum**
+
+**SHOW vs TELL Example**:
+```
+❌ TELLING (avoid):
+"Sarah was angry... She confronted him..." (50 words - rushed summary)
+
+✅ SHOWING (do this):
+Sarah's jaw clenched as Mark walked in, whistling...
+[Full dialogue scene with action/emotion] (380 words - full scene)
+```
+
+**Critical Reminders (multiple)**:
+- "COMPLETE DRAMATIC UNIT" (not summary)
+- "Do NOT summarize or rush"
+- "Let moments breathe"
+- "SHOW character emotions through action, dialogue, physical reactions"
+- "Include sensory details in EVERY scene"
+- "Let dialogue breathe - reactions, pauses, character processing"
+
+**4. Token Calculation Updated (line 113)**:
+- Support both scenes and key_events formats
+- Backward compatible
+
+**Impact**: This is the MOST CRITICAL change for word count achievement. By:
+1. Breaking down into scene-by-scene structure with embedded scene details
+2. Showing concrete SHOW vs TELL example (50 vs 380 words = 7.6x difference)
+3. Emphasizing MINIMUM (not average) word counts repeatedly
+4. Providing 4-part scene structure template for each scene
+
+The prompt now explicitly signals: write FULL DRAMATIC SCENES with dialogue, action, sensory details, emotional processing - NOT plot summaries.
+
+**Status**: ✅ Complete, syntax verified, committed
+
+---
+
+## ✅ COMPLETED: Phase 2 - Generation System
+
+**All critical prompts updated for scene-based generation:**
+- ✅ depth_calculator.py - Math layer (commit 325c75d)
+- ✅ chapters.py - Chapter outline generation (commit b239512)
+- ✅ prose.py - Prose generation (commit 51cff67)
+
+**Expected Impact**:
+- Baseline: 50-60% word count achievement (2,300 / 3,800 words)
+- New System: 80-100% achievement (3,040-3,800 / 3,800 words)
+- Quality: From 3/5 (micro-scenes) to 4/5 (full dramatic units)
+
+---
+
+## 🔄 IN PROGRESS: Phase 3 - Supporting Systems
+
+### Next Files to Update
 
 **Priority 3: YAML Schema & Loaders**
 - [ ] Define new scene structure in schema
