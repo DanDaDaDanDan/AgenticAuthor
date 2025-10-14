@@ -112,12 +112,12 @@ class ShortStoryGenerator:
             with open(self.project.premise_metadata_file) as f:
                 premise_metadata = json.load(f)
 
-        # Get target word count
+        # Get target word count from taxonomy/stored value
         target_words = self.project.get_target_words()
         if not target_words:
-            # Fallback: estimate from treatment
-            treatment_words = len(treatment.split())
-            target_words = treatment_words * 20  # Assume treatment is ~5% of story
+            # Fallback: use default for short story form
+            from .depth_calculator import DepthCalculator
+            target_words = DepthCalculator.get_default_word_count('short_story', 'general')
 
         # Determine story type label
         if target_words < 1500:

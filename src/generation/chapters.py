@@ -1463,10 +1463,16 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)
 
-        # Build unified prompt (same as generate() method)
+        # Build unified prompt with iteration-specific instructions
         feedback_instruction = ""
+        word_count_instruction = f"- target_word_count: {total_words}"
+        word_count_distribution = f"- word_count_target: distribute {total_words} across chapters"
+
         if feedback:
-            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nPlease incorporate the above feedback while generating the chapters."
+            # For iteration: give LLM freedom to adjust word count based on feedback
+            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the above feedback while generating the chapters. You may adjust the target word count and chapter count if the feedback suggests it (e.g., 'consolidate' → fewer words/chapters, 'expand' → more words/chapters)."
+            word_count_instruction = f"- target_word_count: {total_words} # Current target - adjust based on feedback if needed"
+            word_count_distribution = f"- word_count_target: distribute words across chapters (adjust total if feedback requires it)"
 
         prompt = f"""Generate a comprehensive, self-contained chapter structure for a book.
 
@@ -1488,7 +1494,7 @@ Generate high-level story parameters based on the taxonomy and treatment:
 - story_structure (e.g., "three_act", "hero_journey")
 - narrative_style (e.g., "third_person_limited", "first_person")
 - target_audience (e.g., "adult", "young adult")
-- target_word_count: {total_words}
+{word_count_instruction}
 - setting_period (e.g., "contemporary", "historical", "future")
 - setting_location (e.g., "urban", "rural", "multiple")
 - content_warnings: list any if applicable
@@ -1551,7 +1557,7 @@ For each chapter:
 - tension_points: 2-3 stakes/urgency moments
 - sensory_details: 2-3 atmospheric elements
 - subplot_threads: 1-2 if applicable
-- word_count_target: distribute {total_words} across chapters
+{word_count_distribution}
 
 Guidelines:
 - Each scene should be specific and complete with full structure
