@@ -344,8 +344,14 @@ class DepthCalculator:
         # Determine form (priority: form_override > length_scope > detection)
         if form_override:
             form = form_override
-        elif length_scope and length_scope in cls.FORM_RANGES:
-            form = length_scope
+        elif length_scope:
+            # Normalize length_scope (taxonomy returns capitalized, e.g. "Novel")
+            normalized_scope = length_scope.lower().replace(' ', '_')
+            if normalized_scope in cls.FORM_RANGES:
+                form = normalized_scope
+            else:
+                # Invalid length_scope, fall back to detection
+                form = cls.detect_form(target_words)
         else:
             form = cls.detect_form(target_words)
 

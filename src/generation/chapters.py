@@ -1175,7 +1175,20 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 if logger:
                     logger.debug(f"Story structure (user-specified chapters): {form}, {chapter_count} chapters, {total_scenes} scenes, {base_ws} w/s (baseline)")
 
-            self.console.print(f"\n[cyan]Story Structure:[/cyan] {form.replace('_', ' ').title()}, {chapter_count} chapters, {base_ws} words/scene")
+            # Display comprehensive story structure breakdown
+            self.console.print(f"\n[bold cyan]Story Structure Breakdown:[/bold cyan]")
+            self.console.print(f"  Form: [green]{form.replace('_', ' ').title()}[/green]")
+            self.console.print(f"  Target: [green]{total_words:,}[/green] words")
+            self.console.print(f"  Chapters: [green]{chapter_count}[/green]")
+            self.console.print(f"  Total Scenes: [green]{total_scenes}[/green]")
+            avg_scenes = total_scenes / chapter_count if chapter_count > 0 else 0
+            self.console.print(f"  Scenes per Chapter: [green]{avg_scenes:.1f}[/green] avg (clamped to 2-4)")
+            self.console.print(f"  Words per Scene: [green]{base_ws:,}[/green] (Act II baseline, varies by act)")
+
+            # Calculate and display expected total
+            expected_total = total_scenes * base_ws
+            variance_pct = ((expected_total / total_words) - 1) * 100 if total_words > 0 else 0
+            self.console.print(f"  Expected Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
 
             # Serialize context to YAML for prompts
             context_yaml = self.context_builder.to_yaml_string(context)
