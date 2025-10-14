@@ -465,6 +465,10 @@ class DepthCalculator:
         """
         Distribute scenes across all chapters based on act structure.
 
+        Each chapter is clamped to 2-4 scenes for professional structure.
+        If total_scenes cannot be distributed within this constraint,
+        the last chapter may exceed the clamp.
+
         Args:
             total_scenes: Total scenes to distribute
             chapter_count: Number of chapters
@@ -472,7 +476,29 @@ class DepthCalculator:
 
         Returns:
             List of scene counts per chapter
+
+        Raises:
+            ValueError: If total_scenes < chapter_count (impossible - need at least 1 scene per chapter)
         """
+        # Validate input
+        if total_scenes < chapter_count:
+            raise ValueError(
+                f"Cannot distribute {total_scenes} scenes across {chapter_count} chapters. "
+                f"Need at least 1 scene per chapter."
+            )
+
+        # Warn if outside reasonable clamp range (2-4 scenes per chapter)
+        min_clamped = chapter_count * 2
+        max_clamped = chapter_count * 4
+        if total_scenes < min_clamped or total_scenes > max_clamped:
+            from ..utils.logging import get_logger
+            logger = get_logger()
+            logger.warning(
+                f"Scene distribution outside clamp range: {total_scenes} scenes for {chapter_count} chapters. "
+                f"Recommended range: {min_clamped}-{max_clamped} (2-4 scenes/chapter). "
+                f"Some chapters may violate 2-4 scene clamp."
+            )
+
         avg_scenes = total_scenes / chapter_count
 
         # Calculate initial distribution
@@ -483,15 +509,43 @@ class DepthCalculator:
             )
             distribution.append(scenes)
 
-        # Normalize to match total_scenes exactly
+        # Normalize to match total_scenes exactly while respecting 2-4 scene clamp
         current_total = sum(distribution)
         if current_total != total_scenes:
-            scale = total_scenes / current_total
-            distribution = [max(2, min(4, int(s * scale))) for s in distribution]
+            diff = total_scenes - current_total
 
-            # Adjust last chapter to hit exact total
-            diff = total_scenes - sum(distribution)
-            distribution[-1] += diff
+            if diff > 0:
+                # Need to add scenes - distribute across chapters below max (4)
+                while diff > 0:
+                    added = False
+                    for i in range(len(distribution)):
+                        if distribution[i] < 4 and diff > 0:
+                            distribution[i] += 1
+                            diff -= 1
+                            added = True
+                    # If we couldn't add any (all at max), break to avoid infinite loop
+                    if not added:
+                        # Fall back to adding to last chapter even if it exceeds clamp
+                        # This should be rare - only when (total_scenes > chapter_count * 4)
+                        distribution[-1] += diff
+                        break
+            else:
+                # Need to remove scenes - take from chapters above min (2)
+                diff = abs(diff)
+                while diff > 0:
+                    removed = False
+                    for i in range(len(distribution) - 1, -1, -1):  # Start from end
+                        if distribution[i] > 2 and diff > 0:
+                            distribution[i] -= 1
+                            diff -= 1
+                            removed = True
+                    # If we couldn't remove any (all at min), break to avoid infinite loop
+                    if not removed:
+                        # Fall back: set last chapter to hold remaining deficit
+                        # This should be rare - only when (total_scenes < chapter_count * 2)
+                        # Ensure we don't go below 1 scene
+                        distribution[-1] = max(1, distribution[-1] - diff)
+                        break
 
         return distribution
 

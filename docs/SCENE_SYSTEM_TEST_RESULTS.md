@@ -171,23 +171,47 @@ NEW system's structured format addresses micro-scene problem:
 
 ## Issues Found
 
-### BUG: Scene Distribution Normalization
+### ✅ FIXED: Scene Distribution Normalization Bug
 
-**Location**: `src/generation/depth_calculator.py:494`
+**Original Location**: `src/generation/depth_calculator.py:494`
 
-```python
-# Adjust last chapter to hit exact total
-diff = total_scenes - sum(distribution)
-distribution[-1] += diff
+**Original Problem**: Normalization blindly added excess scenes to the final chapter without respecting 2-4 scene clamp.
+
+**Original Impact**: Chapter 11 would get 8 scenes (violates max 4).
+
+**Fix Implemented** (2025-10-14):
+
+1. **Iterative Distribution**: Scenes are now distributed across ALL chapters that have room (< 4), not just the last chapter
+2. **Clamp Respect**: Algorithm respects 2-4 scene limit throughout distribution
+3. **Input Validation**: Raises ValueError if total_scenes < chapter_count
+4. **Warning System**: Logs warning if distribution is outside recommended range (chapter_count * 2-4)
+5. **Fallback Protection**: Only violates clamp as last resort, with minimum 1 scene per chapter
+
+**Test Results** (Post-Fix):
+
+```
+steampunk-moon (38 scenes, 11 chapters):
+  Distribution: [4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2]
+  All within 2-4 clamp: ✓
+  Total matches target: ✓ (38 = 38)
+
+Perfect scenario (33 scenes, 11 chapters):
+  Distribution: [4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2]
+  All within 2-4 clamp: ✓
+  Total matches target: ✓ (33 = 33)
+
+Short story (6 scenes, 2 chapters):
+  Distribution: [4, 2]
+  All within 2-4 clamp: ✓
+  Total matches target: ✓ (6 = 6)
+
+Novella (50 scenes, 15 chapters):
+  Distribution: [4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+  All within 2-4 clamp: ✓
+  Total matches target: ✓ (50 = 50)
 ```
 
-**Problem**: This line violates the 2-4 scene clamp by adding excess scenes to the final chapter without checking limits.
-
-**Impact**: In test case, Chapter 11 gets 8 scenes (should be max 4).
-
-**Fix Needed**: Implement iterative distribution that respects scene clamping while hitting total target.
-
-**Severity**: Medium - Affects final chapter's structure and realism.
+**Status**: ✅ RESOLVED
 
 ---
 
@@ -203,10 +227,10 @@ distribution[-1] += diff
 ### NEW System Advantages (Validated)
 
 1. ✅ **Realistic Targets**: Scene-based calculation aligns with project totals
-2. ✅ **Scene Clamping**: 2-4 scenes enforces professional structure
+2. ✅ **Scene Clamping**: 2-4 scenes enforces professional structure (normalization bug FIXED)
 3. ✅ **Cognitive Triggers**: Multiple mechanisms signal full scene writing
 4. ✅ **Act Awareness**: Multipliers adjust targets per story phase
-5. ⚠️ **Normalization**: Needs fix for final chapter scene count
+5. ✅ **Iterative Distribution**: Scenes distributed evenly while respecting clamps
 
 ### Expected Impact
 
@@ -221,16 +245,18 @@ distribution[-1] += diff
 
 ## Recommendations
 
-### Immediate Actions
+### ✅ Completed Actions
 
-1. **Fix normalization bug** in `distribute_scenes_across_chapters()`:
-   - Implement iterative distribution that respects 2-4 scene clamp
-   - Distribute excess scenes across multiple chapters, not just last
-   - Add validation to prevent clamping violations
+1. **✅ Fixed normalization bug** in `distribute_scenes_across_chapters()`:
+   - ✅ Implemented iterative distribution that respects 2-4 scene clamp
+   - ✅ Distributes excess scenes across multiple chapters, not just last
+   - ✅ Added input validation (ValueError for impossible scenarios)
+   - ✅ Added warning for distributions outside recommended range
 
-2. **Add validation** to chapter generation:
+### Remaining Actions
+
+1. **Add validation** to chapter generation workflow:
    - Verify sum of chapter targets ≈ project target (±10%)
-   - Warn if scene counts violate 2-4 clamp
    - Log calculation details for debugging
 
 ### Testing Next Steps
@@ -243,9 +269,9 @@ distribution[-1] += diff
 ### Documentation Updates
 
 1. ✅ Test results documented (this file)
-2. ⏳ Update IMPLEMENTATION_SUMMARY.md with bug findings
-3. ⏳ Create GitHub issue for normalization bug
-4. ⏳ Update CHANGELOG with test results
+2. ✅ Bug fix documented (this file updated with fix details)
+3. ⏳ Update IMPLEMENTATION_SUMMARY.md with bug findings and fix
+4. ⏳ Update CHANGELOG with test results and bug fix
 
 ---
 
