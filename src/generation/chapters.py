@@ -517,7 +517,44 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
 
         # Add feedback instruction if iterating
         if feedback:
-            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: When generating the metadata, you may adjust target_word_count AND chapter_count if the feedback suggests it (e.g., 'consolidate/tighten' → reduce both word count and chapter count, 'expand' → increase both)."
+            prompt += f"\n\nUSER FEEDBACK:\n{feedback}\n\n"
+            prompt += f"""CRITICAL INSTRUCTION: Analyze the feedback's structural intent before setting target_word_count and chapter_count.
+
+Current baseline: {total_words:,} words, {chapter_count} chapters
+
+STEP 1: Identify the feedback's overall intent by looking for these indicators:
+
+CONSOLIDATION INDICATORS (→ REDUCE both word count and chapter count):
+  Keywords: "consolidate", "combine", "merge", "tighten", "condense", "streamline"
+  Problems: "padded", "repetitive", "redundant", "dragging", "slow", "bloated"
+  Actions: "remove", "cut", "trim", "reduce", "eliminate"
+
+  If feedback contains these → REDUCE by 15-25%
+  Example: {total_words:,} words → {int(total_words * 0.75):,}-{int(total_words * 0.85):,} words
+           {chapter_count} chapters → {max(int(chapter_count * 0.75), 1)}-{max(int(chapter_count * 0.85), 1)} chapters
+
+EXPANSION INDICATORS (→ INCREASE both word count and chapter count):
+  Keywords: "expand", "develop", "add more", "deepen", "flesh out", "elaborate"
+  Problems: "rushed", "underdeveloped", "needs more", "too brief", "shallow"
+  Actions: "add", "extend", "grow", "enrich"
+
+  If feedback contains these → INCREASE by 15-25%
+  Example: {total_words:,} words → {int(total_words * 1.15):,}-{int(total_words * 1.25):,} words
+           {chapter_count} chapters → {int(chapter_count * 1.15)}-{int(chapter_count * 1.25)} chapters
+
+MIXED/REFINEMENT (→ minimal or no adjustment):
+  Feedback addresses specific scenes/moments without overall length concerns
+  Both consolidation and expansion requested in different areas
+  Focus on content changes rather than structural changes
+
+  If mixed signals → Adjust by less than 10% or keep current
+  Example: {total_words:,} words → {int(total_words * 0.95):,}-{total_words:,} words
+           {chapter_count} chapters → {max(chapter_count - 2, 1)}-{chapter_count} chapters
+
+STEP 2: Set your target_word_count and chapter_count based on your analysis above.
+
+Your values should reflect the feedback's structural intent, not just specific edits.
+If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitive", "combine chapters"), you SHOULD reduce both metrics proportionally."""
 
         # Generate foundation
         result = await self.client.streaming_completion(
