@@ -33,7 +33,7 @@ class ChapterGenerator:
       * world: ~500 tokens (setting, locations, systems)
 
     - Per chapter: ~600-800 tokens each
-      * Rich outlines with 8-10 key_events, character developments,
+      * Rich outlines with 2-4 structured scenes, character developments,
         relationship beats, tension points, sensory details
 
     TOTAL NEEDED: overhead + (chapter_count * 700)
@@ -576,7 +576,7 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
             total_chapters: Total number of chapters in the complete book
             form: Story form (novella, novel, epic)
             pacing: Pacing taxonomy (fast, moderate, slow)
-            events_per_chapter: List of event counts for each chapter in batch
+            scenes_per_chapter: List of scene counts for each chapter in batch
 
         Returns:
             List of chapter dicts

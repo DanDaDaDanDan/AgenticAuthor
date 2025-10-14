@@ -409,15 +409,21 @@ class LODResponseParser:
 
         Compares key fields that would affect prose generation.
         """
-        # Compare key fields
+        # Compare key fields (support both scenes and key_events)
         key_fields = [
-            'title', 'summary', 'key_events', 'character_developments',
+            'title', 'summary', 'character_developments',
             'relationship_beats', 'tension_points'
         ]
 
         for field in key_fields:
             if old.get(field) != new.get(field):
                 return True
+
+        # Check content field (scenes OR key_events)
+        old_content = old.get('scenes', old.get('key_events'))
+        new_content = new.get('scenes', new.get('key_events'))
+        if old_content != new_content:
+            return True
 
         return False
 
@@ -643,16 +649,32 @@ class LODResponseParser:
                     errors.append(f"chapters[{i}] must be a dict")
                     continue
 
-                required_chapter_fields = ['number', 'title', 'summary', 'key_events', 'word_count_target']
-                for field in required_chapter_fields:
+                # Base required fields (support both scenes and key_events formats)
+                required_base_fields = ['number', 'title', 'summary', 'word_count_target']
+                for field in required_base_fields:
                     if field not in chapter:
                         errors.append(f"chapters[{i}] missing: {field}")
 
-                # Validate key_events is a list
-                if 'key_events' in chapter and not isinstance(chapter['key_events'], list):
-                    errors.append(f"chapters[{i}].key_events must be a list")
-                elif 'key_events' in chapter and len(chapter['key_events']) == 0:
-                    errors.append(f"chapters[{i}].key_events is empty")
+                # Check for content field (scenes OR key_events)
+                has_scenes = 'scenes' in chapter
+                has_key_events = 'key_events' in chapter
+
+                if not has_scenes and not has_key_events:
+                    errors.append(f"chapters[{i}] missing both 'scenes' and 'key_events' (one required)")
+
+                # Validate scenes format if present
+                if has_scenes:
+                    if not isinstance(chapter['scenes'], list):
+                        errors.append(f"chapters[{i}].scenes must be a list")
+                    elif len(chapter['scenes']) == 0:
+                        errors.append(f"chapters[{i}].scenes is empty")
+
+                # Validate key_events format if present (legacy support)
+                if has_key_events:
+                    if not isinstance(chapter['key_events'], list):
+                        errors.append(f"chapters[{i}].key_events must be a list")
+                    elif len(chapter['key_events']) == 0:
+                        errors.append(f"chapters[{i}].key_events is empty")
 
         # Raise aggregated errors
         if errors:

@@ -275,9 +275,14 @@ class AnalysisCoordinator:
                 lines.append(f"Summary: {ch.get('summary', 'N/A')}")
                 lines.append(f"Target words: {ch.get('word_count_target', 'N/A')}")
 
-                key_events = ch.get('key_events', [])
-                if key_events:
-                    lines.append(f"Key Events ({len(key_events)} total)")
+                # Support both scenes (new) and key_events (old) formats
+                scenes = ch.get('scenes', ch.get('key_events', []))
+                if scenes:
+                    # Check if structured scenes or simple list
+                    if isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict):
+                        lines.append(f"Scenes ({len(scenes)} total - structured format)")
+                    else:
+                        lines.append(f"Scenes ({len(scenes)} total)")
 
                 char_devs = ch.get('character_developments', [])
                 if char_devs:
