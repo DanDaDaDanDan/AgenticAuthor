@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Treatment Analysis for Initial Generation** 📖 (commit bd1c585)
+  - **Problem**: All novels of same genre got identical word counts (e.g., all sci-fi → 92K) regardless of actual story complexity
+  - **Solution**: LLM analyzes treatment to determine organic word count for first-time generation
+  - **Analysis Factors**:
+    1. Story complexity (plot threads)
+    2. Character count (number with significant arcs)
+    3. World-building needs (alternate history, magic systems, etc.)
+    4. Subplot density
+    5. Natural pacing (fast-paced action vs deliberate literary)
+    6. Timeline span (days vs months/years)
+  - **Constraints**: Still respects form ranges (e.g., novel: 50k-120k)
+  - **Display**: Shows "📊 Treatment Analysis Results" with LLM's chosen word count
+  - **Example**: Tight thriller might get 60K words instead of genre default 92K
+  - **Files Modified**: `src/generation/chapters.py`
+  - **Note**: Only affects initial generation (not iteration)
+
+- **Simplified /analyze Command** 🎯 (commit 86be6ea)
+  - **Problem**: Over-engineered prompt with 8 rigid dimensions, 12 instructions, forced categorization limited LLM's ability to provide organic feedback
+  - **Solution**: Drastically simplified prompt for free-form, authentic feedback
+  - **Before**:
+    - 130+ lines of prescriptive instructions
+    - 8 forced dimensions (plot, character, worldbuilding, dialogue, prose, theme, narrative, commercial)
+    - Complex JSON: priority_fixes, path_to_a_plus, dimension_scores, confidence percentages, severity levels
+    - Progress: "⏳ Plot... ⏳ Character... ⏳ Worldbuilding... ⏳ Theme..."
+  - **After**:
+    - ~25 lines: "Rate the quality and provide constructive criticism"
+    - Simple JSON: `grade`, `grade_justification`, `overall_assessment`, `feedback[]`, `strengths[]`, `next_steps`
+    - Progress: "⏳ Reading and evaluating..."
+  - **Display Format**:
+    ```
+    📊 Analysis: Chapters
+
+    Grade: B+ (Very Good)
+    Strong plotting but pacing issues in Act II
+
+    📝 Feedback:
+      • Act II drags - consolidate chapters 9-11
+      • Protagonist motivation unclear in chapter 5
+
+    ✓ Strengths:
+      • Excellent world-building
+      • Strong character voice
+
+    🎯 Next Steps:
+      Consolidate middle chapters to tighten pacing
+    ```
+  - **Benefits**:
+    - LLM identifies what actually matters (not forced into categories)
+    - More authentic, honest feedback
+    - Faster, cheaper analysis (shorter prompt)
+    - "Next steps" more actionable than complex recommendations
+  - **Files Modified**: `src/generation/analysis/unified_analyzer.py`, `src/cli/interactive.py`
+
 ### Changed
 - **Scene-Based Word Count System** 🎬 **[MAJOR REFACTORING]**
   - **Problem**: Current system achieves only 50-60% of target word counts (e.g., 2,300/3,800 words)

@@ -548,6 +548,36 @@ Generate chapter outlines from treatment (LOD2).
 - Creates detailed beats for each chapter
 - Saves to chapters.yaml
 
+**Treatment Analysis (Initial Generation):**
+When generating chapters for the first time, the LLM analyzes your treatment to determine an organic word count instead of using rigid genre defaults:
+
+**Analysis Factors:**
+1. **Story Complexity**: Number of major plot threads
+2. **Character Count**: How many characters have significant arcs
+3. **World-Building Needs**: Alternate history, magic systems, extensive setting
+4. **Subplot Density**: Number of parallel storylines
+5. **Natural Pacing**: Fast-paced action vs deliberate literary exploration
+6. **Timeline Span**: Events spanning days/weeks (shorter) vs months/years (longer)
+
+**Example:**
+```
+📊 Treatment Analysis Results
+═══════════════════════════════════════════════════════════
+
+  Word Count: 92,000 → 75,000 ↘ -18.5% (-17,000 words)
+
+  Average chapter length: 4,000 → 3,260 words
+
+═══════════════════════════════════════════════════════════
+```
+
+**Why This Matters:**
+- Tight thriller with 3 characters → 60K words (not genre default 92K)
+- Epic with extensive world-building → 105K words (not genre default 92K)
+- Still respects form ranges (novel: 50k-120k)
+
+**Note:** Treatment analysis only runs during initial generation. Iteration uses stored targets and adjusts based on feedback.
+
 #### `/generate prose <chapter>`
 Generate full prose for a chapter (LOD0).
 - **chapter**: Chapter number to generate (required)
@@ -606,7 +636,7 @@ Apply natural language feedback to existing content or taxonomy.
   - `/iterate chapters` → "Add foreshadowing to chapters 4,8" - Regenerate (minutes)
 
 #### `/analyze [type]`
-Analyze story for quality and issues with confidence scoring.
+Get honest, free-form feedback on your story without rigid categorization.
 
 **Types:**
 - `premise` - Analyze premise quality
@@ -615,27 +645,11 @@ Analyze story for quality and issues with confidence scoring.
 - `prose` - Analyze chapter prose (specify chapter number)
 - `all` - Run comprehensive analysis
 
-**New Features (Revamped Analysis):**
-- **Confidence Scores**: Every issue includes confidence percentage (0-100%)
-  - Only reports issues with >70% confidence
-  - Self-critical evaluation: "Better to miss a minor issue than report a false positive"
-  - Reduces false positives and focuses on genuine problems
-- **Path to A+ Grade**: Specific recommendations to reach A/A+ rating
-  - Current assessment explaining grade
-  - Actionable recommendations with confidence scores
-  - System can say "unable to determine" if no clear path exists
-- **8 Analysis Dimensions**:
-  - Plot & Structure (holes, pacing, foreshadowing)
-  - Character (consistency, arcs, motivation)
-  - World-Building (logic, coherence, systems)
-  - Dialogue (naturalism, voice, subtext)
-  - Prose & Style (clarity, engagement, active voice)
-  - Theme (coherence, symbols, integration)
-  - Narrative Technique (POV, tense, hooks)
-  - Commercial Viability (market fit, target audience)
-- **0-7 Issues Maximum**: Quality over quantity
-- **Severity Classification**: CRITICAL, HIGH only
-- **Markdown Reports**: Saved to `analysis/` with git SHA tracking
+**Philosophy:**
+- **Simplified Prompt**: "Rate the quality and provide constructive criticism. Focus on what matters most."
+- **Free-Form Feedback**: LLM identifies what actually matters instead of being forced into rigid dimensions
+- **Authentic Analysis**: No prescribed categories means more honest, organic observations
+- **Fast & Simple**: Shorter prompt = faster, cheaper analysis
 
 **Examples:**
 ```bash
@@ -645,12 +659,38 @@ Analyze story for quality and issues with confidence scoring.
 /analyze chapters             # Analyze all chapter outlines
 ```
 
+**Output Format:**
+```
+📊 Analysis: Chapters
+
+Grade: B+ (Very Good)
+Strong plotting but pacing issues in Act II
+
+The chapters demonstrate solid three-act structure with clear character arcs.
+World-building is rich and immersive. However, Act II suffers from pacing
+problems that slow momentum.
+
+📝 Feedback:
+  • Act II drags - consolidate chapters 9-11 to maintain momentum
+  • Protagonist's motivation unclear in chapter 5 - needs stronger setup
+  • Subplot with minor character feels disconnected from main plot
+
+✓ Strengths:
+  • Excellent world-building with vivid atmospheric descriptions
+  • Strong character voice consistency throughout
+  • Natural dialogue that reveals character
+
+🎯 Next Steps:
+  Consolidate middle chapters to tighten pacing and clarify protagonist
+  motivation in Act I
+```
+
 **Report Includes:**
-- Overall Grade (A through F) and Score (0-10)
-- Issue list with confidence percentages and severity
-- Dimension scores (Plot: 8.5/10, Character: 7.0/10, etc.)
-- Positive highlights
-- **Path to A+**: What's holding story back and how to improve it
+- Letter Grade (A+ through F) with justification
+- Overall assessment (2-3 sentences)
+- Specific feedback points with concrete suggestions
+- Story strengths
+- Single most impactful next step
 - Saved to `analysis/[type]-[timestamp].md`
 
 #### `/cull <target>`

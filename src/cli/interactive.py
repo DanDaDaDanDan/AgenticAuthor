@@ -2432,21 +2432,8 @@ class InteractiveSession:
             if target_id:
                 content_desc += f" {target_id}"
 
-            self.console.print(f"\n[bold cyan]📊 Analyzing {content_desc}...[/bold cyan]\n")
-
-            # Track progress for each dimension
-            dimensions = []
-            if content_type in ['premise']:
-                dimensions = ['plot', 'theme', 'commercial']
-            elif content_type in ['treatment']:
-                dimensions = ['plot', 'character', 'worldbuilding', 'theme', 'commercial']
-            elif content_type in ['chapters', 'chapter']:
-                dimensions = ['plot', 'character', 'worldbuilding', 'theme']
-            elif content_type in ['prose']:
-                dimensions = ['plot', 'character', 'worldbuilding', 'dialogue', 'prose', 'theme', 'narrative']
-
-            for i, dim in enumerate(dimensions, 1):
-                self.console.print(f"   ⏳ {dim.title()}...")
+            self.console.print(f"\n[bold cyan]📊 Analyzing {content_desc}...[/bold cyan]")
+            self.console.print(f"   ⏳ Reading and evaluating...\n")
 
             # Ensure git repo exists
             self._ensure_git_repo()
