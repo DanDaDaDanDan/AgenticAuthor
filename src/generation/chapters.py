@@ -2,6 +2,7 @@
 
 import json
 import yaml
+from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from jinja2 import Template
@@ -509,8 +510,14 @@ world:
   social_context:
     - "..."
 
-IMPORTANT: Return ONLY these three sections. DO NOT include a 'chapters:' section.
-Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
+CRITICAL REQUIREMENTS:
+1. You MUST return ALL THREE sections: metadata, characters, AND world
+2. The 'world:' section is REQUIRED - do not omit it
+3. DO NOT include a 'chapters:' section
+4. Do NOT wrap in markdown code fences
+5. Return ONLY valid YAML content
+
+If you omit any of the three required sections (metadata, characters, world), the response will be rejected."""
 
         # Add treatment analysis instruction for initial generation
         if is_initial_generation and min_words and max_words:
@@ -623,7 +630,18 @@ When the feedback mentions duplicate or repetitive content:
         required_sections = ['metadata', 'characters', 'world']
         missing = [s for s in required_sections if s not in foundation_data]
         if missing:
-            raise Exception(f"Foundation missing required sections: {', '.join(missing)}")
+            found_sections = list(foundation_data.keys())
+            # Save failed response for debugging
+            debug_file = self.project.path / '.agentic' / 'debug' / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}.yaml'
+            debug_file.parent.mkdir(parents=True, exist_ok=True)
+            debug_file.write_text(response_text, encoding='utf-8')
+
+            raise Exception(
+                f"Foundation missing required sections: {', '.join(missing)}\n"
+                f"Found sections: {', '.join(found_sections)}\n"
+                f"Full response saved to: {debug_file.relative_to(self.project.path)}\n"
+                f"Response preview (first 500 chars):\n{response_text[:500]}"
+            )
 
         # Make sure chapters section is NOT present
         if 'chapters' in foundation_data:
