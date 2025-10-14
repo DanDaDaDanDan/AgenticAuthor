@@ -1130,9 +1130,28 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                     if stored_target:
                         total_words = int(stored_target)
                         if logger:
-                            logger.debug(f"Using stored target_word_count: {total_words}")
+                            logger.debug(f"Found stored target_word_count: {total_words}")
 
-                # Calculate intelligent default if no stored value
+                        # Validate stored target against current length_scope from taxonomy
+                        if length_scope:
+                            normalized_scope = length_scope.lower().replace(' ', '_')
+                            form_ranges = DepthCalculator.FORM_RANGES.get(normalized_scope)
+                            if form_ranges:
+                                min_words, max_words = form_ranges
+                                # If stored target is outside form range, recalculate with warning
+                                if total_words < min_words or total_words > max_words:
+                                    if logger:
+                                        logger.warning(
+                                            f"Stored target {total_words:,} words is outside range for {length_scope} "
+                                            f"({min_words:,}-{max_words:,}). Recalculating to match taxonomy..."
+                                        )
+                                    self.console.print(
+                                        f"[yellow]Note:[/yellow] Stored target ({total_words:,} words) doesn't match "
+                                        f"{length_scope} range. Recalculating..."
+                                    )
+                                    total_words = None  # Force recalculation
+
+                # Calculate intelligent default if no stored value (or if invalidated)
                 if total_words is None:
                     if length_scope:
                         total_words = DepthCalculator.get_default_word_count(length_scope, genre)
