@@ -56,22 +56,71 @@
 
 ---
 
-## 🔄 IN PROGRESS: Phase 2 - Generation System
+## ✅ COMPLETED: Phase 2 Part 1 - chapters.py
 
-### Next Critical Files to Update
+**Commit**: b239512
 
-**Priority 1: chapters.py** (~1,300 lines)
-- [ ] Update chapter generation prompts (lines ~620-700)
-  - Replace "key_events" terminology with "scenes"
-  - Add scene structure requirements (goal, conflict, outcome, etc.)
-  - Update depth guidance to use scenes
-- [ ] Update validation (lines ~167, 203)
-  - Accept both "key_events" (old) and "scenes" (new)
-  - Add deprecation warnings for key_events
-- [ ] Update batch generation prompts (lines ~808, 1460)
-  - Scene-based specifications
-- [ ] Update context building
-  - Pass scene structure information
+### What Was Changed
+
+**1. Variables & Parameters Renamed**:
+- `events_per_chapter` → `scenes_per_chapter`
+- `total_events` → `total_scenes`
+- `base_we` → `base_ws`
+- `act_we` → `act_ws`
+- `events_distribution` → `scenes_distribution`
+
+**2. Validation Updated (Backward Compatible)**:
+- Lines 167-177, 203-214: Accept both 'scenes' (new) and 'key_events' (old)
+- Checks for `('scenes' in chapter or 'key_events' in chapter)`
+- No deprecation warnings yet (will add in future iteration)
+
+**3. Three Major Prompts Updated**:
+
+**`_generate_chapter_batch()` (lines 648-723)**:
+- Replaced "key_events: 8-10 plot beats" with structured "scenes: 2-4 dramatic units"
+- Full scene structure specification:
+  ```yaml
+  scenes:
+    - scene: "Scene Title"
+      location: "Where it happens"
+      pov_goal: "What character wants"
+      conflict: "What prevents it"
+      stakes: "What's at risk"
+      outcome: "How it resolves"
+      emotional_beat: "Internal change"
+      sensory_focus: ["Detail 1", "Detail 2"]
+      target_words: 1300  # Act-specific
+  ```
+- Emphasizes: "COMPLETE DRAMATIC UNITS (1,000-2,000 words when written)"
+- Adds: "NOT bullet point summaries - these are FULL SCENES with structure"
+- Guidance: "Professional novels use 2-4 full scenes per chapter, NOT 6-10 bullet points"
+
+**`_resume_generation()` (lines 839-881)**:
+- Updated to use "scenes" or match previous format for consistency
+- Shows full scene structure in examples
+- Instructs LLM to match format from partial generation
+
+**`generate_with_competition()` (lines 1499-1525)**:
+- Same scene structure as batch generation
+- Competition mode will generate scene-based outlines
+
+**4. Method Calls Updated**:
+- Line 1242: `events_per_chapter=` → `scenes_per_chapter=`
+
+**5. Comments & Display Updated**:
+- All "events" references → "scenes"
+- Console: "words/event" → "words/scene"
+- Comments: "event count" → "scene count"
+
+**Impact**: The prompts now clearly signal to LLMs: write FULL DRAMATIC SCENES (1,000-2,000 words), NOT bullet point summaries (200-500 words). This is the critical change that should drive word count achievement from 50-60% to 80-100%.
+
+**Status**: ✅ Complete, syntax verified, committed
+
+---
+
+## 🔄 IN PROGRESS: Phase 2 Part 2 - prose.py
+
+### Next Critical File to Update
 
 **Priority 2: prose.py** (~600 lines)
 - [ ] Update prose generation prompts (lines ~268-331)
