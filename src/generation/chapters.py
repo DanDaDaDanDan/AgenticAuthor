@@ -377,6 +377,35 @@ class ChapterGenerator:
         if unique_elements is None:
             unique_elements = []
 
+        # ITERATION OPTIMIZATION: Reuse existing world/characters during iteration
+        # World-building and character profiles shouldn't change based on plot feedback
+        if feedback:
+            existing_chapters_yaml = self.project.get_chapters_yaml()
+            if existing_chapters_yaml:
+                if logger:
+                    logger.debug("Iteration detected - reusing world and characters from existing chapters.yaml")
+
+                # Extract stable sections (world, characters, most metadata)
+                existing_world = existing_chapters_yaml.get('world')
+                existing_characters = existing_chapters_yaml.get('characters')
+                existing_metadata = existing_chapters_yaml.get('metadata', {})
+
+                # Build foundation from existing data + updated structural params
+                foundation_data = {
+                    'metadata': existing_metadata.copy(),
+                    'characters': existing_characters,
+                    'world': existing_world
+                }
+
+                # Update only the structural parameters that feedback might change
+                foundation_data['metadata']['target_word_count'] = total_words
+                foundation_data['metadata']['chapter_count'] = chapter_count
+
+                if logger:
+                    logger.debug(f"Reused foundation with updated word count: {total_words}, chapter count: {chapter_count}")
+
+                return foundation_data
+
         if logger:
             logger.debug(f"Generating foundation (metadata + characters + world)")
 
@@ -623,7 +652,12 @@ When the feedback mentions duplicate or repetitive content:
         required_sections = ['metadata', 'characters', 'world']
         missing = [s for s in required_sections if s not in foundation_data]
         if missing:
-            raise Exception(f"Foundation missing required sections: {', '.join(missing)}")
+            found_sections = list(foundation_data.keys())
+            raise Exception(
+                f"Foundation missing required sections: {', '.join(missing)}\n"
+                f"Found sections: {', '.join(found_sections)}\n"
+                f"Response preview: {response_text[:500]}..."
+            )
 
         # Make sure chapters section is NOT present
         if 'chapters' in foundation_data:
