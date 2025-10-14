@@ -7,17 +7,21 @@ from typing import Optional
 class MarkdownExporter:
     """Export project to combined markdown file."""
 
-    def __init__(self, project):
+    def __init__(self, project, client=None, model: str = None):
         """
         Initialize markdown exporter.
 
         Args:
             project: Project to export
+            client: Optional OpenRouter client (for dedication generation)
+            model: Optional model name (for dedication generation)
         """
         self.project = project
         self.metadata = project.get_book_metadata()
+        self.client = client
+        self.model = model
 
-    def export(self, output_path: Optional[Path] = None) -> Path:
+    async def export(self, output_path: Optional[Path] = None) -> Path:
         """
         Export project to combined markdown file.
 
@@ -40,15 +44,18 @@ class MarkdownExporter:
         if output_path is None:
             output_path = self.project.get_export_path('md')
 
+        # Ensure dedication exists (generate if needed)
+        await self._ensure_dedication()
+
         # Build markdown content
-        markdown = self._build_markdown()
+        markdown = await self._build_markdown()
 
         # Write to file
         output_path.write_text(markdown, encoding='utf-8')
 
         return output_path
 
-    def _build_markdown(self) -> str:
+    async def _build_markdown(self) -> str:
         """Build complete markdown document."""
         from datetime import datetime
         parts = []
@@ -68,6 +75,13 @@ class MarkdownExporter:
         parts.append("All rights reserved. No part of this book may be reproduced in any form or by any electronic or mechanical means, including information storage and retrieval systems, without permission in writing from the author, except by a reviewer who may quote brief passages in a review.\n\n")
         parts.append("This is a work of fiction. Names, characters, places, and incidents are either the product of the author's imagination or are used fictitiously. Any resemblance to actual persons, living or dead, events, or locales is entirely coincidental.\n\n")
         parts.append("---\n\n")
+
+        # Dedication (if exists)
+        dedication = self.project.get_dedication()
+        if dedication:
+            parts.append("## Dedication\n\n")
+            parts.append(f"{dedication}\n\n")
+            parts.append("---\n\n")
 
         # Frontmatter sections (if any)
         frontmatter = self.project.get_frontmatter()
@@ -141,6 +155,13 @@ class MarkdownExporter:
                 parts.append(chapter_text)
                 parts.append("\n\n")
 
+        # Backmatter (if author is Sloane Grey)
+        backmatter = await self._get_backmatter()
+        if backmatter:
+            parts.append("---\n\n")
+            parts.append(backmatter)
+            parts.append("\n\n")
+
         return ''.join(parts)
 
     def _replace_variables(self, text: str) -> str:
@@ -164,3 +185,43 @@ class MarkdownExporter:
         if match:
             return int(match.group(1))
         return 0
+
+    async def _ensure_dedication(self):
+        """Ensure dedication exists, generate if needed."""
+        # Check if dedication already exists
+        if self.project.get_dedication():
+            return  # Already have it
+
+        # Need client and model to generate
+        if not self.client or not self.model:
+            return  # Can't generate without these
+
+        # Generate dedication
+        from .dedication_generator import DedicationGenerator
+        generator = DedicationGenerator(self.client, self.project, self.model)
+
+        try:
+            dedication = await generator.generate_dedication()
+            self.project.save_dedication(dedication)
+        except Exception as e:
+            # Log error but don't fail export
+            print(f"Warning: Could not generate dedication: {e}")
+
+    async def _get_backmatter(self) -> Optional[str]:
+        """Get backmatter if author matches Sloane Grey."""
+        author = self.metadata.get('author', '').lower()
+
+        # Check if author is Sloane Grey (case-insensitive)
+        if 'sloane grey' not in author and 'sloane-grey' not in author:
+            return None
+
+        # Load Sloane Grey backmatter
+        backmatter_path = Path(__file__).parent.parent.parent / "misc" / "backmatter-sloane-grey.md"
+        if not backmatter_path.exists():
+            return None
+
+        # Read backmatter markdown
+        backmatter_md = backmatter_path.read_text(encoding='utf-8')
+
+        # For markdown export, we can include it as-is (it's already markdown)
+        return backmatter_md

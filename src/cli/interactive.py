@@ -2726,7 +2726,7 @@ class InteractiveSession:
         """Export to RTF format."""
         from ..export.rtf_exporter import RTFExporter
 
-        exporter = RTFExporter(self.project)
+        exporter = RTFExporter(self.project, self.client, self.settings.active_model)
 
         # Determine output path
         if custom_path:
@@ -2738,7 +2738,7 @@ class InteractiveSession:
 
         # Export
         with self.console.status("[yellow]Generating RTF...[/yellow]"):
-            result_path = exporter.export(output_path)
+            result_path = await exporter.export(output_path)
 
         self.console.print(f"[green]✓[/green] Exported to: [cyan]{result_path}[/cyan]")
 
@@ -2757,7 +2757,7 @@ class InteractiveSession:
         """Export to combined markdown."""
         from ..export.md_exporter import MarkdownExporter
 
-        exporter = MarkdownExporter(self.project)
+        exporter = MarkdownExporter(self.project, self.client, self.settings.active_model)
 
         # Determine output path
         if custom_path:
@@ -2769,7 +2769,7 @@ class InteractiveSession:
 
         # Export
         with self.console.status("[yellow]Combining markdown files...[/yellow]"):
-            result_path = exporter.export(output_path)
+            result_path = await exporter.export(output_path)
 
         self.console.print(f"[green]✓[/green] Exported to: [cyan]{result_path}[/cyan]")
 

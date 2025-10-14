@@ -20,17 +20,21 @@ class RTFExporter:
 
     FOOTER = "}\n"
 
-    def __init__(self, project):
+    def __init__(self, project, client=None, model: str = None):
         """
         Initialize RTF exporter.
 
         Args:
             project: Project to export
+            client: Optional OpenRouter client (for dedication generation)
+            model: Optional model name (for dedication generation)
         """
         self.project = project
         self.metadata = project.get_book_metadata()
+        self.client = client
+        self.model = model
 
-    def export(self, output_path: Optional[Path] = None) -> Path:
+    async def export(self, output_path: Optional[Path] = None) -> Path:
         """
         Export project to RTF file.
 
@@ -53,15 +57,18 @@ class RTFExporter:
         if output_path is None:
             output_path = self.project.get_export_path('rtf')
 
+        # Ensure dedication exists (generate if needed)
+        await self._ensure_dedication()
+
         # Build RTF content
-        rtf = self._build_rtf()
+        rtf = await self._build_rtf()
 
         # Write to file
         output_path.write_text(rtf, encoding='utf-8')
 
         return output_path
 
-    def _build_rtf(self) -> str:
+    async def _build_rtf(self) -> str:
         """Build complete RTF document."""
         parts = []
 
@@ -74,15 +81,27 @@ class RTFExporter:
         parts.append(self._build_copyright_page())
         parts.append(self._page_break())
 
+        # Dedication (if exists)
+        dedication = self.project.get_dedication()
+        if dedication:
+            parts.append(self._build_dedication(dedication))
+            parts.append(self._page_break())
+
         # Optional frontmatter sections
         frontmatter_sections = self._parse_frontmatter()
         for section_name, section_content in frontmatter_sections.items():
-            if section_name not in ['title page', 'copyright']:
+            if section_name not in ['title page', 'copyright', 'dedication']:
                 parts.append(section_content)
                 parts.append(self._page_break())
 
         # Chapters
         parts.append(self._build_all_chapters())
+
+        # Backmatter (if author is Sloane Grey)
+        backmatter = await self._get_backmatter()
+        if backmatter:
+            parts.append(self._page_break())
+            parts.append(backmatter)
 
         # Footer
         parts.append(self.FOOTER)
@@ -396,6 +415,114 @@ class RTFExporter:
         for para in paragraphs:
             parts.append(para)
             parts.append("\n")
+
+        return ''.join(parts)
+
+    async def _ensure_dedication(self):
+        """Ensure dedication exists, generate if needed."""
+        # Check if dedication already exists
+        if self.project.get_dedication():
+            return  # Already have it
+
+        # Need client and model to generate
+        if not self.client or not self.model:
+            return  # Can't generate without these
+
+        # Generate dedication
+        from .dedication_generator import DedicationGenerator
+        generator = DedicationGenerator(self.client, self.project, self.model)
+
+        try:
+            dedication = await generator.generate_dedication()
+            self.project.save_dedication(dedication)
+        except Exception as e:
+            # Log error but don't fail export
+            print(f"Warning: Could not generate dedication: {e}")
+
+    def _build_dedication(self, dedication: str) -> str:
+        """Build RTF dedication section."""
+        parts = []
+
+        # Dedication heading (centered, italic)
+        parts.append(r"{\pard\qc\i Dedication\i0\par}")
+        parts.append("\n")
+
+        # Blank line
+        parts.append(r"{\pard\par}")
+        parts.append("\n")
+
+        # Dedication text (centered)
+        parts.append(r"{\pard\qc ")
+        parts.append(self._escape_rtf(dedication))
+        parts.append(r"\par}")
+        parts.append("\n")
+
+        return ''.join(parts)
+
+    async def _get_backmatter(self) -> Optional[str]:
+        """Get backmatter if author matches Sloane Grey."""
+        author = self.metadata.get('author', '').lower()
+
+        # Check if author is Sloane Grey (case-insensitive)
+        if 'sloane grey' not in author and 'sloane-grey' not in author:
+            return None
+
+        # Load Sloane Grey backmatter
+        backmatter_path = Path(__file__).parent.parent.parent / "misc" / "backmatter-sloane-grey.md"
+        if not backmatter_path.exists():
+            return None
+
+        backmatter_md = backmatter_path.read_text(encoding='utf-8')
+
+        # Convert markdown to RTF
+        return self._backmatter_to_rtf(backmatter_md)
+
+    def _backmatter_to_rtf(self, markdown: str) -> str:
+        """Convert backmatter markdown to RTF."""
+        parts = []
+
+        # Split into sections by ## headings
+        sections = re.split(r'^## (.+?)$', markdown, flags=re.MULTILINE)
+
+        # First part is intro (before any ## headings)
+        if sections and sections[0].strip():
+            intro = sections[0].strip()
+            # Remove "# A Note from the Author" if present
+            intro = re.sub(r'^# A Note from the Author\s*', '', intro, flags=re.MULTILINE)
+            if intro:
+                paragraphs = self._markdown_to_paragraphs(intro)
+                for para in paragraphs:
+                    parts.append(para)
+                    parts.append("\n")
+                # Blank line
+                parts.append(r"{\pard\par}")
+                parts.append("\n")
+
+        # Process remaining sections (heading, content, heading, content, ...)
+        for i in range(1, len(sections), 2):
+            if i + 1 < len(sections):
+                heading = sections[i].strip()
+                content = sections[i + 1].strip()
+
+                # Section heading (bold, left-aligned)
+                parts.append(r"{\pard\b ")
+                parts.append(self._escape_rtf(heading))
+                parts.append(r"\b0\par}")
+                parts.append("\n")
+
+                # Blank line
+                parts.append(r"{\pard\par}")
+                parts.append("\n")
+
+                # Content paragraphs
+                paragraphs = self._markdown_to_paragraphs(content)
+                for para in paragraphs:
+                    parts.append(para)
+                    parts.append("\n")
+
+                # Blank line after section
+                parts.append(r"{\pard\par}")
+                parts.append("\n")
 
         return ''.join(parts)
 

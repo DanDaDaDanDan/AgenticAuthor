@@ -1,0 +1,1 @@
+To my family, you are the quiet constants that anchor a chaotic world. This book is a testament to the patterns you've shown me—the unwavering rhythm of your support, the intricate geometry of your shared love, and the profound strength found not in isolation, but in connection. You are the reason I can find order in chaos and humanity in the darkest of places.

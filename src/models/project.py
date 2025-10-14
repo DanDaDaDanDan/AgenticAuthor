@@ -101,6 +101,11 @@ class Project:
         return self.path / "frontmatter.md"
 
     @property
+    def dedication_file(self) -> Path:
+        """Get path to dedication.md file."""
+        return self.path / "dedication.md"
+
+    @property
     def config_file(self) -> Path:
         """Get path to config.yaml file (for book metadata)."""
         return self.path / "config.yaml"
@@ -692,6 +697,26 @@ class Project:
             content: Frontmatter markdown text
         """
         self.frontmatter_file.write_text(content, encoding='utf-8')
+
+    def get_dedication(self) -> Optional[str]:
+        """
+        Get dedication content.
+
+        Returns:
+            Dedication text, or None if not exists
+        """
+        if self.dedication_file.exists():
+            return self.dedication_file.read_text(encoding='utf-8')
+        return None
+
+    def save_dedication(self, content: str):
+        """
+        Save dedication content.
+
+        Args:
+            content: Dedication text
+        """
+        self.dedication_file.write_text(content, encoding='utf-8')
 
     def init_default_frontmatter(self):
         """Initialize frontmatter with default template if not exists."""
