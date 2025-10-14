@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 from .base import BaseAnalyzer, AnalysisResult, Issue, Strength, Severity, PathToAPlus, Recommendation
 
 
-UNIFIED_ANALYSIS_PROMPT = """You are an expert story editor analyzing this {{ content_type }}.
+UNIFIED_ANALYSIS_PROMPT = """You are an expert story editor. Read this {{ content_type }} and provide honest feedback.
 
 Content to Analyze:
 ```
@@ -30,111 +30,48 @@ Chapter Outline:
 {{ chapter_outline }}
 {% endif %}
 
-ANALYSIS TASK:
-
-Analyze across ALL story dimensions:
-1. **Plot & Structure** - Holes, pacing, cause/effect, foreshadowing, escalation
-2. **Character** - Consistency, arcs, motivation, believability
-3. **World-Building** - Internal logic, coherence, geography, systems
-4. **Dialogue** - Naturalism, character voice, subtext
-5. **Prose & Style** - Clarity, engagement, repetition, active voice
-6. **Theme** - Coherence, symbols, integration
-7. **Narrative Technique** - POV consistency, tense, hooks, distance
-8. **Commercial Viability** - Market fit, hook strength, target audience appeal
-
-CRITICAL INSTRUCTIONS:
-
-1. **Focus on CRITICAL issues only** - things that genuinely harm the story
-2. **Return 0-7 issues maximum** - quality over quantity
-3. **It's OKAY to find 0 issues** if the content is solid
-4. **Prioritize by IMPACT** - one major plot hole matters more than five minor word choices
-5. **Be specific** - vague feedback like "pacing issues" is useless
-6. **Provide actionable fixes** - tell exactly how to improve it
-7. **Don't invent problems** - only report real issues that affect reader experience
-
-CONFIDENCE REQUIREMENTS (NEW):
-
-8. **Only report issues with >70% confidence** - be self-critical about your analysis
-9. **If uncertain, DON'T include it** - it's better to miss a minor issue than report a false positive
-10. **Include confidence percentage (0-100%) for each issue** - be honest about certainty
-11. **False positives are worse than false negatives** - when in doubt, leave it out
-12. **Ask yourself: "Am I CERTAIN this is a real problem?"** - if the answer is "maybe", skip it
-
-SEVERITY GUIDELINES:
-- **CRITICAL**: Story-breaking issues (major plot holes, character contradictions, broken logic)
-- **HIGH**: Significant problems that weaken the story (pacing drags, weak character motivation)
-- **MEDIUM**: Noticeable issues that could be improved (minor inconsistencies, style quirks)
-- **LOW**: Polish items (word choice, minor clarity improvements)
-
-Only include CRITICAL and HIGH severity issues in your response.
+Rate the quality and provide constructive criticism. Focus on what matters most to making this better.
 
 Respond with ONLY valid JSON:
 {
-  "overall_score": 0-10,
-  "overall_grade": "A (Excellent) | B+ (Very Good) | B (Good) | C+ (Above Average) | C (Average) | D+ (Below Average) | D (Poor) | F (Needs Major Revision)",
-  "summary": "2-3 sentence executive summary of overall quality",
-
-  "priority_fixes": [
-    {
-      "priority": 1,
-      "dimension": "Plot|Character|World-Building|Dialogue|Prose|Theme|Narrative|Commercial",
-      "severity": "CRITICAL|HIGH",
-      "confidence": 0-100,
-      "location": "specific location (Act II, Chapter 3, opening paragraph, etc.)",
-      "issue": "concise description of what's wrong",
-      "impact": "why this matters - how it affects the reader/story",
-      "suggestion": "concrete, actionable fix - be specific"
-    }
+  "grade": "A+ (Exceptional) | A (Excellent) | B+ (Very Good) | B (Good) | C+ (Above Average) | C (Average) | D+ (Below Average) | D (Poor) | F (Needs Major Revision)",
+  "grade_justification": "one sentence explaining the grade",
+  "overall_assessment": "2-3 sentences on overall quality",
+  "feedback": [
+    "Specific observation with concrete suggestion (e.g., 'Act II drags - consolidate chapters 9-11 to maintain momentum')",
+    "Another point...",
+    ...
   ],
-
-  "path_to_a_plus": {
-    "current_assessment": "why the current grade was given - what's holding it back from A/A+",
-    "recommendations": [
-      {
-        "description": "specific actionable step to reach A/A+ grade",
-        "confidence": 0-100,
-        "rationale": "why this would elevate the story to A/A+ level"
-      }
-    ],
-    "unable_to_determine": false,
-    "reasoning": "if unable_to_determine is true, explain why you can't identify a clear path to A+"
-  },
-
   "strengths": [
-    {
-      "dimension": "which aspect shines",
-      "description": "specific positive element worth highlighting",
-      "location": "where this appears (optional)"
-    }
+    "What works well in this story",
+    ...
   ],
-
-  "dimension_scores": {
-    "plot": 0-10,
-    "character": 0-10,
-    "worldbuilding": 0-10,
-    "dialogue": 0-10,
-    "prose": 0-10,
-    "theme": 0-10,
-    "narrative": 0-10,
-    "commercial": 0-10
-  },
-
-  "notes": ["any additional high-level observations"]
+  "next_steps": "Single most impactful change to improve this {{ content_type }}"
 }
 
-REMEMBER:
-- 0-7 issues maximum (it's okay to have fewer or zero)
-- Only CRITICAL and HIGH severity
-- Be specific with locations and suggestions
-- Focus on what genuinely improves the story
-- Include confidence percentage for each issue (must be >70%)
-- Include confidence percentage for path_to_a_plus recommendations
-- It's OKAY to set unable_to_determine=true if you genuinely can't identify improvements
+Be honest, specific, and constructive. Focus on impact, not minutiae.
 """
 
 
 class UnifiedAnalyzer(BaseAnalyzer):
     """Single unified analyzer covering all story dimensions."""
+
+    def _grade_to_score(self, grade_str: str) -> float:
+        """Convert letter grade to numeric score (0-10)."""
+        grade_map = {
+            'A+': 10.0,
+            'A': 9.5,
+            'B+': 8.5,
+            'B': 8.0,
+            'C+': 7.0,
+            'C': 6.0,
+            'D+': 5.0,
+            'D': 4.0,
+            'F': 2.0
+        }
+        # Extract just the grade letter (e.g., "A+ (Exceptional)" -> "A+")
+        grade = grade_str.split('(')[0].strip()
+        return grade_map.get(grade, 6.0)
 
     async def analyze(
         self,
@@ -176,56 +113,53 @@ class UnifiedAnalyzer(BaseAnalyzer):
         try:
             data = self._parse_json_response(response)
 
-            # Convert to AnalysisResult
+            # Extract grade and convert to numeric score
+            grade_str = data.get('grade', 'C')
+            score = self._grade_to_score(grade_str)
+
+            # Build summary from grade + justification + assessment
+            grade_justification = data.get('grade_justification', '')
+            overall_assessment = data.get('overall_assessment', '')
+            summary = f"{grade_str}\n{grade_justification}\n\n{overall_assessment}"
+
+            # Convert feedback points to issues (no severity/impact needed for simplified format)
+            feedback_points = data.get('feedback', [])
             issues = [
                 Issue(
-                    category=f"[{i['dimension']}] {i.get('category', i['dimension'])}",
-                    severity=Severity(i['severity']),
-                    location=i['location'],
-                    description=i['issue'],
-                    impact=i['impact'],
-                    suggestion=i['suggestion'],
-                    confidence=i.get('confidence', 100)  # Default to 100 if missing
+                    category="Feedback",
+                    severity=Severity.MEDIUM,
+                    location="General",
+                    description=point,
+                    impact="",
+                    suggestion="",
+                    confidence=100
                 )
-                for i in data.get('priority_fixes', [])
+                for point in feedback_points
             ]
 
+            # Convert strengths (simple strings to Strength objects)
+            strength_points = data.get('strengths', [])
             strengths = [
                 Strength(
-                    category=s['dimension'],
-                    description=s['description'],
-                    location=s.get('location')
+                    category="Strength",
+                    description=s,
+                    location=None
                 )
-                for s in data.get('strengths', [])
+                for s in strength_points
             ]
 
-            # Parse path_to_a_plus section
-            path_to_a_plus = None
-            if 'path_to_a_plus' in data:
-                path_data = data['path_to_a_plus']
-                recommendations = [
-                    Recommendation(
-                        description=r['description'],
-                        confidence=r.get('confidence', 0),
-                        rationale=r.get('rationale', '')
-                    )
-                    for r in path_data.get('recommendations', [])
-                ]
-                path_to_a_plus = PathToAPlus(
-                    current_assessment=path_data.get('current_assessment', ''),
-                    recommendations=recommendations,
-                    unable_to_determine=path_data.get('unable_to_determine', False),
-                    reasoning=path_data.get('reasoning')
-                )
+            # Next steps as notes
+            next_steps = data.get('next_steps', '')
+            notes = [f"Next steps: {next_steps}"] if next_steps else []
 
             return AnalysisResult(
                 dimension="Comprehensive Analysis",
-                score=data.get('overall_score', 5.0),
-                summary=data.get('summary', ''),
+                score=score,
+                summary=summary,
                 issues=issues,
                 strengths=strengths,
-                notes=data.get('notes', []),
-                path_to_a_plus=path_to_a_plus
+                notes=notes,
+                path_to_a_plus=None  # Removed - redundant with next_steps
             )
 
         except Exception as e:

@@ -2470,88 +2470,61 @@ class InteractiveSession:
                 self.session_logger.log_error(e, "Analysis failed")
 
     def _display_analysis_results(self, result: Dict[str, Any]):
-        """Display analysis results."""
+        """Display analysis results in simplified format."""
         self.console.print()
         self.console.rule(style="cyan")
 
-        # Executive Summary
+        # Header
         content_desc = result['content_type'].title()
         if result.get('target_id'):
             content_desc += f" {result['target_id']}"
 
-        self.console.print(f"\n[bold]📊 Analysis Complete: {content_desc}[/bold]\n")
+        self.console.print(f"\n[bold]📊 Analysis: {content_desc}[/bold]\n")
 
-        self.console.print(f"[bold]Overall Grade:[/bold] {result['overall_grade']}")
-        self.console.print(f"[bold]Overall Score:[/bold] {result['overall_score']:.1f}/10\n")
+        # Grade and summary (extract from summary field which contains grade + justification + assessment)
+        summary_parts = result.get('summary', '').split('\n')
+        if len(summary_parts) >= 3:
+            grade = summary_parts[0]
+            justification = summary_parts[1]
+            assessment = '\n'.join(summary_parts[3:])  # Skip empty line at index 2
 
-        # Issue Summary
-        if result['total_issues'] > 0:
-            self.console.print(f"⚠️  [bold]Issues Found:[/bold] {result['total_issues']} total")
-            if result['critical_issues'] > 0:
-                self.console.print(f"   • Critical: {result['critical_issues']}")
-            if result['high_issues'] > 0:
-                self.console.print(f"   • High: {result['high_issues']}")
-            self.console.print()
+            self.console.print(f"[bold green]Grade:[/bold green] {grade}")
+            self.console.print(f"[dim]{justification}[/dim]\n")
+            self.console.print(f"{assessment}\n")
+        else:
+            # Fallback if format is different
+            self.console.print(f"{result.get('summary', 'No assessment available')}\n")
 
-        # Dimension Scores
-        self.console.print("[bold]Dimension Scores:[/bold]")
-        for dim in result['dimension_results']:
-            score = dim['score']
-            bar = '█' * int(score) + '░' * (10 - int(score))
-            self.console.print(f"  {dim['dimension']:25} [{bar}] {score:.1f}/10")
-        self.console.print()
-
-        # Top Issues
-        if result['priority_issues']:
-            self.console.print("[bold]Top Priority Issues:[/bold]")
-            for i, issue in enumerate(result['priority_issues'][:3], 1):
-                severity_color = {
-                    'CRITICAL': 'red',
-                    'HIGH': 'yellow',
-                    'MEDIUM': 'cyan',
-                    'LOW': 'dim'
-                }.get(issue['severity'], 'white')
-
-                confidence = issue.get('confidence', 100)
-                self.console.print(f"  {i}. [{severity_color}][{issue['severity']}][/{severity_color}] {issue['category']} [dim]({confidence}% confidence)[/dim]")
-                self.console.print(f"     Location: [dim]{issue['location']}[/dim]")
-                self.console.print(f"     Issue: {issue['description']}")
-                self.console.print(f"     Fix: [green]{issue['suggestion']}[/green]")
+        # Feedback (stored in issues, but display as simple bullet points)
+        dimension_results = result.get('dimension_results', [])
+        if dimension_results:
+            # Get issues from first dimension result (unified analysis has single dimension)
+            issues = dimension_results[0].get('issues', [])
+            if issues:
+                self.console.print("[bold]📝 Feedback:[/bold]")
+                for issue in issues:
+                    # Issue description contains the full feedback point
+                    self.console.print(f"  • {issue['description']}")
                 self.console.print()
 
-        # Highlights
-        if result['highlights']:
-            self.console.print("[bold]✓ Positive Highlights:[/bold]")
-            for strength in result['highlights'][:3]:
-                self.console.print(f"  • {strength['description']}")
-            self.console.print()
+        # Strengths
+        if dimension_results:
+            strengths = dimension_results[0].get('strengths', [])
+            if strengths:
+                self.console.print("[bold green]✓ Strengths:[/bold green]")
+                for strength in strengths:
+                    self.console.print(f"  • {strength['description']}")
+                self.console.print()
 
-        # Path to A+ section
-        if 'path_to_a_plus' in result and result['path_to_a_plus']:
-            path = result['path_to_a_plus']
-            self.console.print("[bold cyan]🎯 Path to A+ Grade:[/bold cyan]")
-
-            # Current assessment
-            if path.get('current_assessment'):
-                self.console.print(f"\n[bold]Current Assessment:[/bold]")
-                self.console.print(f"  {path['current_assessment']}\n")
-
-            # Unable to determine
-            if path.get('unable_to_determine'):
-                self.console.print("[yellow]Unable to determine clear path to A+ grade.[/yellow]")
-                if path.get('reasoning'):
-                    self.console.print(f"[dim]{path['reasoning']}[/dim]")
-            else:
-                # Recommendations
-                if path.get('recommendations'):
-                    self.console.print("[bold]Recommendations:[/bold]")
-                    for i, rec in enumerate(path['recommendations'], 1):
-                        confidence = rec.get('confidence', 0)
-                        self.console.print(f"  {i}. {rec['description']} [dim]({confidence}% confidence)[/dim]")
-                        if rec.get('rationale'):
-                            self.console.print(f"     [dim]→ {rec['rationale']}[/dim]")
-
-            self.console.print()
+        # Next steps (stored in notes)
+        if dimension_results:
+            notes = dimension_results[0].get('notes', [])
+            if notes:
+                for note in notes:
+                    if note.startswith('Next steps:'):
+                        next_steps = note.replace('Next steps: ', '')
+                        self.console.print(f"[bold cyan]🎯 Next Steps:[/bold cyan]")
+                        self.console.print(f"  {next_steps}\n")
 
         # Report saved
         self.console.rule(style="cyan")
