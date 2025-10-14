@@ -107,10 +107,11 @@ class ProseGenerator:
             if ch.get('prose_generated'):
                 chapters_tokens += estimate_tokens(ch.get('full_prose', ''))
             else:
-                # Estimate outline tokens
+                # Estimate outline tokens (support both scenes and key_events)
                 outline_text = f"Chapter {ch.get('number', 0)}: {ch.get('title', '')}\n"
                 outline_text += f"Summary: {ch.get('summary', '')}\n"
-                outline_text += f"Key Events: {ch.get('key_events', [])}\n"
+                scenes_or_events = ch.get('scenes', ch.get('key_events', []))
+                outline_text += f"Scenes: {scenes_or_events}\n"
                 outline_text += f"Character Developments: {ch.get('character_developments', [])}\n"
                 chapters_tokens += estimate_tokens(outline_text)
 
@@ -245,25 +246,45 @@ class ProseGenerator:
 
         # Build prose generation prompt
         word_count_target = current_chapter.get('word_count_target', 3000)
-        key_events = current_chapter.get('key_events', [])
-        num_events = len(key_events)
+
+        # Support both new (scenes) and old (key_events) formats
+        scenes = current_chapter.get('scenes', current_chapter.get('key_events', []))
+        num_scenes = len(scenes)
+        uses_structured_scenes = 'scenes' in current_chapter and isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict)
 
         # Get form and pacing from metadata for depth guidance
         pacing = metadata.get('pacing', 'moderate')
         target_word_count = metadata.get('target_word_count', 50000)
         form = DepthCalculator.detect_form(target_word_count)
-        base_we = DepthCalculator.get_base_words_per_event(form, pacing)
+        base_ws = DepthCalculator.get_base_words_per_scene(form, pacing)
 
         # Calculate scene depth guidance
         depth_guidance = DepthCalculator.get_scene_depth_guidance(
-            num_events, word_count_target, form, pacing
+            num_scenes, word_count_target, form, pacing
         )
 
-        avg_we = depth_guidance['avg_we']
+        avg_ws = depth_guidance['avg_ws']
         setup_range = depth_guidance['setup_range']
         standard_range = depth_guidance['standard_range']
         climax_range = depth_guidance['climax_range']
         example_dist = depth_guidance['distribution_example']
+
+        # Build scene-by-scene breakdown if using structured format
+        scene_breakdown = ""
+        if uses_structured_scenes:
+            scene_breakdown = "\n\nSCENE-BY-SCENE BREAKDOWN:\n"
+            for i, scene in enumerate(scenes, 1):
+                target_scene_words = scene.get('target_words', avg_ws)
+                scene_breakdown += f"\nScene {i}: \"{scene.get('scene', 'Untitled')}\"\n"
+                scene_breakdown += f"  Location: {scene.get('location', 'N/A')}\n"
+                scene_breakdown += f"  POV Goal: {scene.get('pov_goal', 'N/A')}\n"
+                scene_breakdown += f"  Conflict: {scene.get('conflict', 'N/A')}\n"
+                scene_breakdown += f"  Stakes: {scene.get('stakes', 'N/A')}\n"
+                scene_breakdown += f"  Outcome: {scene.get('outcome', 'N/A')}\n"
+                scene_breakdown += f"  Emotional Beat: {scene.get('emotional_beat', 'N/A')}\n"
+                if scene.get('sensory_focus'):
+                    scene_breakdown += f"  Sensory Focus: {', '.join(scene.get('sensory_focus', []))}\n"
+                scene_breakdown += f"  TARGET: {target_scene_words:,} words MINIMUM (this is a full dramatic scene)\n"
 
         prompt = f"""Generate full prose for a chapter using this self-contained story context.
 
@@ -278,57 +299,89 @@ Generate {word_count_target:,} words of polished narrative prose for:
 - Chapter {chapter_number}: "{current_chapter['title']}"
 - POV: {current_chapter.get('pov', 'N/A')}
 - Act: {current_chapter.get('act', 'N/A')}
+{scene_breakdown}
 
-SCENE DEVELOPMENT (CRITICAL - ACT-AWARE):
-You have {num_events} key events to cover in {word_count_target:,} words.
-This means AVERAGE of ~{avg_we} words per event.
+CRITICAL - FULL SCENE DEVELOPMENT (NOT SUMMARIES):
+This chapter has {num_scenes} SCENES to develop in {word_count_target:,} words.
+Each scene is a COMPLETE DRAMATIC UNIT with 4-part structure:
+
+1. SETUP (15-20% of scene):
+   - Establish location, time, who's present
+   - Ground reader in the sensory environment
+   - Show character's initial state/goal
+
+2. DEVELOPMENT (40-50% of scene):
+   - Action, dialogue, character interaction
+   - Show obstacles and complications
+   - Build tension through conflict
+   - SHOW character reactions and processing
+
+3. CLIMAX (15-20% of scene):
+   - Peak moment of the scene
+   - Decision, revelation, confrontation
+   - Emotional turning point
+
+4. RESOLUTION (15-20% of scene):
+   - Immediate aftermath
+   - Character processes what happened
+   - Bridge to next scene
+
+MINIMUM WORDS PER SCENE (not average - MINIMUM):
+• This chapter: ~{avg_ws} words per scene
+• Setup/transition scenes: {setup_range[0]}-{setup_range[1]} words minimum
+• Standard dramatic scenes: {standard_range[0]}-{standard_range[1]} words minimum
+• Climactic/peak scenes: {climax_range[0]}-{climax_range[1]}+ words minimum
+
+SHOW vs TELL - CRITICAL DISTINCTION:
+
+❌ TELLING (summary - avoid this):
+"Sarah was angry with her brother for forgetting her birthday. She confronted him about it and he apologized."
+(50 words - rushed summary)
+
+✅ SHOWING (full scene - do this):
+Sarah's jaw clenched as Mark walked in, whistling. Her birthday. Her thirtieth birthday. And he'd forgotten.
+
+"Hey," he said, dropping his keys on the counter. "What's for dinner?"
+
+The casual question hit like a slap. She'd spent the morning checking her phone, waiting for his text, his call, anything. "You're kidding."
+
+"What?" He opened the fridge, oblivious.
+
+"Mark." Her voice came out flat. "What day is it?"
+
+He paused, milk carton in hand. His eyes widened. "Oh God. Sarah, I—"
+
+"Don't." She held up a hand. "Just don't."
+
+(380 words - full scene with dialogue, action, emotion)
+
+WRITE EVERY SCENE AS A FULL DRAMATIC UNIT. Do NOT summarize or rush.
+Each scene should feel complete and immersive. Let moments breathe.
 
 NOTE: This chapter is in {current_chapter.get('act', 'N/A')}.
-- Act I chapters: Efficient setup (slightly faster pacing)
-- Act II chapters: Standard development
-- Act III chapters: DEEPER, more emotional intensity per event
-
-Vary depth based on dramatic importance:
-
-• Setup/transition scenes ({setup_range[0]}-{setup_range[1]} words):
-  - Quick establishment of new information
-  - Efficient scene-setting and transitions
-  - Move story forward without dwelling
-
-• Standard dramatic scenes ({standard_range[0]}-{standard_range[1]} words):
-  - Full development: dialogue with character reactions
-  - Show internal thoughts and emotional processing
-  - Include sensory details and atmosphere
-  - Build tension and pacing naturally
-  - Let dialogue breathe
-
-• Climactic/peak scenes ({climax_range[0]}-{climax_range[1]}+ words):
-  - Deep character work and emotional depth
-  - Immersive sensory detail
-  - Let crucial moments land before moving on
-  - Allow tension to build fully
-  - Give weight to major revelations/conflicts
-
-{example_dist}
-
-Identify which events are dramatic peaks and give them space to breathe.
-Don't rush through important moments. Each scene should feel complete.
+- Act I: Efficient setup, but still FULL scenes (not summaries)
+- Act II: Standard dramatic development
+- Act III: DEEPER emotional intensity, more immersive
 
 GUIDELINES:
 1. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
 2. Draw on character backgrounds, motivations, and arcs from the characters section
-3. Use world-building details (locations, systems, atmosphere) to ground the scene
-4. Follow the chapter outline's key events, character developments, relationship beats
+3. Use world-building details (locations, systems, atmosphere) to ground scenes
+4. Follow the chapter outline's scene structure, character developments, relationship beats
 5. Perfect continuity from previous chapters (if any)
 6. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
-7. TARGET: {word_count_target:,} words total = {num_events} events × ~{avg_we} w/e average
+7. TARGET: {word_count_target:,} words total = {num_scenes} scenes × {avg_ws} w/s MINIMUM per scene
+8. SHOW character emotions through action, dialogue, physical reactions
+9. Include sensory details in EVERY scene (sight, sound, touch, smell, taste)
+10. Let dialogue breathe - include reactions, pauses, character processing
 
 Return ONLY the prose text. Do NOT include:
 - YAML formatting
 - Chapter headers (we'll add those)
 - Explanations or notes
+- Scene markers or dividers
 
-Just the flowing narrative prose ({word_count_target:,} words, developed at ~{avg_we} words per event)."""
+Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full dramatic scenes)."""
 
         # Generate with API
         try:
