@@ -358,7 +358,13 @@ class ChapterGenerator:
         chapter_count: int,
         original_concept: str = '',
         unique_elements: List[str] = None,
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
+        is_initial_generation: bool = False,
+        min_words: Optional[int] = None,
+        max_words: Optional[int] = None,
+        genre_baseline: Optional[int] = None,
+        length_scope: Optional[str] = None,
+        genre: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Generate ONLY the foundation (metadata + characters + world), no chapters.
@@ -370,6 +376,13 @@ class ChapterGenerator:
             chapter_count: Number of chapters (for metadata)
             original_concept: Original user concept (verbatim)
             unique_elements: LLM-identified unique story elements
+            feedback: Iteration feedback (if iterating)
+            is_initial_generation: True if first-time generation (no stored target)
+            min_words: Minimum allowed word count from form range
+            max_words: Maximum allowed word count from form range
+            genre_baseline: Genre-based default word count (for reference)
+            length_scope: Form name (e.g., "novel", "novella")
+            genre: Genre name for context
 
         Returns:
             Dict with metadata, characters, world sections
@@ -514,6 +527,36 @@ world:
 
 IMPORTANT: Return ONLY these three sections. DO NOT include a 'chapters:' section.
 Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
+
+        # Add treatment analysis instruction for initial generation
+        if is_initial_generation and min_words and max_words:
+            prompt += f"""
+
+TREATMENT ANALYSIS FOR WORD COUNT:
+
+Before setting target_word_count, analyze the treatment to determine the story's natural scope.
+
+Consider these factors from the treatment:
+1. STORY COMPLEXITY: How many major plot threads are outlined?
+2. CHARACTER COUNT: How many characters have significant roles?
+3. WORLD-BUILDING NEEDS: How much setting/system explanation is required?
+4. SUBPLOT DENSITY: How many parallel storylines are present?
+5. NATURAL PACING: Does the story suggest fast-paced action (fewer words) or deliberate literary exploration (more)?
+6. TIMELINE: Do events span days/weeks (shorter) or months/years (longer)?
+
+CONSTRAINTS:
+- Genre: {genre or 'general'}
+- Length scope: {length_scope} ({min_words:,}-{max_words:,} words)
+- Genre baseline: {genre_baseline:,} words (reference only - DO NOT default to this)
+
+CRITICAL: Set target_word_count based on the treatment's ACTUAL COMPLEXITY within the {length_scope} range ({min_words:,}-{max_words:,}).
+
+Examples of organic word count selection:
+- Tight thriller with single plot thread, 2-3 main characters, fast pacing → {int(min_words * 1.2):,} words
+- Complex mystery with multiple suspects, intricate plotting, moderate pacing → {int((min_words + max_words) / 2):,} words
+- Epic with extensive world-building, large cast, multiple subplots → {int(max_words * 0.9):,} words
+
+Your choice should reflect the treatment's inherent scope, not just match the genre default."""
 
         # Add feedback instruction if iterating
         if feedback:
@@ -1176,6 +1219,12 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             else:
                 length_scope = length_scope_value if isinstance(length_scope_value, str) else None
 
+            # Track whether this is initial generation (no stored value) vs iteration/regeneration
+            is_initial_generation = False
+            min_words = None
+            max_words = None
+            genre_baseline = None
+
             # Calculate total_words if not provided
             if total_words is None:
                 # Try stored value first (from previous generation)
@@ -1208,14 +1257,35 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                                     total_words = None  # Force recalculation
 
                 # Calculate intelligent default if no stored value (or if invalidated)
+                # For initial generation, we'll let LLM analyze treatment and choose
                 if total_words is None:
+                    is_initial_generation = True  # No stored value means first-time generation
+
+                    # Get the range constraints from taxonomy
                     if length_scope:
-                        total_words = DepthCalculator.get_default_word_count(length_scope, genre)
+                        normalized_scope = length_scope.lower().replace(' ', '_')
+                        form_ranges = DepthCalculator.FORM_RANGES.get(normalized_scope)
+                        if form_ranges:
+                            min_words, max_words = form_ranges
+                        else:
+                            # Fallback to novel range
+                            min_words, max_words = DepthCalculator.FORM_RANGES.get('novel', (50000, 120000))
+
+                        # Get genre baseline for reference
+                        genre_baseline = DepthCalculator.get_default_word_count(length_scope, genre)
+
                         if logger:
-                            logger.debug(f"Calculated default for {length_scope}/{genre}: {total_words} words")
+                            logger.debug(
+                                f"Initial generation: Will use LLM treatment analysis for word count. "
+                                f"Range: {min_words:,}-{max_words:,}, Genre baseline: {genre_baseline:,}"
+                            )
+
+                        # Use genre baseline as starting point (will be replaced by LLM's analysis)
+                        total_words = genre_baseline
                     else:
                         # Fallback: use 'novel' baseline
                         total_words = DepthCalculator.get_default_word_count('novel', genre)
+                        min_words, max_words = DepthCalculator.FORM_RANGES.get('novel', (50000, 120000))
                         if logger:
                             logger.debug(f"Using fallback default for novel/{genre}: {total_words} words")
 
@@ -1304,16 +1374,23 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 chapter_count=chapter_count,
                 original_concept=original_concept,
                 unique_elements=unique_elements,
-                feedback=feedback
+                feedback=feedback,
+                is_initial_generation=is_initial_generation,
+                min_words=min_words,
+                max_words=max_words,
+                genre_baseline=genre_baseline,
+                length_scope=length_scope,
+                genre=genre
             )
 
             # Save foundation immediately
             self._save_partial(foundation, phase='foundation')
             self.console.print(f"[green]✓[/green] Foundation complete")
 
-            # ===== EXTRACT LLM'S STRUCTURAL CHOICES (ITERATION ONLY) =====
-            # During iteration, LLM may adjust word count and chapter count based on feedback
-            if feedback:
+            # ===== EXTRACT LLM'S STRUCTURAL CHOICES =====
+            # During iteration: LLM adjusts based on feedback
+            # During initial generation: LLM chooses based on treatment analysis
+            if feedback or is_initial_generation:
                 foundation_metadata = foundation.get('metadata', {})
                 llm_word_count = foundation_metadata.get('target_word_count')
                 llm_chapter_count = foundation_metadata.get('chapter_count')
@@ -1331,7 +1408,10 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                         total_words = llm_word_count
                         word_count_changed = True
                         if logger:
-                            logger.info(f"Iteration: LLM adjusted word count to {total_words}")
+                            if feedback:
+                                logger.info(f"Iteration: LLM adjusted word count to {total_words}")
+                            else:
+                                logger.info(f"Initial generation: LLM chose word count {total_words} based on treatment")
 
                 # Apply LLM's chapter count (if provided, valid, and different)
                 if llm_chapter_count:
@@ -1342,18 +1422,24 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                             chapter_count = llm_chapter_count
                             chapter_count_changed = True
                             if logger:
-                                logger.info(f"Iteration: LLM adjusted chapter count to {chapter_count}")
+                                if feedback:
+                                    logger.info(f"Iteration: LLM adjusted chapter count to {chapter_count}")
+                                else:
+                                    logger.info(f"Initial generation: LLM chose chapter count {chapter_count} based on treatment")
                     else:
                         if logger:
                             logger.warning(
-                                f"Iteration: LLM provided invalid chapter_count {llm_chapter_count}, "
+                                f"LLM provided invalid chapter_count {llm_chapter_count}, "
                                 f"using calculated value {chapter_count}"
                             )
 
                 # Display adjustments (if any)
                 if word_count_changed or chapter_count_changed:
                     self.console.print(f"\n[bold cyan]{'='*60}[/bold cyan]")
-                    self.console.print(f"[bold cyan]📊 LLM Structural Adjustments Based on Feedback[/bold cyan]")
+                    if feedback:
+                        self.console.print(f"[bold cyan]📊 LLM Structural Adjustments Based on Feedback[/bold cyan]")
+                    else:
+                        self.console.print(f"[bold cyan]📊 Treatment Analysis Results[/bold cyan]")
                     self.console.print(f"[bold cyan]{'='*60}[/bold cyan]")
 
                     if word_count_changed:
@@ -1386,7 +1472,9 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                     self.console.print(f"[bold cyan]{'='*60}[/bold cyan]\n")
                 else:
                     # No changes made - LLM kept existing structure
-                    self.console.print(f"\n[dim]→ LLM analysis: Current structure appropriate for feedback[/dim]\n")
+                    if feedback:
+                        # Only show this message during iteration
+                        self.console.print(f"\n[dim]→ LLM analysis: Current structure appropriate for feedback[/dim]\n")
 
                 # Recalculate structure with LLM's values (if any changed)
                 if llm_word_count or llm_chapter_count:
