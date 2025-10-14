@@ -752,27 +752,9 @@ You are modifying a short-form story. The premise and treatment provide the stor
                     if logger:
                         logger.debug(f"Iteration: Using fallback default for novel/{genre}: {total_words} words")
 
-            # Determine whether to use existing chapter count or let it recalculate
-            # If word target changed significantly (>20%), recalculate chapter count
-            chapter_count = None  # Default: let it recalculate
-
-            if current_chapter_count and stored_target and total_words:
-                # Check if word target changed significantly
-                old_target = int(stored_target)
-                change_ratio = abs(total_words - old_target) / old_target if old_target > 0 else 1.0
-
-                if change_ratio < 0.2:  # Less than 20% change
-                    # Use existing chapter count (minor adjustment)
-                    chapter_count = current_chapter_count
-                    if logger:
-                        logger.debug(f"Iteration: Word target changed {change_ratio*100:.1f}%, keeping {current_chapter_count} chapters")
-                else:
-                    # Recalculate chapter count (significant change)
-                    if logger:
-                        logger.warning(
-                            f"Iteration: Word target changed {change_ratio*100:.1f}% ({old_target:,} → {total_words:,}). "
-                            f"Recalculating chapter count instead of using {current_chapter_count}."
-                        )
+            # Always let the LLM determine optimal chapter count during iteration
+            # User feedback may request consolidation/expansion, LLM needs freedom to restructure
+            chapter_count = None  # Let DepthCalculator and LLM decide based on word target and feedback
 
             # Regenerate with feedback as guidance
             feedback_text = intent.get('description', '')
