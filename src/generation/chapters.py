@@ -581,7 +581,15 @@ MIXED/REFINEMENT (→ minimal or no adjustment):
 STEP 2: Set your target_word_count and chapter_count based on your analysis above.
 
 Your values should reflect the feedback's structural intent, not just specific edits.
-If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitive", "combine chapters"), you SHOULD reduce both metrics proportionally."""
+If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitive", "combine chapters"), you SHOULD reduce both metrics proportionally.
+
+CRITICAL - AVOID DUPLICATE EVENTS IN ITERATION:
+When the feedback mentions duplicate or repetitive content:
+- This means previous chapter generation created redundant scenes/events
+- Your job is to consolidate the structure to PREVENT duplication
+- Review the existing chapters carefully and eliminate duplicate plot beats
+- Each chapter should cover UNIQUE story events and character moments
+- Do NOT create separate chapters for events that should be combined into one"""
 
         # Generate foundation
         result = await self.client.streaming_completion(
@@ -811,7 +819,7 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML list."""
 
         # Add feedback instruction if iterating
         if feedback:
-            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the above feedback when generating chapters. You may adjust chapter count, scene count, and word targets if the feedback suggests it (e.g., 'consolidate chapters' → fewer chapters with tighter scenes, 'expand' → more chapters/scenes)."
+            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the above feedback when generating chapters. You may adjust chapter count, scene count, and word targets if the feedback suggests it (e.g., 'consolidate chapters' → fewer chapters with tighter scenes, 'expand' → more chapters/scenes).\n\nCRITICAL - AVOID DUPLICATE EVENTS:\n- Review previous chapters' scenes CAREFULLY before creating new scenes\n- Check scene titles, locations, and pov_goals to identify already-covered events\n- Do NOT repeat plot beats, events, or character moments that already exist\n- Each scene must advance the story with NEW events, conflicts, and outcomes\n- If a previous chapter already covers an event (e.g., 'Manchester alliance formed'), do NOT create another scene for it"
 
         # Generate batch
         min_tokens = batch_size * 700  # Estimate: 700 tokens per chapter
@@ -1729,7 +1737,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
 
         if feedback:
             # For iteration: give LLM freedom to adjust word count based on feedback
-            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the above feedback while generating the chapters. You may adjust the target word count and chapter count if the feedback suggests it (e.g., 'consolidate' → fewer words/chapters, 'expand' → more words/chapters)."
+            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the above feedback while generating the chapters. You may adjust the target word count and chapter count if the feedback suggests it (e.g., 'consolidate' → fewer words/chapters, 'expand' → more words/chapters).\n\nCRITICAL - AVOID DUPLICATE EVENTS:\n- Review ALL existing chapters and scenes before creating new structure\n- Do NOT repeat plot beats, events, or character moments already covered\n- Each chapter must advance the story with UNIQUE events and conflicts\n- If feedback mentions 'duplicate' or 'repetitive', consolidate those events into single chapters"
             word_count_instruction = f"- target_word_count: {total_words} # Current target - adjust based on feedback if needed"
             word_count_distribution = f"- word_count_target: distribute words across chapters (adjust total if feedback requires it)"
 
