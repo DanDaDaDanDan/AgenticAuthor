@@ -280,9 +280,18 @@ class AnalysisCoordinator:
                 if scenes:
                     # Check if structured scenes or simple list
                     if isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict):
-                        lines.append(f"Scenes ({len(scenes)} total - structured format)")
+                        lines.append(f"Scenes ({len(scenes)} total):")
+                        # Include scene details for duplicate detection
+                        for i, scene in enumerate(scenes, 1):
+                            scene_title = scene.get('scene', 'Untitled')
+                            location = scene.get('location', 'N/A')
+                            pov_goal = scene.get('pov_goal', 'N/A')
+                            lines.append(f"  {i}. {scene_title} @ {location}")
+                            lines.append(f"     Goal: {pov_goal}")
                     else:
-                        lines.append(f"Scenes ({len(scenes)} total)")
+                        lines.append(f"Scenes ({len(scenes)} total):")
+                        for i, scene in enumerate(scenes, 1):
+                            lines.append(f"  {i}. {scene}")
 
                 char_devs = ch.get('character_developments', [])
                 if char_devs:

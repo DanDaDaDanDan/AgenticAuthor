@@ -32,6 +32,13 @@ Chapter Outline:
 
 Rate the quality and provide constructive criticism. Focus on what matters most to making this better.
 
+CRITICAL: Check for duplicate plot elements:
+- Duplicate events across different chapters (e.g., "alliance formed" in Ch 6 AND Ch 10)
+- Repeated character moments or developments
+- Redundant scenes covering the same story beats
+- Structural repetition (two chapters doing essentially the same thing)
+If you find duplicates, note them SPECIFICALLY in feedback (e.g., "Ch 6 'Alliance of Thieves' and Ch 10 'Manchester Accord' both cover the same alliance formation event - consolidate into one chapter")
+
 Respond with ONLY valid JSON:
 {
   "grade": "A+ (Exceptional) | A (Excellent) | B+ (Very Good) | B (Good) | C+ (Above Average) | C (Average) | D+ (Below Average) | D (Poor) | F (Needs Major Revision)",
