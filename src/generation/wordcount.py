@@ -42,10 +42,10 @@ class WordCountAssigner:
 
     async def assign_word_counts(self) -> Dict[str, Any]:
         """
-        Assign word count targets to all chapters based on event counts with act-aware depth.
+        Assign word count targets to all chapters based on scene counts with act-aware depth.
 
-        Uses the depth architecture: word_count_target = event_count × act_we
-        where act_we is calculated from form + pacing + act position.
+        Uses the depth architecture: word_count_target = scene_count × act_ws
+        where act_ws is calculated from form + pacing + act position.
 
         Returns:
             Dictionary with:
@@ -95,17 +95,17 @@ class WordCountAssigner:
             target_word_count, pacing, length_scope=length_scope
         )
         form = structure['form']
-        base_we = structure['base_we']  # Act II baseline
+        base_ws = structure['base_ws']  # Act II baseline
         total_chapters = len(chapters)
 
         print(f"\nCalculating word counts (act-aware):")
         print(f"  Form: {form.replace('_', ' ').title()}")
         print(f"  Pacing: {pacing}")
-        print(f"  Base words/event: {base_we} (Act II baseline)")
-        print(f"  Act multipliers: Act I={structure['act_we_multipliers']['act1']:.2f}x, Act II={structure['act_we_multipliers']['act2']:.2f}x, Act III={structure['act_we_multipliers']['act3']:.2f}x")
+        print(f"  Base words/scene: {base_ws} (Act II baseline)")
+        print(f"  Act multipliers: Act I={structure['act_ws_multipliers']['act1']:.2f}x, Act II={structure['act_ws_multipliers']['act2']:.2f}x, Act III={structure['act_ws_multipliers']['act3']:.2f}x")
         print()
 
-        # Calculate word counts based on actual event counts + act position
+        # Calculate word counts based on actual scene counts + act position
         new_targets = {}
         changes = []
 
@@ -114,21 +114,21 @@ class WordCountAssigner:
             if ch_num is None:
                 continue
 
-            # Count events in this chapter
-            key_events = chapter.get('key_events', [])
-            event_count = len(key_events)
+            # Count scenes in this chapter (support both formats)
+            scenes = chapter.get('scenes', chapter.get('key_events', []))
+            scene_count = len(scenes)
 
             # Calculate act-aware word target
             act = DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
-            act_we = DepthCalculator.get_act_words_per_event(form, pacing, act)
-            new_target = event_count * act_we
+            act_ws = DepthCalculator.get_act_words_per_scene(form, pacing, act)
+            new_target = scene_count * act_ws
 
             # Track changes
             old_target = chapter.get('word_count_target', 0)
             if old_target != new_target:
                 act_display = act.replace('act', 'Act ')
                 changes.append((ch_num, old_target, new_target, act_display))
-                print(f"  Chapter {ch_num} ({act_display}): {event_count} events × {act_we} w/e = {new_target:,} words (was {old_target:,})")
+                print(f"  Chapter {ch_num} ({act_display}): {scene_count} scenes × {act_ws} w/s = {new_target:,} words (was {old_target:,})")
 
             # Update chapter
             chapter['word_count_target'] = new_target
@@ -154,7 +154,7 @@ class WordCountAssigner:
             'book_length': book_length_category,
             'target_range': target_range,
             'changes': changes,
-            'base_we': base_we,
+            'base_ws': base_ws,
             'form': form
         }
 
@@ -233,12 +233,18 @@ class WordCountAssigner:
             ch_num = ch.get('number', '?')
             title = ch.get('title', 'Untitled')
             summary = ch.get('summary', '')
-            key_events = ch.get('key_events', [])
+            # Support both scenes (new) and key_events (old)
+            scenes = ch.get('scenes', ch.get('key_events', []))
 
             info = f"Chapter {ch_num}: {title}\n"
             info += f"  Summary: {summary}\n"
-            if key_events:
-                info += f"  Key Events: {', '.join(key_events)}\n"
+            if scenes:
+                # Handle both structured scenes and simple list
+                if isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict):
+                    scene_titles = [s.get('scene', 'Untitled Scene') for s in scenes]
+                    info += f"  Scenes: {', '.join(scene_titles)}\n"
+                else:
+                    info += f"  Scenes: {', '.join(scenes)}\n"
             chapter_info.append(info)
 
         chapters_text = "\n".join(chapter_info)
