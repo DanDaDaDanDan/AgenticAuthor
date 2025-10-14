@@ -406,6 +406,7 @@ class ChapterGenerator:
   narrative_style: "..."
   target_audience: "..."
   target_word_count: {total_words}
+  chapter_count: {chapter_count}
   setting_period: "..."
   setting_location: "..."
   content_warnings: []"""
@@ -417,10 +418,12 @@ class ChapterGenerator:
             for elem in unique_elements:
                 metadata_yaml_example += f'\n    - "{elem}"'
 
-        # Iteration-specific instructions for word count flexibility
+        # Iteration-specific instructions for structural flexibility
         word_count_note = ""
+        chapter_count_note = ""
         if feedback:
             word_count_note = " # Current target - adjust based on feedback if needed"
+            chapter_count_note = " # Current count - adjust based on feedback if needed"
 
         prompt = f"""Generate the FOUNDATION for a chapter structure. This is PART 1 of multi-phase generation.
 
@@ -442,6 +445,7 @@ Generate high-level story parameters:
 - narrative_style (e.g., "third_person_limited", "first_person")
 - target_audience (e.g., "adult", "young adult")
 - target_word_count: {total_words}{word_count_note}
+- chapter_count: {chapter_count}{chapter_count_note}
 - setting_period (e.g., "contemporary", "historical", "future")
 - setting_location (e.g., "urban", "rural", "multiple")
 - content_warnings: list any if applicable
@@ -513,7 +517,7 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
 
         # Add feedback instruction if iterating
         if feedback:
-            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: When generating the metadata, you may adjust the target_word_count if the feedback suggests it (e.g., 'consolidate/tighten' → reduce word count, 'expand' → increase word count)."
+            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: When generating the metadata, you may adjust target_word_count AND chapter_count if the feedback suggests it (e.g., 'consolidate/tighten' → reduce both word count and chapter count, 'expand' → increase both)."
 
         # Generate foundation
         result = await self.client.streaming_completion(
@@ -1266,6 +1270,64 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
             # Save foundation immediately
             self._save_partial(foundation, phase='foundation')
             self.console.print(f"[green]✓[/green] Foundation complete")
+
+            # ===== EXTRACT LLM'S STRUCTURAL CHOICES (ITERATION ONLY) =====
+            # During iteration, LLM may adjust word count and chapter count based on feedback
+            if feedback:
+                foundation_metadata = foundation.get('metadata', {})
+                llm_word_count = foundation_metadata.get('target_word_count')
+                llm_chapter_count = foundation_metadata.get('chapter_count')
+
+                # Apply LLM's word count (if provided and different)
+                if llm_word_count:
+                    llm_word_count = int(llm_word_count)
+                    if llm_word_count != total_words:
+                        self.console.print(
+                            f"[yellow]→ LLM adjusted word count:[/yellow] "
+                            f"{total_words:,} → {llm_word_count:,} words"
+                        )
+                        total_words = llm_word_count
+                        if logger:
+                            logger.info(f"Iteration: LLM adjusted word count to {total_words}")
+
+                # Apply LLM's chapter count (if provided, valid, and different)
+                if llm_chapter_count:
+                    llm_chapter_count = int(llm_chapter_count)
+                    # Validate reasonable range (1-100 chapters)
+                    if 1 <= llm_chapter_count <= 100:
+                        if llm_chapter_count != chapter_count:
+                            self.console.print(
+                                f"[yellow]→ LLM adjusted chapter count:[/yellow] "
+                                f"{chapter_count} → {llm_chapter_count} chapters"
+                            )
+                            chapter_count = llm_chapter_count
+                            if logger:
+                                logger.info(f"Iteration: LLM adjusted chapter count to {chapter_count}")
+                    else:
+                        if logger:
+                            logger.warning(
+                                f"Iteration: LLM provided invalid chapter_count {llm_chapter_count}, "
+                                f"using calculated value {chapter_count}"
+                            )
+
+                # Recalculate structure with LLM's values (if any changed)
+                if llm_word_count or llm_chapter_count:
+                    structure = self._calculate_structure(total_words, pacing, length_scope)
+                    form = structure['form']
+                    base_ws = structure['base_ws']
+                    total_scenes = structure['total_scenes']
+
+                    # Redistribute scenes across LLM's chosen chapter count
+                    scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
+                        total_scenes, chapter_count, form
+                    )
+
+                    if logger:
+                        logger.debug(
+                            f"Recalculated structure with LLM values: {form}, {chapter_count} chapters, "
+                            f"{total_scenes} scenes, {base_ws} w/s"
+                        )
+                        logger.debug(f"Recalculated scene distribution: {scenes_distribution}")
 
             # ===== PHASE 2: GENERATE CHAPTER BATCHES =====
             all_chapters = []
