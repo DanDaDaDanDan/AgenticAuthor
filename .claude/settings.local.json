@@ -36,7 +36,10 @@
       "Bash(for:*)",
       "Bash(paste -:*)",
       "Bash(tee:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(cmd /c:*)",
+      "Bash(findstr:*)",
+      "Bash(del scriptsupdate_chapters_for_scenes.py)"
     ],
     "deny": [],
     "ask": []

@@ -133,7 +133,7 @@ class ChapterGenerator:
             length_scope: Optional taxonomy length_scope (overrides auto-detection)
 
         Returns:
-            Dict with form, chapter_count, base_we, etc.
+            Dict with form, chapter_count, base_ws, etc.
         """
         return DepthCalculator.calculate_structure(total_words, pacing, length_scope=length_scope)
 
@@ -164,9 +164,12 @@ class ChapterGenerator:
                 if isinstance(chapters, list) and len(chapters) > 0:
                     # Check if last chapter has all required fields
                     last_chapter = chapters[-1]
-                    required_fields = ['number', 'title', 'summary', 'key_events', 'word_count_target']
+                    # Accept both old (key_events) and new (scenes) formats
+                    required_base_fields = ['number', 'title', 'summary', 'word_count_target']
+                    has_base = all(f in last_chapter for f in required_base_fields)
+                    has_content = ('scenes' in last_chapter or 'key_events' in last_chapter)
 
-                    if all(f in last_chapter for f in required_fields):
+                    if has_base and has_content:
                         # Last chapter is complete
                         result['last_complete_chapter'] = len(chapters)
                     else:
@@ -200,9 +203,12 @@ class ChapterGenerator:
                             # Check last chapter completeness
                             if len(chapters) > 0:
                                 last_chapter = chapters[-1]
-                                required_fields = ['number', 'title', 'summary', 'key_events', 'word_count_target']
+                                # Accept both old (key_events) and new (scenes) formats
+                                required_base_fields = ['number', 'title', 'summary', 'word_count_target']
+                                has_base = all(f in last_chapter for f in required_base_fields)
+                                has_content = ('scenes' in last_chapter or 'key_events' in last_chapter)
 
-                                if all(f in last_chapter for f in required_fields):
+                                if has_base and has_content:
                                     result['last_complete_chapter'] = len(chapters)
                                 else:
                                     result['last_complete_chapter'] = max(0, len(chapters) - 1)
@@ -555,7 +561,7 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         total_chapters: int,
         form: str,
         pacing: str,
-        events_per_chapter: List[int]
+        scenes_per_chapter: List[int]
     ) -> List[Dict[str, Any]]:
         """
         Generate a batch of chapters with full context and act-aware word targets.
@@ -603,18 +609,18 @@ Do NOT wrap in markdown code fences. Return ONLY the YAML content."""
         else:
             default_act = "Act III"
 
-        # Build per-chapter event and word specifications (act-aware)
+        # Build per-chapter scene and word specifications (act-aware)
         chapter_specs = []
         for i, ch_num in enumerate(range(start_chapter, end_chapter + 1)):
-            events = events_per_chapter[i]
-            # Calculate act-aware words per event for this chapter
+            scenes = scenes_per_chapter[i]
+            # Calculate act-aware words per scene for this chapter
             act = DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
-            act_we = DepthCalculator.get_act_words_per_event(form, pacing, act)
-            word_target = events * act_we
+            act_ws = DepthCalculator.get_act_words_per_scene(form, pacing, act)
+            word_target = scenes * act_ws
 
             # Show which act for context
             act_display = act.replace('act', 'Act ')
-            chapter_specs.append(f"Chapter {ch_num} ({act_display}): {events} events × {act_we} w/e = {word_target:,} words")
+            chapter_specs.append(f"Chapter {ch_num} ({act_display}): {scenes} scenes × {act_ws} w/s = {word_target:,} words")
 
         specs_text = '\n'.join(chapter_specs)
 
@@ -637,13 +643,13 @@ PREVIOUS CHAPTERS (summaries only):
 
 STORY DEPTH ARCHITECTURE (ACT-AWARE):
 This story varies depth by act position to create narrative rhythm.
-Each chapter's word target is calculated using act-specific words-per-event:
+Each chapter's word target is calculated using act-specific words-per-scene:
 
 {specs_text}
 
-Note: Act I (setup) uses slightly lower w/e for efficiency
-      Act II (rising action) uses baseline w/e
-      Act III (climax) uses HIGHER w/e for emotional depth
+Note: Act I (setup) uses slightly lower w/s for efficiency
+      Act II (rising action) uses baseline w/s
+      Act III (climax) uses HIGHER w/s for emotional depth
 
 TASK:
 Generate {batch_size} comprehensive chapter outlines, numbered {start_chapter} through {end_chapter}.
@@ -654,22 +660,33 @@ For each chapter, follow the EXACT specifications above:
 - pov: character name
 - act: "{default_act}" (or adjust based on story flow)
 - summary: 3-4 sentences
-- key_events: MATCH THE EVENT COUNT specified above for this chapter
-  * Each event should be specific and complete
-  * Events will be developed with act-appropriate depth during prose generation
-  * Act III events need MORE depth even though there are fewer of them
+- scenes: MATCH THE SCENE COUNT specified above for this chapter
+  * CRITICAL: Each scene is a COMPLETE DRAMATIC UNIT (1,000-2,000 words when written)
+  * NOT bullet point summaries - these are FULL SCENES with structure:
+    - scene: Brief scene title (2-4 words)
+    - location: Where the scene takes place
+    - pov_goal: What the POV character wants in this scene
+    - conflict: What prevents them from getting it
+    - stakes: What's at risk if they fail
+    - outcome: How the scene resolves (success/failure/complication)
+    - emotional_beat: Internal character change or realization
+    - sensory_focus: 2-3 specific sensory details for atmosphere
+    - target_words: Scene word target (use act-specific w/s from above)
+  * Act III scenes need MORE depth (higher w/s) even though there are fewer of them
+  * This structure signals to prose generation: write FULL dramatic scenes, not summaries
 - character_developments: 3-4 internal changes
 - relationship_beats: 2-3 relationship evolutions
 - tension_points: 2-3 stakes/urgency moments
-- sensory_details: 2-3 atmospheric elements
+- sensory_details: 2-3 atmospheric elements (chapter-level)
 - subplot_threads: 1-2 if applicable
-- word_count_target: USE THE EXACT TARGET from the spec above (already calculated with act-aware w/e)
+- word_count_target: USE THE EXACT TARGET from the spec above (already calculated with act-aware w/s)
 
 Guidelines:
 - Maintain consistency with the foundation (characters, world, metadata)
 - Continue narrative flow from previous chapters
 - Be specific with names, places, emotions
-- Event count varies by chapter position in three-act structure
+- Scene count varies by chapter position in three-act structure (2-4 scenes per chapter)
+- Professional novels use 2-4 full scenes per chapter, NOT 6-10 bullet points
 
 RETURN FORMAT:
 Return ONLY a YAML list of chapters (no markdown fences):
@@ -679,8 +696,21 @@ Return ONLY a YAML list of chapters (no markdown fences):
   pov: "..."
   act: "{default_act}"
   summary: "..."
-  key_events:
-    - "..."  # {events_per_chapter[0]} events total
+  scenes:  # {scenes_per_chapter[0]} scenes total for this chapter
+    - scene: "Scene Title"
+      location: "Specific place"
+      pov_goal: "What character wants"
+      conflict: "What prevents it"
+      stakes: "What's at risk"
+      outcome: "How it resolves"
+      emotional_beat: "Internal change"
+      sensory_focus:
+        - "Sensory detail 1"
+        - "Sensory detail 2"
+      target_words: {act_ws}  # Act-specific target
+    - scene: "Next Scene Title"
+      location: "..."
+      # ... (continue for all {scenes_per_chapter[0]} scenes)
   character_developments:
     - "..."
   relationship_beats:
@@ -691,10 +721,11 @@ Return ONLY a YAML list of chapters (no markdown fences):
     - "..."
   subplot_threads:
     - "..."
-  word_count_target: {DepthCalculator.get_act_words_per_event(form, pacing, DepthCalculator.get_act_for_chapter(start_chapter, total_chapters)) * events_per_chapter[0]}  # USE EXACT VALUE FROM SPEC ABOVE
+  word_count_target: {DepthCalculator.get_act_words_per_scene(form, pacing, DepthCalculator.get_act_for_chapter(start_chapter, total_chapters)) * scenes_per_chapter[0]}  # USE EXACT VALUE FROM SPEC ABOVE
 
 [Continue for all chapters {start_chapter} through {end_chapter}]
 
+IMPORTANT: Use "scenes:" (with scene structure), NOT "key_events:" (old format).
 Do NOT wrap in markdown code fences. Return ONLY the YAML list."""
 
         # Generate batch
@@ -808,7 +839,9 @@ IMPORTANT REQUIREMENTS:
 For each chapter ({last_complete_chapter + 1} through {total_chapters}):
 - number, title (evocative, specific)
 - pov, act, summary (3-4 sentences)
-- key_events: 8-10 specific plot beats
+- scenes: 2-4 full dramatic scenes (MATCH FORMAT from previous chapters)
+  * If previous chapters use "scenes:" with structure (scene/location/pov_goal/conflict/stakes/outcome/emotional_beat/sensory_focus/target_words), use that format
+  * If previous chapters use "key_events:" (old format), use that for consistency
 - character_developments: 3-4 internal changes
 - relationship_beats: 2-3 relationship evolutions
 - tension_points: 2-3 stakes/urgency moments
@@ -824,8 +857,17 @@ Return ONLY a YAML list of the missing chapters (no markdown fences, no other co
   pov: "..."
   act: "..."
   summary: "..."
-  key_events:
-    - "..."
+  scenes:  # Use scenes (new format) or key_events (old format) - match previous chapters
+    - scene: "Scene Title"
+      location: "..."
+      pov_goal: "..."
+      conflict: "..."
+      stakes: "..."
+      outcome: "..."
+      emotional_beat: "..."
+      sensory_focus:
+        - "..."
+      target_words: ...
   character_developments:
     - "..."
   relationship_beats:
@@ -1102,38 +1144,38 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                         if logger:
                             logger.debug(f"Using fallback default for novel/{genre}: {total_words} words")
 
-            # Calculate story structure (form, chapters, events, base_we)
+            # Calculate story structure (form, chapters, scenes, base_ws)
             if not chapter_count:
                 structure = self._calculate_structure(total_words, pacing, length_scope)
                 chapter_count = structure['chapter_count']
                 form = structure['form']
-                base_we = structure['base_we']
-                total_events = structure['total_events']
+                base_ws = structure['base_ws']
+                total_scenes = structure['total_scenes']
 
-                # Distribute events across chapters based on act structure
-                events_distribution = DepthCalculator.distribute_events_across_chapters(
-                    total_events, chapter_count, form
+                # Distribute scenes across chapters based on act structure
+                scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
+                    total_scenes, chapter_count, form
                 )
 
                 if logger:
-                    logger.debug(f"Story structure: {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e (baseline)")
-                    logger.debug(f"Event distribution: {events_distribution}")
+                    logger.debug(f"Story structure: {form}, {chapter_count} chapters, {total_scenes} scenes, {base_ws} w/s (baseline)")
+                    logger.debug(f"Scene distribution: {scenes_distribution}")
             else:
                 # User specified chapter count - use it but still calculate structure
                 structure = self._calculate_structure(total_words, pacing, length_scope)
                 form = structure['form']
-                base_we = structure['base_we']
-                total_events = structure['total_events']
+                base_ws = structure['base_ws']
+                total_scenes = structure['total_scenes']
 
-                # Distribute events across user-specified chapter count
-                events_distribution = DepthCalculator.distribute_events_across_chapters(
-                    total_events, chapter_count, form
+                # Distribute scenes across user-specified chapter count
+                scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
+                    total_scenes, chapter_count, form
                 )
 
                 if logger:
-                    logger.debug(f"Story structure (user-specified chapters): {form}, {chapter_count} chapters, {total_events} events, {base_we} w/e (baseline)")
+                    logger.debug(f"Story structure (user-specified chapters): {form}, {chapter_count} chapters, {total_scenes} scenes, {base_ws} w/s (baseline)")
 
-            self.console.print(f"\n[cyan]Story Structure:[/cyan] {form.replace('_', ' ').title()}, {chapter_count} chapters, {base_we} words/event")
+            self.console.print(f"\n[cyan]Story Structure:[/cyan] {form.replace('_', ' ').title()}, {chapter_count} chapters, {base_ws} words/scene")
 
             # Serialize context to YAML for prompts
             context_yaml = self.context_builder.to_yaml_string(context)
@@ -1191,8 +1233,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 # Create summaries of previous chapters for context
                 previous_summaries = self._summarize_chapters(all_chapters)
 
-                # Get events for this batch of chapters
-                batch_events = events_distribution[start_ch-1:end_ch]  # 0-indexed to 1-indexed
+                # Get scenes for this batch of chapters
+                batch_scenes = scenes_distribution[start_ch-1:end_ch]  # 0-indexed to 1-indexed
 
                 # Try batch generation with retry
                 batch_chapters = None
@@ -1208,7 +1250,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                             total_chapters=chapter_count,
                             form=form,
                             pacing=pacing,
-                            events_per_chapter=batch_events
+                            scenes_per_chapter=batch_scenes
                         )
                         break  # Success
                     except Exception as e:
@@ -1460,7 +1502,18 @@ Generate {chapter_count} comprehensive chapter outlines.
 For each chapter:
 - number, title (evocative, specific)
 - pov, act, summary (3-4 sentences)
-- key_events: 8-10 specific plot beats
+- scenes: 2-4 full dramatic scenes with structure
+  * CRITICAL: Each scene is a COMPLETE DRAMATIC UNIT (1,000-2,000 words when written)
+  * NOT bullet point summaries - use full scene structure:
+    - scene: Brief scene title (2-4 words)
+    - location: Where the scene takes place
+    - pov_goal: What the POV character wants in this scene
+    - conflict: What prevents them from getting it
+    - stakes: What's at risk if they fail
+    - outcome: How the scene resolves
+    - emotional_beat: Internal character change
+    - sensory_focus: 2-3 specific sensory details
+    - target_words: Scene word target (~1,300 words/scene for novels)
 - character_developments: 3-4 internal changes
 - relationship_beats: 2-3 relationship evolutions
 - tension_points: 2-3 stakes/urgency moments
@@ -1469,7 +1522,7 @@ For each chapter:
 - word_count_target: distribute {total_words} across chapters
 
 Guidelines:
-- Each key_event should be specific and complete
+- Each scene should be specific and complete with full structure
 - Character developments show internal change
 - Relationship beats track evolving dynamics
 - Be specific with names, places, emotions
