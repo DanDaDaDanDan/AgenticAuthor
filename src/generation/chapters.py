@@ -305,24 +305,8 @@ class ChapterGenerator:
             # Needs ~1,400 tokens output
             return min(2, chapter_count)
 
-    def _summarize_chapters(self, chapters: List[Dict[str, Any]]) -> List[Dict[str, str]]:
-        """
-        Create compressed summaries of chapters for context passing.
-
-        Args:
-            chapters: List of full chapter dicts
-
-        Returns:
-            List of summary dicts with just number, title, summary
-        """
-        summaries = []
-        for chapter in chapters:
-            summaries.append({
-                'number': chapter.get('number'),
-                'title': chapter.get('title'),
-                'summary': chapter.get('summary')
-            })
-        return summaries
+    # Removed _summarize_chapters() - now passing full chapter context to batches
+    # to prevent duplicate scenes/beats across batches
 
     def _save_partial(self, data: Dict[str, Any], phase: str):
         """
@@ -648,7 +632,7 @@ If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitiv
         self,
         context_yaml: str,
         foundation: Dict[str, Any],
-        previous_summaries: List[Dict[str, str]],
+        previous_chapters: List[Dict[str, Any]],
         start_chapter: int,
         end_chapter: int,
         words_per_chapter: int,
@@ -664,7 +648,7 @@ If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitiv
         Args:
             context_yaml: Full premise + treatment as YAML
             foundation: metadata + characters + world sections
-            previous_summaries: Summaries of chapters generated so far
+            previous_chapters: FULL chapter dicts generated so far (with all scenes, beats, etc.)
             start_chapter: First chapter number to generate (inclusive)
             end_chapter: Last chapter number to generate (inclusive)
             words_per_chapter: Average words per chapter (for display only)
@@ -687,10 +671,10 @@ If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitiv
         # Serialize foundation to YAML
         foundation_yaml = yaml.dump(foundation, allow_unicode=True, default_flow_style=False)
 
-        # Serialize previous summaries to YAML
+        # Serialize previous chapters to YAML (FULL context, not summaries)
         previous_yaml = ""
-        if previous_summaries:
-            previous_yaml = yaml.dump({'previous_chapters': previous_summaries}, allow_unicode=True, default_flow_style=False)
+        if previous_chapters:
+            previous_yaml = yaml.dump(previous_chapters, allow_unicode=True, default_flow_style=False)
 
         # Determine act for these chapters
         # Simple heuristic: first 25% = Act I, middle 50% = Act II, last 25% = Act III
@@ -731,7 +715,7 @@ FOUNDATION (metadata + characters + world):
 {foundation_yaml}
 ```
 
-PREVIOUS CHAPTERS (summaries only):
+PREVIOUS CHAPTERS (full details - all scenes, beats, developments):
 ```yaml
 {previous_yaml if previous_yaml else "# No previous chapters - this is the first batch"}
 ```
@@ -779,6 +763,8 @@ For each chapter, follow the EXACT specifications above:
 Guidelines:
 - Maintain consistency with the foundation (characters, world, metadata)
 - Continue narrative flow from previous chapters
+- Review previous chapters' scenes carefully to avoid duplication
+- Each scene should advance the plot - do not repeat beats already covered
 - Be specific with names, places, emotions
 - Scene count varies by chapter position in three-act structure (2-4 scenes per chapter)
 - Professional novels use 2-4 full scenes per chapter, NOT 6-10 bullet points
@@ -1513,8 +1499,8 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                 phase_num = batch_num + 2
                 self.console.print(f"\n[cyan][{phase_num}/{total_phases}] Generating chapters {start_ch}-{end_ch}...[/cyan]")
 
-                # Create summaries of previous chapters for context
-                previous_summaries = self._summarize_chapters(all_chapters)
+                # Pass FULL chapter context (not summaries) to prevent duplicates
+                previous_chapters = all_chapters
 
                 # Get scenes for this batch of chapters
                 batch_scenes = scenes_distribution[start_ch-1:end_ch]  # 0-indexed to 1-indexed
@@ -1526,7 +1512,7 @@ Return ONLY the YAML list of chapters. Do NOT include any other text."""
                         batch_chapters = await self._generate_chapter_batch(
                             context_yaml=context_yaml,
                             foundation=foundation,
-                            previous_summaries=previous_summaries,
+                            previous_chapters=previous_chapters,
                             start_chapter=start_ch,
                             end_chapter=end_ch,
                             words_per_chapter=words_per_chapter,
