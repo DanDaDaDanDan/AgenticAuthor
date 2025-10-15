@@ -158,7 +158,7 @@ except ValueError as e:
    - Methods:
      - `build_context(project, target_lod, include_downstream)` - Assembles context
      - `to_yaml_string(context)` - Serializes to YAML for LLM
-   - Loads: premise_metadata.json, treatment.md, chapters.yaml, chapters/*.md
+   - Loads: premise_metadata.json, treatment.md, chapters.yaml, prose/*.md
 
 2. **LODResponseParser** (`src/generation/lod_parser.py`)
    - Splits LLM's unified YAML back to individual files
@@ -630,7 +630,7 @@ graph TB
 ### 7. Short Story System (`src/generation/short_story.py`)
 - **short_story.py**: ShortStoryGenerator for optimized short-form prose
 - **Auto-detection**: Based on target word count (≤7,500) or taxonomy (length_scope)
-- **Single file generation**: story.md instead of chapters/ directory
+- **Single file generation**: story.md instead of prose/ directory
 - **Streamlined flow**: premise → treatment → story.md (skips chapters.yaml)
 - **Optimized prompts**: Emphasize unity of effect, single-sitting experience
 - **File structure differences**: Uses story.md for short form vs chapters/ for novels
@@ -2371,7 +2371,7 @@ if is_short_story:
 else:
     # Use chapter-based generation
     prose_gen = ProseGenerator(client, project, model)
-    # Generates to: books/my-story/chapters/
+    # Generates to: books/my-story/prose/
 ```
 
 **Short Story Detection Logic:**
@@ -2410,11 +2410,11 @@ def is_short_story_project(project: Project) -> bool:
 
 | Aspect | Short Story | Novel |
 |--------|-------------|-------|
-| File structure | premise_metadata.json + treatment.md + story.md | premise_metadata.json + treatment.md + chapters.yaml + chapters/*.md |
+| File structure | premise_metadata.json + treatment.md + story.md | premise_metadata.json + treatment.md + chapters.yaml + prose/*.md |
 | Generation flow | 3 steps (premise → treatment → story) | 4 steps (premise → treatment → chapters → prose) |
 | Prompts | Unity of effect, single-sitting | Chapter arcs, long-form pacing |
 | Iteration | Direct patching of story.md | Chapter-level or prose-level patches |
-| Export | Single story.md → RTF | Combined chapters/*.md → RTF |
+| Export | Single story.md → RTF | Combined prose/*.md → RTF |
 
 ### Concept Mashup Generator Pattern
 

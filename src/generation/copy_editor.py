@@ -19,7 +19,7 @@ console = Console()
 class CopyEditor:
     """Professional copy editing pass with full accumulated context.
 
-    Edits prose files (chapters/chapter-XX.md) sequentially, passing ALL
+    Edits prose files (prose/chapter-XX.md) sequentially, passing ALL
     previously edited chapters as context for maximum consistency.
 
     Does NOT edit: premise_metadata.json, treatment.md, or chapters.yaml
@@ -135,7 +135,7 @@ class CopyEditor:
             if abs(word_change) > 0.1:
                 console.print(f"  [dim]• Word count: {word_change:+.1f}%[/dim]")
 
-            console.print(f"  [dim]• Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
+            console.print(f"  [dim]• Saved to prose/chapter-{chapter_num:02d}.md[/dim]")
 
             edited_count += 1
 

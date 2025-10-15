@@ -194,7 +194,7 @@ class LODResponseParser:
                         chapter_num = prose_entry['chapter']
                         prose_text = prose_entry['text']
                         project.save_chapter(chapter_num, prose_text)
-                        updated_files.append(f'chapters/chapter-{chapter_num:02d}.md')
+                        updated_files.append(f'prose/chapter-{chapter_num:02d}.md')
 
             # Apply culling based on target_lod (NOT what LLM changed)
             deleted_files = self._apply_culling(project, target_lod, data)
@@ -213,7 +213,7 @@ class LODResponseParser:
                 for prose_entry in data['prose']:
                     if isinstance(prose_entry, dict) and 'chapter' in prose_entry:
                         chapter_num = prose_entry['chapter']
-                        updated_files.append(f'chapters/chapter-{chapter_num:02d}.md')
+                        updated_files.append(f'prose/chapter-{chapter_num:02d}.md')
 
             # Dry run culling simulation
             deleted_files = self._simulate_culling(project, target_lod, data)
@@ -312,9 +312,9 @@ class LODResponseParser:
                 old_ch = next((c for c in old_chapters if c['number'] == ch_num), None)
 
                 if old_ch is None or self._chapter_differs(old_ch, new_ch):
-                    prose_file = project.chapters_dir / f'chapter-{ch_num:02d}.md'
+                    prose_file = project.prose_dir / f'chapter-{ch_num:02d}.md'
                     if prose_file.exists():
-                        deleted.append(f'chapters/chapter-{ch_num:02d}.md')
+                        deleted.append(f'prose/chapter-{ch_num:02d}.md')
 
         return deleted
 
@@ -396,10 +396,10 @@ class LODResponseParser:
 
             if old_ch is None or self._chapter_differs(old_ch, new_ch):
                 # Chapter changed, delete prose
-                prose_file = project.chapters_dir / f'chapter-{ch_num:02d}.md'
+                prose_file = project.prose_dir / f'chapter-{ch_num:02d}.md'
                 if prose_file.exists():
                     prose_file.unlink()
-                    deleted.append(f'chapters/chapter-{ch_num:02d}.md')
+                    deleted.append(f'prose/chapter-{ch_num:02d}.md')
 
         return deleted
 

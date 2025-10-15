@@ -56,8 +56,8 @@ Intent Analysis (LLM call with structured JSON)
 ### Example Diff Output
 
 ```diff
---- a/chapters/chapter-03.md
-+++ b/chapters/chapter-03.md
+--- a/prose/chapter-03.md
++++ b/prose/chapter-03.md
 @@ -45,7 +45,12 @@
 
  Sarah entered the library, her footsteps echoing on the marble floor.
@@ -396,8 +396,8 @@ Requirements:
 Output ONLY the diff, starting with "--- a/" and "+++ b/".
 
 Example format:
---- a/chapters/chapter-03.md
-+++ b/chapters/chapter-03.md
+--- a/prose/chapter-03.md
++++ b/prose/chapter-03.md
 @@ -45,7 +45,12 @@
  [context lines]
 -[old line]
@@ -641,8 +641,8 @@ User: "Add more dialogue between Sarah and the librarian in chapter 3"
 
 **Output:**
 ```diff
---- a/chapters/chapter-03.md
-+++ b/chapters/chapter-03.md
+--- a/prose/chapter-03.md
++++ b/prose/chapter-03.md
 @@ -45,7 +45,15 @@
 
  Sarah entered the library, her footsteps echoing on the marble floor.

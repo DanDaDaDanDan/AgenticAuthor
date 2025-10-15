@@ -153,7 +153,7 @@ class AnalysisCoordinator:
             else:
                 # Long-form: analyze specific chapter
                 chapter_num = int(target_id) if target_id else 1
-                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                chapter_file = self.project.prose_dir / f"chapter-{chapter_num:02d}.md"
                 if chapter_file.exists():
                     content = chapter_file.read_text(encoding='utf-8')
                     context['treatment'] = self.project.get_treatment()

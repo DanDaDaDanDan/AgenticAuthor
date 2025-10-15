@@ -282,7 +282,7 @@ scenes:
   - Existing chapters included in iteration prompt for true modification
 - **Short Story Workflow** 📖 - Simplified flow for short-form stories (≤2 chapters)
   - Automatic detection: ≤2 chapters = short-form (flash fiction, short story, novelette)
-  - Single file: story.md instead of chapters/ directory
+  - Single file: story.md instead of prose/ directory
   - Skip chapters.yaml: goes directly from treatment → prose
   - Optimized prompts: emphasizes unity of effect, single-sitting experience
   - Iteration: diff-based patching of story.md with full context
@@ -361,7 +361,7 @@ agentic           # Start REPL (main interface)
 books/my-short-story/
 ├── premise_metadata.json  ← Single source of truth (text + taxonomy)
 ├── treatment.md
-└── story.md               ← Single complete story (no chapters/)
+└── story.md               ← Single complete story (no prose/)
 ```
 
 **vs. Novel Structure:**
@@ -370,7 +370,7 @@ books/my-novel/
 ├── premise_metadata.json  ← Single source of truth (text + taxonomy)
 ├── treatment.md
 ├── chapters.yaml          ← Full metadata + outlines
-└── chapters/
+└── prose/
     ├── chapter-01.md
     ├── chapter-02.md
     └── ...
@@ -642,7 +642,7 @@ books/                      # All projects root
 │   ├── premise_metadata.json # LOD3 - Single source of truth (premise text + taxonomy)
 │   ├── treatment.md         # LOD2
 │   ├── chapters.yaml        # LOD2 - Self-contained (metadata, characters, world, outlines)
-│   ├── chapters/            # LOD0 prose
+│   ├── prose/               # LOD0 prose
 │   │   └── chapter-*.md
 │   ├── analysis/            # Analysis results
 │   │   ├── commercial.md

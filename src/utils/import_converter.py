@@ -39,7 +39,7 @@ class StoryExportConverter:
         # Create chapters.yaml
         self._write_chapters_yaml(project_dir)
 
-        # Create chapters/ directory with prose
+        # Create prose/ directory with prose
         self._write_prose_chapters(project_dir, use_edited)
 
         # Create project.yaml
@@ -97,8 +97,8 @@ class StoryExportConverter:
 
     def _write_prose_chapters(self, project_dir: Path, use_edited: bool) -> None:
         """Write individual chapter files."""
-        chapters_dir = project_dir / 'chapters'
-        chapters_dir.mkdir(exist_ok=True)
+        prose_dir = project_dir / 'prose'
+        prose_dir.mkdir(exist_ok=True)
 
         if use_edited and 'editedBook' in self.data:
             # Use copy-edited chapters
@@ -118,7 +118,7 @@ class StoryExportConverter:
 
                     # Write to file
                     chapter_num = chapter.get('number', 0)
-                    chapter_file = chapters_dir / f"chapter-{chapter_num:02d}.md"
+                    chapter_file = prose_dir / f"chapter-{chapter_num:02d}.md"
                     chapter_file.write_text(full_content, encoding='utf-8')
         else:
             # Use original prose chapters
@@ -131,7 +131,7 @@ class StoryExportConverter:
                 if prose_content:
                     # Write to file (already in markdown format)
                     chapter_num = chapter.get('number', 0)
-                    chapter_file = chapters_dir / f"chapter-{chapter_num:02d}.md"
+                    chapter_file = prose_dir / f"chapter-{chapter_num:02d}.md"
                     chapter_file.write_text(prose_content, encoding='utf-8')
 
     def _html_to_markdown(self, html: str) -> str:

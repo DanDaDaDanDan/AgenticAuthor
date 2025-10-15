@@ -429,7 +429,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Organized features by importance and recency
 - **Short Story Workflow** 📖
   - Automatic detection: Stories with ≤2 expected chapters use simplified flow
-  - Single-file generation: story.md instead of chapters/ directory
+  - Single-file generation: story.md instead of prose/ directory
   - Skip chapters.yaml: goes directly premise → treatment → story.md
   - ShortStoryGenerator class for optimized short-form prose
   - Prompts emphasize unity of effect and single-sitting experience

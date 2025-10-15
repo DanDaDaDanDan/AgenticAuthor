@@ -31,7 +31,7 @@ project/
 ├── premise_metadata.json   # LOD3 - Core concept + taxonomy selections
 ├── treatment.md            # LOD2 - Narrative arc
 ├── chapters.yaml           # LOD2 - Chapter outlines
-└── chapters/               # LOD0 - Full prose
+└── prose/                  # LOD0 - Full prose
     ├── chapter-01.md
     ├── chapter-02.md
     └── ...
@@ -63,10 +63,10 @@ chapters:
 prose:
   - chapter: 1
     text: |
-      [Content from chapters/chapter-01.md]
+      [Content from prose/chapter-01.md]
   - chapter: 2
     text: |
-      [Content from chapters/chapter-02.md]
+      [Content from prose/chapter-02.md]
 ```
 
 #### Key Benefits
