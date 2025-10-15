@@ -46,6 +46,7 @@ class InteractiveSession:
         self.git: Optional[GitManager] = None
         self.running = False
         self.iteration_target: Optional[str] = None  # Track what to iterate on
+        self.iteration_chapters: Optional[list] = None  # Track which chapters to iterate (None = all)
 
         # Use provided logger or setup basic logging
         self.session_logger = logger
@@ -460,11 +461,15 @@ class InteractiveSession:
                 project=self.project,
                 model=self.settings.active_model,
                 default_target=self.iteration_target,  # Pass the iteration target
+                target_chapters=self.iteration_chapters,  # Pass the chapter filter
                 settings=self.settings  # Pass settings for multi-model mode
             )
 
             # Show processing header
             target_info = f" → {self.iteration_target}" if self.iteration_target else ""
+            if self.iteration_chapters:
+                chapters_str = ','.join(str(c) for c in self.iteration_chapters)
+                target_info += f" ({chapters_str})"
             self.console.rule(f"[bold cyan]Iteration{target_info}[/bold cyan]", style="cyan")
             self._print()
 
@@ -2072,21 +2077,72 @@ class InteractiveSession:
         except Exception as e:
             self.console.print(f"[red]Error: {e}[/red]")
 
+    def _parse_chapter_spec(self, spec: str) -> list:
+        """
+        Parse chapter specification string into list of chapter numbers.
+
+        Examples:
+            "1,2" → [1, 2]
+            "3-10" → [3, 4, 5, 6, 7, 8, 9, 10]
+            "1,3,5-7" → [1, 3, 5, 6, 7]
+
+        Args:
+            spec: Chapter specification string
+
+        Returns:
+            List of chapter numbers (sorted, deduplicated)
+        """
+        chapters = set()
+
+        # Split by comma
+        parts = spec.split(',')
+
+        for part in parts:
+            part = part.strip()
+
+            # Check if it's a range (e.g., "3-10")
+            if '-' in part:
+                try:
+                    start, end = part.split('-')
+                    start_num = int(start.strip())
+                    end_num = int(end.strip())
+
+                    if start_num > end_num:
+                        raise ValueError(f"Invalid range: {start_num}-{end_num} (start > end)")
+
+                    chapters.update(range(start_num, end_num + 1))
+                except ValueError as e:
+                    raise ValueError(f"Invalid chapter range '{part}': {e}")
+            else:
+                # Single chapter number
+                try:
+                    chapters.add(int(part))
+                except ValueError:
+                    raise ValueError(f"Invalid chapter number '{part}'")
+
+        return sorted(list(chapters))
+
     async def iterate_content(self, args: str):
         """Set iteration target for natural language feedback."""
         if not args:
             # Show current target or clear it
             if self.iteration_target:
-                self._print(f"[dim]Current iteration target:[/dim] [cyan]{self.iteration_target}[/cyan]")
+                chapters_info = ""
+                if self.iteration_chapters:
+                    chapters_str = ','.join(str(c) for c in self.iteration_chapters)
+                    chapters_info = f" (chapters: {chapters_str})"
+
+                self._print(f"[dim]Current iteration target:[/dim] [cyan]{self.iteration_target}{chapters_info}[/cyan]")
                 self._print("[dim]Type /iterate to clear target[/dim]")
                 self.iteration_target = None
+                self.iteration_chapters = None
 
                 # Clear from project metadata
                 if self.project and self.project.metadata:
                     self.project.metadata.iteration_target = None
                     self.project.save_metadata()
             else:
-                self._print("[yellow]Usage: /iterate <target>[/yellow]")
+                self._print("[yellow]Usage: /iterate <target> [chapter-spec][/yellow]")
                 self._print("[dim]Set what to iterate on (premise, treatment, chapters, prose)[/dim]")
                 self._print("[dim]Then just type your feedback naturally[/dim]")
                 self._print()
@@ -2094,12 +2150,19 @@ class InteractiveSession:
                 self._print("  [bold]/iterate treatment[/bold]")
                 self._print("  [dim]Add more action scenes[/dim]")
                 self._print()
-                self._print("  [bold]/iterate chapters[/bold]")
-                self._print("  [dim]Make chapter 3 more tense[/dim]")
+                self._print("  [bold]/iterate chapters[/bold]  [dim]# All chapters[/dim]")
+                self._print("  [bold]/iterate chapters 3-10[/bold]  [dim]# Only chapters 3-10[/dim]")
+                self._print("  [dim]Make them more tense[/dim]")
+                self._print()
+                self._print("  [bold]/iterate prose 1,2[/bold]  [dim]# Only prose for chapters 1 and 2[/dim]")
+                self._print("  [dim]Add more dialogue[/dim]")
             return
 
-        # Parse target
-        target = args.strip().lower()
+        # Parse target and optional chapter specification
+        parts = args.strip().split(maxsplit=1)
+        target = parts[0].lower()
+        chapter_spec = parts[1] if len(parts) > 1 else None
+
         valid_targets = ['premise', 'treatment', 'chapters', 'prose', 'taxonomy']
 
         if target not in valid_targets:
@@ -2107,14 +2170,39 @@ class InteractiveSession:
             self._print(f"[dim]Valid targets: {', '.join(valid_targets)}[/dim]")
             return
 
-        self.iteration_target = target
+        # Parse chapter specification if provided
+        chapters = None
+        if chapter_spec:
+            # Only chapters and prose support chapter specifications
+            if target not in ['chapters', 'prose']:
+                self._print(f"[red]Error:[/red] Chapter specifications are only supported for 'chapters' and 'prose' targets")
+                self._print(f"[dim]Usage: /iterate {target} (without chapter specification)[/dim]")
+                return
 
-        # Save to project metadata
+            try:
+                chapters = self._parse_chapter_spec(chapter_spec)
+                if not chapters:
+                    self._print(f"[red]Error:[/red] No valid chapters specified")
+                    return
+            except ValueError as e:
+                self._print(f"[red]Error parsing chapter specification:[/red] {e}")
+                return
+
+        self.iteration_target = target
+        self.iteration_chapters = chapters
+
+        # Save to project metadata (target only, not chapters - that's session-specific)
         if self.project and self.project.metadata:
             self.project.metadata.iteration_target = target
             self.project.save_metadata()
 
-        self._print(f"[green]✓[/green] Iteration target set to: [cyan]{target}[/cyan]")
+        # Display confirmation
+        if chapters:
+            chapters_str = ','.join(str(c) for c in chapters)
+            self._print(f"[green]✓[/green] Iteration target set to: [cyan]{target}[/cyan] (chapters: {chapters_str})")
+        else:
+            self._print(f"[green]✓[/green] Iteration target set to: [cyan]{target}[/cyan] (all)")
+
         self._print("[dim]Now type your feedback naturally (no / needed)[/dim]")
         self._print()
         self._print("[dim]Examples:[/dim]")
@@ -2125,11 +2213,17 @@ class InteractiveSession:
             self._print("  Add more conflict in act 2")
             self._print("  Develop the antagonist's motivation")
         elif target == 'chapters':
-            self._print("  Make chapter 3 more tense")
-            self._print("  Add a subplot about the protagonist's past")
+            if chapters:
+                self._print(f"  Make them more tense (will update chapters {chapters_str})")
+            else:
+                self._print("  Make chapter 3 more tense")
+                self._print("  Add a subplot about the protagonist's past")
         elif target == 'prose':
-            self._print("  Add more dialogue to chapter 5")
-            self._print("  Enhance sensory details in the opening")
+            if chapters:
+                self._print(f"  Add more dialogue (will update chapters {chapters_str})")
+            else:
+                self._print("  Add more dialogue to chapter 5")
+                self._print("  Enhance sensory details in the opening")
 
     async def _generate_marketing(self, options: str = ""):
         """Generate KDP marketing metadata (description, keywords, categories, etc.)."""
