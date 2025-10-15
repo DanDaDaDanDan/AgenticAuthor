@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
-- **Dead Code and Unused Scripts** 🧹
+- **Dead Code and Unused Scripts** 🧹 (**Phase 1**)
   - Removed unused methods from `src/utils/tokens.py`:
     - `split_text_for_context()` - Text chunking for context limits, never used
     - `estimate_json_tokens()` - JSON token estimation, never imported
@@ -23,7 +23,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - One-time migration script with hardcoded path
     - No longer needed after scene system migration
   - Empty `scripts/` directory remains for future utility scripts
-  - **Impact**: Cleaner codebase, no functional changes
+  - **Impact**: Cleaner codebase, no functional changes (~862 lines removed)
+
+- **Dead Code from Core Modules** 🧹 (**Phase 2**)
+  - **`src/cli/interactive.py`** - Removed unused components:
+    - Imports: `re`, `importlib`, `sys`, `rprint` (never used in code)
+    - `Story` import from models (write-only variable)
+    - `self.story` variable and all assignments (lines 235-239, 889, 1003) - never read
+    - `reload_modules()` method (45 lines) - defined but not registered in commands dict
+    - **Total**: ~55 lines removed
+  - **`src/generation/chapters.py`** - Removed legacy batched generation methods:
+    - `_find_last_complete_chapter()` method (94 lines) - old truncation recovery
+    - `_fix_truncated_yaml()` method (36 lines) - YAML repair for truncation
+    - Jinja2 Template import (unused)
+    - `DEFAULT_CHAPTERS_TEMPLATE` constant (deprecated)
+    - **Reason**: Sequential generation has built-in resume via generate() loop
+    - **Total**: ~132 lines removed
+  - **`src/api/streaming.py`** - Removed legacy streaming methods:
+    - Rich progress imports: `Progress`, `SpinnerColumn`, `TextColumn` (only used by dead methods)
+    - `handle_sse_stream()` old version (90 lines) - basic streaming
+    - `stream_with_progress()` method (41 lines) - wrapper around old method
+    - `collect_stream()` method (12 lines) - simple wrapper
+    - **Reason**: Replaced by `handle_sse_stream_with_status()` and `handle_json_stream_with_display()`
+    - **Total**: ~144 lines removed
+  - **Verification Process**:
+    - Used Task agent to analyze large files (interactive.py, chapters.py, streaming.py)
+    - Classified findings: HIGH confidence (13 items) → removed, MEDIUM (4 items) → kept, LOW → kept
+    - Grep verification for each item before removal
+    - Confirmed no external calls to removed methods
+  - **Overall Impact**: ~331 lines of dead code removed, codebase maintainability improved
+  - **No Functional Changes**: All removed code was unreachable or unused
 
 ### Added
 

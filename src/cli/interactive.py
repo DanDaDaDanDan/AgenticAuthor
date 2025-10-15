@@ -1,8 +1,5 @@
 """Interactive REPL interface using prompt_toolkit."""
 import asyncio
-import re
-import importlib
-import sys
 import json
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -17,11 +14,10 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
 from rich.panel import Panel
-from rich import print as rprint
 
 from ..config import get_settings
 from ..api import OpenRouterClient
-from ..models import Project, Story
+from ..models import Project
 from ..storage.git_manager import GitManager
 from .command_completer import SlashCommandCompleter, create_command_descriptions
 from .auto_suggest import SlashCommandAutoSuggest
@@ -47,7 +43,6 @@ class InteractiveSession:
         self.console = Console()
         self.client: Optional[OpenRouterClient] = None
         self.project: Optional[Project] = None
-        self.story: Optional[Story] = None
         self.git: Optional[GitManager] = None
         self.running = False
         self.iteration_target: Optional[str] = None  # Track what to iterate on
@@ -236,12 +231,6 @@ class InteractiveSession:
                 return
 
             # Load story data
-            self.story = Story()
-            if premise := self.project.get_premise():
-                self.story.premise = premise
-            if treatment := self.project.get_treatment():
-                self.story.treatment = treatment
-
             # Save as last opened project
             self.settings.last_opened_project = self.project.name
             self.settings.save_config_file(Path('config.yaml'))
@@ -896,9 +885,6 @@ class InteractiveSession:
             # Commit to shared git
             self._commit("Initial project creation")
 
-            # Initialize story
-            self.story = Story()
-
             self._print(f"[dim]Created project:[/dim] [bold]{name}[/bold]")
             self._print(f"[dim]Location: {project_dir}[/dim]")
 
@@ -1011,7 +997,6 @@ class InteractiveSession:
             switch = self.console.input("\nSwitch to cloned project? (y/n): ").strip().lower()
             if switch == 'y':
                 self.project = cloned
-                self.story = Story()  # Reset story
                 self._print(f"[dim]Switched to:[/dim] [bold]{new_name}[/bold]")
 
         except FileExistsError as e:
@@ -3041,52 +3026,6 @@ class InteractiveSession:
         else:
             self.console.print(f"[red]Unknown subcommand: {subcmd}[/red]")
             self.console.print("[dim]Use /multimodel config for help[/dim]")
-
-    def reload_modules(self, args: str = ""):
-        """Reload Python modules for development (experimental)."""
-        self.console.print("[yellow]Reloading modules...[/yellow]")
-
-        # List of modules to reload
-        modules_to_reload = [
-            'src.generation.premise',
-            'src.generation.treatment',
-            'src.generation.chapters',
-            'src.generation.prose',
-            'src.generation.taxonomies',
-            'src.cli.command_completer',
-            'src.cli.auto_suggest',
-            'src.models',
-            'src.api.openrouter',
-            'src.config',
-            'src.storage.git_manager',
-        ]
-
-        reloaded = []
-        for module_name in modules_to_reload:
-            if module_name in sys.modules:
-                try:
-                    importlib.reload(sys.modules[module_name])
-                    reloaded.append(module_name)
-                except Exception as e:
-                    self.console.print(f"[red]Failed to reload {module_name}: {e}[/red]")
-
-        if reloaded:
-            self.console.print(f"[green]Reloaded {len(reloaded)} modules:[/green]")
-            for module in reloaded:
-                self.console.print(f"  • {module}")
-
-            # Re-initialize command completer with reloaded modules
-            try:
-                from src.cli.command_completer import create_command_descriptions
-                command_descriptions = create_command_descriptions()
-                # Note: Can't easily update the existing completer, would need to recreate prompt session
-                self.console.print("[yellow]Note: Some changes may require restart for full effect[/yellow]")
-            except Exception as e:
-                self.console.print(f"[red]Error reinitializing components: {e}[/red]")
-        else:
-            self.console.print("[yellow]No modules were reloaded[/yellow]")
-
-        self.console.print("[dim]For complete reload, use /exit and restart[/dim]")
 
     async def show_logs(self, args: str = ""):
         """Show recent log entries from session log."""

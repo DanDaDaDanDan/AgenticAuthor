@@ -5,8 +5,6 @@ import yaml
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-from jinja2 import Template
-
 from ..api import OpenRouterClient
 from ..models import Project, ChapterOutline
 from rich.console import Console
@@ -14,10 +12,6 @@ from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .lod_parser import LODResponseParser
 from .depth_calculator import DepthCalculator
-
-
-# This template is deprecated - using inline prompt generation instead
-DEFAULT_CHAPTERS_TEMPLATE = "DEPRECATED"
 
 
 class ChapterGenerator:
@@ -120,137 +114,9 @@ class ChapterGenerator:
         """
         return DepthCalculator.calculate_structure(total_words, pacing, length_scope=length_scope)
 
-    def _find_last_complete_chapter(self, yaml_text: str) -> Dict[str, Any]:
-        """
-        Parse partial YAML to find last complete chapter.
-
-        Args:
-            yaml_text: Potentially truncated YAML text
-
-        Returns:
-            Dict with:
-            - last_complete_chapter: int - last complete chapter number (0 if none)
-            - partial_data: dict - successfully parsed data (may be incomplete)
-            - chapters_count: int - number of chapters found
-        """
-        result = {
-            'last_complete_chapter': 0,
-            'partial_data': None,
-            'chapters_count': 0
-        }
-
-        # First attempt: try parsing as-is
-        try:
-            data = yaml.safe_load(yaml_text)
-            if isinstance(data, dict) and 'chapters' in data:
-                chapters = data['chapters']
-                if isinstance(chapters, list) and len(chapters) > 0:
-                    # Check if last chapter has all required fields
-                    last_chapter = chapters[-1]
-                    # Accept both old (key_events) and new (scenes) formats
-                    required_base_fields = ['number', 'title', 'summary', 'word_count_target']
-                    has_base = all(f in last_chapter for f in required_base_fields)
-                    has_content = ('scenes' in last_chapter or 'key_events' in last_chapter)
-
-                    if has_base and has_content:
-                        # Last chapter is complete
-                        result['last_complete_chapter'] = len(chapters)
-                    else:
-                        # Last chapter is incomplete, use second-to-last
-                        result['last_complete_chapter'] = max(0, len(chapters) - 1)
-
-                    result['partial_data'] = data
-                    result['chapters_count'] = len(chapters)
-                    return result
-        except yaml.YAMLError as parse_error:
-            # YAML parsing failed - try to recover
-            from ..utils.logging import get_logger
-            logger = get_logger()
-
-            if logger:
-                logger.debug(f"Initial YAML parse failed: {parse_error}")
-                logger.debug(f"Attempting to fix truncated YAML...")
-
-            # Second attempt: fix unterminated strings and try again
-            fixed_yaml = self._fix_truncated_yaml(yaml_text)
-            if fixed_yaml:
-                try:
-                    data = yaml.safe_load(fixed_yaml)
-                    if isinstance(data, dict):
-                        result['partial_data'] = data
-
-                        if 'chapters' in data and isinstance(data['chapters'], list):
-                            chapters = data['chapters']
-                            result['chapters_count'] = len(chapters)
-
-                            # Check last chapter completeness
-                            if len(chapters) > 0:
-                                last_chapter = chapters[-1]
-                                # Accept both old (key_events) and new (scenes) formats
-                                required_base_fields = ['number', 'title', 'summary', 'word_count_target']
-                                has_base = all(f in last_chapter for f in required_base_fields)
-                                has_content = ('scenes' in last_chapter or 'key_events' in last_chapter)
-
-                                if has_base and has_content:
-                                    result['last_complete_chapter'] = len(chapters)
-                                else:
-                                    result['last_complete_chapter'] = max(0, len(chapters) - 1)
-
-                        if logger:
-                            logger.debug(f"Fixed YAML successfully: {result['chapters_count']} chapters, {result['last_complete_chapter']} complete")
-
-                        return result
-                except yaml.YAMLError as e:
-                    if logger:
-                        logger.debug(f"Fixed YAML still failed to parse: {e}")
-
-            # Third attempt: pattern matching without parsing
-            if logger:
-                logger.debug("Falling back to pattern matching")
-
-            # Count "- number:" occurrences as chapter markers
-            chapter_markers = yaml_text.count('- number:')
-            result['chapters_count'] = chapter_markers
-            result['last_complete_chapter'] = max(0, chapter_markers - 1)  # Conservative estimate
-
-        return result
-
-    def _fix_truncated_yaml(self, yaml_text: str) -> str:
-        """
-        Attempt to fix common YAML truncation issues.
-
-        Args:
-            yaml_text: Truncated YAML text
-
-        Returns:
-            Fixed YAML text, or empty string if unfixable
-        """
-        # Check for unterminated strings (odd number of quotes)
-        lines = yaml_text.split('\n')
-
-        # Find the last line with content
-        last_line_idx = len(lines) - 1
-        while last_line_idx >= 0 and not lines[last_line_idx].strip():
-            last_line_idx -= 1
-
-        if last_line_idx < 0:
-            return ""
-
-        # Check if last line has unterminated string
-        last_line = lines[last_line_idx]
-        quote_count = last_line.count('"')
-
-        if quote_count % 2 != 0:
-            # Unterminated string - close it
-            lines[last_line_idx] = last_line + '"'
-
-            # Remove any incomplete content after this line
-            fixed_lines = lines[:last_line_idx + 1]
-
-            return '\n'.join(fixed_lines)
-
-        # No obvious fix
-        return ""
+    # Removed _find_last_complete_chapter() and _fix_truncated_yaml() - no longer needed with sequential generation
+    # Old batched generation used these for truncation recovery
+    # Sequential generation has built-in resume via generate() loop
 
     # Removed _calculate_batch_size() and _summarize_chapters() - no longer needed with sequential generation
     # Sequential generation passes full chapter context (100% of data) to each new chapter
