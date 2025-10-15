@@ -523,7 +523,7 @@ When the feedback mentions duplicate or repetitive content:
         # Calculate beat budgets for each scene (using 6-beat pattern as default)
         beat_budgets_per_scene = []
         for scene_budget in scene_budgets:
-            beat_budgets = DepthCalculator.calculate_beat_budget(scene_budget, num_beats=6)
+            beat_budgets = DepthCalculator.calculate_beat_budget(scene_budget, beat_count=6)
             beat_budgets_per_scene.append(beat_budgets)
 
         if logger:
