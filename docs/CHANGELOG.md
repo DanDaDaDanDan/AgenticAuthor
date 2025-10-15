@@ -9,6 +9,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Sequential Chapter Generation Architecture** 🔄 **[MAJOR REFACTORING]** (commit 5d52156)
+  - **Problem**: Batched generation caused 95% information loss between batches (only 3/60 fields passed via summaries)
+  - **Result**: Duplicate chapters (Ch 6/10, Ch 7/11) covering same events
+  - **Root Cause**: `_summarize_chapters()` passed only number/title/summary between batches
+  - **Solution**: Complete rewrite from batched to sequential generation with full context accumulation
+
+  **Architecture Changes**:
+  - **Old Format**: Single `chapters.yaml` with all chapters + batched generation
+  - **New Format**: Individual files in `chapter-beats/` directory:
+    - `foundation.yaml` (metadata + characters + world) - generated once
+    - `chapter-01.yaml` through `chapter-NN.yaml` - generated sequentially
+  - **Context Flow**:
+    - Chapter 1: sees foundation only
+    - Chapter 2: sees foundation + FULL chapter 1 (100% detail)
+    - Chapter N: sees foundation + FULL chapters 1 through N-1
+    - **Zero information loss** (was 95% loss with summaries)
+
+  **Code Changes**:
+  - Project Model (`src/models/project.py`):
+    - Added `chapter_beats_dir` property
+    - Added `get_foundation()` / `save_foundation()`
+    - Added `get_chapter_beat()` / `save_chapter_beat()` / `list_chapter_beats()`
+    - Updated `get_chapters()` / `get_chapters_yaml()` for backward compatibility
+  - Chapter Generator (`src/generation/chapters.py`):
+    - Added `_generate_single_chapter()` (~200 lines) - generates one chapter with full context
+    - Rewrote `generate()` main loop (~500 lines) - sequential generation with resume checks
+    - Removed obsolete methods (~690 lines):
+      - `_calculate_batch_size()` (no batching)
+      - `_generate_chapter_batch()` (replaced by sequential calls)
+      - `_resume_generation()` (built-in resume via file checking)
+      - `_merge_yaml()` (individual files don't need merging)
+
+  **User-Facing Features**:
+  - **Resume Capability**: Before generation, checks for existing `chapter-beats/`
+    ```
+    ⚠️  Found 5 existing chapters
+
+    What would you like to do?
+      1. Continue from chapter 6 (resume)
+      2. Regenerate all chapters from scratch
+      3. Abort generation
+    ```
+  - **Progress Display**:
+    ```
+    [1/3] Loading existing foundation...
+    ✓ Foundation loaded
+
+    [2/3] Generating chapters sequentially...
+    Generating chapter 6/20...
+    ✓ Chapter 6/20 complete
+    ```
+  - **Error Recovery**: Clear failure point, completed chapters saved, can resume
+
+  **Benefits**:
+  - ✅ Eliminates duplicate scenes/events (root cause fixed)
+  - ✅ Each chapter sees 100% of previous detail, not 5% summaries
+  - ✅ User-controlled resume (choose continue/regenerate/abort)
+  - ✅ Incremental saves (inspect partial results anytime)
+  - ✅ Foundation loaded on resume (not regenerated, saves tokens)
+  - ✅ Better error recovery (resume from exact chapter number)
+
+  **Backward Compatibility**:
+  - Old format (`chapters.yaml`) still supported for reading
+  - `get_chapters_yaml()` aggregates new format transparently
+  - Prose generation and analysis work unchanged
+  - No migration needed for existing projects
+
 - **Treatment Analysis for Initial Generation** 📖 (commit bd1c585)
   - **Problem**: All novels of same genre got identical word counts (e.g., all sci-fi → 92K) regardless of actual story complexity
   - **Solution**: LLM analyzes treatment to determine organic word count for first-time generation

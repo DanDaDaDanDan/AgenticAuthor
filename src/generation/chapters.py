@@ -1054,10 +1054,26 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
             if not model_obj:
                 raise Exception(f"Failed to fetch model capabilities for {self.model}")
 
-            # ===== PHASE 1: GENERATE FOUNDATION =====
-            self.console.print(f"\n[cyan][1/3] Generating foundation (metadata + characters + world)...[/cyan]")
+            # ===== PHASE 1: GENERATE OR LOAD FOUNDATION =====
+            # Check for existing foundation (skip generation on resume if no feedback)
+            existing_foundation = self.project.get_foundation()
 
-            foundation = await self._generate_foundation(
+            if existing_foundation and not feedback:
+                # Resume mode: use existing foundation
+                self.console.print(f"\n[cyan][1/3] Loading existing foundation...[/cyan]")
+                foundation = existing_foundation
+                self.console.print(f"[green]✓[/green] Foundation loaded")
+
+                if logger:
+                    logger.debug("Using existing foundation from chapter-beats/foundation.yaml")
+            else:
+                # Generate foundation (initial generation or iteration)
+                if existing_foundation and feedback:
+                    self.console.print(f"\n[cyan][1/3] Regenerating foundation (iteration mode)...[/cyan]")
+                else:
+                    self.console.print(f"\n[cyan][1/3] Generating foundation (metadata + characters + world)...[/cyan]")
+
+                foundation = await self._generate_foundation(
                 context_yaml=context_yaml,
                 taxonomy_data=taxonomy_data,
                 total_words=total_words,
@@ -1073,9 +1089,9 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                 genre=genre
             )
 
-            # Save foundation immediately
-            self._save_partial(foundation, phase='foundation')
-            self.console.print(f"[green]✓[/green] Foundation complete")
+                # Save foundation immediately
+                self._save_partial(foundation, phase='foundation')
+                self.console.print(f"[green]✓[/green] Foundation complete")
 
             # ===== EXTRACT LLM'S STRUCTURAL CHOICES =====
             # During iteration: LLM adjusts based on feedback
@@ -1219,10 +1235,18 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                         else:
                             raise Exception("Found chapter files but failed to load them")
                 elif choice == "2":
-                    # Regenerate: delete existing chapters and start fresh
-                    self.console.print(f"[yellow]Deleting {existing_count} existing chapters...[/yellow]")
+                    # Regenerate: delete existing chapters AND foundation, start fresh
+                    self.console.print(f"[yellow]Deleting all existing chapter data...[/yellow]")
+
+                    # Delete all chapter files
                     for chapter_file in existing_chapters:
                         chapter_file.unlink()
+
+                    # Delete foundation if it exists
+                    foundation_file = self.chapter_beats_dir / "foundation.yaml"
+                    if foundation_file.exists():
+                        foundation_file.unlink()
+
                     start_chapter = 1
                     self.console.print(f"[cyan]Starting fresh generation...[/cyan]")
                 elif choice == "3":

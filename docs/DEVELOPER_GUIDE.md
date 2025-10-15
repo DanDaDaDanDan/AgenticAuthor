@@ -2470,14 +2470,18 @@ Concept: "Star Wars with lawyers"
 → Generated premise: "In a galaxy where interstellar disputes are settled in courtrooms rather than battlefields, a young lawyer discovers evidence that threatens to unravel the legal system..."
 ```
 
-### Multi-Phase Chapter Generation Pattern
+### Sequential Chapter Generation Pattern
+
+**Architecture Overview:**
+
+Sequential generation (v0.3.0+) generates chapters one at a time with full context accumulation, replacing the old batched approach. This eliminates the 95% information loss that caused duplicate scenes/events.
 
 ```python
 from src.generation.chapters import ChapterGenerator
 
 generator = ChapterGenerator(client, project, model)
 
-# Generate chapters with multi-phase system
+# Generate chapters with sequential system
 result = await generator.generate()
 
 # Phase breakdown:
@@ -2485,81 +2489,72 @@ result = await generator.generate()
 #    - Metadata (genre, themes, pacing, etc.)
 #    - Characters (profiles with arcs, relationships)
 #    - World (setting, locations, systems, social context)
-#    Saved to: chapters.partial.foundation.yaml
+#    Saved to: chapter-beats/foundation.yaml
 
-# 2. Batched chapters phase (adaptive batching)
-#    - Batch size determined by model capacity:
-#      * Large models (16k+): 8 chapters per batch
-#      * Medium models (8-16k): 5 chapters per batch
-#      * Small models (4-8k): 3 chapters per batch
-#      * Very small (<4k): 2 chapters per batch
-#    - Each batch includes FULL context:
-#      * Complete premise + treatment
-#      * Foundation (metadata, characters, world)
-#      * Previous chapter summaries
-#    - Streaming display: 30-60s per batch
-#    Saved to: chapters.partial.batch_1.yaml, chapters.partial.batch_2.yaml, etc.
+# 2. Sequential chapters phase
+#    - Chapter 1: foundation only (~700 tokens, 30-60s)
+#    - Chapter 2: foundation + FULL Ch 1 (~700 tokens, 30-60s)
+#    - Chapter N: foundation + FULL Ch 1 through N-1 (~700 tokens, 30-60s)
+#    - Context grows: 8k base + (700 tokens × previous_chapter_count)
+#    - ZERO information loss (100% of previous chapters passed)
+#    Saved to: chapter-beats/chapter-01.yaml, chapter-02.yaml, ..., chapter-NN.yaml
 
 # 3. Assembly phase
-#    - Merge all partial files
-#    - Validate structure
-#    - Save to final chapters.yaml
+#    - Load all chapter files
+#    - Validate sequential numbering
+#    - Aggregate into chapters.yaml for backward compatibility
 ```
 
-**Adaptive Batch Sizing:**
+**File Structure:**
+
+```
+project/
+  ├── chapter-beats/
+  │   ├── foundation.yaml           # Generated once, loaded on resume
+  │   ├── chapter-01.yaml           # Individual chapter files
+  │   ├── chapter-02.yaml
+  │   └── chapter-NN.yaml
+  └── chapters.yaml                 # Aggregated (for backward compat)
+```
+
+**Resume Capability:**
+
+Sequential generation includes built-in resume via file checking:
 
 ```python
-def _determine_batch_size(self, model_obj) -> int:
-    """
-    Calculate optimal batch size based on model output capacity.
+# Before generation, checks for existing chapter-beats/ files
+existing_chapters = project.list_chapter_beats()
 
-    Conservative estimates to ensure completion:
-    - Large models (16k+): 8 chapters
-    - Medium models (8-16k): 5 chapters
-    - Small models (4-8k): 3 chapters
-    - Very small (<4k): 2 chapters
-    """
-    max_output = model_obj.get_max_output_tokens()
+if existing_chapters and not feedback:
+    # Prompt user for action
+    print(f"Found {len(existing_chapters)} existing chapters")
+    print("1. Continue from chapter N+1 (resume)")
+    print("2. Regenerate all chapters from scratch")
+    print("3. Abort generation")
 
-    if max_output >= 16000:
-        return 8  # ~2000 tokens per chapter
-    elif max_output >= 8000:
-        return 5  # ~1600 tokens per chapter
-    elif max_output >= 4000:
-        return 3  # ~1333 tokens per chapter
-    else:
-        return 2  # ~2000 tokens per chapter
+    choice = input("Enter choice (1-3): ")
+
+    if choice == "1":
+        # Resume: load existing foundation, start from next chapter
+        foundation = project.get_foundation()
+        start_chapter = len(existing_chapters) + 1
+
+    elif choice == "2":
+        # Regenerate: delete all chapter-beats/ files
+        for chapter_file in existing_chapters:
+            chapter_file.unlink()
+        foundation_file = project.chapter_beats_dir / "foundation.yaml"
+        if foundation_file.exists():
+            foundation_file.unlink()
+        start_chapter = 1
 ```
 
-**Auto-Resume on Network Drop:**
+**Benefits Over Batched Approach:**
 
-```python
-# If network drops during batch generation, auto-resume:
-try:
-    batch_result = await self._generate_chapter_batch(...)
-except YAMLTruncationError as e:
-    # Analyze what we got
-    last_complete = e.last_complete_chapter
-
-    # Resume from next chapter
-    remaining_chapters = chapters[last_complete + 1:]
-
-    # Generate continuation with context
-    continuation = await self._generate_continuation(
-        foundation=foundation,
-        completed_chapters=chapters[:last_complete + 1],
-        remaining_chapters=remaining_chapters
-    )
-
-    # Merge partial + continuation
-    final = merge_partials([partial, continuation])
-```
-
-**Benefits of Multi-Phase Generation:**
-
-1. **Shorter Streams**: 30-60s per batch vs 3+ minutes for full generation
-2. **Better Reliability**: Network drops only lose current batch, not everything
-3. **Incremental Progress**: Can inspect/iterate on partial results
-4. **Token Efficiency**: Auto-resume saves ~25-30% tokens vs full retry
-5. **Better Context**: Each batch gets full context (not truncated by token limits)
-6. **Clear Progress**: User sees exactly which batch is generating
+1. **Zero Information Loss**: Each chapter sees 100% of previous chapters (not 5% summaries)
+2. **No Duplicate Scenes**: Full context prevents LLM from repeating plot beats
+3. **Better Resume**: User-controlled, works at chapter granularity
+4. **Incremental Saves**: Inspect partial results anytime during generation
+5. **Token Efficiency**: Foundation loaded on resume (not regenerated)
+6. **Short Streams**: 30-60s per chapter (consistent, predictable)
+7. **Clear Progress**: User sees exactly which chapter is generating
