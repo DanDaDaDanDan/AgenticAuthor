@@ -12,6 +12,7 @@ from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .lod_parser import LODResponseParser
 from .depth_calculator import DepthCalculator
+from ..utils.resume_state import ResumeStateManager
 
 
 class ChapterGenerator:
@@ -99,6 +100,7 @@ class ChapterGenerator:
         self.console = Console()
         self.context_builder = LODContextBuilder()
         self.parser = LODResponseParser()
+        self.resume_manager = ResumeStateManager(project.path)
 
     def _calculate_structure(self, total_words: int, pacing: str, length_scope: Optional[str] = None) -> Dict:
         """
