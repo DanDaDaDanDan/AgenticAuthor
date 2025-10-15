@@ -76,8 +76,13 @@ class Project:
         return self.path / "chapters.yaml"
 
     @property
+    def chapter_beats_dir(self) -> Path:
+        """Get path to chapter-beats directory (new format)."""
+        return self.path / "chapter-beats"
+
+    @property
     def chapters_dir(self) -> Path:
-        """Get path to chapters directory."""
+        """Get path to chapters directory (prose files)."""
         return self.path / "chapters"
 
     @property
@@ -260,8 +265,94 @@ class Project:
                 return yaml.safe_load(f)
         return None
 
+    def get_foundation(self) -> Optional[Dict[str, Any]]:
+        """
+        Load foundation (metadata + characters + world) from new format.
+
+        Returns:
+            Dict with metadata, characters, world sections, or None if not found
+        """
+        foundation_file = self.chapter_beats_dir / "foundation.yaml"
+        if foundation_file.exists():
+            with open(foundation_file, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f)
+        return None
+
+    def save_foundation(self, data: Dict[str, Any]):
+        """
+        Save foundation (metadata + characters + world) to new format.
+
+        Args:
+            data: Dict with metadata, characters, world sections
+        """
+        self.chapter_beats_dir.mkdir(exist_ok=True)
+        foundation_file = self.chapter_beats_dir / "foundation.yaml"
+        with open(foundation_file, 'w', encoding='utf-8') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+
+    def get_chapter_beat(self, chapter_num: int) -> Optional[Dict[str, Any]]:
+        """
+        Load individual chapter outline from new format.
+
+        Args:
+            chapter_num: Chapter number (1-based)
+
+        Returns:
+            Chapter dict, or None if not found
+        """
+        chapter_file = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.yaml"
+        if chapter_file.exists():
+            with open(chapter_file, 'r', encoding='utf-8') as f:
+                return yaml.safe_load(f)
+        return None
+
+    def save_chapter_beat(self, chapter_num: int, data: Dict[str, Any]):
+        """
+        Save individual chapter outline to new format.
+
+        Args:
+            chapter_num: Chapter number (1-based)
+            data: Chapter dict with outline data
+        """
+        self.chapter_beats_dir.mkdir(exist_ok=True)
+        chapter_file = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.yaml"
+        with open(chapter_file, 'w', encoding='utf-8') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+
+    def list_chapter_beats(self) -> List[Path]:
+        """
+        List all chapter beat files in new format.
+
+        Returns:
+            Sorted list of chapter-NN.yaml file paths
+        """
+        if not self.chapter_beats_dir.exists():
+            return []
+        return sorted(self.chapter_beats_dir.glob("chapter-*.yaml"))
+
     def get_chapters(self) -> Optional[List[Dict[str, Any]]]:
-        """Load chapters list from chapter outlines."""
+        """
+        Load chapters list - supports both old and new formats.
+
+        New format: Aggregates from chapter-beats/*.yaml files
+        Old format: Reads from chapters.yaml
+
+        Returns:
+            List of chapter dicts, or None if not found
+        """
+        # Try new format first (chapter-beats/)
+        if self.chapter_beats_dir.exists():
+            chapters = []
+            for chapter_file in self.list_chapter_beats():
+                with open(chapter_file, 'r', encoding='utf-8') as f:
+                    chapter_data = yaml.safe_load(f)
+                    if chapter_data:
+                        chapters.append(chapter_data)
+            if chapters:
+                # Sort by chapter number
+                return sorted(chapters, key=lambda x: x.get('number', 0))
+
+        # Fall back to old format (chapters.yaml)
         outlines = self.get_chapter_outlines()
         # chapters.yaml contains a direct list of chapter dicts
         if outlines and isinstance(outlines, list):
@@ -287,19 +378,36 @@ class Project:
 
     def get_chapters_yaml(self) -> Optional[Dict[str, Any]]:
         """
-        Load complete chapters.yaml structure (self-contained format).
+        Load complete chapters structure (self-contained format).
+
+        Supports both:
+        - New format: Aggregates from chapter-beats/ (foundation.yaml + chapter-NN.yaml)
+        - Old format: Reads from chapters.yaml
 
         Returns full structure with metadata, characters, world, chapters sections.
-        Returns None if file doesn't exist or for legacy format.
+        Returns None if not found or for legacy list format.
         """
+        # Try new format first (chapter-beats/)
+        if self.chapter_beats_dir.exists():
+            foundation = self.get_foundation()
+            chapters = self.get_chapters()
+            if foundation and chapters:
+                # Aggregate into old format for backward compatibility
+                return {
+                    **foundation,  # metadata, characters, world
+                    'chapters': chapters
+                }
+
+        # Fall back to old format (chapters.yaml)
         if self.chapters_file.exists():
             with open(self.chapters_file) as f:
                 data = yaml.safe_load(f)
-                # Check if it's the new self-contained format
+                # Check if it's the self-contained format
                 if isinstance(data, dict) and 'metadata' in data:
                     return data
                 # Legacy format (list or old dict) - return None
                 return None
+
         return None
 
     def save_chapters_yaml(self, data: Dict[str, Any]):

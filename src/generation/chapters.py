@@ -654,6 +654,214 @@ When the feedback mentions duplicate or repetitive content:
 
         return foundation_data
 
+    async def _generate_single_chapter(
+        self,
+        chapter_num: int,
+        total_chapters: int,
+        context_yaml: str,
+        foundation: Dict[str, Any],
+        previous_chapters: List[Dict[str, Any]],
+        form: str,
+        pacing: str,
+        feedback: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate a single chapter with full context of all previous chapters.
+
+        Args:
+            chapter_num: Chapter number to generate (1-based)
+            total_chapters: Total number of chapters in story
+            context_yaml: Full premise + treatment as YAML
+            foundation: metadata + characters + world sections
+            previous_chapters: FULL chapter dicts for all previous chapters (empty for chapter 1)
+            form: Story form (novel, novella, etc.)
+            pacing: Story pacing (fast, moderate, slow)
+            feedback: Optional user feedback (for iteration)
+
+        Returns:
+            Dict with chapter data (number, title, pov, act, summary, scenes, etc.)
+        """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.debug(f"Generating chapter {chapter_num} with {len(previous_chapters)} previous chapters")
+
+        # Calculate act and scene count for this chapter
+        act = DepthCalculator.get_act_for_chapter(chapter_num, total_chapters)
+        act_ws = DepthCalculator.get_act_words_per_scene(form, pacing, act)
+
+        # Get scene count for this chapter
+        structure = self._calculate_structure(
+            total_words=foundation['metadata']['target_word_count'],
+            pacing=pacing
+        )
+        scenes_per_chapter = structure['scenes_per_chapter']
+        chapter_index = chapter_num - 1
+        scene_count = scenes_per_chapter[chapter_index] if chapter_index < len(scenes_per_chapter) else 3
+
+        word_target = scene_count * act_ws
+
+        # Determine default act label
+        act_1_end = total_chapters * 0.25
+        act_2_end = total_chapters * 0.75
+        if chapter_num <= act_1_end:
+            default_act = "Act I"
+        elif chapter_num <= act_2_end:
+            default_act = "Act II"
+        else:
+            default_act = "Act III"
+
+        # Serialize foundation to YAML
+        foundation_yaml = yaml.dump(foundation, default_flow_style=False, allow_unicode=True)
+
+        # Serialize previous chapters to YAML (FULL detail, not summaries)
+        previous_yaml = ""
+        if previous_chapters:
+            previous_yaml = yaml.dump(previous_chapters, default_flow_style=False, allow_unicode=True)
+
+        # Build prompt
+        prompt = f"""Generate chapter {chapter_num} of {total_chapters} for a book.
+
+FULL STORY CONTEXT:
+```yaml
+{context_yaml}
+```
+
+FOUNDATION (metadata + characters + world):
+```yaml
+{foundation_yaml}
+```
+
+PREVIOUS CHAPTERS (full details with all scenes):
+```yaml
+{previous_yaml if previous_yaml else "# This is chapter 1 - no previous chapters"}
+```
+
+STORY DEPTH ARCHITECTURE:
+This is chapter {chapter_num} in {act} ({default_act}).
+- Scene count: {scene_count} scenes
+- Words per scene: {act_ws} w/s
+- Target word count: {word_target:,} words
+
+TASK:
+Generate chapter {chapter_num} with the EXACT specifications:
+- number: {chapter_num}
+- title: evocative, specific (2-6 words)
+- pov: character name
+- act: "{default_act}" (or adjust based on story flow)
+- summary: 3-4 sentences describing this chapter
+- scenes: {scene_count} complete scenes with structure:
+  * scene: Brief scene title (2-4 words)
+  * location: Where the scene takes place
+  * pov_goal: What the POV character wants in this scene
+  * conflict: What prevents them from getting it
+  * stakes: What's at risk if they fail
+  * outcome: How the scene resolves
+  * emotional_beat: Internal character change
+  * sensory_focus: 2-3 specific sensory details
+  * target_words: {act_ws}
+- character_developments: 3-4 internal changes
+- relationship_beats: 2-3 relationship evolutions
+- tension_points: 2-3 stakes/urgency moments
+- sensory_details: 2-3 atmospheric elements
+- subplot_threads: 1-2 if applicable
+- word_count_target: {word_target}
+
+Guidelines:
+- Maintain consistency with foundation (characters, world, metadata)
+- Continue narrative flow from previous chapters
+- Review previous chapters' scenes CAREFULLY to avoid duplication
+- Each scene must advance the story with NEW events and conflicts
+- Do NOT repeat plot beats, events, or character moments already covered
+- Be specific with names, places, emotions
+- {scene_count} scenes = {scene_count} complete dramatic units (not bullet points)
+
+RETURN FORMAT:
+Return ONLY valid YAML for this ONE chapter (no markdown fences):
+
+number: {chapter_num}
+title: "..."
+pov: "..."
+act: "{default_act}"
+summary: "..."
+scenes:
+  - scene: "Scene Title"
+    location: "..."
+    pov_goal: "..."
+    conflict: "..."
+    stakes: "..."
+    outcome: "..."
+    emotional_beat: "..."
+    sensory_focus:
+      - "..."
+      - "..."
+    target_words: {act_ws}
+  # ... continue for all {scene_count} scenes
+character_developments:
+  - "..."
+relationship_beats:
+  - "..."
+tension_points:
+  - "..."
+sensory_details:
+  - "..."
+subplot_threads:
+  - "..."
+word_count_target: {word_target}
+
+IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdown code fences."""
+
+        # Add feedback instruction if iterating
+        if feedback:
+            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the feedback when generating this chapter. You may adjust scene count, word targets, or content based on the feedback."
+
+        # Generate chapter
+        min_tokens = 700  # Estimate: 700 tokens per chapter
+
+        result = await self.client.streaming_completion(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            stream=True,
+            display=True,
+            min_response_tokens=min_tokens
+        )
+
+        if not result:
+            raise Exception(f"No response from API for chapter {chapter_num}")
+
+        response_text = result.get('content', result) if isinstance(result, dict) else result
+
+        # Parse YAML
+        try:
+            chapter_data = yaml.safe_load(response_text)
+        except yaml.YAMLError as e:
+            raise Exception(f"Failed to parse chapter {chapter_num} YAML: {e}")
+
+        # Validate structure
+        if not isinstance(chapter_data, dict):
+            raise Exception(f"Chapter {chapter_num} response is not a valid dict structure")
+
+        required_fields = ['number', 'title', 'summary', 'scenes']
+        missing = [f for f in required_fields if f not in chapter_data]
+        if missing:
+            raise Exception(f"Chapter {chapter_num} missing required fields: {', '.join(missing)}")
+
+        # Ensure correct chapter number
+        if chapter_data.get('number') != chapter_num:
+            if logger:
+                logger.warning(f"Chapter number mismatch: expected {chapter_num}, got {chapter_data.get('number')} - correcting")
+            chapter_data['number'] = chapter_num
+
+        if logger:
+            logger.debug(f"Chapter {chapter_num} generated successfully: {len(chapter_data.get('scenes', []))} scenes")
+
+        return chapter_data
+
     async def _generate_chapter_batch(
         self,
         context_yaml: str,
