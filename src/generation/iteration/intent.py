@@ -38,7 +38,6 @@ Analyze the intent and respond with ONLY valid JSON (no other text):
   "scope": "specific|section|multiple|entire",
   "action": "add_dialogue|fix_plot|enhance_description|change_tone|add_chapter|etc",
   "description": "clear description of what user wants",
-  "scale": "patch|regenerate|unclear",
   "reasoning": "why you classified it this way"
 }
 
@@ -73,11 +72,6 @@ Guidelines:
   * entire: Whole document/project
 
 - action: What action to take (use underscores, be specific)
-
-- scale: Should this be a patch or regenerate
-  * patch: Small change, can use unified diff
-  * regenerate: Large change, need full regeneration
-  * unclear: Not sure, need further analysis
 
 - reasoning: Brief explanation of your classification
 
@@ -299,7 +293,7 @@ class IntentAnalyzer:
         """Validate intent structure."""
         required_fields = [
             'intent_type', 'confidence', 'target_type',
-            'scope', 'action', 'description', 'scale', 'reasoning'
+            'scope', 'action', 'description', 'reasoning'
         ]
 
         for field in required_fields:
@@ -325,7 +319,3 @@ class IntentAnalyzer:
         valid_scopes = ['specific', 'section', 'multiple', 'entire']
         if intent['scope'] not in valid_scopes:
             raise ValueError(f"Invalid scope: {intent['scope']}")
-
-        valid_scales = ['patch', 'regenerate', 'unclear']
-        if intent['scale'] not in valid_scales:
-            raise ValueError(f"Invalid scale: {intent['scale']}")

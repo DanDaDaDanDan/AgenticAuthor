@@ -483,7 +483,6 @@ class InteractiveSession:
                     # Commit changes BEFORE LOD sync (if there were any)
                     if result.get('changes'):
                         intent = result.get('intent', {})
-                        scale = result.get('scale', 'patch')
 
                         # Generate commit message
                         action = intent.get('action', 'update').replace('_', ' ')
@@ -491,11 +490,7 @@ class InteractiveSession:
                         if intent.get('target_id'):
                             target = f"{target} {intent['target_id']}"
 
-                        if scale == "patch":
-                            message = f"Iterate {target}: {action}"
-                        else:
-                            message = f"Regenerate {target}: {action}"
-
+                        message = f"Iterate {target}: {action}"
                         self._commit(message)
 
                 elif result.get('needs_clarification'):
@@ -520,7 +515,6 @@ class InteractiveSession:
     def _display_iteration_success(self, result: Dict[str, Any]):
         """Display successful iteration results."""
         intent = result.get('intent', {})
-        scale = result.get('scale', 'unknown')
         changes = result.get('changes', [])
 
         # Show intent summary
@@ -530,7 +524,7 @@ class InteractiveSession:
             target = f"{target} {intent['target_id']}"
 
         self._print(f"[green]✓ Intent understood:[/green] {action} ({target})")
-        self._print(f"[dim]  Confidence: {intent.get('confidence', 0):.0%} | Scale: {scale}[/dim]")
+        self._print(f"[dim]  Confidence: {intent.get('confidence', 0):.0%}[/dim]")
         self._print()
 
         # Show changes
@@ -538,29 +532,7 @@ class InteractiveSession:
             for change in changes:
                 change_type = change.get('type', 'unknown')
 
-                if change_type == 'patch':
-                    # New unified context format
-                    updated_files = change.get('updated_files', [])
-                    deleted_files = change.get('deleted_files', [])
-
-                    # Show updated files
-                    if updated_files:
-                        for file in updated_files:
-                            self._print(f"[green]✓ Updated:[/green] [cyan]{file}[/cyan]")
-
-                    # Show deleted files (culled downstream)
-                    if deleted_files:
-                        self._print(f"[dim]✗ Culled downstream:[/dim]")
-                        for file in deleted_files:
-                            self._print(f"  [dim]- {file}[/dim]")
-
-                    # Show chapter count if applicable
-                    if 'chapter_count' in change:
-                        chapter_count = change.get('chapter_count', 0)
-                        self._print(f"[dim]  ({chapter_count} chapters)[/dim]")
-
-                elif change_type == 'regenerate':
-                    # Old format (still used by some generators)
+                if change_type == 'regenerate':
                     file_path = change.get('file', 'unknown')
                     # Check if this is chapters (has 'count' field) or prose (has 'word_count')
                     if 'count' in change:
