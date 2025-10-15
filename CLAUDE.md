@@ -777,6 +777,149 @@ if not data:
 process(data)  # No conditionals needed
 ```
 
+## Context is King: Always Prioritize Quality Over Token Cost
+
+**CRITICAL PRINCIPLE: When building prompts or context for LLM calls, ALWAYS prioritize giving complete, relevant context over optimizing for token cost.**
+
+### Core Philosophy
+
+1. **Quality over Cost**: Better to spend tokens and get great results than save tokens and get mediocre results
+2. **Context is Cheap, Regeneration is Expensive**: A few thousand extra context tokens costs pennies. Regenerating because of insufficient context costs time, money, and user frustration
+3. **When in Doubt, Ask**: If unsure whether to include something in context, ASK the user rather than making assumptions
+4. **Full Context by Default**: Err on the side of including more context, not less
+
+### Examples
+
+**❌ BAD - Token optimization that hurts quality:**
+```python
+# Prose generation with minimal context
+def generate_prose(chapter):
+    # Only include current chapter outline
+    context = f"Chapter {chapter.number}: {chapter.title}"
+    # Missing: full chapters.yaml, previous prose, character details, etc.
+```
+
+**✅ GOOD - Full context for quality:**
+```python
+# Prose generation with complete context
+def generate_prose(chapter, all_chapters_yaml, previous_prose):
+    # Include EVERYTHING the LLM needs to write well:
+    # - Full chapters.yaml (metadata, characters, world, all chapter outlines)
+    # - All previous prose (for continuity, consistency)
+    # - Current chapter's full outline with scene structure
+    # Even if this is 50k-100k tokens, it's worth it for quality
+```
+
+### When to Include Full Context
+
+**ALWAYS include full context for:**
+- **Prose generation**: Full chapters.yaml + all previous prose + current chapter outline
+- **Chapter iteration**: Full treatment + all existing chapters + feedback
+- **Copy editing**: Full chapters.yaml + ALL chapter prose (edited + remaining originals)
+- **Analysis**: All available content (premise + treatment + chapters + prose)
+
+**Example from the codebase:**
+```python
+# Sequential chapter generation - each chapter sees 100% of previous chapters
+# NOT 5% summaries, but FULL chapter outlines
+for chapter_num in range(1, chapter_count + 1):
+    previous_chapters = []
+    for prev_num in range(1, chapter_num):
+        prev_chapter_data = self.project.get_chapter_beat(prev_num)
+        previous_chapters.append(prev_chapter_data)  # FULL detail, not summary
+
+    # Generate with FULL context
+    chapter_data = await self._generate_single_chapter(
+        foundation=foundation,           # Full metadata, characters, world
+        previous_chapters=previous_chapters,  # FULL previous chapters
+        ...
+    )
+```
+
+### When in Doubt: ASK
+
+If you're unsure whether to include something in context:
+
+**❌ DON'T:**
+- Assume it's not needed
+- Skip it to save tokens
+- Use a summary instead of full content
+- Make a unilateral decision
+
+**✅ DO:**
+- Ask the user: "Should I include X in the context? It will add ~Y tokens but may improve quality."
+- Explain the tradeoff clearly
+- Let the user decide based on their priorities
+- Document the decision for future reference
+
+### Example Scenarios
+
+**Scenario 1: Prose Generation**
+```
+❌ "I'll summarize previous chapters to save tokens"
+✅ "Should I include all previous chapter prose for continuity?
+   This adds ~30k tokens (~$0.15) but ensures perfect consistency."
+```
+
+**Scenario 2: Chapter Iteration**
+```
+❌ "I'll only send the chapters being modified"
+✅ "Should I include all existing chapters as context for iteration?
+   The LLM can see how changes fit with the rest of the story.
+   Adds ~5k tokens (~$0.02)."
+```
+
+**Scenario 3: Copy Editing**
+```
+❌ "I'll edit chapters one at a time without context"
+✅ Using full context by default:
+   - chapters.yaml (metadata, characters, world)
+   - All edited chapters so far
+   - All remaining original chapters for forward reference
+   Total: ~200k tokens, but ensures perfect consistency
+```
+
+### Cost Reality Check
+
+**Token costs are VERY cheap compared to the value of quality:**
+- 10,000 tokens ≈ $0.05-0.10 (most models)
+- 100,000 tokens ≈ $0.50-1.00 (most models)
+- Regenerating because of poor quality: $$$$ + user frustration
+
+**User time is valuable:**
+- Fixing a poorly generated chapter: 30-60 minutes
+- Cost of that time >>> cost of a few thousand extra tokens
+
+### The Sequential Generation Architecture
+
+This project uses **sequential generation** (not batched) specifically to maintain full context:
+
+```python
+# OLD batched system: 95% information loss
+# Passed only 3/60 fields (number, title, summary) between batches
+# Result: Duplicate scenes, inconsistencies, ~60% word count achievement
+
+# NEW sequential system: ZERO information loss
+# Each chapter sees 100% of all previous chapters
+# Result: Perfect continuity, no duplicates, 80-100% word count achievement
+```
+
+**Why we made this choice:**
+- Token cost: Slightly higher (~10-20% more tokens)
+- Quality improvement: MASSIVE (eliminated duplicates, improved consistency)
+- **Conclusion: Worth it every single time**
+
+### Summary
+
+**Golden Rules:**
+1. ✅ Full context by default - never summarize unless explicitly required
+2. ✅ Ask when uncertain - user makes final call on tradeoffs
+3. ✅ Quality over pennies - token costs are negligible compared to quality
+4. ✅ Document decisions - explain why you included/excluded context
+5. ✅ Trust the architecture - Sequential generation exists for full context
+
+**Remember:** We chose sequential generation SPECIFICALLY to enable full context passing. Honor that architectural decision by always including complete context.
+
 ## Important Notes
 
 - OpenRouter API key must start with 'sk-or-'
