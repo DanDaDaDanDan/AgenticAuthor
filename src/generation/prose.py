@@ -50,7 +50,7 @@ class ProseGenerator:
 
         # For each chapter, check if prose exists and load it
         for chapter in chapters:
-            chapter_file = self.project.path / "prose" / f"chapter-{chapter['number']:02d}.md"
+            chapter_file = self.project.path / "chapters" / f"chapter-{chapter['number']:02d}.md"
             if chapter_file.exists():
                 with open(chapter_file, 'r') as f:
                     chapter['full_prose'] = f.read()
@@ -233,7 +233,7 @@ class ProseGenerator:
                 prev_summary += f"\nChapter {ch['number']}: {ch['title']}\n"
                 prev_summary += f"Summary: {ch.get('summary', 'N/A')}\n"
                 # Check if prose exists for this chapter
-                prose_file = self.project.prose_dir / f"chapter-{ch['number']:02d}.md"
+                prose_file = self.project.chapters_dir / f"chapter-{ch['number']:02d}.md"
                 if prose_file.exists():
                     prose_text = prose_file.read_text(encoding='utf-8')
                     # Include last paragraph for continuity
@@ -409,8 +409,8 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
             prose_text = result.get('content', result) if isinstance(result, dict) else result
 
             # Save prose directly to file
-            chapter_file = self.project.prose_dir / f"chapter-{chapter_number:02d}.md"
-            self.project.prose_dir.mkdir(exist_ok=True)
+            chapter_file = self.project.chapters_dir / f"chapter-{chapter_number:02d}.md"
+            self.project.chapters_dir.mkdir(exist_ok=True)
 
             # Add chapter header
             full_prose = f"# Chapter {chapter_number}: {current_chapter['title']}\n\n{prose_text}"
@@ -708,7 +708,7 @@ Return ONLY the YAML content with all sections (premise + treatment + chapters +
         )
 
         # Read the saved prose
-        chapter_file = self.project.path / "prose" / f"chapter-{chapter_number:02d}.md"
+        chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
         if chapter_file.exists():
             with open(chapter_file, 'r', encoding='utf-8') as f:
                 prose_content = f.read()

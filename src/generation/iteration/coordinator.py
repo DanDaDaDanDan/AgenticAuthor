@@ -376,7 +376,7 @@ Return ONLY the YAML content. Do NOT wrap in markdown code fences (```)."""
             raise ValueError("Cannot determine which chapter to iterate. Please specify chapter number.")
 
         # Get target chapter file
-        chapter_file = self.project.prose_dir / f'chapter-{chapter_num:02d}.md'
+        chapter_file = self.project.chapters_dir / f'chapter-{chapter_num:02d}.md'
         if not chapter_file.exists():
             raise ValueError(f"Chapter {chapter_num} not found. Generate it first with /generate prose {chapter_num}")
 
@@ -412,7 +412,7 @@ You are modifying chapter {chapter_num}. All other chapters are provided for con
             diff = await self.diff_generator.generate_diff(
                 original=original_content,
                 intent=intent,
-                file_path=f'prose/chapter-{chapter_num:02d}.md',
+                file_path=f'chapters/chapter-{chapter_num:02d}.md',
                 context=additional_context
             )
 
@@ -449,7 +449,7 @@ You are modifying chapter {chapter_num}. All other chapters are provided for con
             change_info = {
                 'type': 'prose_patch',
                 'chapter': chapter_num,
-                'updated_files': [f'prose/chapter-{chapter_num:02d}.md'],
+                'updated_files': [f'chapters/chapter-{chapter_num:02d}.md'],
                 'backup_path': str(backup_path.relative_to(self.project.path)),
                 'statistics': stats,
                 'word_count_before': len(original_content.split()),
@@ -463,7 +463,7 @@ You are modifying chapter {chapter_num}. All other chapters are provided for con
             print(f"  +{stats['added']} lines added")
             print(f"  -{stats['removed']} lines removed")
             print(f"  Backup saved to: {change_info['backup_path']}")
-            print(f"  To undo: copy backup back to prose/chapter-{chapter_num:02d}.md")
+            print(f"  To undo: copy backup back to chapters/chapter-{chapter_num:02d}.md")
 
             return changes
 

@@ -28,8 +28,8 @@ class CullManager:
         deleted_files = []
 
         # Find all chapter prose files
-        if self.project.prose_dir.exists():
-            for prose_file in self.project.prose_dir.glob("chapter-*.md"):
+        if self.project.chapters_dir.exists():
+            for prose_file in self.project.chapters_dir.glob("chapter-*.md"):
                 prose_file.unlink()
                 deleted_files.append(str(prose_file.relative_to(self.project.path)))
 

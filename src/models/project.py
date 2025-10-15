@@ -76,9 +76,9 @@ class Project:
         return self.path / "chapters.yaml"
 
     @property
-    def prose_dir(self) -> Path:
-        """Get path to prose directory."""
-        return self.path / "prose"
+    def chapters_dir(self) -> Path:
+        """Get path to chapters directory."""
+        return self.path / "chapters"
 
     @property
     def story_file(self) -> Path:
@@ -329,7 +329,7 @@ class Project:
         Returns:
             Chapter content or None if not found
         """
-        chapter_file = self.prose_dir / f"chapter-{chapter_num:02d}.md"
+        chapter_file = self.chapters_dir / f"chapter-{chapter_num:02d}.md"
         if chapter_file.exists():
             return chapter_file.read_text(encoding='utf-8')
         return None
@@ -342,10 +342,10 @@ class Project:
             chapter_num: Chapter number (1-based)
             content: Chapter content
         """
-        # Ensure prose directory exists
-        self.prose_dir.mkdir(exist_ok=True)
+        # Ensure chapters directory exists
+        self.chapters_dir.mkdir(exist_ok=True)
 
-        chapter_file = self.prose_dir / f"chapter-{chapter_num:02d}.md"
+        chapter_file = self.chapters_dir / f"chapter-{chapter_num:02d}.md"
         chapter_file.write_text(content, encoding='utf-8')
 
         # Update word count
@@ -356,9 +356,9 @@ class Project:
 
     def list_chapters(self) -> List[Path]:
         """List all chapter files."""
-        if not self.prose_dir.exists():
+        if not self.chapters_dir.exists():
             return []
-        return sorted(self.prose_dir.glob("chapter-*.md"))
+        return sorted(self.chapters_dir.glob("chapter-*.md"))
 
     def get_story(self) -> Optional[str]:
         """
@@ -471,8 +471,8 @@ class Project:
         if self.story_file.exists():
             return True
 
-        # If prose/ directory exists with files, it's long-form
-        if self.prose_dir.exists() and list(self.prose_dir.glob('chapter-*.md')):
+        # If chapters/ directory exists with files, it's long-form
+        if self.chapters_dir.exists() and list(self.chapters_dir.glob('chapter-*.md')):
             return False
 
         # Detect from target word count
@@ -564,7 +564,7 @@ class Project:
         project.save_metadata()
 
         # Create subdirectories
-        project.prose_dir.mkdir(exist_ok=True)
+        project.chapters_dir.mkdir(exist_ok=True)
         project.analysis_dir.mkdir(exist_ok=True)
         project.exports_dir.mkdir(exist_ok=True)
 

@@ -2052,7 +2052,7 @@ class InteractiveSession:
                     self.console.print()  # Blank line
                     self.console.rule(style="dim")
                     self.console.print(f"[green]✓  Chapter {chapter_num} generated: {word_count} words[/green]")
-                    self.console.print(f"[dim]Saved to prose/chapter-{chapter_num:02d}.md[/dim]")
+                    self.console.print(f"[dim]Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
 
                     # Git commit
                     self._commit(f"Generate prose for chapter {chapter_num} {commit_suffix}")

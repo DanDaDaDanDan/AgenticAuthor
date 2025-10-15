@@ -1,9 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git log:*)",
-      "Bash(git revert:*)",
-      "Bash(do echo \"=== $file ===\")"
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
