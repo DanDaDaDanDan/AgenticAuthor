@@ -217,6 +217,8 @@ class ChapterGenerator:
   target_audience: "..."
   target_word_count: {total_words}
   chapter_count: {chapter_count}
+  glue_fraction: 0.25  # 25% for transitions/exposition
+  act_weights: [0.25, 0.50, 0.25]  # Act I, Act II, Act III percentages
   setting_period: "..."
   setting_location: "..."
   content_warnings: []"""
@@ -475,6 +477,7 @@ When the feedback mentions duplicate or repetitive content:
         previous_chapters: List[Dict[str, Any]],
         form: str,
         pacing: str,
+        chapter_budget: Dict[str, Any],
         feedback: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -488,6 +491,7 @@ When the feedback mentions duplicate or repetitive content:
             previous_chapters: FULL chapter dicts for all previous chapters (empty for chapter 1)
             form: Story form (novel, novella, etc.)
             pacing: Story pacing (fast, moderate, slow)
+            chapter_budget: Budget dict with role, act, words_total, words_scenes, typical_scenes
             feedback: Optional user feedback (for iteration)
 
         Returns:
@@ -499,30 +503,36 @@ When the feedback mentions duplicate or repetitive content:
         if logger:
             logger.debug(f"Generating chapter {chapter_num} with {len(previous_chapters)} previous chapters")
 
-        # Calculate act and scene count for this chapter
-        act = DepthCalculator.get_act_for_chapter(chapter_num, total_chapters)
-        act_ws = DepthCalculator.get_act_words_per_scene(form, pacing, act)
+        # Extract budget information
+        chapter_role = chapter_budget['role']
+        chapter_act = chapter_budget['act']
+        words_total = chapter_budget['words_total']
+        words_scenes = chapter_budget['words_scenes']
+        scene_count = chapter_budget['typical_scenes']
 
-        # Get scene count for this chapter
-        structure = self._calculate_structure(
-            total_words=foundation['metadata']['target_word_count'],
-            pacing=pacing
-        )
-        scenes_per_chapter = structure['scenes_per_chapter']
-        chapter_index = chapter_num - 1
-        scene_count = scenes_per_chapter[chapter_index] if chapter_index < len(scenes_per_chapter) else 3
+        # Map act number to label
+        act_labels = {1: "Act I", 2: "Act II", 3: "Act III"}
+        default_act = act_labels.get(chapter_act, "Act II")
 
-        word_target = scene_count * act_ws
+        # Calculate scene budgets with impact ratings
+        # Auto-assign impacts: first/last = 1 (connective), middle = 2 (important), middle in peak = 3 (set-piece)
+        is_peak_chapter = chapter_role in ['inciting_setup', 'midpoint', 'crisis', 'climax']
+        scene_impacts = DepthCalculator.assign_scene_impacts(scene_count, is_peak_chapter)
 
-        # Determine default act label
-        act_1_end = total_chapters * 0.25
-        act_2_end = total_chapters * 0.75
-        if chapter_num <= act_1_end:
-            default_act = "Act I"
-        elif chapter_num <= act_2_end:
-            default_act = "Act II"
-        else:
-            default_act = "Act III"
+        # Calculate scene budgets based on impacts
+        scene_budgets = DepthCalculator.calculate_scene_budget(words_scenes, scene_impacts)
+
+        # Calculate beat budgets for each scene (using 6-beat pattern as default)
+        beat_budgets_per_scene = []
+        for scene_budget in scene_budgets:
+            beat_budgets = DepthCalculator.calculate_beat_budget(scene_budget, num_beats=6)
+            beat_budgets_per_scene.append(beat_budgets)
+
+        if logger:
+            logger.debug(f"Chapter {chapter_num} budget: role={chapter_role}, act={chapter_act}, "
+                        f"total={words_total}, scenes={words_scenes}, scene_count={scene_count}")
+            logger.debug(f"Scene impacts: {scene_impacts}")
+            logger.debug(f"Scene budgets: {scene_budgets}")
 
         # Serialize foundation to YAML
         foundation_yaml = yaml.dump(foundation, default_flow_style=False, allow_unicode=True)
@@ -531,6 +541,15 @@ When the feedback mentions duplicate or repetitive content:
         previous_yaml = ""
         if previous_chapters:
             previous_yaml = yaml.dump(previous_chapters, default_flow_style=False, allow_unicode=True)
+
+        # Build beat structure examples for prompt
+        beat_type_labels = DepthCalculator.BEAT_TYPE_TEMPLATES[6]  # Use 6-beat pattern
+        beat_examples = []
+        for i, (beat_type, beat_budget) in enumerate(zip(beat_type_labels, beat_budgets_per_scene[0])):
+            beat_examples.append(f"""      - type: "{beat_type}"
+        note: "Brief description of what happens in this beat"
+        target_words: {beat_budget}""")
+        beat_structure_example = "\n".join(beat_examples)
 
         # Build prompt
         prompt = f"""Generate chapter {chapter_num} of {total_chapters} for a book.
@@ -550,35 +569,56 @@ PREVIOUS CHAPTERS (full details with all scenes):
 {previous_yaml if previous_yaml else "# This is chapter 1 - no previous chapters"}
 ```
 
-STORY DEPTH ARCHITECTURE:
-This is chapter {chapter_num} in {act} ({default_act}).
-- Scene count: {scene_count} scenes
-- Words per scene: {act_ws} w/s
-- Target word count: {word_target:,} words
+BEAT-DRIVEN ARCHITECTURE:
+This is chapter {chapter_num} in {default_act} (role: {chapter_role}).
+- Chapter budget: {words_total:,} words total ({words_scenes:,} for scenes, rest for transitions/glue)
+- Scene count: {scene_count} scenes with varying impact ratings
+- Scene budgets: {[f"{sb:,}w" for sb in scene_budgets]}
+- Each scene has 6 beats with target words (setup, obstacle, complication, reversal, consequence, exit)
 
 TASK:
-Generate chapter {chapter_num} with the EXACT specifications:
+Generate chapter {chapter_num} with COMPLETE BEAT STRUCTURE for all scenes.
+
+Required fields:
 - number: {chapter_num}
 - title: evocative, specific (2-6 words)
 - pov: character name
 - act: "{default_act}" (or adjust based on story flow)
 - summary: 3-4 sentences describing this chapter
-- scenes: {scene_count} complete scenes with structure:
-  * scene: Brief scene title (2-4 words)
-  * location: Where the scene takes place
-  * pov_goal: What the POV character wants in this scene
-  * conflict: What prevents them from getting it
-  * stakes: What's at risk if they fail
-  * outcome: How the scene resolves
-  * emotional_beat: Internal character change
-  * sensory_focus: 2-3 specific sensory details
-  * target_words: {act_ws}
+- scenes: {scene_count} complete scenes with FULL STRUCTURE including beats array
 - character_developments: 3-4 internal changes
 - relationship_beats: 2-3 relationship evolutions
 - tension_points: 2-3 stakes/urgency moments
 - sensory_details: 2-3 atmospheric elements
 - subplot_threads: 1-2 if applicable
-- word_count_target: {word_target}
+- word_count_target: {words_total}
+
+SCENE STRUCTURE (all fields required):
+Each scene MUST include:
+  - scene: Brief scene title (2-4 words)
+  - location: Specific place where scene occurs
+  - objective: VERB phrase - what character wants (must be fail-able)
+  - opposition: Active force preventing success (not just circumstances)
+  - value_shift: "before state → after state" (explicit X → Y format)
+  - outcome: How the scene resolves
+  - exit_hook: Forward momentum (question/decision/reveal/peril)
+  - emotional_beat: Internal character change
+  - tension: 2-3 tags from: timer, secrecy, pursuit, environment, moral, social-pressure, puzzle
+  - plants: Setup for later payoffs (if applicable)
+  - payoffs: Callbacks to earlier plants (if applicable)
+  - impact: {scene_impacts[0]} (1=connective, 2=important, 3=set-piece) - ALREADY ASSIGNED, use these values
+  - sensory_focus: 2-3 specific sensory details
+  - target_words: scene word target
+  - beats: Array of 6 beats with type, note, target_words
+
+BEAT ARRAY STRUCTURE (6 beats per scene):
+Each scene must have exactly 6 beats:
+  1. setup (10% of scene) - Establish location, character state
+  2. obstacle (15%) - First complication arises
+  3. complication (20%) - Stakes increase
+  4. reversal (25%) - Peak moment, decision point, turn
+  5. consequence (20%) - Immediate aftermath
+  6. exit (10%) - Bridge to next scene with hook
 
 Guidelines:
 - Maintain consistency with foundation (characters, world, metadata)
@@ -587,7 +627,12 @@ Guidelines:
 - Each scene must advance the story with NEW events and conflicts
 - Do NOT repeat plot beats, events, or character moments already covered
 - Be specific with names, places, emotions
-- {scene_count} scenes = {scene_count} complete dramatic units (not bullet points)
+- objective must be VERB phrase ("convince mentor", NOT "talking to mentor")
+- opposition must be ACTIVE force ("mentor's skepticism", NOT "it's difficult")
+- value_shift must use → symbol ("ignored → heard")
+- exit_hook must point forward (question, decision, reveal, peril)
+- Vary tension tags across scenes (avoid repeating same 3+ times)
+- At least ONE plant or payoff per scene
 
 RETURN FORMAT:
 Return ONLY valid YAML for this ONE chapter (no markdown fences):
@@ -600,16 +645,26 @@ summary: "..."
 scenes:
   - scene: "Scene Title"
     location: "..."
-    pov_goal: "..."
-    conflict: "..."
-    stakes: "..."
-    outcome: "..."
-    emotional_beat: "..."
+    objective: "convince mentor to reopen case"  # VERB phrase
+    opposition: "mentor's skepticism and department politics"  # Active force
+    value_shift: "ignored → heard"  # X → Y format
+    outcome: "partial win"
+    exit_hook: "Mentor asks about the missing artifact"  # Forward momentum
+    emotional_beat: "confidence"
+    tension:
+      - "social-pressure"
+      - "timer"
+    plants:
+      - "Mention of artifact"
+    payoffs: []
+    impact: {scene_impacts[0]}
     sensory_focus:
-      - "..."
-      - "..."
-    target_words: {act_ws}
-  # ... continue for all {scene_count} scenes
+      - "Stale coffee smell"
+      - "Fluorescent buzz"
+    target_words: {scene_budgets[0]}
+    beats:
+{beat_structure_example}
+  # ... continue for all {scene_count} scenes with their specific budgets: {scene_budgets}
 character_developments:
   - "..."
 relationship_beats:
@@ -620,9 +675,13 @@ sensory_details:
   - "..."
 subplot_threads:
   - "..."
-word_count_target: {word_target}
+word_count_target: {words_total}
 
-IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdown code fences."""
+IMPORTANT:
+- Return ONLY the YAML for chapter {chapter_num}
+- Do NOT wrap in markdown code fences
+- ALL scene fields are REQUIRED (objective, opposition, value_shift, exit_hook, tension, impact, beats)
+- beats array must have exactly 6 beats with type, note, target_words"""
 
         # Add feedback instruction if iterating
         if feedback:
@@ -669,8 +728,70 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                 logger.warning(f"Chapter number mismatch: expected {chapter_num}, got {chapter_data.get('number')} - correcting")
             chapter_data['number'] = chapter_num
 
+        # Validate scene hygiene
+        scenes = chapter_data.get('scenes', [])
+        hygiene_warnings = []
+
+        for i, scene in enumerate(scenes, 1):
+            scene_id = scene.get('scene', f'Scene {i}')
+
+            # Check objective (must be verb phrase)
+            objective = scene.get('objective', '')
+            if not objective:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'objective' field")
+            elif any(word in objective.lower() for word in ['talk', 'talking', 'discuss', 'discussing']) and 'to' not in objective:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): objective '{objective}' is too vague (use 'convince X to Y' not 'talk to X')")
+
+            # Check opposition (must be active force)
+            opposition = scene.get('opposition', '')
+            if not opposition:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'opposition' field")
+            elif any(phrase in opposition.lower() for phrase in ['it\'s difficult', 'circumstances', 'hard to', 'challenging']):
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): opposition '{opposition}' is passive (use active force like 'character's skepticism')")
+
+            # Check value_shift (must have → symbol)
+            value_shift = scene.get('value_shift', '')
+            if not value_shift:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'value_shift' field")
+            elif '→' not in value_shift and '->' not in value_shift:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): value_shift '{value_shift}' must use → format (before → after)")
+
+            # Check exit_hook
+            exit_hook = scene.get('exit_hook', '')
+            if not exit_hook:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'exit_hook' field")
+            elif any(phrase in exit_hook.lower() for phrase in ['scene ends', 'chapter ends', 'ends']):
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): exit_hook '{exit_hook}' has no forward momentum")
+
+            # Check tension tags
+            tension = scene.get('tension', [])
+            if not tension or len(tension) == 0:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'tension' tags")
+
+            # Check plants or payoffs
+            plants = scene.get('plants', [])
+            payoffs = scene.get('payoffs', [])
+            if not plants and not payoffs:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing both 'plants' and 'payoffs' (need at least one)")
+
+            # Check beats array
+            beats = scene.get('beats', [])
+            if not beats:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'beats' array")
+            elif len(beats) != 6:
+                hygiene_warnings.append(f"Scene {i} ({scene_id}): beats array has {len(beats)} beats (expected 6)")
+
+        # Log warnings but don't fail generation
+        if hygiene_warnings:
+            if logger:
+                logger.warning(f"Scene hygiene validation found {len(hygiene_warnings)} issues in chapter {chapter_num}:")
+                for warning in hygiene_warnings[:5]:  # Log first 5
+                    logger.warning(f"  - {warning}")
+                if len(hygiene_warnings) > 5:
+                    logger.warning(f"  ... and {len(hygiene_warnings) - 5} more")
+
         if logger:
-            logger.debug(f"Chapter {chapter_num} generated successfully: {len(chapter_data.get('scenes', []))} scenes")
+            logger.debug(f"Chapter {chapter_num} generated successfully: {len(scenes)} scenes")
 
         return chapter_data
 
@@ -851,61 +972,50 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                         if logger:
                             logger.debug(f"Using fallback default for novel/{genre}: {total_words} words")
 
-            # Calculate story structure (form, chapters, scenes, base_ws)
+            # Calculate story structure using top-down budgeting
             if not chapter_count:
                 structure = self._calculate_structure(total_words, pacing, length_scope)
                 chapter_count = structure['chapter_count']
                 form = structure['form']
-                base_ws = structure['base_ws']
-                total_scenes = structure['total_scenes']
-
-                # Distribute scenes across chapters based on act structure
-                scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
-                    total_scenes, chapter_count, form
-                )
-
-                if logger:
-                    logger.debug(f"Story structure: {form}, {chapter_count} chapters, {total_scenes} scenes, {base_ws} w/s (baseline)")
-                    logger.debug(f"Scene distribution: {scenes_distribution}")
             else:
-                # User specified chapter count - use it but still calculate structure
+                # User specified chapter count - use it
                 structure = self._calculate_structure(total_words, pacing, length_scope)
                 form = structure['form']
-                base_ws = structure['base_ws']
-                total_scenes = structure['total_scenes']
 
-                # Distribute scenes across user-specified chapter count
-                scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
-                    total_scenes, chapter_count, form
-                )
+            # Calculate top-down budget (Book → Acts → Chapters → Scenes → Beats)
+            budget = DepthCalculator.calculate_top_down_budget(
+                total_words=total_words,
+                chapter_count=chapter_count,
+                form=form,
+                glue_fraction=0.25  # 25% for transitions/exposition
+            )
 
-                if logger:
-                    logger.debug(f"Story structure (user-specified chapters): {form}, {chapter_count} chapters, {total_scenes} scenes, {base_ws} w/s (baseline)")
+            if logger:
+                logger.debug(f"Top-down budget calculated: {form}, {chapter_count} chapters")
+                logger.debug(f"Act budgets: {budget['act_budgets']}")
+                logger.debug(f"Chapter budgets: {len(budget['chapter_budgets'])} chapters with roles/targets")
 
             # Display comprehensive story structure breakdown
             self.console.print(f"\n[bold cyan]Story Structure Breakdown:[/bold cyan]")
             self.console.print(f"  Form: [green]{form.replace('_', ' ').title()}[/green]")
             self.console.print(f"  Target: [green]{total_words:,}[/green] words")
             self.console.print(f"  Chapters: [green]{chapter_count}[/green]")
-            self.console.print(f"  Total Scenes: [green]{total_scenes}[/green]")
-            avg_scenes = total_scenes / chapter_count if chapter_count > 0 else 0
-            self.console.print(f"  Scenes per Chapter: [green]{avg_scenes:.1f}[/green] avg (clamped to 2-4)")
-            self.console.print(f"  Words per Scene: [green]{base_ws:,}[/green] (Act II baseline, varies by act)")
 
-            # Calculate and display expected total
-            expected_total = total_scenes * base_ws
-            variance_pct = ((expected_total / total_words) - 1) * 100 if total_words > 0 else 0
+            # Display act breakdown
+            act_budgets = budget['act_budgets']
+            self.console.print(f"  Act Budgets: [green]Act I: {act_budgets[0]:,}w[/green] | [green]Act II: {act_budgets[1]:,}w[/green] | [green]Act III: {act_budgets[2]:,}w[/green]")
+            self.console.print(f"  Glue Fraction: [green]25%[/green] (transitions/exposition)")
+
+            # Count peak chapters
+            peak_chapters = [ch for ch in budget['chapter_budgets'] if ch['role'] in ['inciting_setup', 'midpoint', 'crisis', 'climax']]
+            self.console.print(f"  Peak Chapters: [green]{len(peak_chapters)}[/green] (inciting, midpoint, crisis, climax)")
 
             if feedback:
                 # During iteration, LLM can adjust - show baseline with note
-                self.console.print(f"  Baseline Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
                 self.console.print(f"\n[bold yellow]📝 Iteration Mode:[/bold yellow] LLM will analyze feedback and may adjust:")
                 self.console.print(f"   • Word count (currently {total_words:,})")
                 self.console.print(f"   • Chapter count (currently {chapter_count})")
                 self.console.print(f"   Changes will be shown after foundation generation")
-            else:
-                # During generation, show expected output
-                self.console.print(f"  Expected Output: [green]{expected_total:,}[/green] words ({variance_pct:+.1f}% from target)")
 
             # Serialize context to YAML for prompts
             context_yaml = self.context_builder.to_yaml_string(context)
@@ -951,15 +1061,16 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                         if logger:
                             logger.debug(f"Resume: Using foundation's chapter_count: {chapter_count}")
 
-                        # Recalculate structure with foundation's values
+                        # Recalculate structure AND budget with foundation's values
                         structure = self._calculate_structure(total_words, pacing, length_scope)
                         form = structure['form']
-                        base_ws = structure['base_ws']
-                        total_scenes = structure['total_scenes']
 
-                        # Redistribute scenes across foundation's chapter count
-                        scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
-                            total_scenes, chapter_count, form
+                        # Recalculate budget with foundation's values
+                        budget = DepthCalculator.calculate_top_down_budget(
+                            total_words=total_words,
+                            chapter_count=chapter_count,
+                            form=form,
+                            glue_fraction=0.25
                         )
             else:
                 # Generate foundation (initial generation or iteration)
@@ -1078,24 +1189,24 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                         # Only show this message during iteration
                         self.console.print(f"\n[dim]→ LLM analysis: Current structure appropriate for feedback[/dim]\n")
 
-                # Recalculate structure with LLM's values (if any changed)
+                # Recalculate structure AND budget with LLM's values (if any changed)
                 if llm_word_count or llm_chapter_count:
                     structure = self._calculate_structure(total_words, pacing, length_scope)
                     form = structure['form']
-                    base_ws = structure['base_ws']
-                    total_scenes = structure['total_scenes']
 
-                    # Redistribute scenes across LLM's chosen chapter count
-                    scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
-                        total_scenes, chapter_count, form
+                    # Recalculate top-down budget with LLM's values
+                    budget = DepthCalculator.calculate_top_down_budget(
+                        total_words=total_words,
+                        chapter_count=chapter_count,
+                        form=form,
+                        glue_fraction=0.25
                     )
 
                     if logger:
                         logger.debug(
-                            f"Recalculated structure with LLM values: {form}, {chapter_count} chapters, "
-                            f"{total_scenes} scenes, {base_ws} w/s"
+                            f"Recalculated structure with LLM values: {form}, {chapter_count} chapters"
                         )
-                        logger.debug(f"Recalculated scene distribution: {scenes_distribution}")
+                        logger.debug(f"Recalculated budget: act_budgets={budget['act_budgets']}")
 
             # ===== CHECK FOR EXISTING CHAPTERS (RESUME CAPABILITY) =====
             existing_chapters = self.project.list_chapter_beats()
@@ -1166,6 +1277,9 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                 if logger:
                     logger.debug(f"Loaded {len(previous_chapters)} previous chapters for context")
 
+                # Get chapter budget for this chapter
+                chapter_budget = budget['chapter_budgets'][chapter_num - 1]
+
                 # Generate this chapter with full context
                 try:
                     chapter_data = await self._generate_single_chapter(
@@ -1176,6 +1290,7 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                         previous_chapters=previous_chapters,
                         form=form,
                         pacing=pacing,
+                        chapter_budget=chapter_budget,
                         feedback=feedback
                     )
                 except Exception as e:
@@ -1235,6 +1350,37 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                     raise Exception(
                         f"Chapter numbering error: chapter at index {i} has number {actual_num}, expected {expected_num}"
                     )
+
+            # Validate pacing anchors
+            if logger:
+                logger.debug("Validating pacing anchors...")
+
+            anchor_results = DepthCalculator.validate_pacing_anchors(
+                chapter_budgets=budget['chapter_budgets'],
+                total_words=total_words
+            )
+
+            # Display pacing validation results
+            self.console.print(f"\n[bold cyan]Pacing Validation:[/bold cyan]")
+            all_ok = True
+            for anchor in ['inciting_incident', 'midpoint', 'crisis', 'climax']:
+                result = anchor_results.get(anchor)
+                if result:
+                    status = result['status']
+                    position_pct = result['position_pct']
+                    expected_min, expected_max = result['expected_range']
+
+                    if status == 'ok':
+                        self.console.print(f"  ✓ {anchor.replace('_', ' ').title()}: [green]{position_pct:.1f}%[/green] (expected {expected_min:.0f}-{expected_max:.0f}%)")
+                    else:
+                        all_ok = False
+                        suggestion = result.get('suggestion', '')
+                        self.console.print(f"  ✗ {anchor.replace('_', ' ').title()}: [yellow]{position_pct:.1f}%[/yellow] (expected {expected_min:.0f}-{expected_max:.0f}%) - {suggestion}")
+
+            if all_ok:
+                self.console.print(f"[green]All pacing anchors within expected ranges![/green]")
+            else:
+                self.console.print(f"[yellow]Some anchors outside expected ranges - consider adjusting chapter structure[/yellow]")
 
             # Save final result
             self.project.save_chapters_yaml(final_data)
