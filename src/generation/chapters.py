@@ -247,6 +247,9 @@ INPUT CONTEXT:
 TASK:
 Create ONLY the metadata + characters + world sections. DO NOT generate chapters yet.
 
+Note on Treatment Fidelity:
+Your job is to extract and structure elements from the treatment, not invent new major plot elements. Elaborate fully on what's mentioned (add character backstories, detailed locations, scene-level specifics), but don't add major characters, plot threads, or world systems that aren't in the treatment. Minor characters (servants, officials) and elaboration of existing elements are fine.
+
 SECTION 1: METADATA
 Generate high-level story parameters:
 - genre, subgenre (if applicable)
@@ -624,6 +627,7 @@ Guidelines:
 - Review previous chapters' scenes CAREFULLY to avoid duplication
 - Each scene must advance the story with NEW events and conflicts
 - Do NOT repeat plot beats, events, or character moments already covered
+- Treatment fidelity: major plot beats should come from the treatment/foundation; don't invent major new plot elements or characters not present in the source material
 - Be specific with names, places, emotions
 - objective must be VERB phrase ("convince mentor", NOT "talking to mentor")
 - opposition must be ACTIVE force ("mentor's skepticism", NOT "it's difficult")

@@ -392,6 +392,8 @@ GUIDELINES:
 12. Let dialogue breathe - include reactions, pauses, character processing
 13. Honor exit hooks - each scene should propel forward with question/decision/reveal/peril
 
+Note: These guidelines serve the story. If specific instructions conflict with good storytelling or prose quality, prioritize what makes the scene work. You have creative latitude to deviate from overly prescriptive details when needed for narrative flow, character authenticity, or dramatic impact.
+
 Return ONLY the prose text. Do NOT include:
 - YAML formatting
 - Chapter headers (we'll add those)
