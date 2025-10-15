@@ -642,20 +642,7 @@ graph TB
 - Backward compatible with existing chapter-based projects
 - Force flag available to override auto-detection
 
-### 8. Concept Mashup System (`src/generation/concept_mashup.py`)
-- **ConceptMashupGenerator**: Combines movies with story modifiers for creative premise ideas
-- **Data sources**: 300 movies (misc/movies.txt) × 103 modifiers (misc/story-modifiers.txt)
-- **Combination generation**: Random unique pairings with safety limits
-- **Output format**: Numbered list with movie, modifier, and combined concept
-
-**Key Design Decisions:**
-- 30,900 possible unique combinations (movies × modifiers)
-- Default 50 combinations, configurable 1-100
-- Duplicate detection via set tracking
-- Safety limit: max_attempts = count × 10
-- Returns structured list: [{number, movie, modifier, concept}]
-
-### 9. Copy Editing System (`src/generation/copy_editor.py`)
+### 8. Copy Editing System (`src/generation/copy_editor.py`)
 - **CopyEditor**: Professional copy editing pass for chapter prose files
 - **Sequential processing**: Edits chapters 1→N with accumulated context
 - **Full story context**: chapters.yaml + edited chapters + remaining original chapters
@@ -703,7 +690,7 @@ context = {
 - Character arc visibility
 - Token usage stays constant (just redistributes)
 
-### 10. Depth Calculator System (`src/generation/depth_calculator.py`)
+### 9. Depth Calculator System (`src/generation/depth_calculator.py`)
 - **DepthCalculator**: Centralized calculation of story depth (words per event) based on form and pacing
 - **Act-aware depth architecture**: Varies words-per-event by three-act position to ensure appropriate climax intensity
 - **Form detection**: Automatic detection of story form (flash fiction → series) from target word count
@@ -2416,65 +2403,7 @@ def is_short_story_project(project: Project) -> bool:
 | Iteration | Direct patching of story.md | Chapter-level or prose-level patches |
 | Export | Single story.md → RTF | Combined chapters/*.md → RTF |
 
-### Concept Mashup Generator Pattern
-
-```python
-from src.generation.concept_mashup import ConceptMashupGenerator
-from pathlib import Path
-
-# Initialize with base directory
-generator = ConceptMashupGenerator(base_dir=Path("D:/AgenticAuthor"))
-
-# Load data files
-movies = generator.load_movies()  # From misc/movies.txt
-modifiers = generator.load_modifiers()  # From misc/story-modifiers.txt
-
-# Get statistics
-stats = generator.get_stats()
-print(f"Movies: {stats['movie_count']}")
-print(f"Modifiers: {stats['modifier_count']}")
-print(f"Max combinations: {stats['max_combinations']}")
-
-# Generate random combinations (default 50)
-concepts = generator.generate_combinations(count=50)
-
-# Display to user for selection
-for concept in concepts:
-    print(f"{concept['number']}. {concept['concept']}")
-    print(f"   Movie: {concept['movie']}")
-    print(f"   Modifier: {concept['modifier']}")
-
-# User selects one, then generate full premise
-selected = concepts[user_choice - 1]
-premise_gen = PremiseGenerator(client, project, model)
-result = await premise_gen.generate(
-    user_input=selected['concept'],
-    genre=None  # Auto-detect
-)
-```
-
-**Integration with Premise Generation:**
-
-The concept mashup is used as the initial seed for premise generation. The flow is:
-
-1. Generate 50 movie+modifier concepts
-2. User selects one
-3. Selected concept becomes the `user_input` for premise generation
-4. LLM auto-detects genre from concept
-5. LLM expands concept into full premise with taxonomy
-
-Example:
-```
-Concept: "Star Wars with lawyers"
-→ Auto-detected genre: "science-fiction"
-→ Generated premise: "In a galaxy where interstellar disputes are settled in courtrooms rather than battlefields, a young lawyer discovers evidence that threatens to unravel the legal system..."
-```
-
 ### Sequential Chapter Generation Pattern
-
-**Architecture Overview:**
-
-Sequential generation (v0.3.0+) generates chapters one at a time with full context accumulation, replacing the old batched approach. This eliminates the 95% information loss that caused duplicate scenes/events.
 
 ```python
 from src.generation.chapters import ChapterGenerator

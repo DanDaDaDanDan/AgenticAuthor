@@ -19,13 +19,6 @@ AI-powered iterative book generation with natural language feedback and git-back
   - Direct iteration on complete story
   - Export works seamlessly for both short and long form
 
-- **Concept Mashup Generator** 🎬
-  - Creative premise ideas from movie + modifier combinations
-  - 300 movies × 103 modifiers = 30,900 possible concepts!
-  - Examples: "Star Wars with lawyers", "Toy Story in space"
-  - Generate 50 combinations by default (1-100 configurable)
-  - Select one → generates full premise with taxonomy
-
 - **Sequential Chapter Generation** 🔄
   - Zero information loss (each chapter sees 100% of previous chapters)
   - Three phases: Foundation → Sequential Chapters → Assembly

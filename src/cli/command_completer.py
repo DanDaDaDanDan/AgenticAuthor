@@ -217,7 +217,7 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/models [search]'
         },
         'generate': {
-            'description': 'Generate content (premise/premises/concepts/treatment/chapters/prose)',
+            'description': 'Generate content (premise/premises/treatment/chapters/prose/marketing)',
             'usage': '/generate <type> [options]'
         },
         'iterate': {
