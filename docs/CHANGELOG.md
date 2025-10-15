@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Dead Code and Unused Scripts** 🧹
+  - Removed unused methods from `src/utils/tokens.py`:
+    - `split_text_for_context()` - Text chunking for context limits, never used
+    - `estimate_json_tokens()` - JSON token estimation, never imported
+  - Removed obsolete utility scripts from root directory:
+    - `analyze_logs.py` - Log debugging helper, never integrated
+    - `init_shared_git.py` - Redundant (git init is automatic in interactive.py)
+    - `verify_prose_iteration.py` - One-time verification script, no longer needed
+  - Removed `src/utils/import_converter.py`:
+    - Converter for old story-export JSON format
+    - Only referenced in CHANGELOG, never imported by main code
+  - Removed `scripts/update_chapters_for_scenes.py`:
+    - One-time migration script with hardcoded path
+    - No longer needed after scene system migration
+  - Empty `scripts/` directory remains for future utility scripts
+  - **Impact**: Cleaner codebase, no functional changes
+
 ### Added
 
 - **Sequential Chapter Generation Architecture** 🔄 **[MAJOR REFACTORING]** (commit 5d52156)
