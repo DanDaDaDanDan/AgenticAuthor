@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       1. Continue from chapter 6 (resume)
       2. Regenerate all chapters from scratch
       3. Abort generation
+
+    > Choice 1: Loads foundation + existing chapters, continues from chapter 6
+    > Choice 2: Deletes chapters, keeps foundation, regenerates all chapters
+    >           (Note: Foundation is kept - it represents stable story structure)
+    >           (Use /iterate to change story structure/foundation)
+    > Choice 3: Aborts generation
     ```
   - **Progress Display**:
     ```
@@ -61,14 +67,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     ✓ Chapter 6/20 complete
     ```
   - **Error Recovery**: Clear failure point, completed chapters saved, can resume
+  - **Foundation Intelligence**: On resume, uses foundation's stored metadata (word count, chapter count) instead of recalculating
 
   **Benefits**:
   - ✅ Eliminates duplicate scenes/events (root cause fixed)
   - ✅ Each chapter sees 100% of previous detail, not 5% summaries
   - ✅ User-controlled resume (choose continue/regenerate/abort)
   - ✅ Incremental saves (inspect partial results anytime)
-  - ✅ Foundation loaded on resume (not regenerated, saves tokens)
+  - ✅ Foundation loaded on resume (not regenerated, saves ~2,000 tokens + 30-45s)
+  - ✅ Foundation metadata reused on resume (ensures consistency with existing chapters)
   - ✅ Better error recovery (resume from exact chapter number)
+  - ✅ Foundation preserved on regenerate (stable story structure)
 
   **Backward Compatibility**:
   - Old format (`chapters.yaml`) still supported for reading

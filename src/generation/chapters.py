@@ -1066,6 +1066,35 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
 
                 if logger:
                     logger.debug("Using existing foundation from chapter-beats/foundation.yaml")
+
+                # Extract metadata from existing foundation to use its values
+                foundation_metadata = foundation.get('metadata', {})
+                stored_word_count = foundation_metadata.get('target_word_count')
+                stored_chapter_count = foundation_metadata.get('chapter_count')
+
+                if stored_word_count:
+                    total_words = int(stored_word_count)
+                    if logger:
+                        logger.debug(f"Resume: Using foundation's target_word_count: {total_words}")
+
+                if stored_chapter_count:
+                    stored_chapter_count = int(stored_chapter_count)
+                    # Validate reasonable range (1-100 chapters)
+                    if 1 <= stored_chapter_count <= 100:
+                        chapter_count = stored_chapter_count
+                        if logger:
+                            logger.debug(f"Resume: Using foundation's chapter_count: {chapter_count}")
+
+                        # Recalculate structure with foundation's values
+                        structure = self._calculate_structure(total_words, pacing, length_scope)
+                        form = structure['form']
+                        base_ws = structure['base_ws']
+                        total_scenes = structure['total_scenes']
+
+                        # Redistribute scenes across foundation's chapter count
+                        scenes_distribution = DepthCalculator.distribute_scenes_across_chapters(
+                            total_scenes, chapter_count, form
+                        )
             else:
                 # Generate foundation (initial generation or iteration)
                 if existing_foundation and feedback:
@@ -1089,8 +1118,9 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                 genre=genre
             )
 
-                # Save foundation immediately
-                self._save_partial(foundation, phase='foundation')
+                # Save foundation immediately to both locations
+                self._save_partial(foundation, phase='foundation')  # Backup/debug
+                self.project.save_foundation(foundation)  # Proper location for resume
                 self.console.print(f"[green]✓[/green] Foundation complete")
 
             # ===== EXTRACT LLM'S STRUCTURAL CHOICES =====
@@ -1235,20 +1265,16 @@ IMPORTANT: Return ONLY the YAML for chapter {chapter_num}. Do NOT wrap in markdo
                         else:
                             raise Exception("Found chapter files but failed to load them")
                 elif choice == "2":
-                    # Regenerate: delete existing chapters AND foundation, start fresh
-                    self.console.print(f"[yellow]Deleting all existing chapter data...[/yellow]")
+                    # Regenerate: delete existing chapters, keep foundation
+                    self.console.print(f"[yellow]Deleting {existing_count} existing chapters...[/yellow]")
 
-                    # Delete all chapter files
+                    # Delete all chapter files only (keep foundation - it's the stable story structure)
                     for chapter_file in existing_chapters:
                         chapter_file.unlink()
 
-                    # Delete foundation if it exists
-                    foundation_file = self.chapter_beats_dir / "foundation.yaml"
-                    if foundation_file.exists():
-                        foundation_file.unlink()
-
                     start_chapter = 1
-                    self.console.print(f"[cyan]Starting fresh generation...[/cyan]")
+                    self.console.print(f"[cyan]Regenerating all chapters from scratch...[/cyan]")
+                    self.console.print(f"[dim](keeping existing foundation - use /iterate to change story structure)[/dim]")
                 elif choice == "3":
                     # Abort
                     self.console.print(f"[yellow]Generation aborted[/yellow]")

@@ -255,13 +255,14 @@ scenes:
 **Expected Impact**: 80-100% word count achievement (vs 50-60% baseline), professional scene quality
 
 **Recent Major Features (v0.3.0 and Unreleased)**:
-- **Multi-Phase Chapter Generation** 🚀 - Reliable chapter generation with automatic resume
-  - Three phases: Foundation (metadata/characters/world) → Batched Chapters → Assembly
-  - Adaptive batching based on model capacity (2-8 chapters per batch)
-  - Full context in every batch (premise + treatment + foundation + previous summaries)
-  - Progress saved after each phase (can inspect partial results)
-  - Automatic resume on network drops (saves 25-30% tokens vs retry)
-  - Benefits: 4x shorter streams (30-60s vs 3+ min), incremental success, clear progress
+- **Sequential Chapter Generation** 🔄 - Zero information loss with full context accumulation
+  - Three phases: Foundation (metadata/characters/world) → Sequential Chapters → Assembly
+  - File structure: `chapter-beats/foundation.yaml` + `chapter-beats/chapter-NN.yaml`
+  - Each chapter sees 100% of previous chapters (not 5% summaries - eliminates duplicate scenes)
+  - User-controlled resume capability (continue/regenerate/abort prompt)
+  - Progress saved incrementally (can inspect partial results)
+  - Foundation loaded on resume (saves ~2,000 tokens + 30-45s)
+  - Benefits: Zero loss, short streams (30-60s/chapter), incremental saves, better error recovery
 - **Self-Contained Chapters Architecture** - chapters.yaml includes everything for prose generation
   - chapters.yaml has 4 sections: metadata, characters, world, chapters
   - Prose generation ONLY uses chapters.yaml (no premise/treatment needed)

@@ -26,13 +26,13 @@ AI-powered iterative book generation with natural language feedback and git-back
   - Generate 50 combinations by default (1-100 configurable)
   - Select one → generates full premise with taxonomy
 
-- **Multi-Phase Chapter Generation** 🚀
-  - Reliable chapter generation with automatic resume
-  - Three phases: Foundation → Batched Chapters → Assembly
-  - Adaptive batching (2-8 chapters per batch based on model)
-  - Full context in every batch
-  - Auto-resume on network drops (saves 25-30% tokens vs retry)
-  - 4x shorter streams (30-60s vs 3+ min)
+- **Sequential Chapter Generation** 🔄
+  - Zero information loss (each chapter sees 100% of previous chapters)
+  - Three phases: Foundation → Sequential Chapters → Assembly
+  - User-controlled resume capability (continue/regenerate/abort)
+  - Incremental saves (inspect partial results anytime)
+  - Foundation loaded on resume (saves ~2,000 tokens + 30-45s)
+  - Short consistent streams (30-60s per chapter)
 
 - **Interactive Editors**
   - Full-screen model selector with live fuzzy search

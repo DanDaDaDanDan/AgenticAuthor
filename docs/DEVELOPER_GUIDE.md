@@ -2540,13 +2540,12 @@ if existing_chapters and not feedback:
         start_chapter = len(existing_chapters) + 1
 
     elif choice == "2":
-        # Regenerate: delete all chapter-beats/ files
+        # Regenerate: delete chapters only, keep foundation
+        # Foundation represents stable story structure (metadata, characters, world)
         for chapter_file in existing_chapters:
             chapter_file.unlink()
-        foundation_file = project.chapter_beats_dir / "foundation.yaml"
-        if foundation_file.exists():
-            foundation_file.unlink()
         start_chapter = 1
+        # Note: Use /iterate with feedback to change story structure/foundation
 ```
 
 **Benefits Over Batched Approach:**
@@ -2555,6 +2554,8 @@ if existing_chapters and not feedback:
 2. **No Duplicate Scenes**: Full context prevents LLM from repeating plot beats
 3. **Better Resume**: User-controlled, works at chapter granularity
 4. **Incremental Saves**: Inspect partial results anytime during generation
-5. **Token Efficiency**: Foundation loaded on resume (not regenerated)
-6. **Short Streams**: 30-60s per chapter (consistent, predictable)
-7. **Clear Progress**: User sees exactly which chapter is generating
+5. **Token Efficiency**: Foundation loaded on resume (not regenerated, saves ~2,000 tokens)
+6. **Foundation Consistency**: Resume uses foundation's stored metadata (word count, chapter count)
+7. **Short Streams**: 30-60s per chapter (consistent, predictable)
+8. **Clear Progress**: User sees exactly which chapter is generating
+9. **Smart Regenerate**: Keeps foundation (stable), regenerates chapters (variable)
