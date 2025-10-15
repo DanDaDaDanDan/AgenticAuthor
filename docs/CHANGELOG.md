@@ -336,6 +336,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated markdown reports to include confidence scores and path to A+
   - Goal: Focus on genuine improvements rather than endlessly finding issues
 
+### Removed
+- **Concept Mashup Generator** 🎬
+  - Removed `/generate concepts` command and related CLI prompts
+  - Deleted `ConceptMashupGenerator` module and supporting data files
+  - Cleared documentation and autocomplete references
+
 ### Added
 - **Professional Copy Editing System** ✏️
   - `/copyedit [--auto]` command for comprehensive copy editing pass
@@ -354,22 +360,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive prompt with clear editing scope and examples
   - Integration with CLI command system
   - Git commit after completion
-- **Concept Mashup Generator** 🎬
-  - Creative premise ideas from movie + modifier combinations
-  - `/generate concepts [count]` command (default 50, range 1-100)
-  - 300 movies × 103 modifiers = 30,900 possible concepts
-  - Examples: "Star Wars with lawyers", "Toy Story in space"
-  - Interactive numbered selection
-  - Selected concept feeds into premise generation with auto-genre detection
-  - Data files: `misc/movies.txt`, `misc/story-modifiers.txt`
-  - ConceptMashupGenerator class in `src/generation/concept_mashup.py`
-  - Duplicate detection ensures unique combinations
-  - Tab completion for `/generate concepts` command
 - **Comprehensive Documentation Updates** 📚
-  - Updated USER_GUIDE.md with all recent features (short story, concepts, multi-phase)
+  - Updated USER_GUIDE.md with all recent features (short story, multi-phase)
   - Updated DEVELOPER_GUIDE.md with implementation patterns
   - Added short story workflow documentation
-  - Added concept mashup integration guide
   - Added multi-phase chapter generation architecture details
   - Organized features by importance and recency
 - **Short Story Workflow** 📖
@@ -956,16 +950,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [x] Export compatibility (RTF and Markdown)
 - [x] Force flag for overriding auto-detection
 - [x] Status display shows story type
-
-### Concept Mashup Generator
-- [x] ConceptMashupGenerator class
-- [x] Load movies and modifiers from data files
-- [x] Generate unique random combinations
-- [x] Interactive numbered selection
-- [x] Integration with premise generation
-- [x] Tab completion for command
-- [x] Statistics and validation
-- [x] Error handling for missing data files
 
 ### Multi-Phase Chapter Generation
 - [x] Three-phase generation system (Foundation → Batches → Assembly)
