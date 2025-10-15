@@ -231,28 +231,67 @@ class DepthCalculator:
         act_budgets = [int(total_words * w) for w in act_weights]
 
         # Step 2: Determine chapters per act (roughly 25%/50%/25% split)
-        act1_chapters = max(1, int(chapter_count * 0.25))
-        act3_chapters = max(1, int(chapter_count * 0.25))
-        act2_chapters = chapter_count - act1_chapters - act3_chapters
+        # Handle edge cases for very small chapter counts
+        if chapter_count == 1:
+            # Single chapter - all acts combined
+            act1_chapters = 0
+            act2_chapters = 1
+            act3_chapters = 0
+        elif chapter_count == 2:
+            # Two chapters - beginning and end
+            act1_chapters = 1
+            act2_chapters = 0
+            act3_chapters = 1
+        elif chapter_count == 3:
+            # Three chapters - one per act
+            act1_chapters = 1
+            act2_chapters = 1
+            act3_chapters = 1
+        else:
+            # Standard distribution for 4+ chapters
+            act1_chapters = max(1, int(chapter_count * 0.25))
+            act3_chapters = max(1, int(chapter_count * 0.25))
+            act2_chapters = chapter_count - act1_chapters - act3_chapters
 
         # Step 3: Assign peak roles and multipliers
         peak_roles = {}
-        midpoint_chapter = act1_chapters + (act2_chapters // 2)
-        crisis_chapter = act1_chapters + act2_chapters - 1
 
+        # Calculate peak chapter positions (handle edge cases)
+        if chapter_count == 1:
+            # Single chapter gets climax role (most important)
+            midpoint_chapter = -1  # Not used
+            crisis_chapter = -1    # Not used
+        elif chapter_count == 2:
+            # Two chapters - no midpoint or crisis
+            midpoint_chapter = -1
+            crisis_chapter = -1
+        elif chapter_count == 3:
+            # Three chapters - midpoint only (ch 2)
+            midpoint_chapter = 2
+            crisis_chapter = -1  # Skip crisis to avoid collision
+        else:
+            # Standard calculation for 4+ chapters
+            midpoint_chapter = act1_chapters + (act2_chapters // 2) if act2_chapters > 0 else -1
+            crisis_chapter = act1_chapters + act2_chapters - 1 if act2_chapters > 0 else -1
+
+        # Assign roles with priority (later assignments can overwrite earlier ones)
         for ch in range(1, chapter_count + 1):
-            if ch == 1:
-                peak_roles[ch] = 'inciting_setup'
-            elif ch == midpoint_chapter:
-                peak_roles[ch] = 'midpoint'
-            elif ch == crisis_chapter:
-                peak_roles[ch] = 'crisis'
-            elif ch == chapter_count:
-                peak_roles[ch] = 'climax'
-            elif ch == chapter_count - 1:  # Penultimate chapter
-                peak_roles[ch] = 'denouement'
-            else:
-                peak_roles[ch] = 'escalation'
+            # Default to escalation
+            peak_roles[ch] = 'escalation'
+
+        # Apply specific roles (order matters - later assignments override)
+        if chapter_count >= 2:
+            peak_roles[chapter_count - 1] = 'denouement'  # Penultimate chapter
+
+        peak_roles[1] = 'inciting_setup'  # First chapter
+
+        if midpoint_chapter > 0 and midpoint_chapter <= chapter_count:
+            peak_roles[midpoint_chapter] = 'midpoint'
+
+        if crisis_chapter > 0 and crisis_chapter <= chapter_count:
+            peak_roles[crisis_chapter] = 'crisis'
+
+        peak_roles[chapter_count] = 'climax'  # Last chapter (highest priority)
 
         # Step 4: Budget chapters within each act
         chapter_budgets = []
@@ -397,7 +436,7 @@ class DepthCalculator:
             if is_first or is_last:
                 impacts.append(1)
             # Middle scenes in peak chapters get set-piece rating
-            elif chapter_role in ['midpoint', 'crisis', 'climax']:
+            elif chapter_role in ['inciting_setup', 'midpoint', 'crisis', 'climax']:
                 impacts.append(3)
             # Other middle scenes are important
             else:

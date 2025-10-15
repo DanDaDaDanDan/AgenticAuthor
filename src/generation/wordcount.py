@@ -126,12 +126,12 @@ class WordCountAssigner:
             new_target = chapter_budget['words_total']
             words_scenes = chapter_budget['words_scenes']
             role = chapter_budget['role']
-            act_num = chapter_budget['act']
+            act_name = chapter_budget['act']  # Already "Act I", "Act II", or "Act III"
 
             # Track changes
             old_target = chapter.get('word_count_target', 0)
             if old_target != new_target:
-                act_display = f"Act {['I', 'II', 'III'][act_num - 1]}"
+                act_display = act_name  # Use directly - it's already formatted
                 role_display = role.replace('_', ' ').title()
                 changes.append((ch_num, old_target, new_target, act_display))
                 print(f"  Chapter {ch_num} ({act_display}, {role_display}): {new_target:,} words total ({words_scenes:,} for scenes) [was {old_target:,}]")

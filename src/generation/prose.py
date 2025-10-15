@@ -252,22 +252,19 @@ class ProseGenerator:
         num_scenes = len(scenes)
         uses_structured_scenes = 'scenes' in current_chapter and isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict)
 
-        # Get form and pacing from metadata for depth guidance
-        pacing = metadata.get('pacing', 'moderate')
-        target_word_count = metadata.get('target_word_count', 50000)
-        form = DepthCalculator.detect_form(target_word_count)
-        base_ws = DepthCalculator.get_base_words_per_scene(form, pacing)
+        # Calculate scene depth guidance from actual scene targets
+        if uses_structured_scenes and scenes:
+            # Get scene targets from structured scenes
+            scene_targets = [scene.get('target_words', 0) for scene in scenes]
+            avg_ws = sum(scene_targets) // len(scene_targets) if scene_targets else word_count_target // num_scenes
+        else:
+            # Fallback: distribute evenly
+            avg_ws = word_count_target // num_scenes if num_scenes > 0 else 1500
 
-        # Calculate scene depth guidance
-        depth_guidance = DepthCalculator.get_scene_depth_guidance(
-            num_scenes, word_count_target, form, pacing
-        )
-
-        avg_ws = depth_guidance['avg_ws']
-        setup_range = depth_guidance['setup_range']
-        standard_range = depth_guidance['standard_range']
-        climax_range = depth_guidance['climax_range']
-        example_dist = depth_guidance['distribution_example']
+        # Simple guidance ranges based on average
+        setup_range = (int(avg_ws * 0.7), int(avg_ws * 0.9))      # 70-90% for setup/transition
+        standard_range = (int(avg_ws * 0.9), int(avg_ws * 1.1))   # 90-110% for standard
+        climax_range = (int(avg_ws * 1.2), int(avg_ws * 1.5))     # 120-150% for climax
 
         # Build scene-by-scene breakdown if using structured format
         scene_breakdown = ""

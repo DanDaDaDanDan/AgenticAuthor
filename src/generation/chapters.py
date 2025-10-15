@@ -510,17 +510,15 @@ When the feedback mentions duplicate or repetitive content:
         words_scenes = chapter_budget['words_scenes']
         scene_count = chapter_budget['typical_scenes']
 
-        # Map act number to label
-        act_labels = {1: "Act I", 2: "Act II", 3: "Act III"}
-        default_act = act_labels.get(chapter_act, "Act II")
+        # chapter_act is already the string "Act I", "Act II", or "Act III"
+        default_act = chapter_act
 
         # Calculate scene budgets with impact ratings
         # Auto-assign impacts: first/last = 1 (connective), middle = 2 (important), middle in peak = 3 (set-piece)
-        is_peak_chapter = chapter_role in ['inciting_setup', 'midpoint', 'crisis', 'climax']
-        scene_impacts = DepthCalculator.assign_scene_impacts(scene_count, is_peak_chapter)
+        scene_impacts = DepthCalculator.assign_scene_impacts(scene_count, chapter_role)
 
         # Calculate scene budgets based on impacts
-        scene_budgets = DepthCalculator.calculate_scene_budget(words_scenes, scene_impacts)
+        scene_budgets = DepthCalculator.calculate_scene_budget(words_scenes, scene_count, scene_impacts)
 
         # Calculate beat budgets for each scene (using 6-beat pattern as default)
         beat_budgets_per_scene = []
