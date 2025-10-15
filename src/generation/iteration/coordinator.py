@@ -346,7 +346,11 @@ class IterationCoordinator:
                 if logger:
                     logger.info(f"COORDINATOR: Targeting specific chapters: {self.target_chapters}")
                 chapter_list = ', '.join(str(c) for c in self.target_chapters)
-                feedback_text = f"{feedback_text}\n\nFOCUS: Apply this feedback specifically to chapters {chapter_list}. Full context is provided, but only modify the specified chapters."
+                focus_instruction = f"FOCUS: Apply this feedback specifically to chapters {chapter_list}. Full context is provided, but only modify the specified chapters."
+                if feedback_text:
+                    feedback_text = f"{feedback_text}\n\n{focus_instruction}"
+                else:
+                    feedback_text = focus_instruction
 
             # Use multi-model competition if enabled
             if self.settings and self.settings.multi_model_mode:
@@ -397,13 +401,21 @@ class IterationCoordinator:
                     if logger:
                         logger.info(f"COORDINATOR: Regenerating specific chapters: {chapters_to_regenerate}")
                 else:
-                    # Extract single chapter from intent (natural language feedback)
+                    # Try to extract single chapter from intent (natural language feedback)
                     chapter_num = self._extract_chapter_number(intent)
-                    if not chapter_num:
-                        raise ValueError("Cannot determine which chapter to regenerate")
-                    chapters_to_regenerate = [chapter_num]
-                    if logger:
-                        logger.info(f"COORDINATOR: Regenerating single chapter from intent: {chapter_num}")
+                    if chapter_num:
+                        # Specific chapter mentioned in feedback
+                        chapters_to_regenerate = [chapter_num]
+                        if logger:
+                            logger.info(f"COORDINATOR: Regenerating single chapter from intent: {chapter_num}")
+                    else:
+                        # No specific chapter mentioned - regenerate ALL chapters
+                        all_chapters = self.project.list_chapters()
+                        if not all_chapters:
+                            raise ValueError("No chapters found in project. Generate chapters first with /generate chapters")
+                        chapters_to_regenerate = list(range(1, len(all_chapters) + 1))
+                        if logger:
+                            logger.info(f"COORDINATOR: No specific chapter mentioned, regenerating all {len(chapters_to_regenerate)} chapters")
 
                 # Regenerate each chapter with full context
                 for chapter_num in chapters_to_regenerate:

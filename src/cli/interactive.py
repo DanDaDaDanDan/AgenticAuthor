@@ -2107,6 +2107,9 @@ class InteractiveSession:
                     start_num = int(start.strip())
                     end_num = int(end.strip())
 
+                    if start_num < 1 or end_num < 1:
+                        raise ValueError(f"Chapter numbers must be positive (got {start_num}-{end_num})")
+
                     if start_num > end_num:
                         raise ValueError(f"Invalid range: {start_num}-{end_num} (start > end)")
 
@@ -2116,7 +2119,10 @@ class InteractiveSession:
             else:
                 # Single chapter number
                 try:
-                    chapters.add(int(part))
+                    chapter_num = int(part)
+                    if chapter_num < 1:
+                        raise ValueError(f"Chapter numbers must be positive (got {chapter_num})")
+                    chapters.add(chapter_num)
                 except ValueError:
                     raise ValueError(f"Invalid chapter number '{part}'")
 
@@ -2184,6 +2190,17 @@ class InteractiveSession:
                 if not chapters:
                     self._print(f"[red]Error:[/red] No valid chapters specified")
                     return
+
+                # Validate that chapters exist in project (for prose target)
+                if target == 'prose' and self.project:
+                    existing_chapters = self.project.list_chapters()
+                    if existing_chapters:
+                        max_chapter = len(existing_chapters)
+                        invalid_chapters = [c for c in chapters if c > max_chapter]
+                        if invalid_chapters:
+                            self._print(f"[red]Error:[/red] Project only has {max_chapter} chapters, but you specified: {', '.join(map(str, invalid_chapters))}")
+                            self._print(f"[dim]Valid chapter range: 1-{max_chapter}[/dim]")
+                            return
             except ValueError as e:
                 self._print(f"[red]Error parsing chapter specification:[/red] {e}")
                 return
