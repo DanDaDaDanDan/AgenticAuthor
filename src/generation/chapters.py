@@ -12,7 +12,6 @@ from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .lod_parser import LODResponseParser
 from .depth_calculator import DepthCalculator
-from ..utils.resume_state import ResumeStateManager
 
 
 class ChapterGenerator:
@@ -100,7 +99,6 @@ class ChapterGenerator:
         self.console = Console()
         self.context_builder = LODContextBuilder()
         self.parser = LODResponseParser()
-        self.resume_manager = ResumeStateManager(project.path)
 
     def _calculate_structure(self, total_words: int, pacing: str, length_scope: Optional[str] = None) -> Dict:
         """
@@ -1031,48 +1029,70 @@ IMPORTANT:
                 raise Exception(f"Failed to fetch model capabilities for {self.model}")
 
             # ===== PHASE 1: GENERATE OR LOAD FOUNDATION =====
-            # Check for existing foundation (skip generation on resume if no feedback)
+            # Check for existing foundation (prompt user if found and not iterating)
             existing_foundation = self.project.get_foundation()
 
             if existing_foundation and not feedback:
-                # Resume mode: use existing foundation
-                self.console.print(f"\n[cyan][1/3] Loading existing foundation...[/cyan]")
-                foundation = existing_foundation
-                self.console.print(f"[green]✓[/green] Foundation loaded")
+                # Found existing foundation - ask user what to do
+                self.console.print(f"\n[yellow]⚠️  Found existing foundation (metadata + characters + world)[/yellow]")
+                self.console.print(f"\nWhat would you like to do?")
+                self.console.print(f"  [cyan]1.[/cyan] Use existing foundation (continue)")
+                self.console.print(f"  [cyan]2.[/cyan] Regenerate foundation from scratch")
+                self.console.print(f"  [cyan]3.[/cyan] Abort generation")
 
-                if logger:
-                    logger.debug("Using existing foundation from chapter-beats/foundation.yaml")
+                choice = input("\nEnter choice (1-3): ").strip()
 
-                # Extract metadata from existing foundation to use its values
-                foundation_metadata = foundation.get('metadata', {})
-                stored_word_count = foundation_metadata.get('target_word_count')
-                stored_chapter_count = foundation_metadata.get('chapter_count')
+                if choice == "1":
+                    # Use existing foundation
+                    self.console.print(f"\n[cyan][1/3] Loading existing foundation...[/cyan]")
+                    foundation = existing_foundation
+                    self.console.print(f"[green]✓[/green] Foundation loaded")
 
-                if stored_word_count:
-                    total_words = int(stored_word_count)
                     if logger:
-                        logger.debug(f"Resume: Using foundation's target_word_count: {total_words}")
+                        logger.debug("Using existing foundation from chapter-beats/foundation.yaml")
 
-                if stored_chapter_count:
-                    stored_chapter_count = int(stored_chapter_count)
-                    # Validate reasonable range (1-100 chapters)
-                    if 1 <= stored_chapter_count <= 100:
-                        chapter_count = stored_chapter_count
+                    # Extract metadata from existing foundation to use its values
+                    foundation_metadata = foundation.get('metadata', {})
+                    stored_word_count = foundation_metadata.get('target_word_count')
+                    stored_chapter_count = foundation_metadata.get('chapter_count')
+
+                    if stored_word_count:
+                        total_words = int(stored_word_count)
                         if logger:
-                            logger.debug(f"Resume: Using foundation's chapter_count: {chapter_count}")
+                            logger.debug(f"Resume: Using foundation's target_word_count: {total_words}")
 
-                        # Recalculate structure AND budget with foundation's values
-                        structure = self._calculate_structure(total_words, pacing, length_scope)
-                        form = structure['form']
+                    if stored_chapter_count:
+                        stored_chapter_count = int(stored_chapter_count)
+                        # Validate reasonable range (1-100 chapters)
+                        if 1 <= stored_chapter_count <= 100:
+                            chapter_count = stored_chapter_count
+                            if logger:
+                                logger.debug(f"Resume: Using foundation's chapter_count: {chapter_count}")
 
-                        # Recalculate budget with foundation's values
-                        budget = DepthCalculator.calculate_top_down_budget(
-                            total_words=total_words,
-                            chapter_count=chapter_count,
-                            form=form,
-                            glue_fraction=0.25
-                        )
-            else:
+                            # Recalculate structure AND budget with foundation's values
+                            structure = self._calculate_structure(total_words, pacing, length_scope)
+                            form = structure['form']
+
+                            # Recalculate budget with foundation's values
+                            budget = DepthCalculator.calculate_top_down_budget(
+                                total_words=total_words,
+                                chapter_count=chapter_count,
+                                form=form,
+                                glue_fraction=0.25
+                            )
+                elif choice == "2":
+                    # Regenerate foundation
+                    self.console.print(f"\n[yellow]Regenerating foundation from scratch...[/yellow]")
+                    existing_foundation = None  # Force regeneration below
+                elif choice == "3":
+                    # Abort
+                    self.console.print(f"[yellow]Generation aborted[/yellow]")
+                    raise Exception("User aborted generation")
+                else:
+                    self.console.print(f"[yellow]Invalid choice, aborting[/yellow]")
+                    raise Exception("Invalid foundation choice")
+
+            if not existing_foundation or feedback:
                 # Generate foundation (initial generation or iteration)
                 if existing_foundation and feedback:
                     self.console.print(f"\n[cyan][1/3] Regenerating foundation (iteration mode)...[/cyan]")
