@@ -464,6 +464,59 @@ class DepthCalculator:
     # These are kept for existing code that uses the old API
 
     @classmethod
+    def calculate_structure(
+        cls,
+        total_words: int,
+        pacing: str,
+        length_scope: Optional[str] = None
+    ) -> Dict:
+        """
+        Calculate complete story structure (backward compatibility method).
+
+        Args:
+            total_words: Target total word count
+            pacing: Story pacing (fast, moderate, slow)
+            length_scope: Optional length scope (overrides auto-detection)
+
+        Returns:
+            Dict with form, chapter_count, base_ws, total_scenes, scenes_per_chapter, etc.
+        """
+        # Detect or use provided form
+        if length_scope:
+            normalized_scope = length_scope.lower().replace(' ', '_')
+            form = normalized_scope if normalized_scope in cls.FORM_RANGES else cls.detect_form(total_words)
+        else:
+            form = cls.detect_form(total_words)
+
+        # Calculate chapter count based on form
+        chapter_length_target = cls.CHAPTER_LENGTH_TARGETS.get(form, 4000)
+        chapter_count = max(1, round(total_words / chapter_length_target))
+
+        # Get typical scenes per chapter for this form
+        typical_scenes = cls.TYPICAL_SCENES_PER_CHAPTER.get(form, 4)
+
+        # Estimate total scenes
+        total_scenes = chapter_count * typical_scenes
+
+        # Calculate base words per scene (Act II baseline)
+        if total_scenes > 0:
+            base_ws = total_words // total_scenes
+        else:
+            base_ws = 1500  # Fallback
+
+        # Distribute scenes across chapters (simple version for compatibility)
+        scenes_per_chapter = [typical_scenes] * chapter_count
+
+        return {
+            'form': form,
+            'chapter_count': chapter_count,
+            'base_ws': base_ws,
+            'total_scenes': total_scenes,
+            'scenes_per_chapter': scenes_per_chapter,
+            'typical_scenes_per_chapter': typical_scenes
+        }
+
+    @classmethod
     def get_act_for_chapter(cls, chapter_number: int, total_chapters: int) -> str:
         """Determine which act a chapter belongs to (for backward compatibility)."""
         if total_chapters <= 3:
@@ -483,3 +536,21 @@ class DepthCalculator:
             return 'act2'
         else:
             return 'act3'
+
+    @classmethod
+    def get_act_words_per_scene(cls, form: str, pacing: str, act: str) -> int:
+        """Get words per scene for a specific act (backward compatibility)."""
+        # Use typical scenes per chapter to estimate base
+        typical_scenes = cls.TYPICAL_SCENES_PER_CHAPTER.get(form, 4)
+        base_chapter_length = cls.CHAPTER_LENGTH_TARGETS.get(form, 4000)
+        base_ws = base_chapter_length // typical_scenes if typical_scenes > 0 else 1000
+
+        # Apply simple act multipliers (Act II is baseline)
+        act_multipliers = {
+            'act1': 0.95,  # Slightly shorter scenes in Act I
+            'act2': 1.0,   # Baseline
+            'act3': 1.05   # Slightly longer scenes in Act III
+        }
+
+        multiplier = act_multipliers.get(act, 1.0)
+        return int(base_ws * multiplier)

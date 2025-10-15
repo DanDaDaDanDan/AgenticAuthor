@@ -1364,18 +1364,22 @@ IMPORTANT:
             self.console.print(f"\n[bold cyan]Pacing Validation:[/bold cyan]")
             all_ok = True
             for anchor in ['inciting_incident', 'midpoint', 'crisis', 'climax']:
-                result = anchor_results.get(anchor)
+                result = anchor_results.get('anchors', {}).get(anchor)
                 if result:
-                    status = result['status']
-                    position_pct = result['position_pct']
+                    in_range = result['in_range']
+                    actual_pct = result['actual_pct']
                     expected_min, expected_max = result['expected_range']
 
-                    if status == 'ok':
-                        self.console.print(f"  ✓ {anchor.replace('_', ' ').title()}: [green]{position_pct:.1f}%[/green] (expected {expected_min:.0f}-{expected_max:.0f}%)")
+                    if in_range:
+                        self.console.print(f"  ✓ {anchor.replace('_', ' ').title()}: [green]{actual_pct:.1f}%[/green] (expected {expected_min:.0f}-{expected_max:.0f}%)")
                     else:
                         all_ok = False
-                        suggestion = result.get('suggestion', '')
-                        self.console.print(f"  ✗ {anchor.replace('_', ' ').title()}: [yellow]{position_pct:.1f}%[/yellow] (expected {expected_min:.0f}-{expected_max:.0f}%) - {suggestion}")
+                        # Generate suggestion based on position
+                        if actual_pct < expected_min:
+                            suggestion = f"appears too early, consider moving later"
+                        else:
+                            suggestion = f"appears too late, consider moving earlier"
+                        self.console.print(f"  ✗ {anchor.replace('_', ' ').title()}: [yellow]{actual_pct:.1f}%[/yellow] (expected {expected_min:.0f}-{expected_max:.0f}%) - {suggestion}")
 
             if all_ok:
                 self.console.print(f"[green]All pacing anchors within expected ranges![/green]")
