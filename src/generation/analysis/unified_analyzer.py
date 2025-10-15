@@ -113,7 +113,7 @@ class UnifiedAnalyzer(BaseAnalyzer):
         response = await self._call_llm(
             prompt,
             temperature=0.3,
-            max_tokens=4000
+            min_response_tokens=4000
         )
 
         # Parse response
