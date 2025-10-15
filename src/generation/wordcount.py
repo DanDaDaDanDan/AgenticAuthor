@@ -95,17 +95,24 @@ class WordCountAssigner:
             target_word_count, pacing, length_scope=length_scope
         )
         form = structure['form']
-        base_ws = structure['base_ws']  # Act II baseline
         total_chapters = len(chapters)
 
-        print(f"\nCalculating word counts (act-aware):")
+        # Calculate top-down budget (Book → Acts → Chapters → Scenes → Beats)
+        budget = DepthCalculator.calculate_top_down_budget(
+            total_words=target_word_count,
+            chapter_count=total_chapters,
+            form=form,
+            glue_fraction=metadata.get('glue_fraction', 0.25)
+        )
+
+        print(f"\nCalculating word counts using top-down budgeting:")
         print(f"  Form: {form.replace('_', ' ').title()}")
         print(f"  Pacing: {pacing}")
-        print(f"  Base words/scene: {base_ws} (Act II baseline)")
-        print(f"  Act multipliers: Act I={structure['act_ws_multipliers']['act1']:.2f}x, Act II={structure['act_ws_multipliers']['act2']:.2f}x, Act III={structure['act_ws_multipliers']['act3']:.2f}x")
+        print(f"  Act Budgets: Act I={budget['act_budgets'][0]:,}w | Act II={budget['act_budgets'][1]:,}w | Act III={budget['act_budgets'][2]:,}w")
+        print(f"  Glue Fraction: {budget['glue_fraction']*100:.0f}% (transitions/exposition)")
         print()
 
-        # Calculate word counts based on actual scene counts + act position
+        # Assign word counts from budget
         new_targets = {}
         changes = []
 
@@ -114,21 +121,20 @@ class WordCountAssigner:
             if ch_num is None:
                 continue
 
-            # Count scenes in this chapter (support both formats)
-            scenes = chapter.get('scenes', chapter.get('key_events', []))
-            scene_count = len(scenes)
-
-            # Calculate act-aware word target
-            act = DepthCalculator.get_act_for_chapter(ch_num, total_chapters)
-            act_ws = DepthCalculator.get_act_words_per_scene(form, pacing, act)
-            new_target = scene_count * act_ws
+            # Get chapter budget from top-down calculation
+            chapter_budget = budget['chapter_budgets'][ch_num - 1]
+            new_target = chapter_budget['words_total']
+            words_scenes = chapter_budget['words_scenes']
+            role = chapter_budget['role']
+            act_num = chapter_budget['act']
 
             # Track changes
             old_target = chapter.get('word_count_target', 0)
             if old_target != new_target:
-                act_display = act.replace('act', 'Act ')
+                act_display = f"Act {['I', 'II', 'III'][act_num - 1]}"
+                role_display = role.replace('_', ' ').title()
                 changes.append((ch_num, old_target, new_target, act_display))
-                print(f"  Chapter {ch_num} ({act_display}): {scene_count} scenes × {act_ws} w/s = {new_target:,} words (was {old_target:,})")
+                print(f"  Chapter {ch_num} ({act_display}, {role_display}): {new_target:,} words total ({words_scenes:,} for scenes) [was {old_target:,}]")
 
             # Update chapter
             chapter['word_count_target'] = new_target
@@ -154,8 +160,8 @@ class WordCountAssigner:
             'book_length': book_length_category,
             'target_range': target_range,
             'changes': changes,
-            'base_ws': base_ws,
-            'form': form
+            'form': form,
+            'budget': budget  # Include full budget for reference
         }
 
     def _get_target_length(self, metadata: Dict[str, Any]) -> tuple[str, tuple[int, int]]:
