@@ -14,7 +14,6 @@ from .constants import (
     DEFAULT_TAXONOMIES_DIR,
     DEFAULT_CACHE_DIR,
     DEFAULT_TEMPERATURES,
-    DEFAULT_MAX_TOKENS,
     DEFAULT_COMPETITION_MODELS,
     DEFAULT_JUDGE_MODEL
 )
@@ -69,10 +68,6 @@ class Settings(BaseSettings):
     temperature: Dict[str, float] = Field(
         default_factory=lambda: DEFAULT_TEMPERATURES.copy(),
         description="Temperature settings for different generation types"
-    )
-    max_tokens: Dict[str, int] = Field(
-        default_factory=lambda: DEFAULT_MAX_TOKENS.copy(),
-        description="Max tokens for different generation types"
     )
 
     # User preferences
@@ -163,10 +158,6 @@ class Settings(BaseSettings):
         """Get temperature for a specific generation type."""
         return self.temperature.get(generation_type, 0.7)
 
-    def get_max_tokens(self, generation_type: str) -> int:
-        """Get max tokens for a specific generation type."""
-        return self.max_tokens.get(generation_type, 4000)
-
     def load_config_file(self, config_path: Path) -> None:
         """Load additional settings from a YAML config file."""
         if config_path.exists():
@@ -184,7 +175,6 @@ class Settings(BaseSettings):
             'default_model': self.default_model,
             'current_model': self.current_model,  # Save current model selection
             'temperature': self.temperature,
-            'max_tokens': self.max_tokens,
             'auto_commit': self.auto_commit,
             'show_token_usage': self.show_token_usage,
             'streaming_output': self.streaming_output,

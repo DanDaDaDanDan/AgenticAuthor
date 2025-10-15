@@ -36,17 +36,6 @@ DEFAULT_TEMPERATURES = {
     'intent': 0.1        # Very low for intent checking
 }
 
-# Token Limits
-DEFAULT_MAX_TOKENS = {
-    'premise': 2000,
-    'treatment': 4000,
-    'chapters': 3000,
-    'prose': 8000,
-    'iteration': 6000,
-    'analysis': 4000,
-    'intent': 500
-}
-
 # Intent Checking
 INTENT_CONFIDENCE_THRESHOLD = 0.8  # Execute if confidence >= this
 INTENT_LOW_CONFIDENCE_THRESHOLD = 0.5  # Below this, definitely ask
