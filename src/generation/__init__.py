@@ -6,7 +6,7 @@ from .chapters import ChapterGenerator
 from .prose import ProseGenerator
 from .short_story import ShortStoryGenerator
 from .copy_editor import CopyEditor
-from .iteration import IterationCoordinator, IntentAnalyzer, ScaleDetector, DiffGenerator
+from .iteration import IterationCoordinator, IntentAnalyzer
 from .analysis import AnalysisCoordinator
 
 __all__ = [
@@ -18,7 +18,5 @@ __all__ = [
     'CopyEditor',
     'IterationCoordinator',
     'IntentAnalyzer',
-    'ScaleDetector',
-    'DiffGenerator',
     'AnalysisCoordinator',
 ]
