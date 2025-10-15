@@ -272,19 +272,39 @@ class ProseGenerator:
         # Build scene-by-scene breakdown if using structured format
         scene_breakdown = ""
         if uses_structured_scenes:
-            scene_breakdown = "\n\nSCENE-BY-SCENE BREAKDOWN:\n"
+            scene_breakdown = "\n\nSCENE-BY-SCENE BREAKDOWN WITH BEAT STRUCTURE:\n"
             for i, scene in enumerate(scenes, 1):
                 target_scene_words = scene.get('target_words', avg_ws)
                 scene_breakdown += f"\nScene {i}: \"{scene.get('scene', 'Untitled')}\"\n"
                 scene_breakdown += f"  Location: {scene.get('location', 'N/A')}\n"
-                scene_breakdown += f"  POV Goal: {scene.get('pov_goal', 'N/A')}\n"
-                scene_breakdown += f"  Conflict: {scene.get('conflict', 'N/A')}\n"
+
+                # Extended scene fields (beat architecture)
+                objective = scene.get('objective', scene.get('pov_goal', 'N/A'))
+                opposition = scene.get('opposition', scene.get('conflict', 'N/A'))
+                value_shift = scene.get('value_shift', 'N/A')
+                exit_hook = scene.get('exit_hook', 'N/A')
+
+                scene_breakdown += f"  Objective: {objective}\n"
+                scene_breakdown += f"  Opposition: {opposition}\n"
+                scene_breakdown += f"  Value Shift: {value_shift}\n"
                 scene_breakdown += f"  Stakes: {scene.get('stakes', 'N/A')}\n"
                 scene_breakdown += f"  Outcome: {scene.get('outcome', 'N/A')}\n"
+                scene_breakdown += f"  Exit Hook: {exit_hook}\n"
                 scene_breakdown += f"  Emotional Beat: {scene.get('emotional_beat', 'N/A')}\n"
                 if scene.get('sensory_focus'):
                     scene_breakdown += f"  Sensory Focus: {', '.join(scene.get('sensory_focus', []))}\n"
-                scene_breakdown += f"  TARGET: {target_scene_words:,} words MINIMUM (this is a full dramatic scene)\n"
+                scene_breakdown += f"  TARGET: {target_scene_words:,} words MINIMUM\n"
+
+                # Add beats array if present
+                beats = scene.get('beats', [])
+                if beats:
+                    scene_breakdown += f"\n  BEAT STRUCTURE ({len(beats)} beats):\n"
+                    for j, beat in enumerate(beats, 1):
+                        beat_type = beat.get('type', 'unknown')
+                        beat_note = beat.get('note', '')
+                        beat_words = beat.get('target_words', 0)
+                        scene_breakdown += f"    {j}. {beat_type.upper()} ({beat_words:,}w): {beat_note}\n"
+                    scene_breakdown += f"  → Follow this beat structure for proper pacing and emphasis\n"
 
         prompt = f"""Generate full prose for a chapter using this self-contained story context.
 
@@ -301,30 +321,27 @@ Generate {word_count_target:,} words of polished narrative prose for:
 - Act: {current_chapter.get('act', 'N/A')}
 {scene_breakdown}
 
-CRITICAL - FULL SCENE DEVELOPMENT (NOT SUMMARIES):
+CRITICAL - BEAT-DRIVEN SCENE DEVELOPMENT (NOT SUMMARIES):
 This chapter has {num_scenes} SCENES to develop in {word_count_target:,} words.
-Each scene is a COMPLETE DRAMATIC UNIT with 4-part structure:
+Each scene is a COMPLETE DRAMATIC UNIT following its BEAT STRUCTURE (see breakdown above).
 
-1. SETUP (15-20% of scene):
-   - Establish location, time, who's present
-   - Ground reader in the sensory environment
-   - Show character's initial state/goal
+If beats are provided in the breakdown, follow them beat-by-beat:
+  1. SETUP (10-15% of scene): Establish location, character state, goal
+  2. OBSTACLE (15% of scene): First complication arises
+  3. COMPLICATION (20% of scene): Stakes increase, tension builds
+  4. REVERSAL (25% of scene): ★ PEAK MOMENT ★ - decision point, turn, revelation
+  5. CONSEQUENCE (20% of scene): Immediate aftermath, character processing
+  6. EXIT (10% of scene): Bridge to next scene with hook
 
-2. DEVELOPMENT (40-50% of scene):
-   - Action, dialogue, character interaction
-   - Show obstacles and complications
-   - Build tension through conflict
-   - SHOW character reactions and processing
+If no beats provided, use classic 4-part structure:
+  1. SETUP (15-20% of scene): Establish location, time, who's present
+  2. DEVELOPMENT (40-50% of scene): Action, dialogue, obstacles, complications
+  3. CLIMAX (15-20% of scene): Peak moment, emotional turning point
+  4. RESOLUTION (15-20% of scene): Aftermath, bridge to next scene
 
-3. CLIMAX (15-20% of scene):
-   - Peak moment of the scene
-   - Decision, revelation, confrontation
-   - Emotional turning point
-
-4. RESOLUTION (15-20% of scene):
-   - Immediate aftermath
-   - Character processes what happened
-   - Bridge to next scene
+★ REVERSAL/CLIMAX IS THE HEART OF THE SCENE ★
+The reversal beat (or climax in 4-part) gets the MOST WORDS (25-30%).
+This is the turn, the decision, the confrontation - don't rush it.
 
 MINIMUM WORDS PER SCENE (not average - MINIMUM):
 • This chapter: ~{avg_ws} words per scene
@@ -364,16 +381,19 @@ NOTE: This chapter is in {current_chapter.get('act', 'N/A')}.
 - Act III: DEEPER emotional intensity, more immersive
 
 GUIDELINES:
-1. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
-2. Draw on character backgrounds, motivations, and arcs from the characters section
-3. Use world-building details (locations, systems, atmosphere) to ground scenes
-4. Follow the chapter outline's scene structure, character developments, relationship beats
-5. Perfect continuity from previous chapters (if any)
-6. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
-7. TARGET: {word_count_target:,} words total = {num_scenes} scenes × {avg_ws} w/s MINIMUM per scene
-8. SHOW character emotions through action, dialogue, physical reactions
-9. Include sensory details in EVERY scene (sight, sound, touch, smell, taste)
-10. Let dialogue breathe - include reactions, pauses, character processing
+1. FOLLOW THE BEAT STRUCTURE for each scene (setup → obstacle → complication → REVERSAL → consequence → exit)
+2. Give REVERSAL/TURN beats the most space (25-30% of scene) - this is where the magic happens
+3. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
+4. Draw on character backgrounds, motivations, and arcs from the characters section
+5. Use world-building details (locations, systems, atmosphere) to ground scenes
+6. Follow scene objectives and value shifts (before → after transformation)
+7. Perfect continuity from previous chapters (if any)
+8. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
+9. TARGET: {word_count_target:,} words total = {num_scenes} scenes × {avg_ws} w/s MINIMUM per scene
+10. SHOW character emotions through action, dialogue, physical reactions
+11. Include sensory details in EVERY scene (sight, sound, touch, smell, taste)
+12. Let dialogue breathe - include reactions, pauses, character processing
+13. Honor exit hooks - each scene should propel forward with question/decision/reveal/peril
 
 Return ONLY the prose text. Do NOT include:
 - YAML formatting
