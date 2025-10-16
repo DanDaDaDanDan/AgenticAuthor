@@ -2217,7 +2217,9 @@ class InteractiveSession:
                 self.console.print()
 
             # Save to publishing-metadata.md
-            output_path = self.project.path / 'publishing-metadata.md'
+            # Ensure exports directory exists
+            self.project.exports_dir.mkdir(exist_ok=True)
+            output_path = self.project.publishing_metadata_file
 
             if generate_all:
                 with self.console.status("[yellow]Saving publishing-metadata.md...[/yellow]"):

@@ -494,7 +494,9 @@ Generate all metadata now:"""
             output_path: Optional custom path
         """
         if output_path is None:
-            output_path = self.project.path / 'publishing-metadata.md'
+            # Ensure exports directory exists
+            self.project.exports_dir.mkdir(exist_ok=True)
+            output_path = self.project.publishing_metadata_file
 
         # Load template
         template_path = Path(__file__).parent.parent.parent / 'docs' / 'PUBLISHING_METADATA_TEMPLATE.md'

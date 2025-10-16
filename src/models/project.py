@@ -137,6 +137,11 @@ class Project:
         return self.exports_dir / "dedication.md"
 
     @property
+    def publishing_metadata_file(self) -> Path:
+        """Get path to publishing-metadata.md file (KDP metadata)."""
+        return self.exports_dir / "publishing-metadata.md"
+
+    @property
     def config_file(self) -> Path:
         """Get path to config.yaml file (for book metadata)."""
         return self.path / "config.yaml"
@@ -164,6 +169,7 @@ class Project:
         - treatment_metadata.json (root)
         - frontmatter.md (root)
         - dedication.md (root)
+        - publishing-metadata.md (root)
 
         New structure:
         - premise/premise_metadata.json
@@ -172,6 +178,7 @@ class Project:
         - treatment/treatment_metadata.json
         - exports/frontmatter.md
         - exports/dedication.md
+        - exports/publishing-metadata.md
 
         This migration is idempotent and safe to run multiple times.
         """
@@ -210,6 +217,12 @@ class Project:
         if old_dedication.exists() and not self.dedication_file.exists():
             self.exports_dir.mkdir(exist_ok=True)
             old_dedication.rename(self.dedication_file)
+
+        # Migrate publishing-metadata.md
+        old_publishing_metadata = self.path / "publishing-metadata.md"
+        if old_publishing_metadata.exists() and not self.publishing_metadata_file.exists():
+            self.exports_dir.mkdir(exist_ok=True)
+            old_publishing_metadata.rename(self.publishing_metadata_file)
 
         # Note: chapter-beats/ and chapters/ already use folder structure, no migration needed
 
