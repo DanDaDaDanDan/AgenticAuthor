@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Tiered Plants/Payoffs System** 🛡️ (commit dc5bb78)
+  - **Problem**: LLM inventing major plot elements not in treatment via plants/payoffs feedback loop
+  - **Case Study**: ad-newworld project diverged completely by chapter 10 (government mind control conspiracy invented, not in treatment)
+  - **Root Cause**: Chapter 6 planted "promotion ceremony" (not in treatment) → Chapter 7 paid off with "eight killers" → Chapter 10+ invented entire conspiracy
+  - **Solution**: Two-tier system distinguishing MAJOR (plot-level) vs MINOR (scene-level) plants
+
+  **MAJOR Plants (plot-level)**: MUST come from treatment
+  - New antagonists, conspiracies, plot twists, character backstories, story threads
+  - Examples: "secret organization", "government experiments", "hidden villain"
+  - Cannot be planted if not explicitly in treatment
+  - Cross-reference required before planting
+
+  **MINOR Plants (scene-level)**: Can be invented freely
+  - Props, location details, character gestures, sensory elements, symbolic objects
+  - Examples: "loose floor tile", "character's watch", "coffee stain", "recurring musical phrase"
+  - Add richness without changing plot direction
+
+  **Payoff Verification**: 4-step process
+  1. Check if plant is MAJOR or MINOR
+  2. If MAJOR: Verify it exists in treatment
+  3. If contradicts treatment → DO NOT pay off (treat as previous chapter error)
+  4. If MINOR: Pay off freely to maintain continuity
+
+  **Enforcement**:
+  - Added "CRITICAL - TREATMENT FIDELITY" section to chapter generation prompt
+  - Treatment established as SOURCE OF TRUTH
+  - Explicit warning: "Previous chapters may contain errors - cross-reference against treatment"
+  - Concrete examples of allowed vs forbidden elaboration
+  - Positioned prominently after treatment context in prompt
+
+  **Expected Impact**: Eliminates treatment drift via compound plant/payoff errors while preserving narrative cohesion through minor plants
+
+  **Files Modified**: `src/generation/chapters.py` (lines 573-594, 638-667, 684, 691)
+
+### Changed
+- **Plants/Payoffs Now Optional** 📝 (commit ca708c8)
+  - Changed from strict requirement to quality-first suggestion
+  - **Reasoning**: Not every scene naturally has plants/payoffs opportunity; forcing them creates contrived elements
+  - **New Approach**: "QUALITY OVER OBLIGATION" - only include when they:
+    - Naturally enhance scene quality and narrative flow
+    - Align with treatment elements (no MAJOR plot inventions)
+    - Serve clear storytelling purpose (foreshadowing, continuity, symbolism)
+    - Feel organic to the moment rather than forced
+  - Updated prompt language: "Plants and payoffs are NOT required in every scene"
+  - Updated guideline: "Plants/payoffs are OPTIONAL - only include when they naturally enhance quality"
+  - Removed validation check for missing plants/payoffs (no longer triggers hygiene warnings)
+  - **Preserved**: All treatment fidelity guardrails (MAJOR vs MINOR distinction still enforced)
+  - **Effect**: LLM can focus on scene quality without pressure to meet quota
+  - **Files Modified**: `src/generation/chapters.py` (lines 667-674, 698, 834)
+
 ### Removed
 - **Dead Code and Unused Scripts** 🧹 (**Phase 1**)
   - Removed unused methods from `src/utils/tokens.py`:
