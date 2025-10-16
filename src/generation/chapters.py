@@ -1022,8 +1022,56 @@ IMPORTANT:
         except Exception as e:
             if logger:
                 logger.warning(f"Validation call failed: {e}")
-            # Don't block generation on validator failures
-            return (True, [])
+
+            # Validator failed - prompt user for action
+            self.console.print(f"\n[bold yellow]{'='*70}[/bold yellow]")
+            self.console.print(f"[bold yellow]⚠️  VALIDATOR FAILURE[/bold yellow]")
+            self.console.print(f"[bold yellow]{'='*70}[/bold yellow]\n")
+
+            self.console.print(f"[yellow]Problem:[/yellow]")
+            self.console.print(f"  The treatment fidelity validator encountered an error: {e}\n")
+
+            self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+            self.console.print(f"  [cyan]1.[/cyan] Retry validation")
+            self.console.print(f"  [cyan]2.[/cyan] Continue without validation [bold](NOT recommended)[/bold]")
+            self.console.print(f"  [cyan]3.[/cyan] Abort generation")
+
+            choice = input("\nEnter choice (1-3): ").strip()
+
+            if choice == "1":
+                # Retry validation
+                self.console.print(f"\n[cyan]Retrying validation...[/cyan]")
+                try:
+                    # Recursive retry - will hit this exception handler again if fails
+                    return await self._validate_treatment_fidelity(
+                        chapter_data=chapter_data,
+                        chapter_num=chapter_num,
+                        treatment_text=treatment_text,
+                        previous_chapters=previous_chapters
+                    )
+                except Exception as retry_e:
+                    # If retry also fails, fall through to continue (don't recurse forever)
+                    if logger:
+                        logger.error(f"Validation retry failed: {retry_e}")
+                    self.console.print(f"[red]Validation retry failed: {retry_e}[/red]")
+                    self.console.print(f"[yellow]Continuing without validation...[/yellow]\n")
+                    return (True, [])
+
+            elif choice == "2":
+                # Continue without validation
+                self.console.print(f"\n[yellow]⚠️  Continuing without validation...[/yellow]")
+                self.console.print(f"[yellow]Chapter may contain treatment violations.[/yellow]\n")
+                return (True, [])
+
+            elif choice == "3":
+                # Abort generation
+                self.console.print(f"\n[red]Generation aborted due to validator failure[/red]")
+                raise Exception(f"User aborted generation due to validator failure in chapter {chapter_num}")
+
+            else:
+                # Invalid choice - treat as abort
+                self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
+                raise Exception("Invalid validator failure choice")
 
     # Removed _generate_chapter_batch() - replaced by sequential _generate_single_chapter() calls
     # Sequential generation eliminates information loss and enables better resume capability
@@ -1610,13 +1658,93 @@ IMPORTANT:
                         raise Exception(f"User aborted generation due to treatment fidelity violation in chapter {chapter_num}")
 
                     elif choice == "2":
-                        # Regenerate chapter with stricter prompt
-                        self.console.print(f"\n[yellow]Regenerating chapter {chapter_num} with stricter treatment enforcement...[/yellow]")
+                        # Regenerate chapter with stricter enforcement
+                        self.console.print(f"\n[yellow]Regenerate chapter {chapter_num}? [y/n][/yellow]", end=" ")
+                        regenerate_choice = input().strip().lower()
 
-                        # TODO: Could add retry logic here with modified prompt
-                        # For now, just continue with a warning
-                        self.console.print(f"[yellow]Note: Automatic regeneration not yet implemented. Continuing with current chapter.[/yellow]")
-                        self.console.print(f"[yellow]Consider using /iterate to fix this chapter after generation completes.[/yellow]\n")
+                        if regenerate_choice == "y" or regenerate_choice == "yes":
+                            self.console.print(f"\n[cyan]Regenerating chapter {chapter_num} with stricter treatment enforcement...[/cyan]")
+
+                            # Retry up to 2 times
+                            max_retries = 2
+                            for retry_attempt in range(1, max_retries + 1):
+                                self.console.print(f"[dim]Attempt {retry_attempt}/{max_retries}...[/dim]")
+
+                                # Regenerate chapter with stricter temperature
+                                try:
+                                    regenerated_chapter = await self._generate_single_chapter(
+                                        chapter_num=chapter_num,
+                                        total_chapters=chapter_count,
+                                        context_yaml=context_yaml,
+                                        foundation=foundation,
+                                        previous_chapters=previous_chapters,
+                                        form=form,
+                                        pacing=pacing,
+                                        chapter_budget=chapter_budget,
+                                        feedback=f"CRITICAL: Previous attempt invented plot elements not in treatment. "
+                                                 f"This chapter MUST strictly follow treatment. Issues detected: "
+                                                 f"{'; '.join([issue.get('element', 'Unknown') for issue in critical_issues])}"
+                                    )
+
+                                    # Save regenerated chapter (overwrite previous)
+                                    self.project.save_chapter_beat(chapter_num, regenerated_chapter)
+                                    chapter_data = regenerated_chapter  # Use regenerated version
+
+                                    if logger:
+                                        logger.debug(f"Regenerated chapter {chapter_num} (attempt {retry_attempt})")
+
+                                    # Validate regenerated chapter
+                                    self.console.print(f"[dim]Validating regenerated chapter...[/dim]")
+                                    regen_valid, regen_issues = await self._validate_treatment_fidelity(
+                                        chapter_data=regenerated_chapter,
+                                        chapter_num=chapter_num,
+                                        treatment_text=treatment_text,
+                                        previous_chapters=previous_chapters
+                                    )
+
+                                    if regen_valid or not regen_issues:
+                                        # Success! Regenerated chapter passed validation
+                                        self.console.print(f"\n[green]✓[/green] Regenerated chapter {chapter_num} passed validation!")
+                                        break
+                                    else:
+                                        # Still has issues
+                                        if retry_attempt < max_retries:
+                                            self.console.print(f"[yellow]Regenerated chapter still has issues. Retrying...[/yellow]")
+                                        else:
+                                            # Max retries reached
+                                            self.console.print(f"\n[yellow]Max retries reached. Regenerated chapter still has issues:[/yellow]")
+                                            for issue in regen_issues:
+                                                self.console.print(f"  • {issue.get('element', 'Unknown')}: {issue.get('reasoning', 'No details')}")
+
+                                            self.console.print(f"\n[yellow]Options:[/yellow]")
+                                            self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold]")
+                                            self.console.print(f"  [cyan]2.[/cyan] Ignore and continue [bold](NOT recommended)[/bold]")
+
+                                            final_choice = input("\nEnter choice (1-2): ").strip()
+
+                                            if final_choice == "1":
+                                                self.console.print(f"\n[red]Generation aborted at chapter {chapter_num}[/red]")
+                                                raise Exception(f"User aborted after failed regeneration attempts for chapter {chapter_num}")
+                                            else:
+                                                self.console.print(f"\n[yellow]⚠️  Continuing with regenerated chapter despite issues...[/yellow]\n")
+                                                break
+
+                                except Exception as regen_e:
+                                    if logger:
+                                        logger.error(f"Regeneration attempt {retry_attempt} failed: {regen_e}")
+
+                                    if retry_attempt < max_retries:
+                                        self.console.print(f"[red]Regeneration failed: {regen_e}[/red]")
+                                        self.console.print(f"[yellow]Retrying...[/yellow]")
+                                    else:
+                                        self.console.print(f"[red]All regeneration attempts failed: {regen_e}[/red]")
+                                        self.console.print(f"[yellow]Continuing with original chapter...[/yellow]\n")
+                                        break
+
+                        else:
+                            # User chose not to regenerate
+                            self.console.print(f"\n[yellow]Keeping current chapter {chapter_num}.[/yellow]")
+                            self.console.print(f"[yellow]Consider using /iterate to fix this chapter after generation completes.[/yellow]\n")
 
                     elif choice == "3":
                         # Ignore and continue

@@ -2702,24 +2702,39 @@ RETURN JSON:
 
 **Post-Generation Validation System:**
 
-1. **Option 2 (Regenerate Chapter) Not Implemented** (Line 1609)
-   - **Current Behavior**: Shows warning instead of actually regenerating chapter
-   - **Why Not Blocking**: User still has option 1 (abort) and option 3 (ignore) as fallbacks
-   - **Future Enhancement**: Could implement automatic regeneration with:
-     - Stricter temperature (e.g., 0.1 instead of 0.5)
-     - Enhanced prompt with explicit violation examples
-     - Retry limit (e.g., max 2 attempts before requiring user intervention)
-   - **Complexity**: Medium - requires retry logic, enhanced prompts, retry state management
+1. **✅ Option 2 (Regenerate Chapter) IMPLEMENTED** (Lines 1660-1747)
+   - **Status**: COMPLETED (v0.3.1+)
+   - **Implementation**: Working regeneration with [y/n] confirmation prompt
+   - **Features**:
+     - Simple yes/no confirmation before regenerating
+     - Retry loop (max 2 attempts) with enhanced feedback
+     - Regenerated chapters validated automatically
+     - Enhanced prompt with explicit violation examples from first attempt
+     - If max retries exhausted: user chooses abort or continue
+     - Graceful fallback to original chapter on regeneration failure
+   - **User Flow**:
+     1. Validation detects issues → option 2: "Regenerate chapter"
+     2. System asks: "Regenerate chapter N? [y/n]"
+     3. If yes: up to 2 retry attempts with stricter enforcement
+     4. Each attempt: regenerate → validate → success or retry
+     5. If still fails after 2 attempts: prompt for abort or continue
 
-2. **Validator Graceful Failure** (Lines 1015-1026)
-   - **Current Behavior**: Returns `(True, [])` if validator LLM call fails (JSON parsing, API error, etc.)
-   - **Rationale**: Non-blocking - doesn't stop generation if validator itself has issues
-   - **Trade-off**: Validator failures silently pass validation check
-   - **Future Enhancement**: Could add:
-     - Explicit warning to user when validator fails
-     - Option to retry validator call
-     - Fallback to pattern-based violation detection (regex for common issues)
-   - **Risk**: Very low - validator failures rare, and layers 1-3 still protect against drift
+2. **✅ Validator Graceful Failure IMPLEMENTED** (Lines 1022-1074)
+   - **Status**: COMPLETED (v0.3.1+)
+   - **Implementation**: User-controlled failure handling with [retry/continue/abort]
+   - **Features**:
+     - Displays validator error to user with full context
+     - Three explicit options:
+       1. **Retry validation**: Recursive retry of validator call (single attempt)
+       2. **Continue without validation**: Proceeds with chapter (NOT recommended)
+       3. **Abort generation**: Stops due to validator failure
+     - If retry also fails: automatic fallback to continue (prevents infinite loops)
+     - Invalid choice treated as abort (safe default)
+   - **User Flow**:
+     1. Validator fails (JSON parsing, API error, etc.)
+     2. System displays error and options
+     3. User chooses: retry (1), continue (2), or abort (3)
+     4. If retry fails again: continues automatically with warning
 
 3. **Temperature Variance in Validation** (Line 864)
    - **Current Setting**: Temperature 0.1 for consistent evaluation
@@ -2803,9 +2818,11 @@ RETURN JSON:
 
 **Priority Rankings:**
 
+**Completed** (v0.3.1+):
+- ✅ #1: Option 2 (Regenerate chapter) implementation
+- ✅ #2: Validator failure handling with user control
+
 **High Priority** (User-impacting, should be implemented soon):
-- #1: Option 2 (Regenerate chapter) implementation
-- #2: Validator failure warnings (currently silent)
 - #11: Treatment quality validation
 
 **Medium Priority** (Nice to have, not blocking):
