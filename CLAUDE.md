@@ -646,23 +646,30 @@ books/                      # All projects root
 │   │   ├── premise_history.json # Generation history
 │   │   └── debug/           # Debug output
 │   ├── config.yaml          # Project configuration
-│   ├── premise/             # LOD3 - Premise folder
-│   │   └── premise_metadata.json # Single source of truth (text + taxonomy)
-│   ├── treatment/           # LOD2 - Treatment folder
+│   ├── premise/             # LOD3 - Premise artifacts
+│   │   ├── premise_metadata.json  # Single source of truth (text + taxonomy)
+│   │   └── premises_candidates.json  # Batch generation results (when using /generate premises N)
+│   ├── treatment/           # LOD2 - Treatment artifacts
 │   │   └── treatment.md
 │   ├── chapter-beats/       # LOD2 - Chapter structure (source of truth)
 │   │   ├── foundation.yaml  # Metadata, characters, world
 │   │   └── chapter-*.yaml   # Individual chapter outlines
+│   ├── chapters.yaml        # LOD2 - Self-contained (deprecated, for backward compatibility)
 │   ├── chapters/            # LOD0 - Prose
 │   │   └── chapter-*.md
+│   ├── story.md             # LOD0 - Complete story (for short stories ≤2 chapters only)
 │   ├── analysis/            # Analysis results
 │   │   ├── commercial.md
 │   │   ├── plot.md
 │   │   └── ...
+│   ├── exports/             # Export artifacts
+│   │   ├── frontmatter.md   # Book frontmatter
+│   │   ├── dedication.md    # Book dedication
+│   │   └── *.rtf, *.md      # Exported books
 │   ├── multimodel/          # Multi-model competition results
 │   │   ├── *_candidate_*.md # All candidate outputs
 │   │   └── decisions.json   # Judging history
-│   └── project.yaml         # Metadata
+│   └── project.yaml         # Project metadata
 └── [project-name-2]/
     └── ... (same structure)
 ```

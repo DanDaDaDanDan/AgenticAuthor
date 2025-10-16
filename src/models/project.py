@@ -69,7 +69,7 @@ class Project:
     @property
     def premises_file(self) -> Path:
         """Get path to premises_candidates.json file (for batch generation)."""
-        return self.path / "premises_candidates.json"
+        return self.premise_dir / "premises_candidates.json"
 
     @property
     def treatment_dir(self) -> Path:
@@ -124,12 +124,12 @@ class Project:
     @property
     def frontmatter_file(self) -> Path:
         """Get path to frontmatter.md file."""
-        return self.path / "frontmatter.md"
+        return self.exports_dir / "frontmatter.md"
 
     @property
     def dedication_file(self) -> Path:
         """Get path to dedication.md file."""
-        return self.path / "dedication.md"
+        return self.exports_dir / "dedication.md"
 
     @property
     def config_file(self) -> Path:
@@ -154,11 +154,17 @@ class Project:
 
         Old structure:
         - premise_metadata.json (root)
+        - premises_candidates.json (root)
         - treatment.md (root)
+        - frontmatter.md (root)
+        - dedication.md (root)
 
         New structure:
         - premise/premise_metadata.json
+        - premise/premises_candidates.json
         - treatment/treatment.md
+        - exports/frontmatter.md
+        - exports/dedication.md
 
         This migration is idempotent and safe to run multiple times.
         """
@@ -168,11 +174,29 @@ class Project:
             self.premise_dir.mkdir(exist_ok=True)
             old_premise_metadata.rename(self.premise_metadata_file)
 
+        # Migrate premises_candidates.json
+        old_premises = self.path / "premises_candidates.json"
+        if old_premises.exists() and not self.premises_file.exists():
+            self.premise_dir.mkdir(exist_ok=True)
+            old_premises.rename(self.premises_file)
+
         # Migrate treatment.md
         old_treatment = self.path / "treatment.md"
         if old_treatment.exists() and not self.treatment_file.exists():
             self.treatment_dir.mkdir(exist_ok=True)
             old_treatment.rename(self.treatment_file)
+
+        # Migrate frontmatter.md
+        old_frontmatter = self.path / "frontmatter.md"
+        if old_frontmatter.exists() and not self.frontmatter_file.exists():
+            self.exports_dir.mkdir(exist_ok=True)
+            old_frontmatter.rename(self.frontmatter_file)
+
+        # Migrate dedication.md
+        old_dedication = self.path / "dedication.md"
+        if old_dedication.exists() and not self.dedication_file.exists():
+            self.exports_dir.mkdir(exist_ok=True)
+            old_dedication.rename(self.dedication_file)
 
         # Note: chapter-beats/ and chapters/ already use folder structure, no migration needed
 
@@ -862,6 +886,8 @@ class Project:
         Args:
             content: Frontmatter markdown text
         """
+        # Ensure exports directory exists
+        self.exports_dir.mkdir(exist_ok=True)
         self.frontmatter_file.write_text(content, encoding='utf-8')
 
     def get_dedication(self) -> Optional[str]:
@@ -882,6 +908,8 @@ class Project:
         Args:
             content: Dedication text
         """
+        # Ensure exports directory exists
+        self.exports_dir.mkdir(exist_ok=True)
         self.dedication_file.write_text(content, encoding='utf-8')
 
     def init_default_frontmatter(self):

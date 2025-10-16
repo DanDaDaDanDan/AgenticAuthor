@@ -1578,6 +1578,8 @@ class InteractiveSession:
                 "premises": premises
             }
 
+            # Ensure premise directory exists
+            self.project.premise_dir.mkdir(exist_ok=True)
             with open(self.project.premises_file, 'w') as f:
                 json.dump(candidates_data, f, indent=2)
 
@@ -1619,6 +1621,8 @@ class InteractiveSession:
 
             # Update candidates file with selection
             candidates_data['selected'] = selected_num
+            # Ensure premise directory exists
+            self.project.premise_dir.mkdir(exist_ok=True)
             with open(self.project.premises_file, 'w') as f:
                 json.dump(candidates_data, f, indent=2)
 
