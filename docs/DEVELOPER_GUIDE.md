@@ -2719,22 +2719,22 @@ RETURN JSON:
      4. Each attempt: regenerate → validate → success or retry
      5. If still fails after 2 attempts: prompt for abort or continue
 
-2. **✅ Validator Graceful Failure IMPLEMENTED** (Lines 1022-1074)
+2. **✅ Validator Graceful Failure IMPLEMENTED** (Lines 1022-1065)
    - **Status**: COMPLETED (v0.3.1+)
    - **Implementation**: User-controlled failure handling with [retry/continue/abort]
    - **Features**:
      - Displays validator error to user with full context
      - Three explicit options:
-       1. **Retry validation**: Recursive retry of validator call (single attempt)
+       1. **Retry validation**: Recursive retry - if fails again, user prompted again
        2. **Continue without validation**: Proceeds with chapter (NOT recommended)
        3. **Abort generation**: Stops due to validator failure
-     - If retry also fails: automatic fallback to continue (prevents infinite loops)
+     - **No automatic fallbacks**: User always maintains control
      - Invalid choice treated as abort (safe default)
    - **User Flow**:
      1. Validator fails (JSON parsing, API error, etc.)
      2. System displays error and options
      3. User chooses: retry (1), continue (2), or abort (3)
-     4. If retry fails again: continues automatically with warning
+     4. If retry fails: user prompted again (recursive, full control maintained)
 
 3. **Temperature Variance in Validation** (Line 864)
    - **Current Setting**: Temperature 0.1 for consistent evaluation

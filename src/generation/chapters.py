@@ -1041,21 +1041,13 @@ IMPORTANT:
             if choice == "1":
                 # Retry validation
                 self.console.print(f"\n[cyan]Retrying validation...[/cyan]")
-                try:
-                    # Recursive retry - will hit this exception handler again if fails
-                    return await self._validate_treatment_fidelity(
-                        chapter_data=chapter_data,
-                        chapter_num=chapter_num,
-                        treatment_text=treatment_text,
-                        previous_chapters=previous_chapters
-                    )
-                except Exception as retry_e:
-                    # If retry also fails, fall through to continue (don't recurse forever)
-                    if logger:
-                        logger.error(f"Validation retry failed: {retry_e}")
-                    self.console.print(f"[red]Validation retry failed: {retry_e}[/red]")
-                    self.console.print(f"[yellow]Continuing without validation...[/yellow]\n")
-                    return (True, [])
+                # Recursive retry - if it fails, user will be prompted again
+                return await self._validate_treatment_fidelity(
+                    chapter_data=chapter_data,
+                    chapter_num=chapter_num,
+                    treatment_text=treatment_text,
+                    previous_chapters=previous_chapters
+                )
 
             elif choice == "2":
                 # Continue without validation
