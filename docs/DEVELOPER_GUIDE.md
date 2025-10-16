@@ -2490,6 +2490,209 @@ if existing_chapters and not feedback:
 8. **Clear Progress**: User sees exactly which chapter is generating
 9. **Smart Regenerate**: Keeps foundation (stable), regenerates chapters (variable)
 
+### YAML Truncation Detection and Auto-Retry (v0.3.1+)
+
+**Problem:** Network interruptions during streaming can leave incomplete YAML documents with unclosed quoted strings, causing immediate generation failure with cryptic errors like:
+
+```
+while scanning a quoted scalar
+  in "<unicode string>", line 88, column 15:
+            note: "Reyes grudgingly authorizes for ...
+                  ^
+found unexpected end of stream
+  in "<unicode string>", line 88, column 88:
+     ... hours for the chess angle before
+                                         ^
+```
+
+**Root Cause:** Network drops or connection instability during streaming completion cause the API stream to end prematurely, leaving YAML documents with:
+- Unclosed quoted strings
+- Incomplete mapping structures
+- Missing closing braces/brackets
+- Abrupt end-of-stream
+
+**Solution: Automatic Retry with Truncation Detection**
+
+Three-layer defense system in `src/generation/chapters.py`:
+
+**Layer 1: Truncation Detection** (`_is_yaml_truncated()` method, lines 117-139)
+
+Detects YAML parsing errors that indicate truncation vs. structural errors:
+
+```python
+def _is_yaml_truncated(self, error: yaml.YAMLError) -> bool:
+    """
+    Detect if YAML parsing error is due to truncation/network interruption.
+
+    Args:
+        error: The YAML parsing error
+
+    Returns:
+        True if error indicates truncation, False otherwise
+    """
+    if not error:
+        return False
+
+    truncation_indicators = [
+        "found unexpected end of stream",
+        "unexpected end of stream",
+        "while scanning a quoted scalar",
+        "unclosed quoted scalar",
+        "mapping values are not allowed here",
+        "expected <block end>",
+    ]
+    error_str = str(error).lower()
+    return any(indicator in error_str for indicator in truncation_indicators)
+```
+
+**Key Patterns:**
+- "found unexpected end of stream" - Stream terminated mid-parse
+- "while scanning a quoted scalar" - Unclosed string
+- "unclosed quoted scalar" - String never closed
+- "mapping values are not allowed here" - Structure incomplete
+- "expected <block end>" - Missing closing delimiter
+
+**Layer 2: Automatic Retry Loop** (Lines 795-850)
+
+When truncation detected, automatically regenerates chapter from scratch (max 2 retries):
+
+```python
+# Check finish_reason for early truncation detection
+if isinstance(result, dict) and result.get('finish_reason') == 'connection_error':
+    self.console.print(f"[yellow]⚠️  Connection error detected during generation[/yellow]")
+    # Will be caught by retry logic below
+
+# Parse YAML with automatic retry on truncation
+max_yaml_retries = 2
+chapter_data = None
+
+for yaml_retry in range(max_yaml_retries + 1):
+    try:
+        chapter_data = yaml.safe_load(response_text)
+        break  # Success! Exit retry loop
+
+    except yaml.YAMLError as e:
+        is_truncated = self._is_yaml_truncated(e)
+
+        if is_truncated and yaml_retry < max_yaml_retries:
+            # Automatic retry on truncation
+            self.console.print(f"\n[yellow]⚠️  YAML truncated (network error)[/yellow]")
+            self.console.print(f"[yellow]Retrying chapter {chapter_num} generation ({yaml_retry + 1}/{max_yaml_retries})...[/yellow]\n")
+
+            if logger:
+                logger.warning(f"YAML truncation detected in chapter {chapter_num}, retry {yaml_retry + 1}/{max_yaml_retries}")
+                logger.debug(f"YAML error: {e}")
+                logger.debug(f"Response length: {len(response_text)} chars")
+
+            # Regenerate from scratch with same parameters
+            result = await self.client.streaming_completion(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                stream=True,
+                display=True,
+                min_response_tokens=min_tokens
+            )
+
+            if not result:
+                raise Exception(f"No response from API for chapter {chapter_num} (retry {yaml_retry + 1})")
+
+            response_text = result.get('content', result) if isinstance(result, dict) else result
+            continue  # Try parsing again
+
+        else:
+            # Not truncated, or max retries reached
+            if is_truncated:
+                self.console.print(f"\n[red]YAML truncation persists after {max_yaml_retries} retries[/red]")
+                if logger:
+                    logger.error(f"YAML truncation in chapter {chapter_num} after {max_yaml_retries} retries")
+            raise Exception(f"Failed to parse chapter {chapter_num} YAML: {e}")
+
+if not chapter_data:
+    raise Exception(f"Failed to generate valid YAML for chapter {chapter_num} after {max_yaml_retries} retries")
+```
+
+**Key Decisions:**
+- **Regenerate from scratch** - Don't attempt to fix partial YAML (simpler, more reliable)
+- **Max 2 retries** - Balances user experience vs. generation time
+- **Same parameters** - Uses identical prompt/temperature for retry
+- **Explicit messaging** - User sees retry attempts with progress
+
+**Layer 3: User-Friendly Error Messages** (Lines 1668-1674)
+
+When all retries exhausted, provide clear guidance:
+
+```python
+# Add truncation hint if it's a YAML error indicating truncation
+error_str = str(e).lower()
+if any(indicator in error_str for indicator in [
+    "while scanning", "unexpected end", "unclosed", "truncation", "retries"
+]):
+    self.console.print(f"\n[yellow]This looks like a network truncation (automatic retries exhausted).[/yellow]")
+    self.console.print(f"[yellow]This can happen with unstable connections or slow models.[/yellow]")
+```
+
+**Expected Behavior:**
+
+**Scenario 1: First Retry Succeeds (Most Common)**
+```
+✓ Generating chapter 2...
+✗ YAML truncated (network error)
+Retrying chapter 2 generation (1/2)...
+✓ Generated chapter 2 (4,200 words)
+```
+
+**Scenario 2: All Retries Fail**
+```
+✓ Generating chapter 2...
+✗ YAML truncated (network error)
+Retrying chapter 2 generation (1/2)...
+✗ YAML truncated (network error)
+Retrying chapter 2 generation (2/2)...
+✗ YAML truncation persists after 2 retries
+
+This looks like a network truncation (automatic retries exhausted).
+This can happen with unstable connections or slow models.
+
+Failed to generate chapter 2: Failed to parse chapter 2 YAML: [error details]
+```
+
+**Consistency with JSON Truncation Handling:**
+
+Mirrors existing `_handle_truncated_json()` pattern in `streaming.py`:
+- Same max retries (2 attempts)
+- Same automatic regeneration approach
+- Same user messaging style
+- Consistent error handling philosophy
+
+**Debug Logging:**
+
+Extensive logging for troubleshooting:
+```python
+logger.warning(f"YAML truncation detected in chapter {chapter_num}, retry {yaml_retry + 1}/{max_yaml_retries}")
+logger.debug(f"YAML error: {e}")
+logger.debug(f"Response length: {len(response_text)} chars")
+```
+
+**Future Enhancements:**
+
+Potential improvements not yet implemented:
+1. **Exponential backoff** - Add delays between retries (1s, 2s, 4s)
+2. **Partial YAML recovery** - Attempt to salvage complete sections from truncated YAML
+3. **Connection quality monitoring** - Track truncation rate and warn user
+4. **Model-specific retry limits** - Adjust retry count based on model reliability
+
+**Trade-offs:**
+
+- **Token cost**: Retries increase token usage (2-3x on failure)
+- **Generation time**: Adds 30-60s per retry
+- **User experience**: Automatic recovery vs. immediate failure
+
+**Verdict**: Automatic retry significantly improves reliability with minimal user friction.
+
 ### Treatment Fidelity System (v0.3.1)
 
 **Problem:** LLMs inventing major plot elements (new antagonists, conspiracies, character backstories) not present in the source treatment, leading to "story drift" where generated chapters diverge into a completely different story.

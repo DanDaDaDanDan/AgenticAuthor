@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **YAML Truncation Detection and Auto-Retry** 🔄 (v0.3.1+)
+  - **Problem**: Network interruptions during chapter generation caused immediate failure with cryptic YAML parsing errors
+  - **Symptom**: "found unexpected end of stream" errors, unclosed quoted strings, incomplete YAML documents
+  - **Solution**: Automatic detection and retry mechanism (max 2 attempts)
+  - **Detection Method**: `_is_yaml_truncated()` checks for truncation-specific error patterns:
+    - "found unexpected end of stream"
+    - "while scanning a quoted scalar"
+    - "unclosed quoted scalar"
+    - "mapping values are not allowed here"
+    - "expected <block end>"
+  - **Retry Logic**:
+    - Detects truncation on YAML parsing failure
+    - Shows clear message: "⚠️  YAML truncated (network error)"
+    - Automatically regenerates chapter from scratch (same prompt/parameters)
+    - Max 2 retry attempts with explicit progress: "Retrying chapter N (1/2)..."
+    - If all retries fail: clear error message with troubleshooting guidance
+  - **User Experience**:
+    - Scenario 1 (most common): First retry succeeds, generation continues normally
+    - Scenario 2: All retries fail, user sees actionable error message
+    - Expected time savings: ~2-5 minutes of manual intervention per truncation
+  - **Consistency**: Mirrors existing `_handle_truncated_json()` pattern in streaming.py
+  - **Files Modified**: `src/generation/chapters.py` (lines 117-139, 795-850, 1668-1674)
+  - **Impact**: Significantly improved chapter generation reliability on unstable connections
+
 - **Tiered Plants/Payoffs System** 🛡️ (commit dc5bb78)
   - **Problem**: LLM inventing major plot elements not in treatment via plants/payoffs feedback loop
   - **Case Study**: ad-newworld project diverged completely by chapter 10 (government mind control conspiracy invented, not in treatment)

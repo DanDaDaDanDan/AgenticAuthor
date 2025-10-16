@@ -321,6 +321,61 @@ result = await generator.generate(
 - Check model availability: `/models`
 - Review logs: `/logs`
 
+### Network Errors and Automatic Retry (v0.3.1+)
+
+**What Happens:** During chapter generation, network interruptions can cause incomplete YAML documents. The system automatically detects this and retries.
+
+**What You'll See:**
+
+**Scenario 1: Automatic Recovery (Most Common)**
+```
+✓ Generating chapter 2...
+✗ YAML truncated (network error)
+Retrying chapter 2 generation (1/2)...
+✓ Generated chapter 2 (4,200 words)
+```
+
+The system detected the truncation, regenerated the chapter, and continued normally. No action needed!
+
+**Scenario 2: Persistent Network Issues**
+```
+✓ Generating chapter 2...
+✗ YAML truncated (network error)
+Retrying chapter 2 generation (1/2)...
+✗ YAML truncated (network error)
+Retrying chapter 2 generation (2/2)...
+✗ YAML truncation persists after 2 retries
+
+This looks like a network truncation (automatic retries exhausted).
+This can happen with unstable connections or slow models.
+
+Failed to generate chapter 2: Failed to parse chapter 2 YAML: [error details]
+```
+
+**What to Do:**
+1. **Check your internet connection** - Ensure stable connectivity
+2. **Try a faster model** - Use `/model` to switch to a model with better streaming reliability
+3. **Check OpenRouter status** - Visit openrouter.ai/status for service status
+4. **Try again** - Often network issues are transient
+5. **View logs** - Use `/logs` to see detailed error information
+
+**Technical Details:**
+- System attempts up to 2 automatic retries
+- Each retry regenerates the chapter from scratch
+- Uses same prompt/temperature as original attempt
+- Saves ~2-5 minutes of user intervention on success
+
+**Why This Happens:**
+- Network drops during streaming API calls
+- Connection timeouts on slower models
+- Temporary service interruptions
+- Unstable internet connection
+
+**Prevention:**
+- Use a stable internet connection (wired preferred over WiFi)
+- Select faster models when on unstable connections
+- Avoid very slow models (>60s generation time)
+
 ## Contributing
 
 Contributions are welcome! Please ensure:

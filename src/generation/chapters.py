@@ -114,17 +114,19 @@ class ChapterGenerator:
         """
         return DepthCalculator.calculate_structure(total_words, pacing, length_scope=length_scope)
 
-    def _is_yaml_truncated(self, content: str, error: yaml.YAMLError) -> bool:
+    def _is_yaml_truncated(self, error: yaml.YAMLError) -> bool:
         """
         Detect if YAML parsing error is due to truncation/network interruption.
 
         Args:
-            content: The YAML content that failed to parse
             error: The YAML parsing error
 
         Returns:
             True if error indicates truncation, False otherwise
         """
+        if not error:
+            return False
+
         truncation_indicators = [
             "found unexpected end of stream",
             "unexpected end of stream",
@@ -807,7 +809,7 @@ IMPORTANT:
                 break  # Success! Exit retry loop
 
             except yaml.YAMLError as e:
-                is_truncated = self._is_yaml_truncated(response_text, e)
+                is_truncated = self._is_yaml_truncated(e)
 
                 if is_truncated and yaml_retry < max_yaml_retries:
                     # Automatic retry on truncation
