@@ -1556,6 +1556,13 @@ IMPORTANT:
                     self.console.print(f"[dim]You can resume by running /generate chapters again[/dim]")
                     raise Exception(f"Failed to generate chapter {chapter_num}: {e}")
 
+                # Save chapter immediately (enables resume and debugging)
+                # IMPORTANT: Save BEFORE validation so chapter is preserved even if issues detected
+                self.project.save_chapter_beat(chapter_num, chapter_data)
+
+                if logger:
+                    logger.debug(f"Saved chapter {chapter_num} to chapter-beats/chapter-{chapter_num:02d}.yaml")
+
                 # Validate treatment fidelity (separate LLM call)
                 self.console.print(f"[dim]Validating treatment fidelity...[/dim]")
 

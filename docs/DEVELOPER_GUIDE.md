@@ -2697,3 +2697,127 @@ RETURN JSON:
 - Validation check removed (line 834)
 - Post-generation validation method added (lines 857-1026)
 - Validation integration in generation loop (lines 1559-1628)
+
+#### Known Limitations and TODOs
+
+**Post-Generation Validation System:**
+
+1. **Option 2 (Regenerate Chapter) Not Implemented** (Line 1609)
+   - **Current Behavior**: Shows warning instead of actually regenerating chapter
+   - **Why Not Blocking**: User still has option 1 (abort) and option 3 (ignore) as fallbacks
+   - **Future Enhancement**: Could implement automatic regeneration with:
+     - Stricter temperature (e.g., 0.1 instead of 0.5)
+     - Enhanced prompt with explicit violation examples
+     - Retry limit (e.g., max 2 attempts before requiring user intervention)
+   - **Complexity**: Medium - requires retry logic, enhanced prompts, retry state management
+
+2. **Validator Graceful Failure** (Lines 1015-1026)
+   - **Current Behavior**: Returns `(True, [])` if validator LLM call fails (JSON parsing, API error, etc.)
+   - **Rationale**: Non-blocking - doesn't stop generation if validator itself has issues
+   - **Trade-off**: Validator failures silently pass validation check
+   - **Future Enhancement**: Could add:
+     - Explicit warning to user when validator fails
+     - Option to retry validator call
+     - Fallback to pattern-based violation detection (regex for common issues)
+   - **Risk**: Very low - validator failures rare, and layers 1-3 still protect against drift
+
+3. **Temperature Variance in Validation** (Line 864)
+   - **Current Setting**: Temperature 0.1 for consistent evaluation
+   - **Issue**: LLMs with temperature > 0 can still produce some variance
+   - **Impact**: Same chapter might get slightly different evaluation scores across runs
+   - **Mitigation**: Low temperature minimizes variance; structured JSON format reduces ambiguity
+   - **Future Enhancement**: Could use temperature 0 (deterministic) if model supports it
+   - **Note**: Current temperature sufficient for production use
+
+4. **No Retry Mechanism for Failed Validations**
+   - **Current Behavior**: User must manually choose action (abort/regenerate/ignore)
+   - **Limitation**: No automatic retry with enhanced enforcement
+   - **Future Enhancement**: Could add:
+     - Automatic 1-retry with enhanced prompt
+     - Exponential backoff for multiple failures
+     - Learning from previous validation failures to adjust generation prompts
+   - **Complexity**: High - requires state management, enhanced prompt generation, retry tracking
+
+5. **No Automatic Treatment Enhancement**
+   - **Current Behavior**: Validator detects violations but doesn't suggest treatment improvements
+   - **Limitation**: User must manually update treatment to fix underlying issues
+   - **Future Enhancement**: Could add:
+     - "Fix treatment" option that suggests specific additions to treatment
+     - Automatic detection of missing plot elements that LLM keeps trying to add
+     - Treatment gap analysis (e.g., "missing antagonist motivation")
+   - **Use Case**: If validator consistently detects same violation type across chapters, likely indicates treatment gap
+   - **Complexity**: Very high - requires treatment analysis, gap detection, suggestion generation
+
+6. **Validation Only at Chapter Level**
+   - **Current Scope**: Validates each chapter after generation
+   - **Limitation**: Doesn't validate cross-chapter consistency (e.g., accumulated drift over 5+ chapters)
+   - **Future Enhancement**: Could add:
+     - Batch validation (every N chapters, validate entire arc)
+     - Timeline consistency checking
+     - Character consistency validation
+     - Plot thread tracking across entire story
+   - **Complexity**: High - requires story-level analysis, multi-chapter context
+
+7. **No Semantic Similarity Detection**
+   - **Current Method**: LLM-based comparison of chapter YAML to treatment text
+   - **Limitation**: Relies on LLM to detect violations (subject to prompt interpretation)
+   - **Future Enhancement**: Could add:
+     - Embedding-based similarity scoring (treatment vs chapter plot elements)
+     - Automated detection of semantic drift (e.g., character A in treatment, character B in chapter)
+     - Entity extraction and cross-reference (NER-based validation)
+   - **Benefit**: More deterministic, less dependent on LLM interpretation
+   - **Complexity**: High - requires NLP pipeline, entity extraction, similarity metrics
+
+8. **Validation Performance**
+   - **Current Cost**: ~200 tokens per validation call (temperature 0.1, no streaming)
+   - **Time Impact**: Adds ~1-2 seconds per chapter
+   - **Cost Impact**: Minimal (<$0.001 per chapter with most models)
+   - **Trade-off**: Small performance cost for significant quality improvement
+   - **Future Optimization**: Could add:
+     - Caching of validation results for unchanged chapters
+     - Batch validation (multiple chapters in single call)
+     - Configurable validation level (skip for minor chapters)
+   - **Note**: Current performance acceptable for production use
+
+9. **Debug-First Architecture**
+   - **Current Behavior**: Chapters saved BEFORE validation (lines 1559-1564)
+   - **Rationale**: Aids debugging - chapters preserved even if validation fails or user aborts
+   - **Benefit**: User can inspect generated chapter YAML to understand validation violations
+   - **Trade-off**: Invalid chapters exist on disk temporarily (until user aborts and deletes)
+   - **Note**: This is INTENTIONAL by design (user request: "still save on error -- this aids debugging")
+
+**General System Limitations:**
+
+10. **Sequential Generation Dependencies**
+    - **Current Behavior**: Each chapter depends on all previous chapters
+    - **Limitation**: Can't parallelize chapter generation
+    - **Trade-off**: Zero information loss vs. generation speed
+    - **Impact**: 20-chapter book takes 10-20 minutes (vs. 2-3 minutes for parallel batched)
+    - **Note**: This is acceptable for quality-first approach
+
+11. **Treatment as Source of Truth Assumption**
+    - **Current Assumption**: Treatment is comprehensive and well-structured
+    - **Limitation**: System can't compensate for incomplete or vague treatments
+    - **Mitigation**: Treatment generation prompts emphasize completeness
+    - **Future Enhancement**: Treatment quality validation before chapter generation
+
+**Priority Rankings:**
+
+**High Priority** (User-impacting, should be implemented soon):
+- #1: Option 2 (Regenerate chapter) implementation
+- #2: Validator failure warnings (currently silent)
+- #11: Treatment quality validation
+
+**Medium Priority** (Nice to have, not blocking):
+- #4: Retry mechanism for failed validations
+- #6: Cross-chapter consistency validation
+- #5: Automatic treatment enhancement suggestions
+
+**Low Priority** (Advanced features, optimize later):
+- #3: Temperature variance (current setting sufficient)
+- #7: Semantic similarity detection (current LLM-based method works well)
+- #8: Validation performance optimization (current performance acceptable)
+
+**Won't Fix** (Intentional design choices):
+- #9: Debug-first architecture (saves before validation)
+- #10: Sequential generation (zero information loss is more important than speed)
