@@ -376,6 +376,144 @@ Failed to generate chapter 2: Failed to parse chapter 2 YAML: [error details]
 - Select faster models when on unstable connections
 - Avoid very slow models (>60s generation time)
 
+### Treatment Fidelity Validation (v0.3.1+)
+
+**What It Does:** Prevents LLMs from inventing major plot elements beyond your treatment, while allowing scene-level elaboration.
+
+**Why It Matters:** Without validation, LLMs may invent secret organizations, government conspiracies, or additional antagonists not in your treatment. This causes story drift and compounds errors in future chapters.
+
+**How It Works - Three-Layer Defense:**
+
+#### 1. Foundation Validation
+
+After generating foundation (metadata + characters + world), the system validates it against your treatment:
+
+**What You'll See (If Issues Found):**
+```
+═══════════════════════════════════════════════════════════════════
+✗ CRITICAL ISSUE DETECTED in Foundation
+═══════════════════════════════════════════════════════════════════
+
+Issue Type: character_contradiction
+Element: Detective Elias Crowe background
+
+Problem:
+  Treatment describes Elias as veteran detective. Foundation contradicts
+  this by making him a rookie officer.
+
+Recommendation:
+  Update foundation to match treatment's character description.
+
+⚠️  Foundation contradicts the treatment.
+Continuing may cause story drift and compound errors in chapters.
+
+What would you like to do?
+  1. Abort generation (recommended) - fix treatment or regenerate foundation
+  2. Regenerate foundation with stricter enforcement
+  3. Ignore and continue (NOT recommended) - may cause story drift
+```
+
+**What To Do:**
+- **Option 1 (Recommended)**: Abort generation and clarify your treatment
+  - Update treatment to be more explicit about character details
+  - Or verify that foundation interpretation is actually correct
+- **Option 2**: Regenerate foundation with stricter enforcement
+  - System retries with additional guardrails
+  - Works well for minor misunderstandings
+- **Option 3 (Not Recommended)**: Ignore and continue
+  - Only use if you're sure the issue is minor
+  - May cause compounding problems later
+
+#### 2. Prompt Guardrails
+
+Every chapter generation includes guidelines to keep LLMs faithful to your sources:
+- Foundation + Treatment are **dual sources of truth**
+- Elaboration welcomed for scene-level details (dialogue, props, gestures)
+- Major plot elements must come from your sources
+- Clear examples of allowed vs forbidden elaboration
+
+#### 3. Chapter Validation
+
+After generating each chapter, the system validates it against your treatment:
+
+**What You'll See (If Issues Found):**
+```
+═══════════════════════════════════════════════════════════════════
+✗ CRITICAL ISSUE DETECTED in Chapter 3
+═══════════════════════════════════════════════════════════════════
+
+Issue Type: major_plot_invention
+Location: Scene 2: The Discovery
+Element: Secret government program 'Project Chimera'
+
+Problem:
+  Treatment describes ONE antagonist (Dr. Victor Lang). This chapter invents
+  a NEW conspiracy involving government experiments not mentioned in treatment.
+
+Recommendation:
+  Remove this plot thread or verify it exists in treatment.
+
+⚠️  This chapter invents major plot elements not in the treatment.
+Continuing may cause story drift and compound errors in future chapters.
+
+What would you like to do?
+  1. Abort generation (recommended) - fix treatment or regenerate chapter
+  2. Regenerate chapter with stricter enforcement
+  3. Ignore and continue (NOT recommended) - may cause story drift
+```
+
+**What To Do:**
+- **Option 1 (Recommended)**: Abort and update treatment
+  - If you want that plot element, add it to your treatment first
+  - Or verify your treatment already has it and clarify the description
+- **Option 2**: Regenerate chapter with stricter enforcement
+  - System retries with additional guardrails
+  - Good for LLMs that slightly exceeded bounds
+- **Option 3 (Not Recommended)**: Ignore and continue
+  - Only use if you actually WANT this new plot element
+  - Consider adding it to treatment retroactively to maintain consistency
+
+**Allowed Elaboration (NOT Violations):**
+- Dialogue specifics ("Lang confronts Elias" → specific words, tone, gestures)
+- Props and details (chess symbolism → specific chess pieces, board details)
+- Location specifics (warehouse → rust on pipes, broken windows, smell of oil)
+- Minor characters (servants, officials, background people)
+- Sensory details (sounds, smells, textures, colors)
+
+**Forbidden Invention (VIOLATIONS):**
+- New antagonists not in treatment
+- Secret organizations or conspiracies not in treatment
+- Major backstories not in treatment
+- New plot threads or subplots
+- Character role changes
+- World-building contradictions (realistic → supernatural, etc.)
+
+**Best Practices:**
+
+**Writing Better Treatments:**
+1. **Be Explicit About Major Elements**: List all antagonists, plot threads, and conspiracies
+2. **Include Character Backgrounds**: Key motivations, histories, and roles
+3. **Describe World Rules**: Realistic vs supernatural, magic systems, tech level
+4. **Set Tone and Pacing**: Fast-paced thriller vs slow-burn literary
+
+**When Validation Triggers:**
+1. **Review Carefully**: Read the issue description and understand the concern
+2. **Check Your Treatment**: Is the element actually missing or just unclear?
+3. **Regenerate First**: Try option 2 (regenerate) before giving up
+4. **Update Treatment**: If you want the element, add it explicitly first
+5. **Don't Ignore**: Ignoring issues compounds errors in future chapters
+
+**Why Validation Happens AFTER Saving:**
+- Failed generations are preserved in `chapter-beats/` for debugging
+- You can inspect what the LLM generated and understand the problem
+- Foundation and chapters are saved even when issues are detected
+- Helps you improve your treatment for better results
+
+**Temperature Settings:**
+- Generation: 0.6 (stricter adherence to sources)
+- Validation: 0.1 (consistent evaluation)
+- Lower temperature = better fidelity, slightly less creativity
+
 ## Contributing
 
 Contributions are welcome! Please ensure:

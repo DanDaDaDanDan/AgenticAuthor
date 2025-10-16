@@ -446,7 +446,7 @@ When the feedback mentions duplicate or repetitive content:
                 {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
+            temperature=0.6,  # Stricter adherence to treatment/foundation sources
             stream=True,
             display=True,
             display_label="Generating foundation",
@@ -594,28 +594,27 @@ PREVIOUS CHAPTERS (full details with all scenes):
 {previous_yaml if previous_yaml else "# This is chapter 1 - no previous chapters"}
 ```
 
-CRITICAL - TREATMENT FIDELITY:
-The treatment above is your SOURCE OF TRUTH for the story. Chapter {chapter_num} must advance THIS story, not invent a new one.
+CRITICAL - STORY FIDELITY:
+The FOUNDATION (metadata, characters, world) and TREATMENT above are your DUAL SOURCES OF TRUTH. Chapter {chapter_num} must advance THIS story, building naturally on these sources.
 
-GUARDRAILS:
-1. MAJOR PLOT ELEMENTS MUST come from the treatment:
+GUIDELINES:
+1. MAJOR PLOT ELEMENTS come from treatment and foundation:
    - Antagonists, plot twists, character revelations, story threads
-   - Do NOT invent: new villains, conspiracies, backstories, or plot arcs not in treatment
+   - These sources define the story's direction - support and elaborate on them
+   - Add richness to existing elements rather than inventing new plot-level elements
 
-2. PREVIOUS CHAPTERS MAY CONTAIN ERRORS:
-   - If previous chapters diverged from treatment, DO NOT compound the error
-   - Cross-reference previous chapters against treatment
-   - Discard invented elements that contradict treatment
+2. ELABORATION is welcomed for scene-level details:
+   - Character gestures, props, location specifics, sensory elements, dialogue
+   - These bring the story to life without changing its direction
+   - Build on what's in the foundation and treatment
 
-3. ELABORATION IS ALLOWED for scene-level details:
-   - Character gestures, props, location specifics, sensory elements
-   - But NOT for plot-level changes
-
-Example of ALLOWED elaboration:
+Example of supportive elaboration:
 ✓ Treatment says "Lang confronts Elias" → You add: specific dialogue, chess board prop, warehouse details
-✗ Treatment has one antagonist → You add: secret conspiracy, government experiments, additional villains
+✓ Foundation establishes "chess symbolism" → You elaborate: white king piece, specific moves
+✗ Treatment has one antagonist → Adding: secret organization, government experiments (major new plot thread)
+✗ Foundation shows realistic world → Adding: supernatural conspiracy (contradicts world rules)
 
-This chapter MUST stay within the story outlined in the treatment above.
+This chapter should support and enrich the story outlined in the foundation and treatment.
 
 BEAT-DRIVEN ARCHITECTURE:
 This is chapter {chapter_num} in {default_act} (role: {chapter_role}).
@@ -783,7 +782,7 @@ IMPORTANT:
                 {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
+            temperature=0.6,  # Stricter adherence to treatment/foundation sources
             stream=True,
             display=True,
             min_response_tokens=min_tokens
@@ -828,7 +827,7 @@ IMPORTANT:
                             {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
                             {"role": "user", "content": prompt}
                         ],
-                        temperature=0.7,
+                        temperature=0.6,  # Stricter adherence to treatment/foundation sources
                         stream=True,
                         display=True,
                         min_response_tokens=min_tokens
@@ -1139,6 +1138,196 @@ IMPORTANT:
                 # Invalid choice - treat as abort
                 self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
                 raise Exception("Invalid validator failure choice")
+
+    async def _validate_foundation_fidelity(
+        self,
+        foundation_data: Dict[str, Any],
+        treatment_text: str
+    ) -> tuple[bool, List[Dict[str, Any]]]:
+        """
+        Validate foundation against treatment for contradictions (separate LLM call).
+
+        This is a POST-GENERATION validation that detects contradictions between foundation and treatment.
+        Uses low temperature (0.1) for consistent, strict evaluation.
+
+        Args:
+            foundation_data: Generated foundation dict with metadata, characters, world
+            treatment_text: Full treatment text (source of truth)
+
+        Returns:
+            Tuple of (is_valid: bool, issues: List[Dict])
+            Issues have: type, severity, element, reasoning, recommendation
+        """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.debug(f"Validating foundation fidelity against treatment")
+
+        # Serialize foundation for validator
+        foundation_yaml = yaml.dump(foundation_data, default_flow_style=False, allow_unicode=True)
+
+        # Build validation prompt
+        validation_prompt = f"""You are a treatment fidelity validator. Your job is to detect contradictions between the foundation and treatment.
+
+TREATMENT (SOURCE OF TRUTH):
+```
+{treatment_text}
+```
+
+GENERATED FOUNDATION:
+```yaml
+{foundation_yaml}
+```
+
+TASK:
+Analyze the foundation for contradictions with the treatment.
+
+DETECTION CRITERIA:
+
+1. **Character Contradictions**
+   - Check: Do character backgrounds, motivations, or roles contradict treatment?
+   - Examples: Treatment says character is innocent → Foundation says they're guilty
+   - Examples: Treatment has 3 main characters → Foundation lists 5 protagonists
+
+2. **World Contradictions**
+   - Check: Do world rules, settings, or systems contradict treatment?
+   - Examples: Treatment is realistic → Foundation adds magic system
+   - Examples: Treatment set in 2025 → Foundation describes 1950s setting
+
+3. **Metadata Contradictions**
+   - Check: Do genre, pacing, themes contradict treatment?
+   - Examples: Treatment is fast-paced thriller → Foundation says "slow, contemplative"
+   - Examples: Treatment word count is 50k → Foundation target is 120k
+
+4. **Plot Element Inventions**
+   - Check: Does foundation introduce major plot elements not in treatment?
+   - Examples: "secret organization", "hidden conspiracy", "government program"
+   - These should come from treatment, not be invented in foundation
+
+ALLOWED (NOT violations):
+- ELABORATIONS: Adding richness to treatment elements (treatment mentions chess → foundation describes chess symbolism system)
+- MINOR DETAILS: Specific locations, character appearance details, world atmosphere
+- ORGANIZATIONAL: Structuring treatment info into categories
+
+RETURN FORMAT:
+Return ONLY valid JSON (no markdown fences):
+
+{{
+  "valid": true/false,
+  "critical_issues": [
+    {{
+      "type": "character_contradiction",
+      "severity": "critical",
+      "element": "Detective Elias Crowe background",
+      "reasoning": "Treatment describes Elias as veteran detective. Foundation contradicts this by making him a rookie officer.",
+      "recommendation": "Update foundation to match treatment's character description."
+    }}
+  ],
+  "warnings": [
+    {{
+      "type": "ambiguous_elaboration",
+      "severity": "low",
+      "element": "City's economic system",
+      "reasoning": "Treatment doesn't explicitly describe economy. Foundation adds economic details that may or may not fit."
+    }}
+  ]
+}}
+
+IMPORTANT:
+- Be STRICT: If foundation contradicts treatment, flag it
+- critical_issues = Direct contradictions that will cause story problems
+- warnings = Ambiguous elements that MAY be issues
+- If no issues: {{"valid": true, "critical_issues": [], "warnings": []}}
+- Temperature is 0.1 for consistency - be thorough and consistent"""
+
+        # Make validation call with LOW temperature for consistency
+        try:
+            result = await self.client.streaming_completion(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a strict treatment fidelity validator. You always return valid JSON without additional formatting."},
+                    {"role": "user", "content": validation_prompt}
+                ],
+                temperature=0.1,  # Low temperature for consistent strict evaluation
+                stream=False,  # No streaming for validation
+                display=False,  # Don't display during validation
+                min_response_tokens=200
+            )
+
+            if not result:
+                raise Exception("No response from validator")
+
+            response_text = result.get('content', result) if isinstance(result, dict) else result
+
+            # Parse JSON response
+            try:
+                # Strip markdown fences if present
+                response_text = response_text.strip()
+                if response_text.startswith('```'):
+                    # Remove fences
+                    lines = response_text.split('\n')
+                    response_text = '\n'.join(lines[1:-1] if len(lines) > 2 else lines)
+
+                validation_result = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                if logger:
+                    logger.warning(f"Failed to parse foundation validation JSON: {e}")
+                # If parsing fails, assume valid (don't block on validator errors)
+                return (True, [])
+
+            is_valid = validation_result.get('valid', True)
+            critical_issues = validation_result.get('critical_issues', [])
+            warnings = validation_result.get('warnings', [])
+
+            if logger:
+                logger.debug(f"Foundation validation result: valid={is_valid}, critical={len(critical_issues)}, warnings={len(warnings)}")
+
+            return (is_valid, critical_issues)
+
+        except Exception as e:
+            if logger:
+                logger.warning(f"Foundation validation call failed: {e}")
+
+            # Validator failed - prompt user for action
+            self.console.print(f"\n[bold yellow]{'='*70}[/bold yellow]")
+            self.console.print(f"[bold yellow]⚠️  FOUNDATION VALIDATOR FAILURE[/bold yellow]")
+            self.console.print(f"[bold yellow]{'='*70}[/bold yellow]\n")
+
+            self.console.print(f"[yellow]Problem:[/yellow]")
+            self.console.print(f"  The foundation fidelity validator encountered an error: {e}\n")
+
+            self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+            self.console.print(f"  [cyan]1.[/cyan] Retry validation")
+            self.console.print(f"  [cyan]2.[/cyan] Continue without validation [bold](NOT recommended)[/bold]")
+            self.console.print(f"  [cyan]3.[/cyan] Abort generation")
+
+            choice = input("\nEnter choice (1-3): ").strip()
+
+            if choice == "1":
+                # Retry validation
+                self.console.print(f"\n[cyan]Retrying foundation validation...[/cyan]")
+                # Recursive retry - if it fails, user will be prompted again
+                return await self._validate_foundation_fidelity(
+                    foundation_data=foundation_data,
+                    treatment_text=treatment_text
+                )
+
+            elif choice == "2":
+                # Continue without validation
+                self.console.print(f"\n[yellow]⚠️  Continuing without foundation validation...[/yellow]")
+                self.console.print(f"[yellow]Foundation may contain treatment contradictions.[/yellow]\n")
+                return (True, [])
+
+            elif choice == "3":
+                # Abort generation
+                self.console.print(f"\n[red]Generation aborted due to foundation validator failure[/red]")
+                raise Exception(f"User aborted generation due to foundation validator failure")
+
+            else:
+                # Invalid choice - treat as abort
+                self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
+                raise Exception("Invalid foundation validator failure choice")
 
     # Removed _generate_chapter_batch() - replaced by sequential _generate_single_chapter() calls
     # Sequential generation eliminates information loss and enables better resume capability
@@ -1466,6 +1655,116 @@ IMPORTANT:
                 self._save_partial(foundation, phase='foundation')  # Backup/debug
                 self.project.save_foundation(foundation)  # Proper location for resume
                 self.console.print(f"[green]✓[/green] Foundation complete")
+
+                # Validate foundation fidelity (separate LLM call)
+                # NOTE: Validation happens AFTER saving to aid debugging
+                self.console.print(f"[dim]Validating foundation fidelity...[/dim]")
+
+                treatment_text = context.get('treatment', {}).get('text', '')
+                is_valid, critical_issues = await self._validate_foundation_fidelity(
+                    foundation_data=foundation,
+                    treatment_text=treatment_text
+                )
+
+                if not is_valid and critical_issues:
+                    # Display critical issues
+                    self.console.print(f"\n[bold red]{'='*70}[/bold red]")
+                    self.console.print(f"[bold red]✗ CRITICAL ISSUE DETECTED in Foundation[/bold red]")
+                    self.console.print(f"[bold red]{'='*70}[/bold red]\n")
+
+                    for issue in critical_issues:
+                        self.console.print(f"[bold yellow]Issue Type:[/bold yellow] {issue.get('type', 'Unknown')}")
+                        self.console.print(f"[bold yellow]Element:[/bold yellow] {issue.get('element', 'Unknown')}\n")
+
+                        self.console.print(f"[yellow]Problem:[/yellow]")
+                        self.console.print(f"  {issue.get('reasoning', 'No details provided')}\n")
+
+                        self.console.print(f"[cyan]Recommendation:[/cyan]")
+                        self.console.print(f"  {issue.get('recommendation', 'Review and fix')}\n")
+                        self.console.print(f"[dim]{'-'*70}[/dim]\n")
+
+                    self.console.print(f"[bold yellow]⚠️  Foundation contradicts the treatment.[/bold yellow]")
+                    self.console.print(f"[yellow]Continuing may cause story drift and compound errors in chapters.[/yellow]\n")
+
+                    self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+                    self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold] - fix treatment or regenerate foundation")
+                    self.console.print(f"  [cyan]2.[/cyan] Regenerate foundation with stricter enforcement")
+                    self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may cause story drift")
+
+                    foundation_choice = input("\nEnter choice (1-3): ").strip()
+
+                    if foundation_choice == "1":
+                        # Abort generation
+                        self.console.print(f"\n[red]Generation aborted due to foundation fidelity issues[/red]")
+                        self.console.print(f"[dim]Review foundation at: chapter-beats/foundation.yaml[/dim]")
+                        raise Exception("Foundation validation failed - user aborted generation")
+
+                    elif foundation_choice == "2":
+                        # Regenerate foundation with stricter enforcement
+                        self.console.print(f"\n[yellow]Regenerating foundation with stricter enforcement...[/yellow]")
+                        self.console.print(f"[yellow]Previous foundation saved to .agentic/debug/ for reference[/yellow]\n")
+
+                        # Add stricter feedback
+                        strict_feedback = (
+                            "CRITICAL: Previous foundation contradicted the treatment. "
+                            "You MUST follow the treatment EXACTLY. Do NOT invent plot elements. "
+                            "Elaborate on treatment elements only, do not contradict or add major elements."
+                        )
+                        if feedback:
+                            strict_feedback = f"{feedback}\n\n{strict_feedback}"
+
+                        # Regenerate with stricter feedback
+                        foundation = await self._generate_foundation(
+                            context_yaml=context_yaml,
+                            taxonomy_data=taxonomy_data,
+                            total_words=total_words,
+                            chapter_count=chapter_count,
+                            original_concept=original_concept,
+                            unique_elements=unique_elements,
+                            feedback=strict_feedback,
+                            is_initial_generation=is_initial_generation,
+                            min_words=min_words,
+                            max_words=max_words,
+                            genre_baseline=genre_baseline,
+                            length_scope=length_scope,
+                            genre=genre
+                        )
+
+                        # Save regenerated foundation
+                        self._save_partial(foundation, phase='foundation')
+                        self.project.save_foundation(foundation)
+                        self.console.print(f"[green]✓[/green] Foundation regenerated")
+
+                        # Validate again (recursive - user can retry if still issues)
+                        self.console.print(f"[dim]Validating regenerated foundation...[/dim]")
+                        is_valid, critical_issues = await self._validate_foundation_fidelity(
+                            foundation_data=foundation,
+                            treatment_text=treatment_text
+                        )
+
+                        # If still invalid, display issues but continue
+                        # (user already chose to regenerate, don't loop forever)
+                        if not is_valid and critical_issues:
+                            self.console.print(f"\n[yellow]⚠️  Regenerated foundation still has issues:[/yellow]")
+                            for issue in critical_issues:
+                                self.console.print(f"  • {issue.get('element', 'Unknown')}: {issue.get('reasoning', '')}")
+                            self.console.print(f"\n[yellow]Continuing anyway...[/yellow]\n")
+                        else:
+                            self.console.print(f"[green]✓[/green] Foundation validation passed\n")
+
+                    elif foundation_choice == "3":
+                        # Ignore and continue
+                        self.console.print(f"\n[yellow]⚠️  Ignoring foundation fidelity issues...[/yellow]")
+                        self.console.print(f"[yellow]Future chapters may drift from treatment.[/yellow]\n")
+
+                    else:
+                        # Invalid choice - treat as abort
+                        self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
+                        raise Exception("Invalid foundation validation choice")
+                else:
+                    if logger:
+                        logger.debug("Foundation validation passed")
+                    self.console.print(f"[green]✓[/green] Foundation validation passed\n")
 
             # ===== EXTRACT LLM'S STRUCTURAL CHOICES =====
             # During iteration: LLM adjusts based on feedback
@@ -2210,7 +2509,7 @@ Return ONLY the YAML content with metadata+characters+world+chapters sections.""
                     {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,
+                temperature=0.6,  # Stricter adherence to treatment/foundation sources
                 stream=True,
                 display=True,
                 display_label=f"Generating chapters ({model})",

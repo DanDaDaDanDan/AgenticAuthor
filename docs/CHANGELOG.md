@@ -32,6 +32,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Files Modified**: `src/generation/chapters.py` (lines 117-139, 795-850, 1668-1674)
   - **Impact**: Significantly improved chapter generation reliability on unstable connections
 
+- **Treatment Fidelity System** 🛡️ (v0.3.1+)
+  - **Problem**: LLMs invent major plot elements beyond treatment (secret organizations, government conspiracies, additional antagonists), causing story drift
+  - **Solution**: Three-layer defense system preventing plot inventions while allowing scene-level elaboration
+
+  **Layer 1: Foundation Validation (Post-Generation)**
+  - Validates foundation against treatment immediately after generation
+  - New method: `_validate_foundation_fidelity()` (~190 lines)
+  - Detection: character contradictions, world contradictions, metadata contradictions, plot element inventions
+  - Temperature 0.1 for consistent strict evaluation
+  - User actions: Abort (recommended) / Regenerate with stricter enforcement / Ignore (not recommended)
+  - Validation AFTER saving (aids debugging - foundation.yaml preserved even when issues detected)
+
+  **Layer 2: Chapter Generation Prompt Guardrails**
+  - Updated "TREATMENT FIDELITY" section to "STORY FIDELITY"
+  - Foundation + Treatment as **dual sources of truth** (was just treatment)
+  - Softened prohibition language: "support and elaborate on" (was "DO NOT invent")
+  - Clear examples: ✓ allowed elaboration vs ✗ forbidden invention
+  - Removed "PREVIOUS CHAPTERS MAY CONTAIN ERRORS" section (existing prose is now canon)
+  - Temperature changed: 0.7 → 0.6 for stricter adherence
+
+  **Layer 3: Chapter Validation (Post-Generation)**
+  - Existing method: `_validate_treatment_fidelity()` (lines 932-1141)
+  - Detects: new antagonists, conspiracies, backstories, plot threads, character role changes, world contradictions
+  - Validation AFTER saving (aids debugging)
+
+  **Detection Criteria:**
+  - **Allowed**: Dialogue specifics, props/details, location specifics, minor characters, sensory details
+  - **Forbidden**: New antagonists, secret organizations, major backstories, new plot threads, character role changes, world contradictions
+
+  **Temperature Settings:**
+  - Generation: 0.6 (stricter adherence to sources, was 0.7)
+  - Validation: 0.1 (consistent evaluation)
+
+  **User Experience:**
+  - Clear error messages with issue type, element, reasoning, recommendation
+  - Three-choice prompts: Abort (recommended) / Regenerate with stricter enforcement / Ignore (not recommended)
+  - Progress feedback: "✓ Foundation validation passed" or detailed issues
+
+  **Files Modified**:
+  - `src/generation/chapters.py` (foundation validation method, prompt updates, temperature changes)
+  - Lines 1143-1331: New `_validate_foundation_fidelity()` method
+  - Lines 597-617: Updated chapter generation prompt (STORY FIDELITY section)
+  - Lines 449, 786, 831, 2513: Temperature changes (0.7 → 0.6)
+  - Lines 1660-1768: Foundation validation flow
+
+  **Documentation**:
+  - `docs/DEVELOPER_GUIDE.md`: New "Treatment Fidelity System" section (~260 lines)
+  - `docs/USER_GUIDE.md`: New "Treatment Fidelity Validation" troubleshooting section (~140 lines)
+
+  **Impact**: Prevents story drift from plot inventions while maintaining creativity for scene elaboration
+
 - **Tiered Plants/Payoffs System** 🛡️ (commit dc5bb78)
   - **Problem**: LLM inventing major plot elements not in treatment via plants/payoffs feedback loop
   - **Case Study**: ad-newworld project diverged completely by chapter 10 (government mind control conspiracy invented, not in treatment)

@@ -860,6 +860,266 @@ After Fix:
 - Affects new generations only (doesn't modify existing content)
 - Users can regenerate chapters to apply new calculations
 
+### 10. Treatment Fidelity System
+
+**Purpose**: Prevent LLMs from inventing major plot elements beyond the treatment and foundation, while allowing scene-level elaboration.
+
+**Problem Solved**: LLMs often invent plot-level elements not in the treatment (secret organizations, government conspiracies, additional antagonists), causing story drift and compounding errors in future chapters.
+
+**Architecture - Three-Layer Defense:**
+
+#### Layer 1: Foundation Validation (Post-Generation)
+
+Validates foundation against treatment immediately after generation (before chapter generation begins).
+
+**File**: `src/generation/chapters.py`
+**Method**: `_validate_foundation_fidelity()`
+
+```python
+async def _validate_foundation_fidelity(
+    self,
+    foundation_data: Dict[str, Any],
+    treatment_text: str
+) -> tuple[bool, List[Dict[str, Any]]]:
+    """
+    Validate foundation against treatment for contradictions (separate LLM call).
+    Uses low temperature (0.1) for consistent, strict evaluation.
+
+    Returns:
+        Tuple of (is_valid: bool, issues: List[Dict])
+    """
+```
+
+**Detection Criteria:**
+- Character contradictions (backgrounds, motivations, roles)
+- World contradictions (rules, settings, systems)
+- Metadata contradictions (genre, pacing, themes)
+- Plot element inventions (organizations, conspiracies not in treatment)
+
+**User Actions on Failure:**
+1. Abort generation (recommended) - fix treatment or regenerate foundation
+2. Regenerate foundation with stricter enforcement
+3. Ignore and continue (NOT recommended) - may cause story drift
+
+**Validation Timing**: AFTER saving (aids debugging - foundation.yaml is preserved even if issues detected)
+
+#### Layer 2: Chapter Generation Prompt Guardrails
+
+Embedded in the chapter generation prompt to guide LLMs toward fidelity.
+
+**File**: `src/generation/chapters.py`
+**Method**: `_generate_single_chapter()` (lines 597-617)
+
+**Key Elements:**
+1. **Dual Sources of Truth**: Foundation + Treatment (not just treatment)
+2. **Supportive Language**: "support and elaborate on" rather than "DO NOT invent"
+3. **Clear Examples**: ✓ allowed elaboration vs ✗ forbidden invention
+4. **Temperature 0.6**: Stricter adherence (down from 0.7)
+
+**Prompt Structure:**
+```
+CRITICAL - STORY FIDELITY:
+The FOUNDATION (metadata, characters, world) and TREATMENT above are your DUAL SOURCES OF TRUTH.
+Chapter {N} must advance THIS story, building naturally on these sources.
+
+GUIDELINES:
+1. MAJOR PLOT ELEMENTS come from treatment and foundation
+   - Support and elaborate on existing elements
+   - Add richness rather than inventing new plot-level elements
+
+2. ELABORATION is welcomed for scene-level details
+   - Character gestures, props, locations, sensory elements, dialogue
+   - Bring the story to life without changing direction
+
+Examples:
+✓ Treatment says "Lang confronts Elias" → Add: specific dialogue, props, details
+✗ Treatment has one antagonist → Adding: secret organization (major new plot thread)
+```
+
+**Removed Concepts:**
+- "PREVIOUS CHAPTERS MAY CONTAIN ERRORS" - existing prose is now canon
+- Treatment constraint summary at top - redundant with examples
+
+#### Layer 3: Chapter Validation (Post-Generation)
+
+Validates each chapter against treatment immediately after generation (before next chapter begins).
+
+**File**: `src/generation/chapters.py`
+**Method**: `_validate_treatment_fidelity()` (lines 932-1141)
+
+```python
+async def _validate_treatment_fidelity(
+    self,
+    chapter_data: Dict[str, Any],
+    chapter_num: int,
+    treatment_text: str,
+    previous_chapters: List[Dict[str, Any]]
+) -> tuple[bool, List[Dict[str, Any]]]:
+    """
+    Validate chapter against treatment for fidelity violations (separate LLM call).
+    Uses low temperature (0.1) for consistent, strict evaluation.
+
+    Returns:
+        Tuple of (is_valid: bool, issues: List[Dict])
+    """
+```
+
+**Detection Criteria:**
+1. New antagonists/villains not in treatment
+2. New conspiracies/organizations not in treatment
+3. Major backstory inventions not in treatment
+4. Plot threads not in treatment
+5. Character role changes vs treatment
+6. World-building contradictions
+
+**Allowed (NOT violations):**
+- MINOR elaborations: props, gestures, dialogue specifics, sensory details
+- Minor characters: servants, officials, background characters
+- Scene-level details: specific actions, internal thoughts, transitions
+- Treatment elements with added richness: treatment mentions chess → chapter adds specific pieces
+
+**User Actions on Failure:**
+1. Abort generation (recommended) - fix treatment or regenerate chapter
+2. Regenerate chapter with stricter enforcement
+3. Ignore and continue (NOT recommended) - may cause story drift
+
+**Validation Timing**: AFTER saving (aids debugging - chapter-NN.yaml is preserved)
+
+#### Temperature Settings
+
+**Generation**: 0.6 (stricter than default 0.7)
+- Foundation generation: `temperature=0.6`
+- Chapter generation: `temperature=0.6`
+- Applied to: foundation, chapters, retry logic, multimodel competition
+
+**Validation**: 0.1 (strict consistency)
+- Foundation validation: `temperature=0.1`
+- Chapter validation: `temperature=0.1`
+- Ensures consistent evaluation across runs
+
+#### Integration Points
+
+**Foundation Generation** (`_generate_foundation()`):
+1. Generate foundation (metadata + characters + world)
+2. Save foundation to `chapter-beats/foundation.yaml`
+3. Validate foundation against treatment (temperature 0.1)
+4. Display issues and prompt user for action
+5. Optional: Regenerate with stricter feedback
+
+**Chapter Generation** (`_generate_single_chapter()`):
+1. Build prompt with STORY FIDELITY guidelines
+2. Generate chapter with temperature 0.6
+3. Save chapter to `chapter-beats/chapter-NN.yaml`
+4. Validate chapter against treatment (temperature 0.1)
+5. Display issues and prompt user for action
+6. Optional: Regenerate with stricter enforcement
+
+**Sequential Architecture**: Each chapter sees 100% of previous chapters, enabling full context validation.
+
+#### Error Messages and UX
+
+**Foundation Issues Detected:**
+```
+═══════════════════════════════════════════════════════════════════
+✗ CRITICAL ISSUE DETECTED in Foundation
+═══════════════════════════════════════════════════════════════════
+
+Issue Type: character_contradiction
+Element: Detective Elias Crowe background
+
+Problem:
+  Treatment describes Elias as veteran detective. Foundation contradicts
+  this by making him a rookie officer.
+
+Recommendation:
+  Update foundation to match treatment's character description.
+
+⚠️  Foundation contradicts the treatment.
+Continuing may cause story drift and compound errors in chapters.
+
+What would you like to do?
+  1. Abort generation (recommended) - fix treatment or regenerate foundation
+  2. Regenerate foundation with stricter enforcement
+  3. Ignore and continue (NOT recommended) - may cause story drift
+```
+
+**Chapter Issues Detected:**
+```
+═══════════════════════════════════════════════════════════════════
+✗ CRITICAL ISSUE DETECTED in Chapter 3
+═══════════════════════════════════════════════════════════════════
+
+Issue Type: major_plot_invention
+Location: Scene 2: The Discovery
+Element: Secret government program 'Project Chimera'
+
+Problem:
+  Treatment describes ONE antagonist (Dr. Victor Lang). This chapter invents
+  a NEW conspiracy involving government experiments not mentioned in treatment.
+
+Recommendation:
+  Remove this plot thread or verify it exists in treatment.
+
+⚠️  This chapter invents major plot elements not in the treatment.
+Continuing may cause story drift and compound errors in future chapters.
+
+What would you like to do?
+  1. Abort generation (recommended) - fix treatment or regenerate chapter
+  2. Regenerate chapter with stricter enforcement
+  3. Ignore and continue (NOT recommended) - may cause story drift
+```
+
+#### Best Practices
+
+**For Treatment Authors:**
+1. Be explicit about major plot elements (antagonists, conspiracies, plot threads)
+2. Include key character backgrounds and motivations
+3. Describe world rules clearly (realistic vs supernatural, etc.)
+4. Set appropriate pacing, tone, and themes
+
+**For Developers:**
+1. Always validate AFTER saving (aids debugging)
+2. Use low temperature (0.1) for validation (consistency)
+3. Use moderate temperature (0.6) for generation (creativity + fidelity)
+4. Provide clear user actions on validation failures
+5. Never silently ignore validation issues
+
+**For Users:**
+1. Review validation issues carefully before continuing
+2. Regenerate rather than ignore (prevents compounding errors)
+3. Update treatment if LLM consistently misunderstands intent
+4. Use foundation + treatment as dual sources of truth
+
+#### Future Enhancements (Deferred)
+
+**LLM-Generated Examples** (user suggestion):
+- Generate treatment-specific examples for chapter generation prompt
+- Show nuance between allowed elaboration vs forbidden invention
+- Customize examples based on actual treatment content
+- Decision: Implement if straightforward, otherwise defer
+
+**Implementation Approach:**
+```python
+# Before chapter generation, generate custom examples
+examples = await self._generate_custom_examples(
+    treatment_text=treatment_text,
+    foundation=foundation
+)
+
+# Inject into prompt
+prompt += f"\n\nCUSTOM EXAMPLES FOR THIS STORY:\n{examples}"
+```
+
+**Benefits:**
+- More targeted guidance than generic examples
+- Adapts to specific story requirements
+- Helps LLM understand allowed vs forbidden elaboration
+
+**Tradeoffs:**
+- Extra LLM call per chapter generation (+30-60s, +500-1000 tokens)
+- May not significantly improve over generic examples
+- Needs testing to validate effectiveness
+
 ## Data Flow
 
 ### Generation Flow
