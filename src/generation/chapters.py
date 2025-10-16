@@ -1139,6 +1139,40 @@ IMPORTANT:
                 self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
                 raise Exception("Invalid validator failure choice")
 
+    def _format_validation_issues(self, issues: List[Dict[str, Any]]) -> str:
+        """
+        Format validation issues for readable display in iteration prompt.
+
+        Args:
+            issues: List of validation issues from _validate_foundation_fidelity()
+                    Each issue has: type, severity, element, reasoning, recommendation
+
+        Returns:
+            Formatted string with numbered issues ready for prompt inclusion
+        """
+        if not issues:
+            return "No issues detected."
+
+        formatted = []
+
+        for i, issue in enumerate(issues, 1):
+            issue_type = issue.get('type', 'unknown')
+            element = issue.get('element', 'Unknown element')
+            reasoning = issue.get('reasoning', 'No reasoning provided')
+            recommendation = issue.get('recommendation', 'Fix this issue')
+
+            # Format type nicely (e.g., "character_contradiction" -> "Character Contradiction")
+            issue_type_formatted = issue_type.replace('_', ' ').title()
+
+            formatted.append(
+                f"Issue #{i}: {issue_type_formatted}\n"
+                f"  Element: {element}\n"
+                f"  Problem: {reasoning}\n"
+                f"  Fix: {recommendation}"
+            )
+
+        return "\n\n".join(formatted)
+
     async def _validate_foundation_fidelity(
         self,
         foundation_data: Dict[str, Any],
@@ -1688,7 +1722,7 @@ IMPORTANT:
 
                     self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
                     self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold] - fix treatment or regenerate foundation")
-                    self.console.print(f"  [cyan]2.[/cyan] Regenerate foundation with stricter enforcement")
+                    self.console.print(f"  [cyan]2.[/cyan] Iterate on foundation to fix specific issues")
                     self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may cause story drift")
 
                     foundation_choice = input("\nEnter choice (1-3): ").strip()
@@ -1700,20 +1734,51 @@ IMPORTANT:
                         raise Exception("Foundation validation failed - user aborted generation")
 
                     elif foundation_choice == "2":
-                        # Regenerate foundation with stricter enforcement
-                        self.console.print(f"\n[yellow]Regenerating foundation with stricter enforcement...[/yellow]")
+                        # Iterate on foundation with specific feedback from validation
+                        self.console.print(f"\n[yellow]Iterating on foundation to fix specific issues...[/yellow]")
                         self.console.print(f"[yellow]Previous foundation saved to .agentic/debug/ for reference[/yellow]\n")
 
-                        # Add stricter feedback
-                        strict_feedback = (
-                            "CRITICAL: Previous foundation contradicted the treatment. "
-                            "You MUST follow the treatment EXACTLY. Do NOT invent plot elements. "
-                            "Elaborate on treatment elements only, do not contradict or add major elements."
-                        )
-                        if feedback:
-                            strict_feedback = f"{feedback}\n\n{strict_feedback}"
+                        # Save previous foundation for reference
+                        debug_dir = self.project.path / ".agentic" / "debug"
+                        debug_dir.mkdir(parents=True, exist_ok=True)
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        debug_file = debug_dir / f"foundation_failed_{timestamp}.yaml"
+                        with open(debug_file, 'w', encoding='utf-8') as f:
+                            yaml.dump(foundation, f, default_flow_style=False, allow_unicode=True)
 
-                        # Regenerate with stricter feedback
+                        # Build iteration prompt with previous foundation and specific issues
+                        foundation_yaml = yaml.dump(foundation, default_flow_style=False, allow_unicode=True)
+                        issues_formatted = self._format_validation_issues(critical_issues)
+
+                        iteration_feedback = f"""FOUNDATION ITERATION - FIX VALIDATION ISSUES:
+
+The foundation below contradicts the treatment in specific ways.
+Fix ONLY the flagged issues while preserving correct elements.
+
+YOUR PREVIOUS FOUNDATION:
+```yaml
+{foundation_yaml}
+```
+
+VALIDATION ISSUES TO FIX:
+
+{issues_formatted}
+
+INSTRUCTIONS:
+1. Review each issue carefully
+2. Cross-reference the treatment (provided in context above)
+3. Update ONLY the problematic elements
+4. Keep everything else that was correct
+5. Do NOT add new major plot elements
+6. Elaborate on treatment elements, don't contradict them
+
+Return the corrected foundation as complete YAML."""
+
+                        # Combine with any existing feedback
+                        if feedback:
+                            iteration_feedback = f"{feedback}\n\n{iteration_feedback}"
+
+                        # Generate corrected foundation
                         foundation = await self._generate_foundation(
                             context_yaml=context_yaml,
                             taxonomy_data=taxonomy_data,
@@ -1721,7 +1786,7 @@ IMPORTANT:
                             chapter_count=chapter_count,
                             original_concept=original_concept,
                             unique_elements=unique_elements,
-                            feedback=strict_feedback,
+                            feedback=iteration_feedback,
                             is_initial_generation=is_initial_generation,
                             min_words=min_words,
                             max_words=max_words,
@@ -1730,27 +1795,26 @@ IMPORTANT:
                             genre=genre
                         )
 
-                        # Save regenerated foundation
+                        # Save iterated foundation
                         self._save_partial(foundation, phase='foundation')
                         self.project.save_foundation(foundation)
-                        self.console.print(f"[green]✓[/green] Foundation regenerated")
+                        self.console.print(f"[green]✓[/green] Foundation iteration complete")
 
-                        # Validate again (recursive - user can retry if still issues)
-                        self.console.print(f"[dim]Validating regenerated foundation...[/dim]")
-                        is_valid, critical_issues = await self._validate_foundation_fidelity(
+                        # Validate again
+                        self.console.print(f"[dim]Validating corrected foundation...[/dim]")
+                        is_valid, new_issues = await self._validate_foundation_fidelity(
                             foundation_data=foundation,
                             treatment_text=treatment_text
                         )
 
-                        # If still invalid, display issues but continue
-                        # (user already chose to regenerate, don't loop forever)
-                        if not is_valid and critical_issues:
-                            self.console.print(f"\n[yellow]⚠️  Regenerated foundation still has issues:[/yellow]")
-                            for issue in critical_issues:
+                        # Show results
+                        if not is_valid and new_issues:
+                            self.console.print(f"\n[yellow]⚠️  Foundation still has issues:[/yellow]")
+                            for issue in new_issues:
                                 self.console.print(f"  • {issue.get('element', 'Unknown')}: {issue.get('reasoning', '')}")
-                            self.console.print(f"\n[yellow]Continuing anyway...[/yellow]\n")
+                            self.console.print(f"\n[yellow]Continuing anyway (iteration attempted)...[/yellow]\n")
                         else:
-                            self.console.print(f"[green]✓[/green] Foundation validation passed\n")
+                            self.console.print(f"[green]✓[/green] Foundation validation passed!\n")
 
                     elif foundation_choice == "3":
                         # Ignore and continue
