@@ -2628,9 +2628,72 @@ The actual ad-newworld project failure demonstrates the effectiveness:
 4. **Quality-First**: No forced obligations - only include when organic
 5. **Clear Boundaries**: Explicit distinction between plot-level (MAJOR) and scene-level (MINOR)
 
+**Layer 4: Post-Generation Validation (v0.3.1+)**
+
+Separate LLM-based validation call AFTER each chapter is generated to detect treatment violations before they're saved:
+
+**Implementation** (`_validate_treatment_fidelity()` method):
+- **Separate LLM call**: Runs after chapter generation, before saving
+- **Temperature 0.1**: Consistent, strict evaluation
+- **No streaming**: Fast validation (not displayed to user)
+- **Detection criteria**: 6 types of violations (new antagonists, conspiracies, backstories, plot threads, role changes, contradictions)
+- **Structured JSON response**: `{valid, critical_issues, warnings}`
+- **Graceful failure**: Returns `(True, [])` if validator fails (doesn't block generation)
+
+**User Control Flow:**
+
+When violations detected:
+1. Display all critical issues with location, element, reasoning, recommendation
+2. Present 3 options:
+   - **Abort generation** (recommended): Stop to fix treatment or regenerate
+   - **Regenerate chapter** (TODO): Auto-retry with stricter enforcement
+   - **Ignore and continue** (NOT recommended): Proceeds with warning about story drift
+3. Invalid choice treated as abort (safe default)
+
+**Validation Prompt Structure:**
+```python
+validation_prompt = f"""
+TREATMENT (SOURCE OF TRUTH):
+{treatment_text}
+
+GENERATED CHAPTER {chapter_num}:
+{chapter_yaml}
+
+PREVIOUS CHAPTERS (for context):
+{previous_yaml}
+
+DETECTION CRITERIA:
+1. New Antagonists/Villains
+2. New Conspiracies/Organizations
+3. Major Backstory Inventions
+4. Plot Threads Not in Treatment
+5. Character Role Changes
+6. World-Building Contradictions
+
+ALLOWED (NOT violations):
+- MINOR elaborations: props, gestures, dialogue specifics
+- Minor characters: servants, officials, background characters
+- Scene-level details: actions, thoughts, transitions
+- Treatment elements with added richness
+
+RETURN JSON:
+{{"valid": true/false, "critical_issues": [...], "warnings": [...]}}
+"""
+```
+
+**Benefits:**
+- **Catches violations before saving**: Prevents bad chapters from entering story
+- **Stops compound errors early**: User can abort before drift spreads to future chapters
+- **User empowerment**: Clear control over how to handle issues
+- **Explicit examples**: Shows exactly what was invented and why it's a problem
+- **Low temperature**: Consistent evaluation across all chapters
+- **Non-blocking**: Gracefully handles validator failures
+
 **Files Modified:**
-- `src/generation/chapters.py` (lines 573-594, 631-632, 638-674, 684, 698, 834)
-- Treatment fidelity section added
-- Tiered plants/payoffs system added
+- `src/generation/chapters.py` (lines 573-594, 631-632, 638-674, 684, 698, 834, 857-1026, 1559-1628)
+- Treatment fidelity section added (lines 573-594)
+- Tiered plants/payoffs system added (lines 638-674)
 - Plants/payoffs made optional (quality over obligation)
 - Validation check removed (line 834)
+- Post-generation validation method added (lines 857-1026)
+- Validation integration in generation loop (lines 1559-1628)

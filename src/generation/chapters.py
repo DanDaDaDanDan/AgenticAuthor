@@ -854,6 +854,177 @@ IMPORTANT:
 
         return chapter_data
 
+    async def _validate_treatment_fidelity(
+        self,
+        chapter_data: Dict[str, Any],
+        chapter_num: int,
+        treatment_text: str,
+        previous_chapters: List[Dict[str, Any]]
+    ) -> tuple[bool, List[Dict[str, Any]]]:
+        """
+        Validate chapter against treatment for fidelity violations (separate LLM call).
+
+        This is a POST-GENERATION validation that detects MAJOR plot inventions not in treatment.
+        Uses low temperature (0.1) for consistent, strict evaluation.
+
+        Args:
+            chapter_data: Generated chapter dict with scenes
+            chapter_num: Chapter number being validated
+            treatment_text: Full treatment text (SOURCE OF TRUTH)
+            previous_chapters: Previous chapters for context
+
+        Returns:
+            Tuple of (is_valid: bool, issues: List[Dict])
+            Issues have: type, severity, location, element, reasoning, recommendation
+        """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.debug(f"Validating treatment fidelity for chapter {chapter_num}")
+
+        # Serialize chapter and previous chapters for validator
+        chapter_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
+
+        previous_yaml = ""
+        if previous_chapters:
+            previous_yaml = yaml.dump(previous_chapters, default_flow_style=False, allow_unicode=True)
+
+        # Build validation prompt
+        validation_prompt = f"""You are a treatment fidelity validator. Your job is to detect MAJOR plot inventions that violate the source treatment.
+
+TREATMENT (SOURCE OF TRUTH):
+```
+{treatment_text}
+```
+
+GENERATED CHAPTER {chapter_num}:
+```yaml
+{chapter_yaml}
+```
+
+PREVIOUS CHAPTERS (for context):
+```yaml
+{previous_yaml if previous_yaml else "# This is chapter 1 - no previous chapters"}
+```
+
+TASK:
+Analyze chapter {chapter_num} for MAJOR plot inventions NOT in the treatment.
+
+DETECTION CRITERIA:
+
+1. **New Antagonists/Villains**
+   - Treatment mentions ONE antagonist → Chapter introduces ADDITIONAL villain
+   - Examples: "secret mastermind", "hidden enemy", "surprise antagonist"
+   - Check: Is this character in treatment with antagonist role?
+
+2. **New Conspiracies/Organizations**
+   - Examples: "secret organization", "government program", "hidden conspiracy", "experiment project"
+   - Check: Is this mentioned anywhere in treatment?
+
+3. **Major Backstory Inventions**
+   - Examples: "character's traumatic past", "secret identity", "hidden history", "dark secret"
+   - Check: Is this character background in treatment?
+
+4. **Plot Threads Not in Treatment**
+   - Examples: new subplots, parallel stories, major revelations, plot twists
+   - Check: Is this plot element mentioned in treatment?
+
+5. **Character Role Changes**
+   - Check: Does chapter change character roles vs treatment?
+
+6. **World-Building Contradictions**
+   - Check: Does chapter contradict treatment's world rules?
+
+ALLOWED (NOT violations):
+- MINOR elaborations: props, gestures, dialogue specifics, sensory details
+- Minor characters: servants, officials, background characters
+- Scene-level details: specific actions, internal thoughts, transitions
+- Treatment elements with added richness: treatment mentions chess → chapter adds specific chess pieces
+
+RETURN FORMAT:
+Return ONLY valid JSON (no markdown fences):
+
+{{
+  "valid": true/false,
+  "critical_issues": [
+    {{
+      "type": "major_plot_invention",
+      "severity": "critical",
+      "location": "Scene 2: The Discovery",
+      "element": "Secret government program 'Project Chimera'",
+      "reasoning": "Treatment describes ONE antagonist (Dr. Victor Lang). This chapter invents a NEW conspiracy involving government experiments not mentioned in treatment.",
+      "recommendation": "Remove this plot thread or verify it exists in treatment."
+    }}
+  ],
+  "warnings": [
+    {{
+      "type": "ambiguous_elaboration",
+      "severity": "low",
+      "location": "Scene 3",
+      "element": "Character's mysterious locket",
+      "reasoning": "Could be MINOR prop or MAJOR plot device. Treatment doesn't mention this."
+    }}
+  ]
+}}
+
+IMPORTANT:
+- Be STRICT: If element is not clearly in treatment AND is plot-level (not scene detail), flag it
+- critical_issues = MAJOR violations that will cause story drift
+- warnings = Ambiguous elements that MAY be issues
+- If no issues: {{"valid": true, "critical_issues": [], "warnings": []}}
+- Temperature is 0.1 for consistency - be thorough and consistent"""
+
+        # Make validation call with LOW temperature for consistency
+        try:
+            result = await self.client.streaming_completion(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a strict treatment fidelity validator. You always return valid JSON without additional formatting."},
+                    {"role": "user", "content": validation_prompt}
+                ],
+                temperature=0.1,  # Low temperature for consistent strict evaluation
+                stream=False,  # No streaming for validation
+                display=False,  # Don't display during validation
+                min_response_tokens=200
+            )
+
+            if not result:
+                raise Exception("No response from validator")
+
+            response_text = result.get('content', result) if isinstance(result, dict) else result
+
+            # Parse JSON response
+            try:
+                # Strip markdown fences if present
+                response_text = response_text.strip()
+                if response_text.startswith('```'):
+                    # Remove fences
+                    lines = response_text.split('\n')
+                    response_text = '\n'.join(lines[1:-1] if len(lines) > 2 else lines)
+
+                validation_result = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                if logger:
+                    logger.warning(f"Failed to parse validation JSON: {e}")
+                # If parsing fails, assume valid (don't block on validator errors)
+                return (True, [])
+
+            is_valid = validation_result.get('valid', True)
+            critical_issues = validation_result.get('critical_issues', [])
+            warnings = validation_result.get('warnings', [])
+
+            if logger:
+                logger.debug(f"Validation result: valid={is_valid}, critical={len(critical_issues)}, warnings={len(warnings)}")
+
+            return (is_valid, critical_issues)
+
+        except Exception as e:
+            if logger:
+                logger.warning(f"Validation call failed: {e}")
+            # Don't block generation on validator failures
+            return (True, [])
+
     # Removed _generate_chapter_batch() - replaced by sequential _generate_single_chapter() calls
     # Sequential generation eliminates information loss and enables better resume capability
 
@@ -1384,6 +1555,71 @@ IMPORTANT:
                     self.console.print(f"[dim]Completed chapters saved to chapter-beats/[/dim]")
                     self.console.print(f"[dim]You can resume by running /generate chapters again[/dim]")
                     raise Exception(f"Failed to generate chapter {chapter_num}: {e}")
+
+                # Validate treatment fidelity (separate LLM call)
+                self.console.print(f"[dim]Validating treatment fidelity...[/dim]")
+
+                treatment_text = context.get('treatment', {}).get('text', '')
+                is_valid, critical_issues = await self._validate_treatment_fidelity(
+                    chapter_data=chapter_data,
+                    chapter_num=chapter_num,
+                    treatment_text=treatment_text,
+                    previous_chapters=previous_chapters
+                )
+
+                if not is_valid and critical_issues:
+                    # Display critical issues
+                    self.console.print(f"\n[bold red]{'='*70}[/bold red]")
+                    self.console.print(f"[bold red]✗ CRITICAL ISSUE DETECTED in Chapter {chapter_num}[/bold red]")
+                    self.console.print(f"[bold red]{'='*70}[/bold red]\n")
+
+                    for issue in critical_issues:
+                        self.console.print(f"[bold yellow]Issue Type:[/bold yellow] {issue.get('type', 'Unknown')}")
+                        self.console.print(f"[bold yellow]Location:[/bold yellow] {issue.get('location', 'Unknown')}")
+                        self.console.print(f"[bold yellow]Element:[/bold yellow] {issue.get('element', 'Unknown')}\n")
+
+                        self.console.print(f"[yellow]Problem:[/yellow]")
+                        self.console.print(f"  {issue.get('reasoning', 'No details provided')}\n")
+
+                        self.console.print(f"[cyan]Recommendation:[/cyan]")
+                        self.console.print(f"  {issue.get('recommendation', 'Review and fix')}\n")
+                        self.console.print(f"[dim]{'-'*70}[/dim]\n")
+
+                    self.console.print(f"[bold yellow]⚠️  This chapter invents major plot elements not in the treatment.[/bold yellow]")
+                    self.console.print(f"[yellow]Continuing may cause story drift and compound errors in future chapters.[/yellow]\n")
+
+                    self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+                    self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold] - fix treatment or regenerate chapter")
+                    self.console.print(f"  [cyan]2.[/cyan] Regenerate chapter {chapter_num} with stricter enforcement")
+                    self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may cause story drift")
+
+                    choice = input("\nEnter choice (1-3): ").strip()
+
+                    if choice == "1":
+                        # Abort generation
+                        self.console.print(f"\n[red]Generation aborted at chapter {chapter_num}[/red]")
+                        self.console.print(f"[dim]Completed chapters (1-{chapter_num - 1}) saved to chapter-beats/[/dim]")
+                        self.console.print(f"[dim]Fix treatment or modify feedback, then run /generate chapters to resume[/dim]")
+                        raise Exception(f"User aborted generation due to treatment fidelity violation in chapter {chapter_num}")
+
+                    elif choice == "2":
+                        # Regenerate chapter with stricter prompt
+                        self.console.print(f"\n[yellow]Regenerating chapter {chapter_num} with stricter treatment enforcement...[/yellow]")
+
+                        # TODO: Could add retry logic here with modified prompt
+                        # For now, just continue with a warning
+                        self.console.print(f"[yellow]Note: Automatic regeneration not yet implemented. Continuing with current chapter.[/yellow]")
+                        self.console.print(f"[yellow]Consider using /iterate to fix this chapter after generation completes.[/yellow]\n")
+
+                    elif choice == "3":
+                        # Ignore and continue
+                        self.console.print(f"\n[yellow]⚠️  Continuing with chapter {chapter_num} despite issues...[/yellow]")
+                        self.console.print(f"[yellow]This may cause compound errors in future chapters.[/yellow]\n")
+
+                    else:
+                        # Invalid choice - treat as abort
+                        self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
+                        raise Exception("Invalid validation choice")
 
                 # Save chapter immediately (enables resume)
                 self.project.save_chapter_beat(chapter_num, chapter_data)
