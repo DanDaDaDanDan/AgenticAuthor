@@ -574,7 +574,7 @@ graph TB
 ### 3. Generation System (`src/generation/`)
 - **premise.py**: LOD3 premise generation with auto-detection and taxonomy iteration (v0.3.0)
 - **treatment.py**: LOD2 story treatment
-- **chapters.py**: LOD2 chapter outlines
+- **chapters.py**: LOD2 chapter outlines with **treatment fidelity enforcement**
 - **prose.py**: LOD0 full prose
 - **iteration/**: Natural language feedback processing
   - **coordinator.py**: Orchestrates iteration workflow
@@ -591,6 +591,8 @@ graph TB
 - **Automatic genre detection from concepts** (v0.3.0)
 - **Taxonomy iteration with natural language or interactive UI** (v0.3.0)
 - **Strict model enforcement - user model for ALL operations** (v0.3.0)
+- **Treatment fidelity enforcement - prevents plot drift in chapter generation** (v0.3.1)
+- **Tiered plants/payoffs system - distinguishes MAJOR (plot) vs MINOR (scene) elements** (v0.3.1)
 
 ### 4. Storage Layer (`src/storage/`)
 - **git_manager.py**: Git operations via subprocess
@@ -2488,3 +2490,147 @@ if existing_chapters and not feedback:
 7. **Short Streams**: 30-60s per chapter (consistent, predictable)
 8. **Clear Progress**: User sees exactly which chapter is generating
 9. **Smart Regenerate**: Keeps foundation (stable), regenerates chapters (variable)
+
+### Treatment Fidelity System (v0.3.1)
+
+**Problem:** LLMs inventing major plot elements (new antagonists, conspiracies, character backstories) not present in the source treatment, leading to "story drift" where generated chapters diverge into a completely different story.
+
+**Root Cause Analysis:**
+
+1. **Token Imbalance**: By chapter 10, previous chapters (~50k tokens) massively outweigh treatment (~2.5k tokens)
+2. **Weak Enforcement**: Original prompts had one buried guideline about following treatment
+3. **Plants/Payoffs Feedback Loop**: LLM invented plot elements in early chapters ("plants") that later chapters tried to "pay off", creating compound error cascade
+4. **Sequential Context Accumulation**: Each chapter sees 100% of previous chapters, so errors become "canon" for subsequent chapters
+
+**Solution: Treatment Fidelity Enforcement**
+
+Three-layer defense system in `src/generation/chapters.py`:
+
+**Layer 1: CRITICAL - TREATMENT FIDELITY Section (Lines 573-594)**
+
+Establishes treatment as SOURCE OF TRUTH with three explicit guardrails:
+
+```python
+CRITICAL - TREATMENT FIDELITY:
+The treatment above is your SOURCE OF TRUTH for the story. Chapter {chapter_num} must advance THIS story, not invent a new one.
+
+GUARDRAILS:
+1. MAJOR PLOT ELEMENTS MUST come from the treatment:
+   - Antagonists, plot twists, character revelations, story threads
+   - Do NOT invent: new villains, conspiracies, backstories, or plot arcs not in treatment
+
+2. PREVIOUS CHAPTERS MAY CONTAIN ERRORS:
+   - If previous chapters diverged from treatment, DO NOT compound the error
+   - Cross-reference previous chapters against treatment
+   - Discard invented elements that contradict treatment
+
+3. ELABORATION IS ALLOWED for scene-level details:
+   - Character gestures, props, location specifics, sensory elements
+   - But NOT for plot-level changes
+```
+
+**Key Innovation: "PREVIOUS CHAPTERS MAY CONTAIN ERRORS"**
+
+Empowers LLM to break compound error cascade by:
+- Recognizing divergence when comparing previous chapters to treatment
+- Discarding invented plot elements that don't align with treatment
+- Preventing "pay off" of invented "plants"
+
+**Layer 2: Tiered Plants/Payoffs System (Lines 638-674)**
+
+Distinguishes two types of narrative plants:
+
+**MAJOR PLANTS (Plot-Level):**
+- **Definition**: New antagonists, conspiracies, plot twists, character backstories, story threads
+- **Rule**: MUST come from treatment
+- **Examples**: "secret organization", "government experiments", "hidden villain", "character's dark past"
+- **Enforcement**: Cross-reference treatment before planting
+
+**MINOR PLANTS (Scene-Level):**
+- **Definition**: Props, location details, character gestures, sensory elements, symbolic objects
+- **Rule**: Can be invented freely
+- **Examples**: "loose floor tile", "character's distinctive watch", "coffee stain on document"
+- **Purpose**: Add richness and continuity without changing plot direction
+
+**Payoff Verification Process (4 Steps):**
+
+```
+1. Check if plant is MAJOR (plot-level) or MINOR (scene-level)
+2. If MAJOR: Verify it exists in the treatment
+3. If plant contradicts treatment → DO NOT pay it off (treat as previous chapter error)
+4. If MINOR: Pay off freely to maintain continuity
+```
+
+**Layer 3: Quality Over Obligation**
+
+Plants/payoffs are OPTIONAL - only include when they:
+- Naturally enhance scene quality and narrative flow
+- Align with treatment elements (no invention of MAJOR plot elements)
+- Serve clear storytelling purpose (foreshadowing, continuity, symbolism)
+- Feel organic to the moment rather than forced
+
+**Implementation in Prompt:**
+
+```python
+# In ChapterGenerator._generate_single_chapter()
+prompt_parts = [
+    "TREATMENT (SOURCE OF TRUTH):",
+    treatment_text,
+    "",
+    "CRITICAL - TREATMENT FIDELITY:",
+    "<guardrails section>",
+    "",
+    "PREVIOUS CHAPTERS:",
+    yaml.dump(previous_chapters) if previous_chapters else "None",
+    "",
+    "PLANTS AND PAYOFFS - TIERED SYSTEM:",
+    "<tiered system details>",
+    "",
+    "GENERATE:",
+    f"Create detailed beat-by-beat structure for Chapter {chapter_num}...",
+    "- Treatment fidelity: Follow the CRITICAL - TREATMENT FIDELITY and PLANTS AND PAYOFFS guardrails above",
+    "- Plants/payoffs are OPTIONAL - only include when they naturally enhance quality (see tiered system above)"
+]
+```
+
+**Expected Impact:**
+
+Without enforcement (baseline):
+- ❌ Chapter 6: Invents "promotion ceremony" plant (not in treatment)
+- ❌ Chapter 7: Pays off with "eight killers" (inventing conspiracy)
+- ❌ Chapter 10: Full government mind control conspiracy (massive divergence)
+
+With enforcement (expected):
+- ✅ Chapter 6: "Promotion ceremony" REJECTED (MAJOR plant not in treatment)
+- ✅ Chapter 7: "Eight killers" payoff REJECTED (verify fails against treatment)
+- ✅ Chapter 10: Stays aligned with treatment's actual story
+- ✅ No compound error cascade
+
+**Testing Against Real Failure:**
+
+The actual ad-newworld project failure demonstrates the effectiveness:
+
+| Element | In Treatment? | Old Behavior | New Behavior |
+|---------|--------------|--------------|--------------|
+| Dr. Victor Lang (antagonist) | ✅ Yes | Generated correctly | Generated correctly |
+| Chess serial killer pattern | ✅ Yes | Generated correctly | Generated correctly |
+| "Promotion ceremony" | ❌ No | Invented in Ch 6 | REJECTED (MAJOR not in treatment) |
+| "Eight killers" conspiracy | ❌ No | Paid off in Ch 7 | REJECTED (verify fails) |
+| Government mind control | ❌ No | Full arc by Ch 10 | REJECTED (not in treatment) |
+| "Patient Eight" backstory | ❌ No | Invented | REJECTED (MAJOR backstory not in treatment) |
+| Commissioner Whitmore villain | ❌ No | Invented | REJECTED (new antagonist not in treatment) |
+
+**Benefits:**
+
+1. **Prevents Story Drift**: Chapters stay aligned with treatment's actual plot
+2. **Breaks Compound Errors**: LLM can recognize and discard previous chapter errors
+3. **Preserves Scene Richness**: MINOR plants still allowed for narrative depth
+4. **Quality-First**: No forced obligations - only include when organic
+5. **Clear Boundaries**: Explicit distinction between plot-level (MAJOR) and scene-level (MINOR)
+
+**Files Modified:**
+- `src/generation/chapters.py` (lines 573-594, 631-632, 638-674, 684, 698, 834)
+- Treatment fidelity section added
+- Tiered plants/payoffs system added
+- Plants/payoffs made optional (quality over obligation)
+- Validation check removed (line 834)
