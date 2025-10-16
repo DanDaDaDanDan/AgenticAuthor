@@ -114,6 +114,28 @@ class ChapterGenerator:
         """
         return DepthCalculator.calculate_structure(total_words, pacing, length_scope=length_scope)
 
+    def _is_yaml_truncated(self, content: str, error: yaml.YAMLError) -> bool:
+        """
+        Detect if YAML parsing error is due to truncation/network interruption.
+
+        Args:
+            content: The YAML content that failed to parse
+            error: The YAML parsing error
+
+        Returns:
+            True if error indicates truncation, False otherwise
+        """
+        truncation_indicators = [
+            "found unexpected end of stream",
+            "unexpected end of stream",
+            "while scanning a quoted scalar",
+            "unclosed quoted scalar",
+            "mapping values are not allowed here",
+            "expected <block end>",
+        ]
+        error_str = str(error).lower()
+        return any(indicator in error_str for indicator in truncation_indicators)
+
     # Removed _find_last_complete_chapter() and _fix_truncated_yaml() - no longer needed with sequential generation
     # Old batched generation used these for truncation recovery
     # Sequential generation has built-in resume via generate() loop
@@ -770,11 +792,62 @@ IMPORTANT:
 
         response_text = result.get('content', result) if isinstance(result, dict) else result
 
-        # Parse YAML
-        try:
-            chapter_data = yaml.safe_load(response_text)
-        except yaml.YAMLError as e:
-            raise Exception(f"Failed to parse chapter {chapter_num} YAML: {e}")
+        # Check finish_reason for early truncation detection
+        if isinstance(result, dict) and result.get('finish_reason') == 'connection_error':
+            self.console.print(f"[yellow]⚠️  Connection error detected during generation[/yellow]")
+            # Will be caught by retry logic below
+
+        # Parse YAML with automatic retry on truncation
+        max_yaml_retries = 2
+        chapter_data = None
+
+        for yaml_retry in range(max_yaml_retries + 1):
+            try:
+                chapter_data = yaml.safe_load(response_text)
+                break  # Success! Exit retry loop
+
+            except yaml.YAMLError as e:
+                is_truncated = self._is_yaml_truncated(response_text, e)
+
+                if is_truncated and yaml_retry < max_yaml_retries:
+                    # Automatic retry on truncation
+                    self.console.print(f"\n[yellow]⚠️  YAML truncated (network error)[/yellow]")
+                    self.console.print(f"[yellow]Retrying chapter {chapter_num} generation ({yaml_retry + 1}/{max_yaml_retries})...[/yellow]\n")
+
+                    if logger:
+                        logger.warning(f"YAML truncation detected in chapter {chapter_num}, retry {yaml_retry + 1}/{max_yaml_retries}")
+                        logger.debug(f"YAML error: {e}")
+                        logger.debug(f"Response length: {len(response_text)} chars")
+
+                    # Regenerate from scratch with same parameters
+                    result = await self.client.streaming_completion(
+                        model=self.model,
+                        messages=[
+                            {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.7,
+                        stream=True,
+                        display=True,
+                        min_response_tokens=min_tokens
+                    )
+
+                    if not result:
+                        raise Exception(f"No response from API for chapter {chapter_num} (retry {yaml_retry + 1})")
+
+                    response_text = result.get('content', result) if isinstance(result, dict) else result
+                    continue  # Try parsing again
+
+                else:
+                    # Not truncated, or max retries reached
+                    if is_truncated:
+                        self.console.print(f"\n[red]YAML truncation persists after {max_yaml_retries} retries[/red]")
+                        if logger:
+                            logger.error(f"YAML truncation in chapter {chapter_num} after {max_yaml_retries} retries")
+                    raise Exception(f"Failed to parse chapter {chapter_num} YAML: {e}")
+
+        if not chapter_data:
+            raise Exception(f"Failed to generate valid YAML for chapter {chapter_num} after {max_yaml_retries} retries")
 
         # Validate structure
         if not isinstance(chapter_data, dict):
@@ -1591,6 +1664,15 @@ IMPORTANT:
                         logger.error(f"Chapter {chapter_num} generation failed: {e}")
 
                     self.console.print(f"[red]✗[/red] Failed to generate chapter {chapter_num}: {e}")
+
+                    # Add truncation hint if it's a YAML error indicating truncation
+                    error_str = str(e).lower()
+                    if any(indicator in error_str for indicator in [
+                        "while scanning", "unexpected end", "unclosed", "truncation", "retries"
+                    ]):
+                        self.console.print(f"\n[yellow]This looks like a network truncation (automatic retries exhausted).[/yellow]")
+                        self.console.print(f"[yellow]This can happen with unstable connections or slow models.[/yellow]")
+
                     self.console.print(f"\n[yellow]Generation stopped at chapter {chapter_num}[/yellow]")
                     self.console.print(f"[dim]Completed chapters saved to chapter-beats/[/dim]")
                     self.console.print(f"[dim]You can resume by running /generate chapters again[/dim]")
