@@ -187,7 +187,9 @@ Return ONLY the treatment section."""
                     'updated_files': parse_result['updated_files'],
                     'deleted_files': parse_result['deleted_files']
                 }
-                metadata_file = self.project.path / "treatment_metadata.json"
+                # Ensure treatment directory exists
+                self.project.treatment_dir.mkdir(exist_ok=True)
+                metadata_file = self.project.treatment_metadata_file
                 with open(metadata_file, 'w', encoding='utf-8') as f:
                     json.dump(treatment_metadata, f, indent=2)
 
@@ -356,7 +358,9 @@ Return ONLY the treatment section."""
             'deleted_files': parse_result['deleted_files'],
             'multi_model': True
         }
-        metadata_file = self.project.path / "treatment_metadata.json"
+        # Ensure treatment directory exists
+        self.project.treatment_dir.mkdir(exist_ok=True)
+        metadata_file = self.project.treatment_metadata_file
         with open(metadata_file, 'w', encoding='utf-8') as f:
             json.dump(treatment_metadata, f, indent=2)
 

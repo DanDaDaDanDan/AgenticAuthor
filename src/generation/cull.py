@@ -103,6 +103,12 @@ class CullManager:
             legacy_treatment_file.unlink()
             deleted_files.append("treatment.md")
 
+        # Also delete legacy treatment_metadata.json if it exists at root
+        legacy_treatment_metadata = self.project.path / "treatment_metadata.json"
+        if legacy_treatment_metadata.exists():
+            legacy_treatment_metadata.unlink()
+            deleted_files.append("treatment_metadata.json")
+
         # Cascade: delete chapters and prose
         chapters_result = self.cull_chapters()
         deleted_files.extend(chapters_result['deleted_files'])

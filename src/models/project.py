@@ -82,6 +82,11 @@ class Project:
         return self.treatment_dir / "treatment.md"
 
     @property
+    def treatment_metadata_file(self) -> Path:
+        """Get path to treatment_metadata.json file (for generation metadata)."""
+        return self.treatment_dir / "treatment_metadata.json"
+
+    @property
     def chapters_file(self) -> Path:
         """
         Get path to chapters.yaml file.
@@ -156,6 +161,7 @@ class Project:
         - premise_metadata.json (root)
         - premises_candidates.json (root)
         - treatment.md (root)
+        - treatment_metadata.json (root)
         - frontmatter.md (root)
         - dedication.md (root)
 
@@ -163,6 +169,7 @@ class Project:
         - premise/premise_metadata.json
         - premise/premises_candidates.json
         - treatment/treatment.md
+        - treatment/treatment_metadata.json
         - exports/frontmatter.md
         - exports/dedication.md
 
@@ -185,6 +192,12 @@ class Project:
         if old_treatment.exists() and not self.treatment_file.exists():
             self.treatment_dir.mkdir(exist_ok=True)
             old_treatment.rename(self.treatment_file)
+
+        # Migrate treatment_metadata.json
+        old_treatment_metadata = self.path / "treatment_metadata.json"
+        if old_treatment_metadata.exists() and not self.treatment_metadata_file.exists():
+            self.treatment_dir.mkdir(exist_ok=True)
+            old_treatment_metadata.rename(self.treatment_metadata_file)
 
         # Migrate frontmatter.md
         old_frontmatter = self.path / "frontmatter.md"
