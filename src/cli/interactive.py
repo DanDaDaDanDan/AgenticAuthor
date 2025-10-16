@@ -2260,10 +2260,10 @@ class InteractiveSession:
             self._print("[dim]Delete generated content and cascade to downstream content[/dim]")
             self._print()
             self._print("[dim]Targets:[/dim]")
-            self._print("  [bold]/cull prose[/bold]       - Delete all prose files")
-            self._print("  [bold]/cull chapters[/bold]    - Delete chapters.yaml + prose")
-            self._print("  [bold]/cull treatment[/bold]   - Delete treatment.md + chapters + prose")
-            self._print("  [bold]/cull premise[/bold]     - Delete premise_metadata.json + all downstream")
+            self._print("  [bold]/cull prose[/bold]       - Delete all prose files (chapters/*.md)")
+            self._print("  [bold]/cull chapters[/bold]    - Delete chapter-beats/ (foundation + all chapters) + prose")
+            self._print("  [bold]/cull treatment[/bold]   - Delete treatment/ + chapters + prose")
+            self._print("  [bold]/cull premise[/bold]     - Delete premise/ + all downstream")
             return
 
         target = args.strip().lower()

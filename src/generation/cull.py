@@ -46,29 +46,69 @@ class CullManager:
         Returns:
             Dict with deleted_files list
         """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
         deleted_files = []
 
         # Delete entire chapter-beats/ directory
-        if self.project.chapter_beats_dir.exists():
-            for beat_file in self.project.chapter_beats_dir.glob("*.yaml"):
-                beat_file.unlink()
-                deleted_files.append(str(beat_file.relative_to(self.project.path)))
+        beats_dir = self.project.chapter_beats_dir
+
+        if logger:
+            logger.debug(f"Cull chapters: checking directory {beats_dir}")
+            logger.debug(f"Directory exists: {beats_dir.exists()}")
+
+        if beats_dir.exists():
+            # Explicitly delete foundation.yaml first
+            foundation_file = beats_dir / "foundation.yaml"
+            if foundation_file.exists():
+                if logger:
+                    logger.debug(f"Deleting foundation: {foundation_file}")
+                foundation_file.unlink()
+                deleted_files.append(str(foundation_file.relative_to(self.project.path)))
+
+            # Delete all chapter-NN.yaml files
+            chapter_files = sorted(beats_dir.glob("chapter-*.yaml"))
+            if logger:
+                logger.debug(f"Found {len(chapter_files)} chapter files")
+
+            for chapter_file in chapter_files:
+                if logger:
+                    logger.debug(f"Deleting: {chapter_file}")
+                chapter_file.unlink()
+                deleted_files.append(str(chapter_file.relative_to(self.project.path)))
+
+            # Delete any other .yaml files (catch-all)
+            other_yaml = [f for f in beats_dir.glob("*.yaml") if f.exists()]
+            for yaml_file in other_yaml:
+                if logger:
+                    logger.debug(f"Deleting other yaml: {yaml_file}")
+                yaml_file.unlink()
+                deleted_files.append(str(yaml_file.relative_to(self.project.path)))
 
             # Try to remove directory if empty
             try:
-                self.project.chapter_beats_dir.rmdir()
-            except OSError:
-                pass  # Directory not empty, that's fine
+                beats_dir.rmdir()
+                if logger:
+                    logger.debug(f"Removed empty directory: {beats_dir}")
+            except OSError as e:
+                if logger:
+                    logger.debug(f"Could not remove directory (not empty or error): {e}")
 
         # Also delete legacy chapters.yaml if it exists
         legacy_chapters_file = self.project.path / "chapters.yaml"
         if legacy_chapters_file.exists():
+            if logger:
+                logger.debug(f"Deleting legacy chapters.yaml")
             legacy_chapters_file.unlink()
             deleted_files.append("chapters.yaml")
 
         # Cascade: delete all prose
         prose_result = self.cull_prose()
         deleted_files.extend(prose_result['deleted_files'])
+
+        if logger:
+            logger.debug(f"Cull chapters complete: deleted {len(deleted_files)} files")
 
         return {
             'deleted_files': deleted_files,

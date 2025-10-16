@@ -2433,19 +2433,18 @@ result = await generator.generate()
 # 3. Assembly phase
 #    - Load all chapter files
 #    - Validate sequential numbering
-#    - Aggregate into chapters.yaml for backward compatibility
+#    - NO chapters.yaml written - chapter-beats/ is the only format
 ```
 
 **File Structure:**
 
 ```
 project/
-  ├── chapter-beats/
-  │   ├── foundation.yaml           # Generated once, loaded on resume
-  │   ├── chapter-01.yaml           # Individual chapter files
-  │   ├── chapter-02.yaml
-  │   └── chapter-NN.yaml
-  └── chapters.yaml                 # Aggregated (for backward compat)
+  └── chapter-beats/                # Only format (no chapters.yaml)
+      ├── foundation.yaml           # Generated once, loaded on resume
+      ├── chapter-01.yaml           # Individual chapter files
+      ├── chapter-02.yaml
+      └── chapter-NN.yaml
 ```
 
 **Resume Capability:**

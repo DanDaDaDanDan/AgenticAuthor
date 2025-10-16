@@ -1830,8 +1830,9 @@ IMPORTANT:
             else:
                 self.console.print(f"[yellow]Some anchors outside expected ranges - consider adjusting chapter structure[/yellow]")
 
-            # Save final result
-            self.project.save_chapters_yaml(final_data)
+            # NOTE: We do NOT save chapters.yaml - chapter-beats/ is the only format
+            # Individual chapter files (chapter-beats/chapter-NN.yaml) are already saved
+            # No need for aggregated chapters.yaml file
 
             if logger:
                 logger.debug(f"Successfully generated {len(all_chapters)} chapters with full context")
