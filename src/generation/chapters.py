@@ -1173,6 +1173,89 @@ IMPORTANT:
 
         return "\n\n".join(formatted)
 
+    def _select_validation_issues(self, issues: List[Dict[str, Any]], context: str = "validation") -> List[Dict[str, Any]]:
+        """
+        Display validation issues and let user select which ones to incorporate.
+
+        Args:
+            issues: List of validation issues
+            context: Context string for display (e.g., "foundation", "chapter 3")
+
+        Returns:
+            Filtered list of selected issues (or all issues if user selects all)
+        """
+        if not issues:
+            return []
+
+        self.console.print(f"\n[yellow]Detected {len(issues)} validation issue(s) in {context}:[/yellow]\n")
+
+        # Display all issues with numbers
+        for i, issue in enumerate(issues, 1):
+            issue_type = issue.get('type', 'unknown')
+            element = issue.get('element', 'Unknown element')
+            reasoning = issue.get('reasoning', 'No reasoning provided')
+            severity = issue.get('severity', 'medium')
+
+            # Format type nicely
+            issue_type_formatted = issue_type.replace('_', ' ').title()
+
+            # Color code by severity
+            severity_color = "red" if severity == "critical" else "yellow" if severity == "high" else "dim"
+
+            self.console.print(f"[cyan]{i}.[/cyan] [{severity_color}]{issue_type_formatted}[/{severity_color}]")
+            self.console.print(f"   Element: {element}")
+            self.console.print(f"   Problem: {reasoning}")
+            self.console.print()
+
+        # Prompt for selection
+        self.console.print("[yellow]Which issues should be incorporated into iteration?[/yellow]")
+        self.console.print("[dim]Options:[/dim]")
+        self.console.print("  • Enter numbers (e.g., '1,3,5' or '1-3')")
+        self.console.print("  • Enter 'all' to include all issues")
+        self.console.print("  • Press Enter to include all issues (default)")
+        self.console.print()
+
+        selection = input("Enter selection: ").strip()
+
+        # Default to all if empty
+        if not selection or selection.lower() == 'all':
+            self.console.print(f"[green]✓[/green] Including all {len(issues)} issues\n")
+            return issues
+
+        # Parse selection
+        selected_indices = set()
+        try:
+            parts = selection.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    # Range (e.g., "1-3")
+                    start, end = part.split('-')
+                    start_idx = int(start.strip())
+                    end_idx = int(end.strip())
+                    for idx in range(start_idx, end_idx + 1):
+                        if 1 <= idx <= len(issues):
+                            selected_indices.add(idx)
+                else:
+                    # Single number
+                    idx = int(part)
+                    if 1 <= idx <= len(issues):
+                        selected_indices.add(idx)
+        except ValueError:
+            self.console.print(f"[red]Invalid selection format. Including all issues.[/red]\n")
+            return issues
+
+        # Filter issues
+        selected_issues = [issues[i - 1] for i in sorted(selected_indices)]
+
+        if selected_issues:
+            self.console.print(f"[green]✓[/green] Selected {len(selected_issues)} of {len(issues)} issues\n")
+        else:
+            self.console.print(f"[yellow]No valid issues selected. Including all issues.[/yellow]\n")
+            return issues
+
+        return selected_issues
+
     async def _validate_foundation_fidelity(
         self,
         foundation_data: Dict[str, Any],
@@ -1746,9 +1829,12 @@ IMPORTANT:
                         with open(debug_file, 'w', encoding='utf-8') as f:
                             yaml.dump(foundation, f, default_flow_style=False, allow_unicode=True)
 
-                        # Build iteration prompt with previous foundation and specific issues
+                        # Let user select which issues to incorporate
+                        selected_issues = self._select_validation_issues(critical_issues, context="foundation")
+
+                        # Build iteration prompt with previous foundation and selected issues
                         foundation_yaml = yaml.dump(foundation, default_flow_style=False, allow_unicode=True)
-                        issues_formatted = self._format_validation_issues(critical_issues)
+                        issues_formatted = self._format_validation_issues(selected_issues)
 
                         iteration_feedback = f"""FOUNDATION ITERATION - FIX VALIDATION ISSUES:
 
@@ -2109,9 +2195,12 @@ Return the corrected foundation as complete YAML."""
                         with open(debug_file, 'w', encoding='utf-8') as f:
                             yaml.dump(chapter_data, f, default_flow_style=False, allow_unicode=True)
 
-                        # Build iteration prompt with previous chapter and specific issues
+                        # Let user select which issues to incorporate
+                        selected_issues = self._select_validation_issues(critical_issues, context=f"chapter {chapter_num}")
+
+                        # Build iteration prompt with previous chapter and selected issues
                         chapter_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
-                        issues_formatted = self._format_validation_issues(critical_issues)
+                        issues_formatted = self._format_validation_issues(selected_issues)
 
                         iteration_feedback = f"""CHAPTER ITERATION - FIX VALIDATION ISSUES:
 
@@ -2179,8 +2268,12 @@ Return the corrected chapter as complete YAML."""
                                     # Still has issues
                                     if retry_attempt < max_retries:
                                         self.console.print(f"[yellow]Chapter still has issues. Retrying iteration...[/yellow]")
-                                        # Update iteration_feedback with new issues for next attempt
-                                        issues_formatted = self._format_validation_issues(iter_issues)
+
+                                        # Let user select which new issues to incorporate for retry
+                                        retry_selected_issues = self._select_validation_issues(iter_issues, context=f"chapter {chapter_num} retry")
+
+                                        # Update iteration_feedback with selected new issues for next attempt
+                                        issues_formatted = self._format_validation_issues(retry_selected_issues)
                                         iteration_feedback = f"""CHAPTER ITERATION - FIX VALIDATION ISSUES (Retry {retry_attempt + 1}):
 
 Previous iteration still has issues. Fix these remaining problems.
