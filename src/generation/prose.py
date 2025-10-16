@@ -62,7 +62,7 @@ class ProseGenerator:
 
     def get_taxonomy_selections(self) -> Optional[str]:
         """Load and format taxonomy selections from premise metadata."""
-        metadata_file = self.project.path / "premise_metadata.json"
+        metadata_file = self.project.premise_metadata_file
         if metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 data = json.load(f)

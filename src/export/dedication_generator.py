@@ -67,7 +67,7 @@ class DedicationGenerator:
         details['author'] = metadata.get('author', 'Unknown')
 
         # Get premise metadata
-        premise_metadata_file = self.project.path / "premise_metadata.json"
+        premise_metadata_file = self.project.premise_metadata_file
         if premise_metadata_file.exists():
             import json
             with open(premise_metadata_file, 'r') as f:

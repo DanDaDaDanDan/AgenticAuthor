@@ -450,7 +450,7 @@ Return JSON with only the selections:
 
             # Save metadata
             if result and 'selections' in result:
-                metadata_path = self.project.path / "premise_metadata.json"
+                metadata_path = self.project.premise_metadata_file
 
                 # Load existing metadata if it exists
                 existing_metadata = {}
@@ -502,7 +502,7 @@ Return JSON with only the selections:
             logger.debug(f"Current premise loaded: {len(current_premise)} chars")
 
         # Load metadata if exists
-        metadata_path = self.project.path / "premise_metadata.json"
+        metadata_path = self.project.premise_metadata_file
         current_metadata = {}
         if metadata_path.exists():
             with open(metadata_path, 'r') as f:
