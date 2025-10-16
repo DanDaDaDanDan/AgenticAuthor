@@ -570,6 +570,29 @@ PREVIOUS CHAPTERS (full details with all scenes):
 {previous_yaml if previous_yaml else "# This is chapter 1 - no previous chapters"}
 ```
 
+CRITICAL - TREATMENT FIDELITY:
+The treatment above is your SOURCE OF TRUTH for the story. Chapter {chapter_num} must advance THIS story, not invent a new one.
+
+GUARDRAILS:
+1. MAJOR PLOT ELEMENTS MUST come from the treatment:
+   - Antagonists, plot twists, character revelations, story threads
+   - Do NOT invent: new villains, conspiracies, backstories, or plot arcs not in treatment
+
+2. PREVIOUS CHAPTERS MAY CONTAIN ERRORS:
+   - If previous chapters diverged from treatment, DO NOT compound the error
+   - Cross-reference previous chapters against treatment
+   - Discard invented elements that contradict treatment
+
+3. ELABORATION IS ALLOWED for scene-level details:
+   - Character gestures, props, location specifics, sensory elements
+   - But NOT for plot-level changes
+
+Example of ALLOWED elaboration:
+✓ Treatment says "Lang confronts Elias" → You add: specific dialogue, chess board prop, warehouse details
+✗ Treatment has one antagonist → You add: secret conspiracy, government experiments, additional villains
+
+This chapter MUST stay within the story outlined in the treatment above.
+
 BEAT-DRIVEN ARCHITECTURE:
 This is chapter {chapter_num} in {default_act} (role: {chapter_role}).
 - Chapter budget: {words_total:,} words total ({words_scenes:,} for scenes, rest for transitions/glue)
@@ -605,12 +628,43 @@ Each scene MUST include:
   - exit_hook: Forward momentum (question/decision/reveal/peril)
   - emotional_beat: Internal character change
   - tension: 2-3 tags from: timer, secrecy, pursuit, environment, moral, social-pressure, puzzle
-  - plants: Setup for later payoffs (if applicable)
-  - payoffs: Callbacks to earlier plants (if applicable)
+  - plants: Setup for later payoffs (MINOR only - see guidelines below)
+  - payoffs: Callbacks to earlier plants (verify against treatment first)
   - impact: {scene_impacts[0]} (1=connective, 2=important, 3=set-piece) - ALREADY ASSIGNED, use these values
   - sensory_focus: 2-3 specific sensory details
   - target_words: scene word target
   - beats: Array of 6 beats with type, note, target_words
+
+PLANTS AND PAYOFFS - TIERED SYSTEM:
+Two types of plants are distinguished:
+
+MAJOR PLANTS (plot-level): MUST come from treatment
+  - New antagonists, conspiracies, plot twists, character backstories, story threads
+  - These shape the overall story direction
+  - Examples: "secret organization", "government experiments", "hidden villain", "character's dark past"
+  - DO NOT plant these elements if they are not in the treatment
+  - Cross-reference treatment before planting any plot-level element
+
+MINOR PLANTS (scene-level): Can be invented freely
+  - Props, location details, character gestures, sensory elements, symbolic objects
+  - These add richness and continuity without changing plot direction
+  - Examples: "loose floor tile", "character's distinctive watch", "coffee stain on document", "recurring musical phrase"
+  - These enrich scenes and can be paid off in later scenes
+
+PAYOFF VERIFICATION:
+Before paying off ANY plant from previous chapters:
+  1. Check if the plant is MAJOR (plot-level) or MINOR (scene-level)
+  2. If MAJOR: Verify it exists in the treatment
+  3. If the plant contradicts treatment → DO NOT pay it off (treat as previous chapter error)
+  4. If MINOR: Pay off freely to maintain continuity
+
+Examples of proper tiered usage:
+✓ Treatment mentions "Lang uses chess symbolism" → You plant "white king piece" (MINOR plant from treatment element)
+✓ Treatment shows "factory has machinery" → You plant "loose tile from manufacturing flaw" (MINOR elaboration)
+✗ Treatment has one villain → Previous chapter planted "secret mastermind" → DO NOT pay this off (MAJOR error)
+✗ Treatment says nothing about experiments → Previous chapter planted "government program" → DO NOT pay this off (MAJOR error)
+
+At least ONE plant or payoff per scene (MINOR plants strongly preferred).
 
 BEAT ARRAY STRUCTURE (6 beats per scene):
 Each scene must have exactly 6 beats:
@@ -627,14 +681,14 @@ Guidelines:
 - Review previous chapters' scenes CAREFULLY to avoid duplication
 - Each scene must advance the story with NEW events and conflicts
 - Do NOT repeat plot beats, events, or character moments already covered
-- Treatment fidelity: major plot beats should come from the treatment/foundation; don't invent major new plot elements or characters not present in the source material
+- Treatment fidelity: Follow the CRITICAL - TREATMENT FIDELITY and PLANTS AND PAYOFFS guardrails above
 - Be specific with names, places, emotions
 - objective must be VERB phrase ("convince mentor", NOT "talking to mentor")
 - opposition must be ACTIVE force ("mentor's skepticism", NOT "it's difficult")
 - value_shift must use → symbol ("ignored → heard")
 - exit_hook must point forward (question, decision, reveal, peril)
 - Vary tension tags across scenes (avoid repeating same 3+ times)
-- At least ONE plant or payoff per scene
+- At least ONE plant or payoff per scene (MINOR plants preferred - see tiered system above)
 
 RETURN FORMAT:
 Return ONLY valid YAML for this ONE chapter (no markdown fences):
