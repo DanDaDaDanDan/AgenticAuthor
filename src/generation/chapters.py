@@ -664,7 +664,14 @@ Examples of proper tiered usage:
 ✗ Treatment has one villain → Previous chapter planted "secret mastermind" → DO NOT pay this off (MAJOR error)
 ✗ Treatment says nothing about experiments → Previous chapter planted "government program" → DO NOT pay this off (MAJOR error)
 
-At least ONE plant or payoff per scene (MINOR plants strongly preferred).
+IMPORTANT - QUALITY OVER OBLIGATION:
+Plants and payoffs are NOT required in every scene. Only include them when they:
+  - Naturally enhance the scene quality and narrative flow
+  - Align with treatment elements (no invention of MAJOR plot elements)
+  - Serve a clear storytelling purpose (foreshadowing, continuity, symbolism)
+  - Feel organic to the moment rather than forced
+
+If a scene works better without plants/payoffs, omit them. Quality and treatment fidelity come first.
 
 BEAT ARRAY STRUCTURE (6 beats per scene):
 Each scene must have exactly 6 beats:
@@ -688,7 +695,7 @@ Guidelines:
 - value_shift must use → symbol ("ignored → heard")
 - exit_hook must point forward (question, decision, reveal, peril)
 - Vary tension tags across scenes (avoid repeating same 3+ times)
-- At least ONE plant or payoff per scene (MINOR plants preferred - see tiered system above)
+- Plants/payoffs are OPTIONAL - only include when they naturally enhance quality (see tiered system above)
 
 RETURN FORMAT:
 Return ONLY valid YAML for this ONE chapter (no markdown fences):
@@ -824,11 +831,7 @@ IMPORTANT:
             if not tension or len(tension) == 0:
                 hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'tension' tags")
 
-            # Check plants or payoffs
-            plants = scene.get('plants', [])
-            payoffs = scene.get('payoffs', [])
-            if not plants and not payoffs:
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing both 'plants' and 'payoffs' (need at least one)")
+            # Note: plants/payoffs are now optional (quality-first approach) - no validation needed
 
             # Check beats array
             beats = scene.get('beats', [])
