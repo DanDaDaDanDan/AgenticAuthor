@@ -107,7 +107,7 @@ class SessionLogger:
 
         self._write_event("command", event_data)
 
-    def log_api_call(self, model: str, prompt: str, response: str, tokens: dict, error: Optional[str] = None, full_messages: list = None, request_params: dict = None):
+    def log_api_call(self, model: str, prompt: str, response: str, tokens: dict, error: Optional[str] = None, full_messages: list = None, request_params: dict = None, operation: str = None):
         """Log an API call with FULL request and response details in JSONL.
 
         Args:
@@ -118,10 +118,12 @@ class SessionLogger:
             error: Error message if call failed
             full_messages: Complete messages array sent to API (list of dicts)
             request_params: Full request parameters (temperature, max_tokens, etc.)
+            operation: Optional operation name (e.g., "premise-generation", "chapter-3")
         """
         self._write_event("api_call", {
             "timestamp": datetime.now().isoformat(),
             "model": model,
+            "operation": operation,
             "request_params": request_params or {},
             "messages": full_messages or [],
             "prompt": prompt,  # Keep for backward compatibility
@@ -130,6 +132,17 @@ class SessionLogger:
             "tokens": tokens or {},
             "error": error
         })
+
+        # Also save as individual text file for easy debugging
+        self.save_llm_call_file(
+            model=model,
+            messages=full_messages or [],
+            response=response if not error else f"ERROR: {error}",
+            request_params=request_params or {},
+            tokens=tokens or {},
+            operation=operation,
+            error=error
+        )
 
     def log_api_error(self, model: str, error: Exception, request_params: dict = None, full_messages: list = None):
         """Log an API call that failed with FULL request details in JSONL.
@@ -148,6 +161,124 @@ class SessionLogger:
             "request_params": request_params or {},
             "messages": full_messages or []
         })
+
+    def save_llm_call_file(
+        self,
+        model: str,
+        messages: list,
+        response: str,
+        request_params: dict,
+        tokens: dict,
+        operation: Optional[str] = None,
+        error: Optional[str] = None
+    ):
+        """Save LLM call details to individual text file for easy debugging.
+
+        Creates a human-readable text file with:
+        - Timestamp, model, and operation
+        - All request parameters
+        - Complete messages/prompt
+        - Full response
+        - Token usage and cost
+
+        Files are saved to: .agentic/debug/llm-calls/YYYYMMDD_HHMMSS_model_operation.txt
+
+        Args:
+            model: Model name
+            messages: Complete messages array
+            response: Response text
+            request_params: Request parameters dict
+            tokens: Token usage dict
+            operation: Optional operation name
+            error: Optional error message
+        """
+        try:
+            # Create debug directory
+            debug_dir = self.logs_dir.parent / "debug" / "llm-calls"
+            debug_dir.mkdir(parents=True, exist_ok=True)
+
+            # Create filename
+            timestamp = datetime.now()
+            timestamp_str = timestamp.strftime("%Y%m%d_%H%M%S")
+
+            # Sanitize model name for filename
+            model_clean = model.replace("/", "_").replace("\\", "_")
+
+            # Sanitize operation name for filename
+            operation_clean = operation.replace(" ", "-").replace("/", "-") if operation else "unknown"
+
+            filename = f"{timestamp_str}_{model_clean}_{operation_clean}.txt"
+            filepath = debug_dir / filename
+
+            # Build file content
+            content_parts = []
+
+            # Header
+            content_parts.append("=" * 80)
+            content_parts.append("LLM CALL DEBUG LOG")
+            content_parts.append("=" * 80)
+            content_parts.append(f"Timestamp: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+            content_parts.append(f"Model: {model}")
+            if operation:
+                content_parts.append(f"Operation: {operation}")
+            if error:
+                content_parts.append(f"ERROR: {error}")
+            content_parts.append("")
+
+            # Parameters section
+            content_parts.append("=" * 80)
+            content_parts.append("PARAMETERS")
+            content_parts.append("=" * 80)
+            for key, value in request_params.items():
+                content_parts.append(f"{key}: {value}")
+            content_parts.append("")
+
+            # Messages section
+            content_parts.append("=" * 80)
+            content_parts.append("MESSAGES")
+            content_parts.append("=" * 80)
+            for msg in messages:
+                role = msg.get('role', 'unknown')
+                content = msg.get('content', '')
+                content_parts.append(f"\n[{role.upper()}]")
+                content_parts.append(content)
+                content_parts.append("")
+
+            # Response section
+            content_parts.append("=" * 80)
+            content_parts.append("RESPONSE")
+            content_parts.append("=" * 80)
+            content_parts.append(response)
+            content_parts.append("")
+
+            # Metadata section
+            content_parts.append("=" * 80)
+            content_parts.append("METADATA")
+            content_parts.append("=" * 80)
+            if tokens:
+                prompt_tokens = tokens.get('prompt_tokens', 0)
+                completion_tokens = tokens.get('completion_tokens', 0)
+                total_tokens = tokens.get('total_tokens', 0)
+                content_parts.append(f"Prompt Tokens: {prompt_tokens:,}")
+                content_parts.append(f"Completion Tokens: {completion_tokens:,}")
+                content_parts.append(f"Total Tokens: {total_tokens:,}")
+
+                # Try to calculate cost if possible (would need model pricing)
+                # For now just note tokens
+            else:
+                content_parts.append("Token usage: Not available")
+
+            content_parts.append(f"Response Length: {len(response)} characters")
+            content_parts.append("")
+
+            # Write to file
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(content_parts))
+
+        except Exception as e:
+            # Silent fail - don't disrupt the session if debugging file can't be saved
+            # But log to the regular log
+            self.log(f"Failed to save LLM call debug file: {e}", level="WARNING")
 
     def log_error(self, error: Exception, context: str = ""):
         """Log an error with traceback in JSONL.

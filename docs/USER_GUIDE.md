@@ -245,6 +245,8 @@ This allows for:
 
 ## Logging and Debugging
 
+### Session Logs
+
 Logs are automatically saved to `.agentic/logs/agentic_YYYYMMDD.log`
 
 View logs in the REPL:
@@ -260,6 +262,48 @@ type .agentic\logs\agentic_20251005.log
 # Mac/Linux
 cat .agentic/logs/agentic_20251005.log
 ```
+
+### LLM Call Debug Files
+
+Every LLM call is automatically saved to an individual text file for debugging. This is especially helpful when:
+- Generation produces unexpected results
+- You want to understand what prompt was used
+- You need to inspect exact token usage
+- You're troubleshooting issues
+
+**Location:** `.agentic/debug/llm-calls/`
+
+**Filename Format:** `YYYYMMDD_HHMMSS_{model}_{operation}.txt`
+
+**Example:**
+```
+.agentic/debug/llm-calls/
+├── 20250116_143022_x-ai_grok-4-fast_premise-generation.txt
+├── 20250116_143530_anthropic_claude-sonnet-4_chapter-3.txt
+└── 20250116_144105_google_gemini-2-5-pro_treatment-generation.txt
+```
+
+Each file contains:
+- Timestamp and model name
+- All request parameters (temperature, max_tokens, etc.)
+- Complete prompt/messages sent to the LLM
+- Full response received
+- Token usage and response length
+
+**To inspect a specific LLM call:**
+```bash
+# Windows
+type .agentic\debug\llm-calls\20250116_143530_anthropic_claude-sonnet-4_chapter-3.txt
+
+# Mac/Linux
+cat .agentic/debug/llm-calls/20250116_143530_anthropic_claude-sonnet-4_chapter-3.txt
+```
+
+**Benefits:**
+- Debug unexpected generation results
+- Optimize prompts by comparing successful vs failed attempts
+- Understand token usage patterns
+- Share specific LLM calls when reporting issues
 
 ## Testing
 

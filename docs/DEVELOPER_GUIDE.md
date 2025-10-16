@@ -474,8 +474,103 @@ session.session = Mock()  # Mock prompt session
 ```
 
 ### Debug API Calls
+
+#### LLM Call Debug Files
+
+**Every LLM call is automatically saved to an individual text file for easy debugging.**
+
+**Location:** `.agentic/debug/llm-calls/`
+
+**Filename Format:** `YYYYMMDD_HHMMSS_{model}_{operation}.txt`
+
+**Example:**
+```
+.agentic/debug/llm-calls/
+├── 20250116_143022_x-ai_grok-4-fast_premise-generation.txt
+├── 20250116_143530_anthropic_claude-sonnet-4_chapter-3.txt
+└── 20250116_144105_google_gemini-2-5-pro_treatment-generation.txt
+```
+
+**File Contents:**
+Each file contains complete details for debugging:
+```
+================================================================================
+LLM CALL DEBUG LOG
+================================================================================
+Timestamp: 2025-01-16 14:30:22
+Model: anthropic/claude-sonnet-4.5
+Operation: chapter-3
+
+================================================================================
+PARAMETERS
+================================================================================
+temperature: 0.6
+max_tokens: 4096
+stream: True
+
+================================================================================
+MESSAGES
+================================================================================
+
+[SYSTEM]
+You are an expert story architect...
+
+[USER]
+Generate chapter 3 based on the following treatment:
+...
+
+================================================================================
+RESPONSE
+================================================================================
+{
+  "chapter": 3,
+  "title": "The Discovery",
+  ...
+}
+
+================================================================================
+METADATA
+================================================================================
+Prompt Tokens: 15,432
+Completion Tokens: 2,156
+Total Tokens: 17,588
+Response Length: 12,543 characters
+```
+
+**Usage in Code:**
 ```python
-# Enable request logging
+# Add operation parameter when making LLM calls
+result = await client.streaming_completion(
+    model=model,
+    messages=messages,
+    temperature=0.6,
+    operation="premise-generation"  # Descriptive operation name
+)
+
+# Operation names should be descriptive:
+# - "premise-generation" - generating premise
+# - "chapter-3" - generating chapter 3
+# - "treatment-generation" - generating treatment
+# - "intent-analysis" - analyzing user intent
+# - "diff-generation" - generating diffs
+```
+
+**Benefits:**
+- **Easy Inspection**: Open any file in a text editor to see exactly what was sent/received
+- **Debug Issues**: When generation fails, check the exact prompt and response
+- **Optimize Prompts**: Compare successful vs failed generations
+- **Token Analysis**: See exact token usage per call
+- **No Disruption**: Silent failures - won't break your session if file can't be saved
+
+**Implementation Details:**
+- Files created automatically by `SessionLogger.save_llm_call_file()`
+- Called from `log_api_call()` after every LLM interaction
+- Works with all three API methods: `streaming_completion()`, `completion()`, `json_completion()`
+- Parallel logging: Both JSONL (structured) and text files (human-readable)
+
+#### Enable Additional Request Logging
+```python
+# Enable request logging for more details
 import logging
 logging.basicConfig(level=logging.DEBUG)
 ```

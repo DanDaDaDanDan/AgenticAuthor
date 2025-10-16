@@ -83,6 +83,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   **Impact**: Prevents story drift from plot inventions while maintaining creativity for scene elaboration
 
+- **LLM Call Debug Files** 🐛 (v0.3.1+)
+  - **Feature**: Every LLM call automatically saved to individual text file for debugging
+  - **Location**: `.agentic/debug/llm-calls/`
+  - **Filename Format**: `YYYYMMDD_HHMMSS_{model}_{operation}.txt`
+  - **File Contents**:
+    - Header: Timestamp, model, operation name, error status
+    - Parameters: temperature, max_tokens, stream, and all other request params
+    - Messages: Complete messages array with role labels ([SYSTEM], [USER])
+    - Response: Full text response from LLM
+    - Metadata: Token counts (prompt, completion, total), response length
+  - **Operation Parameter**: Added to all API methods:
+    - `streaming_completion(operation=...)` - operation name for debugging
+    - `completion(operation=...)` - passes through to streaming_completion
+    - `json_completion(operation=...)` - operation name for debugging
+    - Examples: "premise-generation", "chapter-3", "treatment-generation"
+  - **Implementation**:
+    - New method: `SessionLogger.save_llm_call_file()` (~85 lines)
+    - Updates: `log_api_call()` calls save_llm_call_file() automatically
+    - Silent failure: Won't disrupt session if file can't be saved
+    - Parallel logging: Both JSONL (structured) and text files (human-readable)
+  - **Use Cases**:
+    - Debug unexpected generation results
+    - Optimize prompts by comparing successful vs failed attempts
+    - Inspect exact prompts sent to LLMs
+    - Analyze token usage patterns
+    - Share specific calls when reporting issues
+  - **Files Modified**:
+    - `src/utils/session_logger.py` (save_llm_call_file method, log_api_call update)
+    - `src/api/openrouter.py` (added operation parameter to all completion methods, updated logging calls)
+  - **Documentation**:
+    - `docs/DEVELOPER_GUIDE.md`: "Debug API Calls → LLM Call Debug Files" section (~100 lines)
+    - `docs/USER_GUIDE.md`: "Logging and Debugging → LLM Call Debug Files" section (~40 lines)
+  - **Impact**: Dramatically improves debugging capability for prompt engineering and troubleshooting
+
 - **Tiered Plants/Payoffs System** 🛡️ (commit dc5bb78)
   - **Problem**: LLM inventing major plot elements not in treatment via plants/payoffs feedback loop
   - **Case Study**: ad-newworld project diverged completely by chapter 10 (government mind control conspiracy invented, not in treatment)

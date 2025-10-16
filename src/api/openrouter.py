@@ -181,6 +181,7 @@ class OpenRouterClient:
         stream: bool = True,
         display: bool = True,
         min_response_tokens: int = 100,
+        operation: Optional[str] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -195,6 +196,7 @@ class OpenRouterClient:
             stream: Whether to stream the response
             display: Whether to display output in console
             min_response_tokens: Minimum tokens to reserve for response
+            operation: Optional operation name for debugging (e.g., "premise-generation", "chapter-3")
             **kwargs: Additional API parameters
 
         Returns:
@@ -331,7 +333,8 @@ class OpenRouterClient:
                                 "max_tokens": max_tokens,
                                 "stream": stream,
                                 **kwargs
-                            }
+                            },
+                            operation=operation  # Pass operation for debugging
                         )
 
                     # Update token counter
@@ -394,6 +397,7 @@ class OpenRouterClient:
         max_tokens: Optional[int] = None,
         display: bool = True,
         min_response_tokens: int = 100,
+        operation: Optional[str] = None,
         **kwargs
     ) -> str:
         """
@@ -407,6 +411,7 @@ class OpenRouterClient:
             max_tokens: Maximum tokens to generate (auto-calculated if None)
             display: Whether to display output in console
             min_response_tokens: Minimum tokens to reserve for response
+            operation: Optional operation name for debugging
             **kwargs: Additional API parameters
 
         Returns:
@@ -424,6 +429,7 @@ class OpenRouterClient:
             max_tokens=max_tokens,
             display=display,
             min_response_tokens=min_response_tokens,
+            operation=operation,
             **kwargs
         )
         return result['content']
@@ -439,6 +445,7 @@ class OpenRouterClient:
         display_label: Optional[str] = None,
         display_mode: str = "field",  # "field", "array_first", or "full"
         min_response_tokens: int = 100,
+        operation: Optional[str] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -455,6 +462,7 @@ class OpenRouterClient:
             display_mode: Display mode - "field" (extract field from object),
                          "array_first" (show first element of array), "full" (show all)
             min_response_tokens: Minimum tokens to reserve for response
+            operation: Optional operation name for debugging (e.g., "premise-generation")
             **kwargs: Additional API parameters
 
         Returns:
@@ -627,6 +635,30 @@ class OpenRouterClient:
                     # Show usage if enabled
                     if self.settings.show_token_usage:
                         self._display_usage(usage, cost)
+
+                # Log API call with FULL details
+                session_logger = get_session_logger()
+                if session_logger:
+                    # Extract prompt from messages for backward compatibility
+                    prompt_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+                    # Convert result to string for logging
+                    response_text = json.dumps(result, indent=2) if isinstance(result, dict) else str(result)
+                    session_logger.log_api_call(
+                        model=model,
+                        prompt=prompt_text,
+                        response=response_text,
+                        tokens=usage or {},
+                        error=None,
+                        full_messages=messages,
+                        request_params={
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "display_field": display_field,
+                            "display_mode": display_mode,
+                            **kwargs
+                        },
+                        operation=operation  # Pass operation for debugging
+                    )
 
                 return result
 
