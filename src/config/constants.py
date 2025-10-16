@@ -10,15 +10,20 @@ DEFAULT_BOOKS_DIR = Path("./books")
 DEFAULT_TAXONOMIES_DIR = Path("./taxonomies")
 DEFAULT_CACHE_DIR = Path("./.cache")
 
-# File Names
+# Directory Names
 PROJECT_FILE = "project.yaml"
-PREMISE_FILE = "premise.md"
-TREATMENT_FILE = "treatment.md"
-CHAPTERS_FILE = "chapters.yaml"
+PREMISE_DIR = "premise"
+TREATMENT_DIR = "treatment"
+CHAPTER_BEATS_DIR = "chapter-beats"
 CHAPTERS_DIR = "chapters"
 ANALYSIS_DIR = "analysis"
 EXPORTS_DIR = "exports"
 MULTIMODEL_DIR = "multimodel"
+
+# Legacy File Names (for backward compatibility)
+PREMISE_FILE = "premise.md"  # Legacy: now in premise/
+TREATMENT_FILE = "treatment.md"  # Legacy: now in treatment/
+CHAPTERS_FILE = "chapters.yaml"  # Deprecated: use chapter-beats/ instead
 
 # Git Configuration
 DEFAULT_COMMIT_AUTHOR = "AgenticAuthor"

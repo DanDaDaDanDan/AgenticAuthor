@@ -41,17 +41,29 @@ class CullManager:
 
     def cull_chapters(self) -> Dict[str, Any]:
         """
-        Delete chapters.yaml and cascade to prose.
+        Delete chapter-beats/ directory (foundation + all chapters) and cascade to prose.
 
         Returns:
             Dict with deleted_files list
         """
         deleted_files = []
 
-        # Delete chapters.yaml
-        chapters_file = self.project.path / "chapters.yaml"
-        if chapters_file.exists():
-            chapters_file.unlink()
+        # Delete entire chapter-beats/ directory
+        if self.project.chapter_beats_dir.exists():
+            for beat_file in self.project.chapter_beats_dir.glob("*.yaml"):
+                beat_file.unlink()
+                deleted_files.append(str(beat_file.relative_to(self.project.path)))
+
+            # Try to remove directory if empty
+            try:
+                self.project.chapter_beats_dir.rmdir()
+            except OSError:
+                pass  # Directory not empty, that's fine
+
+        # Also delete legacy chapters.yaml if it exists
+        legacy_chapters_file = self.project.path / "chapters.yaml"
+        if legacy_chapters_file.exists():
+            legacy_chapters_file.unlink()
             deleted_files.append("chapters.yaml")
 
         # Cascade: delete all prose
@@ -66,17 +78,29 @@ class CullManager:
 
     def cull_treatment(self) -> Dict[str, Any]:
         """
-        Delete treatment.md and cascade to chapters + prose.
+        Delete treatment/ directory and cascade to chapters + prose.
 
         Returns:
             Dict with deleted_files list
         """
         deleted_files = []
 
-        # Delete treatment.md
-        treatment_file = self.project.path / "treatment.md"
-        if treatment_file.exists():
-            treatment_file.unlink()
+        # Delete entire treatment/ directory
+        if self.project.treatment_dir.exists():
+            for file in self.project.treatment_dir.glob("*"):
+                file.unlink()
+                deleted_files.append(str(file.relative_to(self.project.path)))
+
+            # Try to remove directory if empty
+            try:
+                self.project.treatment_dir.rmdir()
+            except OSError:
+                pass  # Directory not empty, that's fine
+
+        # Also delete legacy treatment.md if it exists at root
+        legacy_treatment_file = self.project.path / "treatment.md"
+        if legacy_treatment_file.exists():
+            legacy_treatment_file.unlink()
             deleted_files.append("treatment.md")
 
         # Cascade: delete chapters and prose
@@ -91,24 +115,35 @@ class CullManager:
 
     def cull_premise(self) -> Dict[str, Any]:
         """
-        Delete premise.md, premise_metadata.json, and cascade all downstream.
+        Delete premise/ directory and cascade all downstream.
 
         Returns:
             Dict with deleted_files list
         """
         deleted_files = []
 
-        # Delete premise.md
-        premise_file = self.project.path / "premise.md"
-        if premise_file.exists():
-            premise_file.unlink()
+        # Delete entire premise/ directory
+        if self.project.premise_dir.exists():
+            for file in self.project.premise_dir.glob("*"):
+                file.unlink()
+                deleted_files.append(str(file.relative_to(self.project.path)))
+
+            # Try to remove directory if empty
+            try:
+                self.project.premise_dir.rmdir()
+            except OSError:
+                pass  # Directory not empty, that's fine
+
+        # Also delete legacy files if they exist at root
+        legacy_premise_file = self.project.path / "premise.md"
+        if legacy_premise_file.exists():
+            legacy_premise_file.unlink()
             deleted_files.append("premise.md")
 
-        # Delete premise_metadata.json
-        metadata_file = self.project.premise_metadata_file
-        if metadata_file.exists():
-            metadata_file.unlink()
-            deleted_files.append(str(metadata_file.relative_to(self.project.path)))
+        legacy_premise_metadata = self.project.path / "premise_metadata.json"
+        if legacy_premise_metadata.exists():
+            legacy_premise_metadata.unlink()
+            deleted_files.append("premise_metadata.json")
 
         # Cascade: delete treatment, chapters, prose
         treatment_result = self.cull_treatment()

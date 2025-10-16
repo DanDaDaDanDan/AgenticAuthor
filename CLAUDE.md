@@ -360,17 +360,23 @@ agentic           # Start REPL (main interface)
 **File Structure (Short Story):**
 ```
 books/my-short-story/
-├── premise_metadata.json  ← Single source of truth (text + taxonomy)
-├── treatment.md
-└── story.md               ← Single complete story (no chapters/)
+├── premise/
+│   └── premise_metadata.json  ← Single source of truth (text + taxonomy)
+├── treatment/
+│   └── treatment.md
+└── story.md                   ← Single complete story (no chapters/)
 ```
 
 **vs. Novel Structure:**
 ```
 books/my-novel/
-├── premise_metadata.json  ← Single source of truth (text + taxonomy)
-├── treatment.md
-├── chapters.yaml          ← Full metadata + outlines
+├── premise/
+│   └── premise_metadata.json  ← Single source of truth (text + taxonomy)
+├── treatment/
+│   └── treatment.md
+├── chapter-beats/             ← Chapter structure (source of truth)
+│   ├── foundation.yaml        ← Metadata, characters, world
+│   └── chapter-NN.yaml        ← Individual chapter outlines
 └── chapters/
     ├── chapter-01.md
     ├── chapter-02.md
@@ -640,10 +646,14 @@ books/                      # All projects root
 │   │   ├── premise_history.json # Generation history
 │   │   └── debug/           # Debug output
 │   ├── config.yaml          # Project configuration
-│   ├── premise_metadata.json # LOD3 - Single source of truth (premise text + taxonomy)
-│   ├── treatment.md         # LOD2
-│   ├── chapters.yaml        # LOD2 - Self-contained (metadata, characters, world, outlines)
-│   ├── chapters/            # LOD0 prose
+│   ├── premise/             # LOD3 - Premise folder
+│   │   └── premise_metadata.json # Single source of truth (text + taxonomy)
+│   ├── treatment/           # LOD2 - Treatment folder
+│   │   └── treatment.md
+│   ├── chapter-beats/       # LOD2 - Chapter structure (source of truth)
+│   │   ├── foundation.yaml  # Metadata, characters, world
+│   │   └── chapter-*.yaml   # Individual chapter outlines
+│   ├── chapters/            # LOD0 - Prose
 │   │   └── chapter-*.md
 │   ├── analysis/            # Analysis results
 │   │   ├── commercial.md

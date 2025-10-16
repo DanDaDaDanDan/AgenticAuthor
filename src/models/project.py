@@ -44,6 +44,7 @@ class Project:
         self.name = self.path.name
         self.metadata: Optional[ProjectMetadata] = None
         self._load_metadata()
+        self._migrate_legacy_files()
 
     @property
     def project_file(self) -> Path:
@@ -51,14 +52,19 @@ class Project:
         return self.path / "project.yaml"
 
     @property
+    def premise_dir(self) -> Path:
+        """Get path to premise directory."""
+        return self.path / "premise"
+
+    @property
     def premise_file(self) -> Path:
-        """Get path to premise.md file."""
+        """Get path to premise.md file (legacy - for backward compatibility)."""
         return self.path / "premise.md"
 
     @property
     def premise_metadata_file(self) -> Path:
         """Get path to premise_metadata.json file."""
-        return self.path / "premise_metadata.json"
+        return self.premise_dir / "premise_metadata.json"
 
     @property
     def premises_file(self) -> Path:
@@ -66,13 +72,28 @@ class Project:
         return self.path / "premises_candidates.json"
 
     @property
+    def treatment_dir(self) -> Path:
+        """Get path to treatment directory."""
+        return self.path / "treatment"
+
+    @property
     def treatment_file(self) -> Path:
         """Get path to treatment.md file."""
-        return self.path / "treatment.md"
+        return self.treatment_dir / "treatment.md"
 
     @property
     def chapters_file(self) -> Path:
-        """Get path to chapters.yaml file."""
+        """
+        Get path to chapters.yaml file.
+
+        DEPRECATED: chapters.yaml no longer exists on disk with sequential generation.
+        All chapter data is stored in chapter-beats/ directory:
+        - chapter-beats/foundation.yaml (metadata, characters, world)
+        - chapter-beats/chapter-NN.yaml (individual chapter outlines)
+
+        Use get_chapters_yaml() instead, which aggregates from chapter-beats/.
+        This property is kept for backward compatibility only.
+        """
         return self.path / "chapters.yaml"
 
     @property
@@ -126,6 +147,34 @@ class Project:
             with open(self.project_file) as f:
                 data = yaml.safe_load(f)
                 self.metadata = ProjectMetadata(**data)
+
+    def _migrate_legacy_files(self):
+        """
+        Migrate legacy file structure to new folder-based structure.
+
+        Old structure:
+        - premise_metadata.json (root)
+        - treatment.md (root)
+
+        New structure:
+        - premise/premise_metadata.json
+        - treatment/treatment.md
+
+        This migration is idempotent and safe to run multiple times.
+        """
+        # Migrate premise_metadata.json
+        old_premise_metadata = self.path / "premise_metadata.json"
+        if old_premise_metadata.exists() and not self.premise_metadata_file.exists():
+            self.premise_dir.mkdir(exist_ok=True)
+            old_premise_metadata.rename(self.premise_metadata_file)
+
+        # Migrate treatment.md
+        old_treatment = self.path / "treatment.md"
+        if old_treatment.exists() and not self.treatment_file.exists():
+            self.treatment_dir.mkdir(exist_ok=True)
+            old_treatment.rename(self.treatment_file)
+
+        # Note: chapter-beats/ and chapters/ already use folder structure, no migration needed
 
     def save_metadata(self):
         """Save project metadata to project.yaml."""
@@ -216,6 +265,9 @@ class Project:
                 logger.debug(f"PROJECT: Premise preview: {metadata['premise'][:100]}...")
 
         try:
+            # Ensure premise directory exists
+            self.premise_dir.mkdir(exist_ok=True)
+
             with open(self.premise_metadata_file, 'w', encoding='utf-8') as f:
                 json.dump(metadata, f, indent=2)
 
@@ -253,6 +305,9 @@ class Project:
 
     def save_treatment(self, content: str):
         """Save treatment content."""
+        # Ensure treatment directory exists
+        self.treatment_dir.mkdir(exist_ok=True)
+
         self.treatment_file.write_text(content, encoding='utf-8')
         if self.metadata:
             self.metadata.update_timestamp()
@@ -672,6 +727,9 @@ class Project:
         project.save_metadata()
 
         # Create subdirectories
+        project.premise_dir.mkdir(exist_ok=True)
+        project.treatment_dir.mkdir(exist_ok=True)
+        project.chapter_beats_dir.mkdir(exist_ok=True)
         project.chapters_dir.mkdir(exist_ok=True)
         project.analysis_dir.mkdir(exist_ok=True)
         project.exports_dir.mkdir(exist_ok=True)
