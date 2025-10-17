@@ -566,7 +566,15 @@ word_count_target: {words_total}"""
 
         # Add feedback instruction if iterating
         if feedback:
-            prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the feedback when generating this chapter. You may adjust scene count, word targets, or content based on the feedback."
+            # Check if this is a validation fix (contains "FIX ISSUES" or "FIX REMAINING")
+            is_validation_fix = "FIX ISSUES" in feedback or "FIX REMAINING" in feedback
+
+            if is_validation_fix:
+                # Validation fix: emphasize fixing existing chapter
+                prompt += f"\n\n{feedback}"
+            else:
+                # User feedback: allow more flexibility
+                prompt += f"\n\nUSER FEEDBACK: {feedback}\n\nIMPORTANT: Incorporate the feedback when generating this chapter. You may adjust scene count, word targets, or content based on the feedback."
 
         # Generate chapter
         min_tokens = 700  # Estimate: 700 tokens per chapter
@@ -1972,7 +1980,12 @@ Return the corrected foundation as complete YAML."""
                         self.console.print(f"  [cyan]2.[/cyan] Iterate on chapter {chapter_num} to fix specific issues [bold](recommended)[/bold]")
                         self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may cause story drift")
 
-                        choice = input("\nEnter choice (1-3): ").strip()
+                        try:
+                            choice = input("\nEnter choice (1-3): ").strip()
+                        except (KeyboardInterrupt, EOFError):
+                            # User cancelled - treat as abort
+                            self.console.print(f"\n[yellow]Cancelled by user. Aborting generation...[/yellow]")
+                            raise KeyboardInterrupt(f"User cancelled validation choice for chapter {chapter_num}")
 
                     if choice == "1":
                         # Abort generation
@@ -2007,42 +2020,50 @@ Return the corrected foundation as complete YAML."""
                         chapter_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
                         issues_formatted = self._format_validation_issues(selected_issues)
 
-                        iteration_feedback = f"""CHAPTER ITERATION - FIX VALIDATION ISSUES:
+                        iteration_feedback = f"""FIX ISSUES WITH EXISTING CHAPTER {chapter_num}:
 
-The chapter below contradicts the treatment in specific ways.
-Fix ONLY the flagged issues while preserving correct elements.
+The chapter below has validation issues that need to be fixed.
+Your task is to FIX these specific issues in the existing chapter structure,
+NOT to regenerate the chapter from scratch.
 
-YOUR PREVIOUS CHAPTER {chapter_num}:
+EXISTING CHAPTER {chapter_num} (to fix):
 ```yaml
 {chapter_yaml}
 ```
 
-VALIDATION ISSUES TO FIX:
+ISSUES TO FIX:
 
 {issues_formatted}
 
 INSTRUCTIONS:
-1. Review each issue carefully
-2. Cross-reference the treatment (provided in context above)
-3. Update ONLY the problematic elements (scenes, events, character moments)
-4. Keep everything else that was correct
+1. Review each issue carefully against the treatment (shown in context above)
+2. FIX ONLY the problematic elements (scenes, events, character moments)
+3. PRESERVE the existing chapter structure (title, POV, act, scene count)
+4. KEEP everything that was correct and well-structured
 5. Do NOT add new major plot elements not in treatment
-6. Elaborate on treatment elements, don't contradict them
+6. Do NOT change well-working scenes to fix unrelated issues
+7. Maintain consistency with previous chapters
 
-Return the corrected chapter as complete YAML."""
+Think of this as editing/fixing the existing chapter, not writing a new one.
 
-                        # Retry up to 2 times
-                        max_retries = 2
+Return the fixed chapter as complete YAML with same structure."""
+
+                        # Retry up to 5 times
+                        max_retries = 5
                         for retry_attempt in range(1, max_retries + 1):
                             self.console.print(f"[dim]Attempt {retry_attempt}/{max_retries}...[/dim]")
 
                             try:
+                                # Include the failed chapter in previous_chapters so LLM can see its structure
+                                # This helps maintain consistency while fixing issues
+                                previous_chapters_with_failed = previous_chapters + [chapter_data]
+
                                 iterated_chapter = await self._generate_single_chapter(
                                     chapter_num=chapter_num,
                                     total_chapters=chapter_count,
                                     context_yaml=context_yaml,
                                     foundation=foundation,
-                                    previous_chapters=previous_chapters,
+                                    previous_chapters=previous_chapters_with_failed,
                                     form=form,
                                     pacing=pacing,
                                     chapter_budget=chapter_budget,
@@ -2086,38 +2107,50 @@ Return the corrected chapter as complete YAML."""
 
                                         # Update iteration_feedback with selected new issues for next attempt
                                         issues_formatted = self._format_validation_issues(retry_selected_issues)
-                                        iteration_feedback = f"""CHAPTER ITERATION - FIX VALIDATION ISSUES (Retry {retry_attempt + 1}):
+                                        iteration_feedback = f"""FIX REMAINING ISSUES (Attempt {retry_attempt + 1}/{max_retries}):
 
-Previous iteration still has issues. Fix these remaining problems.
+Previous fix still has issues. Fix these remaining problems.
 
-YOUR PREVIOUS CHAPTER {chapter_num}:
+CURRENT CHAPTER {chapter_num} (still needs fixes):
 ```yaml
 {yaml.dump(iterated_chapter, default_flow_style=False, allow_unicode=True)}
 ```
 
-VALIDATION ISSUES TO FIX:
+REMAINING ISSUES TO FIX:
 
 {issues_formatted}
 
 INSTRUCTIONS:
-1. Review each issue carefully
-2. Cross-reference the treatment
-3. Update ONLY the problematic elements
-4. Keep everything else that was correct
-5. Do NOT add new major plot elements
+1. Review each remaining issue carefully against the treatment
+2. FIX ONLY the problematic elements
+3. PRESERVE the existing chapter structure
+4. Keep everything that was correct
+5. Do NOT add new major plot elements not in treatment
 
-Return the corrected chapter as complete YAML."""
+Return the fixed chapter as complete YAML with same structure."""
+                                        # Update chapter_data for next iteration's context
+                                        chapter_data = iterated_chapter
                                     else:
                                         # Max retries reached
                                         self.console.print(f"\n[yellow]Max retries reached. Chapter {chapter_num} still has issues:[/yellow]")
                                         for issue in iter_issues:
                                             self.console.print(f"  • {issue.get('element', 'Unknown')}: {issue.get('reasoning', 'No details')}")
 
+                                        # In auto mode, just abort at max retries
+                                        if auto_fix:
+                                            self.console.print(f"\n[red]Auto-fix: Max retries reached, aborting generation[/red]")
+                                            raise Exception(f"Auto-fix failed after {max_retries} attempts for chapter {chapter_num}")
+
                                         self.console.print(f"\n[yellow]Options:[/yellow]")
                                         self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold]")
                                         self.console.print(f"  [cyan]2.[/cyan] Ignore and continue [bold](NOT recommended)[/bold]")
 
-                                        final_choice = input("\nEnter choice (1-2): ").strip()
+                                        try:
+                                            final_choice = input("\nEnter choice (1-2): ").strip()
+                                        except (KeyboardInterrupt, EOFError):
+                                            # User cancelled - treat as abort
+                                            self.console.print(f"\n[yellow]Cancelled by user. Aborting generation...[/yellow]")
+                                            raise KeyboardInterrupt(f"User cancelled max retries choice for chapter {chapter_num}")
 
                                         if final_choice == "1":
                                             self.console.print(f"\n[red]Generation aborted at chapter {chapter_num}[/red]")
@@ -2125,6 +2158,11 @@ Return the corrected chapter as complete YAML."""
                                         else:
                                             self.console.print(f"\n[yellow]⚠️  Continuing with iterated chapter despite issues...[/yellow]\n")
                                             break
+
+                            except KeyboardInterrupt:
+                                # User aborted (Ctrl+C) - propagate immediately
+                                self.console.print(f"\n[red]Iteration aborted by user[/red]")
+                                raise
 
                             except Exception as iter_e:
                                 if logger:
