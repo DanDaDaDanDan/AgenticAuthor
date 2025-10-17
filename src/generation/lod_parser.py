@@ -1,7 +1,6 @@
 """LOD response parsing to split unified YAML back to individual files.
 
 This module handles parsing LLM responses and saving them to the appropriate files.
-It supports multiple response formats for backward compatibility.
 
 Format Detection and Handling
 ==============================
@@ -32,24 +31,10 @@ The parser automatically detects which format the LLM used:
    Validation: Basic presence checks
    Saves to: Respective files only
 
-3. LEGACY Format (backward compatibility):
-   {
-     premise: {...},
-     treatment: {...},
-     chapters: [...]
-   }
-
-   Used by: Older iteration code paths
-   Validation: Permissive, accepts what's present
-   Saves to: All present sections
-
 Validation Strategy
 ===================
 - NEW format: Strict validation with detailed error messages
 - EFFICIENT format: Basic validation (must have target section)
-- LEGACY format: Permissive (saves whatever is present)
-
-This ensures new code has high quality while maintaining backward compatibility.
 
 Culling Strategy
 ================
