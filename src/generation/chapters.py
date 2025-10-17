@@ -2059,16 +2059,16 @@ Return the fixed chapter as complete YAML with same structure."""
                             self.console.print(f"[dim]Attempt {retry_attempt}/{max_retries}...[/dim]")
 
                             try:
-                                # Include the failed chapter in previous_chapters so LLM can see its structure
-                                # This helps maintain consistency while fixing issues
-                                previous_chapters_with_failed = previous_chapters + [chapter_data]
+                                # Do NOT include the failed chapter in previous_chapters
+                                # The failed chapter is already shown in the iteration_feedback
+                                # Including it in previous_chapters can cause LLM to preserve elements that should be removed
 
                                 iterated_chapter = await self._generate_single_chapter(
                                     chapter_num=chapter_num,
                                     total_chapters=chapter_count,
                                     context_yaml=context_yaml,
                                     foundation=foundation,
-                                    previous_chapters=previous_chapters_with_failed,
+                                    previous_chapters=previous_chapters,
                                     form=form,
                                     pacing=pacing,
                                     chapter_budget=chapter_budget,
