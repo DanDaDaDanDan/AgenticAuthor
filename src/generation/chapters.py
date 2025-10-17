@@ -261,19 +261,15 @@ class ChapterGenerator:
             word_count_note = " # Current target - adjust based on feedback if needed"
             chapter_count_note = " # Current count - adjust based on feedback if needed"
 
-        prompt = f"""# TREATMENT (SOURCE OF TRUTH)
+        prompt = f"""# TREATMENT
 ```yaml
 {context_yaml}
 ```
 {unique_context}
 # YOUR TASK
-Extract and structure foundation (metadata + characters + world) from the treatment above.
+Generate foundation (metadata + characters + world) from the treatment above.
 
-⚠️ CRITICAL: You are EXTRACTING from the treatment, not generating new content.
-- Extract metadata that reflects treatment's scope
-- Extract characters that are IN the treatment
-- Extract world details that are IN the treatment
-- Elaborate on details, but DO NOT invent new major plot elements, antagonists, or conspiracies
+Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
 
 # OUTPUT
 Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
@@ -393,10 +389,10 @@ When the feedback mentions duplicate or repetitive content:
         result = await self.client.streaming_completion(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a story structure extraction specialist. You extract metadata, characters, and world details from treatments. You never invent new plot elements. You always return valid YAML without additional formatting."},
+                {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3,  # Faithful extraction from treatment (not creative generation)
+            temperature=0.6,  # Balanced creativity with adherence to treatment
             stream=True,
             display=True,
             display_label="Generating foundation",
@@ -514,53 +510,26 @@ When the feedback mentions duplicate or repetitive content:
         if previous_chapters:
             previous_yaml = yaml.dump(previous_chapters, default_flow_style=False, allow_unicode=True)
 
-        # Build prompt with treatment as source of truth for extraction
-        prompt = f"""# TREATMENT (SOURCE OF TRUTH - EXTRACT FROM HERE)
+        # Build prompt with full context
+        prompt = f"""# TREATMENT
 ```
 {context_yaml}
 ```
 
-⚠️ CRITICAL INSTRUCTION:
-You are EXTRACTING and STRUCTURING content FROM THE TREATMENT ABOVE.
-Do NOT invent new plot elements. The treatment contains the complete plot.
-Your job is to divide it into chapters and structure it into scenes/beats.
-
-# STORY FOUNDATION (extracted from treatment)
+# STORY FOUNDATION
 ```yaml
 {foundation_yaml}
 ```
 
-# PREVIOUS CHAPTERS (already extracted and structured)
+# PREVIOUS CHAPTERS
 ```yaml
 {previous_yaml if previous_yaml else "# Chapter 1 - no previous chapters"}
 ```
 
-**CRITICAL**: Review previous chapters carefully. Each scene must be NEW events from treatment. Do NOT duplicate plot beats already covered.
+**CRITICAL**: Review previous chapters carefully. Each scene must be NEW events and conflicts. Do NOT duplicate plot beats already covered.
 
 # YOUR TASK
-Extract and structure Chapter {chapter_num} of {total_chapters} from the treatment above.
-
-EXTRACTION PROCESS:
-1. Review the treatment plot (shown at top)
-2. Identify which treatment sections/events belong in chapter {chapter_num}
-3. Divide those treatment events into {scene_count} scenes
-4. Structure each scene with beats showing HOW the treatment events unfold
-5. DO NOT add plot elements not present in the treatment
-
-FORBIDDEN (causes treatment drift):
-❌ New antagonists or villains not in treatment
-❌ Secret organizations or conspiracies not in treatment
-❌ Character backstories not in treatment
-❌ New plot threads or subplots not in treatment
-❌ Major revelations not established in treatment
-
-ALLOWED (scene-level elaboration):
-✅ Dialogue specifics (treatment has plot, you add dialogue)
-✅ Sensory details (sight, sound, smell, touch, taste)
-✅ Minor characters (servants, officials, crowd, background)
-✅ Scene transitions and connective tissue
-✅ Internal character thoughts and reactions
-✅ Action choreography (treatment says "fight", you show how)
+Generate Chapter {chapter_num} of {total_chapters} ({default_act}, {chapter_role} role)
 
 Chapter {chapter_num} role: {chapter_role}
 Act: {default_act}
@@ -605,10 +574,10 @@ word_count_target: {words_total}"""
         result = await self.client.streaming_completion(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a story structure extraction specialist. You extract plot from treatments and structure it into chapters with scenes and beats. You never invent new plot elements. You always return valid YAML without additional formatting."},
+                {"role": "system", "content": "You are a professional story development assistant. You structure treatments into detailed chapter outlines with scenes and beats. You always return valid YAML without additional formatting."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3,  # Faithful extraction from treatment (not creative generation)
+            temperature=0.6,  # Balanced creativity with adherence to treatment
             stream=True,
             display=True,
             min_response_tokens=min_tokens
@@ -660,10 +629,10 @@ word_count_target: {words_total}"""
                     result = await self.client.streaming_completion(
                         model=self.model,
                         messages=[
-                            {"role": "system", "content": "You are a story structure extraction specialist. You extract plot from treatments and structure it into chapters with scenes and beats. You never invent new plot elements. You always return valid YAML without additional formatting."},
+                            {"role": "system", "content": "You are a professional story development assistant. You structure treatments into detailed chapter outlines with scenes and beats. You always return valid YAML without additional formatting."},
                             {"role": "user", "content": prompt}
                         ],
-                        temperature=0.3,  # Faithful extraction from treatment (not creative generation)
+                        temperature=0.6,  # Balanced creativity with adherence to treatment
                         stream=True,
                         display=True,
                         min_response_tokens=min_tokens
@@ -2416,32 +2385,13 @@ Return the corrected chapter as complete YAML."""
             word_count_instruction = f"- target_word_count: {total_words} # Current target - adjust based on feedback if needed"
             word_count_distribution = f"- word_count_target: distribute words across chapters (adjust total if feedback requires it)"
 
-        prompt = f"""# TREATMENT (SOURCE OF TRUTH - EXTRACT FROM HERE)
+        prompt = f"""# TREATMENT
 ```yaml
 {context_yaml}
 ```
 
-⚠️ CRITICAL INSTRUCTION:
-You are EXTRACTING and STRUCTURING content FROM THE TREATMENT ABOVE.
-Do NOT invent new plot elements. The treatment contains the complete plot.
-Your job is to divide it into chapters and structure it into scenes/beats.
-
 # YOUR TASK
-Extract and structure complete chapter structure (metadata + characters + world + chapters) from the treatment above.
-
-FORBIDDEN (causes treatment drift):
-❌ New antagonists or villains not in treatment
-❌ Secret organizations or conspiracies not in treatment
-❌ Character backstories not in treatment
-❌ New plot threads or subplots not in treatment
-❌ Major revelations not established in treatment
-
-ALLOWED (scene-level elaboration):
-✅ Dialogue specifics (treatment has plot, you add dialogue)
-✅ Sensory details (sight, sound, smell, touch, taste)
-✅ Minor characters (servants, officials, crowd, background)
-✅ Scene transitions and connective tissue
-✅ Internal character thoughts and reactions
+Generate complete chapter structure (metadata + characters + world + chapters) from the treatment above.
 
 # OUTPUT
 Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
@@ -2529,10 +2479,10 @@ chapters:
             result = await self.client.streaming_completion(
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are a story structure extraction specialist. You extract plot from treatments and structure it into chapters with scenes and beats. You never invent new plot elements. You always return valid YAML without additional formatting."},
+                    {"role": "system", "content": "You are a professional story development assistant. You structure treatments into detailed chapter outlines with scenes and beats. You always return valid YAML without additional formatting."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.3,  # Faithful extraction from treatment (not creative generation)
+                temperature=0.6,  # Balanced creativity with adherence to treatment
                 stream=True,
                 display=True,
                 display_label=f"Generating chapters ({model})",
