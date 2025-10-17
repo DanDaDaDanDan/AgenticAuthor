@@ -1450,12 +1450,10 @@ IMPORTANT:
 
             # Display act breakdown
             act_budgets = budget['act_budgets']
-            self.console.print(f"  Act Budgets: [green]Act I: {act_budgets[0]:,}w[/green] | [green]Act II: {act_budgets[1]:,}w[/green] | [green]Act III: {act_budgets[2]:,}w[/green]")
-            self.console.print(f"  Glue Fraction: [green]25%[/green] (transitions/exposition)")
-
-            # Count peak chapters
-            peak_chapters = [ch for ch in budget['chapter_budgets'] if ch['role'] in ['inciting_setup', 'midpoint', 'crisis', 'climax']]
-            self.console.print(f"  Peak Chapters: [green]{len(peak_chapters)}[/green] (inciting, midpoint, crisis, climax)")
+            chapters_per_act = budget['chapters_per_act']
+            self.console.print(f"  Act I: [green]{chapters_per_act[0]} chapters, {act_budgets[0]:,} words[/green]")
+            self.console.print(f"  Act II: [green]{chapters_per_act[1]} chapters, {act_budgets[1]:,} words[/green]")
+            self.console.print(f"  Act III: [green]{chapters_per_act[2]} chapters, {act_budgets[2]:,} words[/green]")
 
             if feedback:
                 # During iteration, LLM can adjust - show baseline with note
