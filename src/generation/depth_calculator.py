@@ -415,36 +415,6 @@ class DepthCalculator:
         return beats
 
     @classmethod
-    def assign_scene_impacts(cls, scene_count: int, chapter_role: str) -> List[int]:
-        """
-        Auto-assign scene impact ratings based on position and chapter role.
-
-        Args:
-            scene_count: Number of scenes in chapter
-            chapter_role: Chapter role (inciting_setup, midpoint, crisis, climax, escalation)
-
-        Returns:
-            List of impact ratings (1=connective, 2=important, 3=set-piece)
-        """
-        impacts = []
-
-        for i in range(scene_count):
-            is_first = (i == 0)
-            is_last = (i == scene_count - 1)
-
-            # First/last scenes are usually connective
-            if is_first or is_last:
-                impacts.append(1)
-            # Middle scenes in peak chapters get set-piece rating
-            elif chapter_role in ['inciting_setup', 'midpoint', 'crisis', 'climax']:
-                impacts.append(3)
-            # Other middle scenes are important
-            else:
-                impacts.append(2)
-
-        return impacts
-
-    @classmethod
     def validate_pacing_anchors(cls, chapter_budgets: List[Dict], total_words: int) -> Dict:
         """
         Check if peak chapters fall within expected pacing anchor percentages.

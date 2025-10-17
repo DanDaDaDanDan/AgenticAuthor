@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Simplified Chapter Beat Structure** 🎯 (v0.3.2+)
+  - **Problem**: Chapter generation used excessive tokens (~350 tokens per scene) with over-prescriptive metadata
+  - **Solution**: Aggressive simplification removing analytical scaffolding, keeping only essentials
+
+  **Removed Scene Fields** (scene-level):
+  - `emotional_beat` - LLM adds these naturally in prose
+  - `impact` - Not needed for generation
+  - `outcome` - LLM determines based on objective
+  - `opposition` - Implicit in scene conflict
+  - `target_words` - Only chapter-level targets remain
+  - `sensory_focus` - LLM adds sensory details naturally
+  - `value_shift` - Over-analytical, not needed
+  - `tension` - LLM creates tension naturally
+  - `plants` - Removed entire PLANTS AND PAYOFFS section
+  - `payoffs` - Removed entire PLANTS AND PAYOFFS section
+
+  **Scene Structure** (simplified to 4 core fields):
+  ```yaml
+  scenes:
+    - scene: "Scene Title"              # 2-4 words
+      location: "Where it happens"      # Specific place
+      objective: "VERB phrase"          # What character wants (must be fail-able)
+      exit_hook: "Forward momentum"     # OPTIONAL - only if strong and aligned with treatment
+      beats: []                         # 6 simple string descriptions
+  ```
+
+  **Beat Format** (simplified from objects to strings):
+  - Old: `{type: "setup", note: "...", target_words: 200}`
+  - New: `"Protagonist enters office with new forensic report, mentor reviewing budget files"`
+
+  **Benefits**:
+  - Token reduction: ~65% per scene (350 → 120 tokens)
+  - Cleaner YAML structure
+  - Less over-prescription for LLM
+  - Backward compatible with old format
+
+  **Backward Compatibility**:
+  - Code checks for both 'scenes' (new) and 'key_events' (old)
+  - Beat display handles both dict (old) and string (new) formats
+  - Existing projects continue working unchanged
+
+  **Files Modified**:
+  - `src/generation/chapters.py`:
+    - Updated prompts to new scene structure (lines 595-691)
+    - Removed scene/beat calculation code (lines 543-577)
+    - Simplified validation (lines 789-808)
+  - `src/generation/prose.py`:
+    - Simplified scene display (lines 544-571)
+    - Handle both beat formats in display
+  - `src/generation/depth_calculator.py`:
+    - Removed `assign_scene_impacts()` method (unused)
+
+  **Impact**: Significantly reduced token usage while maintaining prose quality
+
 ### Added
 - **YAML Truncation Detection and Auto-Retry** 🔄 (v0.3.1+)
   - **Problem**: Network interruptions during chapter generation caused immediate failure with cryptic YAML parsing errors

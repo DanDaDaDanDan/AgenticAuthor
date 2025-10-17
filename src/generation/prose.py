@@ -543,36 +543,30 @@ Return ONLY the JSON, no additional commentary."""
         if uses_structured_scenes:
             scene_breakdown = "\n\nSCENE-BY-SCENE BREAKDOWN WITH BEAT STRUCTURE:\n"
             for i, scene in enumerate(scenes, 1):
-                target_scene_words = scene.get('target_words', avg_ws)
                 scene_breakdown += f"\nScene {i}: \"{scene.get('scene', 'Untitled')}\"\n"
                 scene_breakdown += f"  Location: {scene.get('location', 'N/A')}\n"
 
-                # Extended scene fields (beat architecture)
+                # Simplified scene fields (backward compatible)
                 objective = scene.get('objective', scene.get('pov_goal', 'N/A'))
-                opposition = scene.get('opposition', scene.get('conflict', 'N/A'))
-                value_shift = scene.get('value_shift', 'N/A')
-                exit_hook = scene.get('exit_hook', 'N/A')
-
                 scene_breakdown += f"  Objective: {objective}\n"
-                scene_breakdown += f"  Opposition: {opposition}\n"
-                scene_breakdown += f"  Value Shift: {value_shift}\n"
-                scene_breakdown += f"  Stakes: {scene.get('stakes', 'N/A')}\n"
-                scene_breakdown += f"  Outcome: {scene.get('outcome', 'N/A')}\n"
-                scene_breakdown += f"  Exit Hook: {exit_hook}\n"
-                scene_breakdown += f"  Emotional Beat: {scene.get('emotional_beat', 'N/A')}\n"
-                if scene.get('sensory_focus'):
-                    scene_breakdown += f"  Sensory Focus: {', '.join(scene.get('sensory_focus', []))}\n"
-                scene_breakdown += f"  TARGET: {target_scene_words:,} words MINIMUM\n"
 
-                # Add beats array if present
+                # Exit hook is optional
+                exit_hook = scene.get('exit_hook')
+                if exit_hook:
+                    scene_breakdown += f"  Exit Hook: {exit_hook}\n"
+
+                # Add beats array (handle both dict and string formats)
                 beats = scene.get('beats', [])
                 if beats:
                     scene_breakdown += f"\n  BEAT STRUCTURE ({len(beats)} beats):\n"
                     for j, beat in enumerate(beats, 1):
-                        beat_type = beat.get('type', 'unknown')
-                        beat_note = beat.get('note', '')
-                        beat_words = beat.get('target_words', 0)
-                        scene_breakdown += f"    {j}. {beat_type.upper()} ({beat_words:,}w): {beat_note}\n"
+                        # Handle both old format (dict with type/note/target_words) and new format (simple string)
+                        if isinstance(beat, dict):
+                            beat_note = beat.get('note', '')
+                            scene_breakdown += f"    {j}. {beat_note}\n"
+                        else:
+                            # New format: simple string
+                            scene_breakdown += f"    {j}. {beat}\n"
                     scene_breakdown += f"  → Follow this beat structure for proper pacing and emphasis\n"
 
         prompt = f"""Generate full prose for a chapter using this self-contained story context.

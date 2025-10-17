@@ -540,24 +540,9 @@ When the feedback mentions duplicate or repetitive content:
         # chapter_act is already the string "Act I", "Act II", or "Act III"
         default_act = chapter_act
 
-        # Calculate scene budgets with impact ratings
-        # Auto-assign impacts: first/last = 1 (connective), middle = 2 (important), middle in peak = 3 (set-piece)
-        scene_impacts = DepthCalculator.assign_scene_impacts(scene_count, chapter_role)
-
-        # Calculate scene budgets based on impacts
-        scene_budgets = DepthCalculator.calculate_scene_budget(words_scenes, scene_count, scene_impacts)
-
-        # Calculate beat budgets for each scene (using 6-beat pattern as default)
-        beat_budgets_per_scene = []
-        for scene_budget in scene_budgets:
-            beat_budgets = DepthCalculator.calculate_beat_budget(scene_budget, beat_count=6)
-            beat_budgets_per_scene.append(beat_budgets)
-
         if logger:
             logger.debug(f"Chapter {chapter_num} budget: role={chapter_role}, act={chapter_act}, "
                         f"total={words_total}, scenes={words_scenes}, scene_count={scene_count}")
-            logger.debug(f"Scene impacts: {scene_impacts}")
-            logger.debug(f"Scene budgets: {scene_budgets}")
 
         # Serialize foundation to YAML
         foundation_yaml = yaml.dump(foundation, default_flow_style=False, allow_unicode=True)
@@ -566,15 +551,6 @@ When the feedback mentions duplicate or repetitive content:
         previous_yaml = ""
         if previous_chapters:
             previous_yaml = yaml.dump(previous_chapters, default_flow_style=False, allow_unicode=True)
-
-        # Build beat structure examples for prompt
-        beat_type_labels = DepthCalculator.BEAT_TYPE_TEMPLATES[6]  # Use 6-beat pattern
-        beat_examples = []
-        for i, (beat_type, beat_budget) in enumerate(zip(beat_type_labels, beat_budgets_per_scene[0])):
-            beat_examples.append(f"""      - type: "{beat_type}"
-        note: "Brief description of what happens in this beat"
-        target_words: {beat_budget}""")
-        beat_structure_example = "\n".join(beat_examples)
 
         # Build prompt
         prompt = f"""Generate chapter {chapter_num} of {total_chapters} for a book.
@@ -618,10 +594,9 @@ This chapter should support and enrich the story outlined in the foundation and 
 
 BEAT-DRIVEN ARCHITECTURE:
 This is chapter {chapter_num} in {default_act} (role: {chapter_role}).
-- Chapter budget: {words_total:,} words total ({words_scenes:,} for scenes, rest for transitions/glue)
-- Scene count: {scene_count} scenes with varying impact ratings
-- Scene budgets: {[f"{sb:,}w" for sb in scene_budgets]}
-- Each scene has 6 beats with target words (setup, obstacle, complication, reversal, consequence, exit)
+- Chapter budget: {words_total:,} words total
+- Scene count: {scene_count} scenes
+- Each scene has 6 beat descriptions tracking narrative progression
 
 TASK:
 Generate chapter {chapter_num} with COMPLETE BEAT STRUCTURE for all scenes.
@@ -640,70 +615,27 @@ Required fields:
 - subplot_threads: 1-2 if applicable
 - word_count_target: {words_total}
 
-SCENE STRUCTURE (all fields required):
-Each scene MUST include:
+SCENE STRUCTURE:
+Each scene includes:
   - scene: Brief scene title (2-4 words)
   - location: Specific place where scene occurs
   - objective: VERB phrase - what character wants (must be fail-able)
-  - opposition: Active force preventing success (not just circumstances)
-  - value_shift: "before state → after state" (explicit X → Y format)
-  - outcome: How the scene resolves
-  - exit_hook: Forward momentum (question/decision/reveal/peril)
-  - emotional_beat: Internal character change
-  - tension: 2-3 tags from: timer, secrecy, pursuit, environment, moral, social-pressure, puzzle
-  - plants: Setup for later payoffs (MINOR only - see guidelines below)
-  - payoffs: Callbacks to earlier plants (verify against treatment first)
-  - impact: {scene_impacts[0]} (1=connective, 2=important, 3=set-piece) - ALREADY ASSIGNED, use these values
-  - sensory_focus: 2-3 specific sensory details
-  - target_words: scene word target
-  - beats: Array of 6 beats with type, note, target_words
+  - exit_hook: (OPTIONAL) Forward momentum if there's a strong one aligned with treatment
+  - beats: Array of 6 beat descriptions (simple strings)
 
-PLANTS AND PAYOFFS - TIERED SYSTEM:
-Two types of plants are distinguished:
+BEAT STRUCTURE (6 beats per scene):
+Each scene should have 6 beats describing the narrative progression.
+Write them as simple descriptive sentences (1-2 sentences each).
 
-MAJOR PLANTS (plot-level): MUST come from treatment
-  - New antagonists, conspiracies, plot twists, character backstories, story threads
-  - These shape the overall story direction
-  - Examples: "secret organization", "government experiments", "hidden villain", "character's dark past"
-  - DO NOT plant these elements if they are not in the treatment
-  - Cross-reference treatment before planting any plot-level element
+Example pattern:
+  1. Setup - Establish location, character state, what's happening
+  2. Complication - First obstacle or problem arises
+  3. Development - Stakes increase, tension builds
+  4. Turning Point - Peak moment, decision, or revelation
+  5. Aftermath - Immediate consequences and character reaction
+  6. Transition - Bridge to next scene
 
-MINOR PLANTS (scene-level): Can be invented freely
-  - Props, location details, character gestures, sensory elements, symbolic objects
-  - These add richness and continuity without changing plot direction
-  - Examples: "loose floor tile", "character's distinctive watch", "coffee stain on document", "recurring musical phrase"
-  - These enrich scenes and can be paid off in later scenes
-
-PAYOFF VERIFICATION:
-Before paying off ANY plant from previous chapters:
-  1. Check if the plant is MAJOR (plot-level) or MINOR (scene-level)
-  2. If MAJOR: Verify it exists in the treatment
-  3. If the plant contradicts treatment → DO NOT pay it off (treat as previous chapter error)
-  4. If MINOR: Pay off freely to maintain continuity
-
-Examples of proper tiered usage:
-✓ Treatment mentions "Lang uses chess symbolism" → You plant "white king piece" (MINOR plant from treatment element)
-✓ Treatment shows "factory has machinery" → You plant "loose tile from manufacturing flaw" (MINOR elaboration)
-✗ Treatment has one villain → Previous chapter planted "secret mastermind" → DO NOT pay this off (MAJOR error)
-✗ Treatment says nothing about experiments → Previous chapter planted "government program" → DO NOT pay this off (MAJOR error)
-
-IMPORTANT - QUALITY OVER OBLIGATION:
-Plants and payoffs are NOT required in every scene. Only include them when they:
-  - Naturally enhance the scene quality and narrative flow
-  - Align with treatment elements (no invention of MAJOR plot elements)
-  - Serve a clear storytelling purpose (foreshadowing, continuity, symbolism)
-  - Feel organic to the moment rather than forced
-
-If a scene works better without plants/payoffs, omit them. Quality and treatment fidelity come first.
-
-BEAT ARRAY STRUCTURE (6 beats per scene):
-Each scene must have exactly 6 beats:
-  1. setup (10% of scene) - Establish location, character state
-  2. obstacle (15%) - First complication arises
-  3. complication (20%) - Stakes increase
-  4. reversal (25%) - Peak moment, decision point, turn
-  5. consequence (20%) - Immediate aftermath
-  6. exit (10%) - Bridge to next scene with hook
+Write beats as flowing narrative descriptions, not analytical labels.
 
 Guidelines:
 - Maintain consistency with foundation (characters, world, metadata)
@@ -711,14 +643,11 @@ Guidelines:
 - Review previous chapters' scenes CAREFULLY to avoid duplication
 - Each scene must advance the story with NEW events and conflicts
 - Do NOT repeat plot beats, events, or character moments already covered
-- Treatment fidelity: Follow the CRITICAL - TREATMENT FIDELITY and PLANTS AND PAYOFFS guardrails above
+- Treatment fidelity: Elaborate on treatment elements, don't contradict them
 - Be specific with names, places, emotions
 - objective must be VERB phrase ("convince mentor", NOT "talking to mentor")
-- opposition must be ACTIVE force ("mentor's skepticism", NOT "it's difficult")
-- value_shift must use → symbol ("ignored → heard")
-- exit_hook must point forward (question, decision, reveal, peril)
-- Vary tension tags across scenes (avoid repeating same 3+ times)
-- Plants/payoffs are OPTIONAL - only include when they naturally enhance quality (see tiered system above)
+- exit_hook is optional - only include if it's strong and aligns with treatment
+- beats should be narrative descriptions of what happens
 
 RETURN FORMAT:
 Return ONLY valid YAML for this ONE chapter (no markdown fences):
@@ -729,28 +658,18 @@ pov: "..."
 act: "{default_act}"
 summary: "..."
 scenes:
-  - scene: "Scene Title"
-    location: "..."
-    objective: "convince mentor to reopen case"  # VERB phrase
-    opposition: "mentor's skepticism and department politics"  # Active force
-    value_shift: "ignored → heard"  # X → Y format
-    outcome: "partial win"
-    exit_hook: "Mentor asks about the missing artifact"  # Forward momentum
-    emotional_beat: "confidence"
-    tension:
-      - "social-pressure"
-      - "timer"
-    plants:
-      - "Mention of artifact"
-    payoffs: []
-    impact: {scene_impacts[0]}
-    sensory_focus:
-      - "Stale coffee smell"
-      - "Fluorescent buzz"
-    target_words: {scene_budgets[0]}
+  - scene: "Mentor's Office"
+    location: "NYPD precinct, Captain Reyes's office"
+    objective: "convince mentor to reopen the Hartley case"
+    exit_hook: "Mentor asks about the missing artifact from evidence room"  # Optional
     beats:
-{beat_structure_example}
-  # ... continue for all {scene_count} scenes with their specific budgets: {scene_budgets}
+      - "Protagonist enters office with new forensic report, mentor reviewing budget files"
+      - "Mentor dismisses case citing jurisdiction issues and political pressure from above"
+      - "Protagonist reveals connection to mentor's decades-old cold case, raising personal stakes"
+      - "Mentor pauses, visible internal conflict between duty and old wounds, reluctantly agrees"
+      - "They discuss next steps and evidence protocols, mentor issues stern warnings about consequences"
+      - "Scene closes with mentor's cryptic question about the missing artifact, hinting at conspiracy"
+  # ... continue for all {scene_count} scenes (chapter target: {words_total} words total = ~{words_scenes // scene_count} words per scene)
 character_developments:
   - "..."
 relationship_beats:
@@ -766,8 +685,9 @@ word_count_target: {words_total}
 IMPORTANT:
 - Return ONLY the YAML for chapter {chapter_num}
 - Do NOT wrap in markdown code fences
-- ALL scene fields are REQUIRED (objective, opposition, value_shift, exit_hook, tension, impact, beats)
-- beats array must have exactly 6 beats with type, note, target_words"""
+- Scene required fields: scene, location, objective, beats (6 items)
+- exit_hook is optional - only include if strong and aligned with treatment
+- beats must be 6 simple descriptive strings (not objects)"""
 
         # Add feedback instruction if iterating
         if feedback:
@@ -865,7 +785,7 @@ IMPORTANT:
                 logger.warning(f"Chapter number mismatch: expected {chapter_num}, got {chapter_data.get('number')} - correcting")
             chapter_data['number'] = chapter_num
 
-        # Validate scene hygiene
+        # Validate scene hygiene (minimal - only required fields)
         scenes = chapter_data.get('scenes', [])
         hygiene_warnings = []
 
@@ -878,34 +798,6 @@ IMPORTANT:
                 hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'objective' field")
             elif any(word in objective.lower() for word in ['talk', 'talking', 'discuss', 'discussing']) and 'to' not in objective:
                 hygiene_warnings.append(f"Scene {i} ({scene_id}): objective '{objective}' is too vague (use 'convince X to Y' not 'talk to X')")
-
-            # Check opposition (must be active force)
-            opposition = scene.get('opposition', '')
-            if not opposition:
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'opposition' field")
-            elif any(phrase in opposition.lower() for phrase in ['it\'s difficult', 'circumstances', 'hard to', 'challenging']):
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): opposition '{opposition}' is passive (use active force like 'character's skepticism')")
-
-            # Check value_shift (must have → symbol)
-            value_shift = scene.get('value_shift', '')
-            if not value_shift:
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'value_shift' field")
-            elif '→' not in value_shift and '->' not in value_shift:
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): value_shift '{value_shift}' must use → format (before → after)")
-
-            # Check exit_hook
-            exit_hook = scene.get('exit_hook', '')
-            if not exit_hook:
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'exit_hook' field")
-            elif any(phrase in exit_hook.lower() for phrase in ['scene ends', 'chapter ends', 'ends']):
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): exit_hook '{exit_hook}' has no forward momentum")
-
-            # Check tension tags
-            tension = scene.get('tension', [])
-            if not tension or len(tension) == 0:
-                hygiene_warnings.append(f"Scene {i} ({scene_id}): Missing 'tension' tags")
-
-            # Note: plants/payoffs are now optional (quality-first approach) - no validation needed
 
             # Check beats array
             beats = scene.get('beats', [])
@@ -2651,16 +2543,12 @@ For each chapter:
 - pov, act, summary (3-4 sentences)
 - scenes: 2-4 full dramatic scenes with structure
   * CRITICAL: Each scene is a COMPLETE DRAMATIC UNIT (1,000-2,000 words when written)
-  * NOT bullet point summaries - use full scene structure:
+  * NOT bullet point summaries - use simplified scene structure:
     - scene: Brief scene title (2-4 words)
     - location: Where the scene takes place
-    - pov_goal: What the POV character wants in this scene
-    - conflict: What prevents them from getting it
-    - stakes: What's at risk if they fail
-    - outcome: How the scene resolves
-    - emotional_beat: Internal character change
-    - sensory_focus: 2-3 specific sensory details
-    - target_words: Scene word target (~1,300 words/scene for novels)
+    - objective: VERB phrase - what character wants (must be fail-able)
+    - exit_hook: (OPTIONAL) Forward momentum if there's a strong one aligned with treatment
+    - beats: Array of 6 beat descriptions (simple strings describing narrative progression)
 - character_developments: 3-4 internal changes
 - relationship_beats: 2-3 relationship evolutions
 - tension_points: 2-3 stakes/urgency moments
