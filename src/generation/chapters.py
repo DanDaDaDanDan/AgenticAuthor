@@ -2644,8 +2644,8 @@ chapters:
     async def _generate_single_shot(
         self,
         context: Dict[str, Any],
-        total_words: int,
-        chapter_count: int,
+        total_words: Optional[int],
+        chapter_count: Optional[int],
         genre: str,
         pacing: str,
         feedback: Optional[str] = None
@@ -2669,6 +2669,19 @@ chapters:
         """
         from ..utils.logging import get_logger
         logger = get_logger()
+
+        # Calculate defaults if not provided
+        if total_words is None:
+            # Use intelligent default based on genre
+            total_words = DepthCalculator.get_default_word_count('novel', genre)
+            if logger:
+                logger.debug(f"Using default word count for {genre} novel: {total_words}")
+
+        if chapter_count is None:
+            # Calculate chapter count from word count
+            chapter_count = self._calculate_chapter_count(total_words)
+            if logger:
+                logger.debug(f"Calculated chapter count: {chapter_count}")
 
         self.console.print(f"\n[cyan]Generating all {chapter_count} chapters in single call...[/cyan]")
         self.console.print(f"[dim]Target: {total_words:,} words across {chapter_count} chapters[/dim]\n")
@@ -2760,16 +2773,21 @@ world:
 
 chapters:"""
 
-        # Add chapter structure for each chapter
-        calc = DepthCalculator(total_words, chapter_count, genre, pacing)
-        structure = calc.calculate()
+        # Calculate chapter structure using DepthCalculator
+        budget = DepthCalculator.calculate_top_down_budget(
+            total_words=total_words,
+            chapter_count=chapter_count
+        )
 
-        for i in range(1, chapter_count + 1):
-            chapter_budget = calc.calculate_chapter_budget(i)
-            words_total = chapter_budget['words_total']
-            scene_count = chapter_budget['scene_count']
-            act = chapter_budget['act']
-            role = chapter_budget['role']
+        # Get chapter budgets from the calculation
+        chapter_budgets = budget['chapter_budgets']
+
+        for ch_budget in chapter_budgets:
+            i = ch_budget['number']
+            words_total = ch_budget['words_total']
+            scene_count = ch_budget.get('typical_scenes', 3)  # Use typical scenes from budget
+            act = ch_budget['act']
+            role = ch_budget['role']
 
             prompt += f"""
   - number: {i}
