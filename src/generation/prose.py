@@ -1031,7 +1031,7 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
         narrative_style: str = "third person limited"
     ) -> str:
         """
-        Generate chapter prose using multi-model competition with unified context.
+        Generate chapter prose using multi-model competition with self-contained chapters.yaml.
 
         Args:
             chapter_number: Chapter to generate
@@ -1041,92 +1041,213 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
             Winning chapter prose text
         """
         from .multi_model import MultiModelGenerator
+        import yaml
 
-        # Build unified context (self-contained chapters.yaml only)
-        context = self.context_builder.build_context(
-            project=self.project,
-            context_level='prose',  # Include chapters.yaml (self-contained)
-            include_downstream=False  # Chapters.yaml is self-contained
-        )
+        # Load chapters.yaml (self-contained - no premise/treatment needed)
+        chapters_data = self.project.get_chapters_yaml()
 
-        if 'chapters' not in context:
-            raise Exception("No chapters found. Generate chapters first with /generate chapters")
+        if not chapters_data:
+            raise Exception(
+                "chapters.yaml not found or in legacy format. "
+                "Please regenerate chapters with /generate chapters to create the new self-contained format."
+            )
 
-        # Extract chapters from dict or list format
-        chapters_data = context['chapters']
-        if isinstance(chapters_data, dict):
-            # New self-contained format
-            chapters = chapters_data.get('chapters', [])
-        else:
-            # Legacy format (list)
-            chapters = chapters_data
+        # Extract sections
+        metadata = chapters_data.get('metadata', {})
+        characters = chapters_data.get('characters', [])
+        world = chapters_data.get('world', {})
+        chapters = chapters_data.get('chapters', [])
 
-        # Find current chapter info
+        # Find current chapter
         current_chapter = None
         for ch in chapters:
-            if ch.get('number') == chapter_number:
+            if ch['number'] == chapter_number:
                 current_chapter = ch
                 break
 
         if not current_chapter:
-            raise Exception(f"Chapter {chapter_number} not found in outlines")
+            raise Exception(f"Chapter {chapter_number} not found in chapters.yaml")
 
-        # Check token requirements
-        token_calc = await self.calculate_prose_context_tokens(chapter_number)
+        # Get previous chapters for context
+        prev_chapters = [ch for ch in chapters if ch['number'] < chapter_number]
 
-        # Serialize context to YAML
-        context_yaml = self.context_builder.to_yaml_string(context)
+        # Build previous chapters summary
+        prev_summary = ""
+        if prev_chapters:
+            prev_summary = "\nPREVIOUS CHAPTERS SUMMARY:\n"
+            for ch in prev_chapters:
+                prev_summary += f"\nChapter {ch['number']}: {ch['title']}\n"
+                prev_summary += f"Summary: {ch.get('summary', 'N/A')}\n"
+                # Check if prose exists for this chapter
+                prose_file = self.project.chapters_dir / f"chapter-{ch['number']:02d}.md"
+                if prose_file.exists():
+                    prose_text = prose_file.read_text(encoding='utf-8')
+                    # Include last paragraph for continuity
+                    paragraphs = [p.strip() for p in prose_text.split('\n\n') if p.strip()]
+                    if paragraphs:
+                        prev_summary += f"Ending: ...{paragraphs[-1]}\n"
 
-        # Build prompt (same as generate_chapter_sequential)
+        # Serialize to YAML for prompt
+        chapters_yaml = yaml.dump(chapters_data, sort_keys=False)
+
+        # Build prose generation prompt (matching generate_chapter_sequential)
         word_count_target = current_chapter.get('word_count_target', 3000)
 
-        prompt = f"""Here is the current book content in YAML format:
+        # Support both new (scenes) and old (key_events) formats
+        scenes = current_chapter.get('scenes', current_chapter.get('key_events', []))
+        num_scenes = len(scenes)
+        uses_structured_scenes = 'scenes' in current_chapter and isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict)
 
+        # Calculate scene depth guidance from actual scene targets
+        if uses_structured_scenes and scenes:
+            # Get scene targets from structured scenes
+            scene_targets = [scene.get('target_words', 0) for scene in scenes]
+            avg_ws = sum(scene_targets) // len(scene_targets) if scene_targets else word_count_target // num_scenes
+        else:
+            # Fallback: distribute evenly
+            avg_ws = word_count_target // num_scenes if num_scenes > 0 else 1500
+
+        # Simple guidance ranges based on average
+        setup_range = (int(avg_ws * 0.7), int(avg_ws * 0.9))      # 70-90% for setup/transition
+        standard_range = (int(avg_ws * 0.9), int(avg_ws * 1.1))   # 90-110% for standard
+        climax_range = (int(avg_ws * 1.2), int(avg_ws * 1.5))     # 120-150% for climax
+
+        # Build scene-by-scene breakdown if using structured format
+        scene_breakdown = ""
+        if uses_structured_scenes:
+            scene_breakdown = "\n\nSCENE-BY-SCENE BREAKDOWN WITH BEAT STRUCTURE:\n"
+            for i, scene in enumerate(scenes, 1):
+                scene_breakdown += f"\nScene {i}: \"{scene.get('scene', 'Untitled')}\"\n"
+                scene_breakdown += f"  Location: {scene.get('location', 'N/A')}\n"
+
+                # Simplified scene fields (backward compatible)
+                objective = scene.get('objective', scene.get('pov_goal', 'N/A'))
+                scene_breakdown += f"  Objective: {objective}\n"
+
+                # Exit hook is optional
+                exit_hook = scene.get('exit_hook')
+                if exit_hook:
+                    scene_breakdown += f"  Exit Hook: {exit_hook}\n"
+
+                # Add beats array (handle both dict and string formats)
+                beats = scene.get('beats', [])
+                if beats:
+                    scene_breakdown += f"\n  BEAT STRUCTURE ({len(beats)} beats):\n"
+                    for j, beat in enumerate(beats, 1):
+                        # Handle both old format (dict with type/note/target_words) and new format (simple string)
+                        if isinstance(beat, dict):
+                            beat_note = beat.get('note', '')
+                            scene_breakdown += f"    {j}. {beat_note}\n"
+                        else:
+                            # New format: simple string
+                            scene_breakdown += f"    {j}. {beat}\n"
+                    scene_breakdown += f"  → Follow this beat structure for proper pacing and emphasis\n"
+
+        prompt = f"""Generate full prose for a chapter using this self-contained story context.
+
+STORY CONTEXT (chapters.yaml):
 ```yaml
-{context_yaml}
+{chapters_yaml}
 ```
+{prev_summary}
 
-Generate full prose for Chapter {chapter_number}: "{current_chapter['title']}"
+TASK:
+Generate {word_count_target:,} words of polished narrative prose for:
+- Chapter {chapter_number}: "{current_chapter['title']}"
+- POV: {current_chapter.get('pov', 'N/A')}
+- Act: {current_chapter.get('act', 'N/A')}
+{scene_breakdown}
 
-Guidelines:
-1. Target ~{word_count_target} words of flowing narrative prose
-2. Perfect continuity from previous chapters (if any exist)
-3. Consistent character voices and development
-4. Proper pacing relative to the story arc
-5. Natural progression toward upcoming chapters
-6. Narrative style: {narrative_style}
-7. Build on established world-building, character traits, and plot threads
-8. Follow the chapter outline's key events, character developments, relationship beats, and tension points
+CRITICAL - BEAT-DRIVEN SCENE DEVELOPMENT (NOT SUMMARIES):
+This chapter has {num_scenes} SCENES to develop in {word_count_target:,} words.
+Each scene is a COMPLETE DRAMATIC UNIT following its BEAT STRUCTURE (see breakdown above).
 
-CRITICAL: Return your response as YAML with this structure:
-```yaml
-premise:
-  text: |
-    ... (keep existing premise unchanged)
-  metadata: ...
+If beats are provided in the breakdown, follow them beat-by-beat:
+  1. SETUP (10-15% of scene): Establish location, character state, goal
+  2. OBSTACLE (15% of scene): First complication arises
+  3. COMPLICATION (20% of scene): Stakes increase, tension builds
+  4. REVERSAL (25% of scene): ★ PEAK MOMENT ★ - decision point, turn, revelation
+  5. CONSEQUENCE (20% of scene): Immediate aftermath, character processing
+  6. EXIT (10% of scene): Bridge to next scene with hook
 
-treatment:
-  text: |
-    ... (keep existing treatment unchanged)
+If no beats provided, use classic 4-part structure:
+  1. SETUP (15-20% of scene): Establish location, time, who's present
+  2. DEVELOPMENT (40-50% of scene): Action, dialogue, obstacles, complications
+  3. CLIMAX (15-20% of scene): Peak moment, emotional turning point
+  4. RESOLUTION (15-20% of scene): Aftermath, bridge to next scene
 
-chapters:
-  - number: 1
-    title: "..."
-    # ... (keep all chapter outlines unchanged)
+★ REVERSAL/CLIMAX IS THE HEART OF THE SCENE ★
+The reversal beat (or climax in 4-part) gets the MOST WORDS (25-30%).
+This is the turn, the decision, the confrontation - don't rush it.
 
-prose:
-  - chapter: {chapter_number}
-    text: |
-      # Chapter {chapter_number}: {current_chapter['title']}
+MINIMUM WORDS PER SCENE (not average - MINIMUM):
+• This chapter: ~{avg_ws} words per scene
+• Setup/transition scenes: {setup_range[0]}-{setup_range[1]} words minimum
+• Standard dramatic scenes: {standard_range[0]}-{standard_range[1]} words minimum
+• Climactic/peak scenes: {climax_range[0]}-{climax_range[1]}+ words minimum
 
-      Your prose here... (~{word_count_target} words of narrative)
-```
+SHOW vs TELL - CRITICAL DISTINCTION:
 
-Do NOT wrap your response in additional markdown code fences (```).
-Return ONLY the YAML content with all sections (premise + treatment + chapters + prose)."""
+❌ TELLING (summary - avoid this):
+"Sarah was angry with her brother for forgetting her birthday. She confronted him about it and he apologized."
+(50 words - rushed summary)
+
+✅ SHOWING (full scene - do this):
+Sarah's jaw clenched as Mark walked in, whistling. Her birthday. Her thirtieth birthday. And he'd forgotten.
+
+"Hey," he said, dropping his keys on the counter. "What's for dinner?"
+
+The casual question hit like a slap. She'd spent the morning checking her phone, waiting for his text, his call, anything. "You're kidding."
+
+"What?" He opened the fridge, oblivious.
+
+"Mark." Her voice came out flat. "What day is it?"
+
+He paused, milk carton in hand. His eyes widened. "Oh God. Sarah, I—"
+
+"Don't." She held up a hand. "Just don't."
+
+(380 words - full scene with dialogue, action, emotion)
+
+WRITE EVERY SCENE AS A FULL DRAMATIC UNIT. Do NOT summarize or rush.
+Each scene should feel complete and immersive. Let moments breathe.
+
+NOTE: This chapter is in {current_chapter.get('act', 'N/A')}.
+- Act I: Efficient setup, but still FULL scenes (not summaries)
+- Act II: Standard dramatic development
+- Act III: DEEPER emotional intensity, more immersive
+
+GUIDELINES:
+1. FOLLOW THE BEAT STRUCTURE for each scene (setup → obstacle → complication → REVERSAL → consequence → exit)
+2. Give REVERSAL/TURN beats the most space (25-30% of scene) - this is where the magic happens
+3. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
+4. Draw on character backgrounds, motivations, and arcs from the characters section
+5. Use world-building details (locations, systems, atmosphere) to ground scenes
+6. Follow scene objectives and value shifts (before → after transformation)
+7. Perfect continuity from previous chapters (if any)
+8. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
+9. TARGET: {word_count_target:,} words total = {num_scenes} scenes × {avg_ws} w/s MINIMUM per scene
+10. SHOW character emotions through action, dialogue, physical reactions
+11. Include sensory details in EVERY scene (sight, sound, touch, smell, taste)
+12. Let dialogue breathe - include reactions, pauses, character processing
+13. Honor exit hooks - each scene should propel forward with question/decision/reveal/peril
+
+Note: These guidelines serve the story. If specific instructions conflict with good storytelling or prose quality, prioritize what makes the scene work. You have creative latitude to deviate from overly prescriptive details when needed for narrative flow, character authenticity, or dramatic impact.
+
+Return ONLY the prose text. Do NOT include:
+- YAML formatting
+- Chapter headers (we'll add those)
+- Explanations or notes
+- Scene markers or dividers
+
+Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full dramatic scenes)."""
 
         # Create multi-model generator
         multi_gen = MultiModelGenerator(self.client, self.project)
+
+        # Estimate tokens
+        from ..utils.tokens import estimate_messages_tokens
+        estimated_response_tokens = word_count_target + 500  # ~1 token per word + buffer
 
         # Define generator function that takes model parameter
         async def generate_with_model(model: str) -> str:
@@ -1135,35 +1256,27 @@ Return ONLY the YAML content with all sections (premise + treatment + chapters +
             if not model_obj:
                 raise Exception(f"Failed to fetch model capabilities for {model}")
 
-            # Generate with this model using dry_run
+            # Generate with this model (plain text, not YAML)
             result = await self.client.streaming_completion(
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are a professional fiction writer. You always return valid YAML without additional formatting."},
+                    {"role": "system", "content": "You are a professional fiction writer. Return only the prose text without any formatting or explanations."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.8,
+                temperature=0.8,  # Higher for creative prose
                 display=True,
                 display_label=f"Generating Chapter {chapter_number} prose ({model})",
-                min_response_tokens=token_calc['response_tokens']
+                min_response_tokens=estimated_response_tokens
             )
 
             if not result:
                 raise Exception(f"No response from {model}")
 
-            response_text = result.get('content', result) if isinstance(result, dict) else result
+            # Extract plain prose text
+            prose_text = result.get('content', result) if isinstance(result, dict) else result
 
-            # Parse with dry_run to validate but not save
-            parse_result = self.parser.parse_and_save(
-                response=response_text,
-                project=self.project,
-                target_lod='prose',
-                original_context=context,
-                dry_run=True
-            )
-
-            # Return the raw response for comparison
-            return response_text
+            # Return the raw prose for comparison
+            return prose_text
 
         # Run competition
         competition_result = await multi_gen.generate_parallel(
@@ -1171,37 +1284,30 @@ Return ONLY the YAML content with all sections (premise + treatment + chapters +
             content_type="prose",
             file_prefix=f"chapter_{chapter_number:02d}",
             context={
-                'premise': context['premise']['text'],
-                'treatment': context['treatment']['text'],
                 'genre': self.project.metadata.genre if self.project.metadata else None,
                 'chapter_number': chapter_number,
-                'chapter_title': current_chapter['title']
+                'chapter_title': current_chapter['title'],
+                'word_count_target': word_count_target
             }
         )
 
         if not competition_result:
             raise Exception("Multi-model competition failed or was cancelled")
 
-        # Get winning response
-        winning_response = competition_result['winner']['content']
+        # Get winning prose text
+        winning_prose = competition_result['winner']['content']
 
-        # Now save the winner for real
-        parse_result = self.parser.parse_and_save(
-            response=winning_response,
-            project=self.project,
-            target_lod='prose',
-            original_context=context,
-            dry_run=False  # Actually save this time
-        )
+        # Save winner directly to file (no YAML parsing needed)
+        chapter_file = self.project.chapters_dir / f"chapter-{chapter_number:02d}.md"
+        self.project.chapters_dir.mkdir(exist_ok=True)
 
-        # Read the saved prose
-        chapter_file = self.project.path / "chapters" / f"chapter-{chapter_number:02d}.md"
-        if chapter_file.exists():
-            with open(chapter_file, 'r', encoding='utf-8') as f:
-                prose_content = f.read()
-                word_count = len(prose_content.split())
-                print(f"\n✅ Chapter {chapter_number} generated successfully (multi-model)")
-                print(f"   Word count: {word_count:,}")
-                return prose_content
-        else:
-            raise Exception(f"Prose file not created for chapter {chapter_number}")
+        # Add chapter header
+        full_prose = f"# Chapter {chapter_number}: {current_chapter['title']}\n\n{winning_prose}"
+
+        chapter_file.write_text(full_prose, encoding='utf-8')
+
+        word_count = len(winning_prose.split())
+        print(f"\n✅ Chapter {chapter_number} generated successfully (multi-model)")
+        print(f"   Word count: {word_count:,}")
+
+        return full_prose
