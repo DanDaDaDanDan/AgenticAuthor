@@ -1475,17 +1475,8 @@ IMPORTANT:
             if not model_obj:
                 raise Exception(f"Failed to fetch model capabilities for {self.model}")
 
-            # Branch to single-shot generation if requested
-            if single:
-                self.console.print(f"\n[cyan]Using single-shot generation (all chapters in one call)...[/cyan]")
-                return await self._generate_single_shot(
-                    context=context,
-                    total_words=total_words,
-                    chapter_count=chapter_count,
-                    genre=genre,
-                    pacing=pacing,
-                    feedback=feedback
-                )
+            # Note: Even in single-shot mode, we generate foundation separately first
+            # This is moved down after foundation generation
 
             # ===== PHASE 1: GENERATE OR LOAD FOUNDATION =====
             # Check for existing foundation (prompt user if found and not iterating)
@@ -1882,7 +1873,22 @@ Return the corrected foundation as complete YAML."""
                     self.console.print(f"[yellow]Invalid choice, aborting[/yellow]")
                     raise Exception("Invalid resume choice")
 
-            # ===== PHASE 2: GENERATE CHAPTERS SEQUENTIALLY =====
+            # ===== PHASE 2: GENERATE CHAPTERS (SINGLE-SHOT OR SEQUENTIAL) =====
+
+            # Branch to single-shot generation if requested
+            if single:
+                self.console.print(f"\n[cyan][2/3] Using single-shot generation (all chapters in one call)...[/cyan]")
+                return await self._generate_single_shot(
+                    context=context,
+                    foundation=foundation,
+                    total_words=total_words,
+                    chapter_count=chapter_count,
+                    genre=genre,
+                    pacing=pacing,
+                    feedback=feedback
+                )
+
+            # Otherwise, generate sequentially
             self.console.print(f"\n[cyan][2/3] Generating chapters sequentially...[/cyan]")
 
             # Generate each chapter one at a time with full context
@@ -2642,6 +2648,7 @@ chapters:
     async def _generate_single_shot(
         self,
         context: Dict[str, Any],
+        foundation: Dict[str, Any],
         total_words: Optional[int],
         chapter_count: Optional[int],
         genre: str,
@@ -2656,6 +2663,7 @@ chapters:
 
         Args:
             context: Story context (premise + treatment)
+            foundation: Foundation data (metadata + characters + world)
             total_words: Target total word count
             chapter_count: Number of chapters
             genre: Story genre
@@ -2687,6 +2695,9 @@ chapters:
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)
 
+        # Serialize foundation to YAML for inclusion in prompt
+        foundation_yaml = yaml.dump(foundation, sort_keys=False, allow_unicode=True)
+
         # Build unified prompt for single-shot generation
         feedback_instruction = ""
         if feedback:
@@ -2706,14 +2717,20 @@ CRITICAL - AVOID DUPLICATE PLOT EVENTS:
 - Events should build on each other causally
 - Maintain clear timeline progression"""
 
-        prompt = f"""# TREATMENT
+        prompt = f"""# PREMISE AND TREATMENT
 ```yaml
 {context_yaml}
+```
+
+# FOUNDATION (METADATA, CHARACTERS, WORLD)
+```yaml
+{foundation_yaml}
 ```
 {feedback_instruction}
 
 # YOUR TASK
-Generate complete chapter structure for a {chapter_count}-chapter story ({total_words:,} words total).
+Generate ONLY the chapter structures for a {chapter_count}-chapter story ({total_words:,} words total).
+The metadata, characters, and world have already been generated (see FOUNDATION above).
 
 CRITICAL INSTRUCTIONS FOR AVOIDING DUPLICATION:
 1. Character development must PROGRESS linearly - no repeated beats
@@ -2722,52 +2739,7 @@ CRITICAL INSTRUCTIONS FOR AVOIDING DUPLICATION:
 4. Track what has been established to avoid re-establishing
 
 # OUTPUT
-Return plain YAML (DO NOT wrap in ```yaml or ``` fences) with this EXACT structure:
-
-metadata:
-  genre: "{genre}"
-  subgenre: "..."
-  tone: "..."
-  pacing: "{pacing}"
-  themes: ["...", "..."]
-  narrative_style: "..."
-  target_word_count: {total_words}
-  chapter_count: {chapter_count}
-  setting_location: "..."
-  setting_period: "..."
-
-characters:
-  - name: "..."
-    role: "protagonist"
-    age: ...
-    background: |
-      ...
-    motivation: |
-      ...
-    character_arc: |
-      LINEAR PROGRESSION across chapters (no repeated beats)
-    internal_conflict: |
-      ...
-    relationships:
-      - character: "..."
-        relationship: "..."
-        evolution: "how it changes"
-
-world:
-  setting_overview: |
-    ...
-  key_locations:
-    - name: "..."
-      description: "..."
-      significance: "..."
-  systems_and_rules:
-    - system: "..."
-      description: "..."
-  social_context:
-    - aspect: "..."
-      description: "..."
-  atmosphere: |
-    ...
+Return plain YAML (DO NOT wrap in ```yaml or ``` fences) with ONLY the chapters list:
 
 chapters:"""
 
@@ -2855,29 +2827,71 @@ FINAL CHECKLIST:
 
             response_text = result.get('content', result) if isinstance(result, dict) else result
 
-            # Parse and save the complete structure
-            parse_result = self.parser.parse_and_save(
-                response=response_text,
-                project=self.project,
-                target_lod='chapters',
-                original_context=context,
-                dry_run=False
+            # Strip markdown fences if present
+            response_text = response_text.strip()
+            if response_text.startswith('```yaml'):
+                response_text = response_text[7:]  # Remove ```yaml
+            elif response_text.startswith('```'):
+                response_text = response_text[3:]  # Remove ```
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]  # Remove closing ```
+            response_text = response_text.strip()
+
+            # Parse the chapters-only YAML
+            try:
+                parsed_data = yaml.safe_load(response_text)
+            except yaml.YAMLError as e:
+                raise Exception(f"Failed to parse chapters YAML: {e}")
+
+            # Extract chapters list
+            if isinstance(parsed_data, dict) and 'chapters' in parsed_data:
+                chapters_data = parsed_data['chapters']
+            elif isinstance(parsed_data, list):
+                # Response might be just the list of chapters
+                chapters_data = parsed_data
+            else:
+                raise Exception(f"Response missing 'chapters' section. Got keys: {list(parsed_data.keys()) if isinstance(parsed_data, dict) else 'not a dict'}")
+
+            if not chapters_data:
+                raise Exception("Empty chapters list in response")
+
+            # Combine foundation with chapters to create the full structure
+            full_structure = {
+                **foundation,  # Include metadata, characters, world
+                'chapters': chapters_data  # Add the generated chapters
+            }
+
+            # Save the complete structure (no validation in single-shot mode)
+            chapters_yaml_path = self.project.path / 'chapters.yaml'
+            chapters_yaml_path.write_text(
+                yaml.dump(full_structure, sort_keys=False, allow_unicode=True),
+                encoding='utf-8'
             )
 
-            if not parse_result or not parse_result.get('success'):
-                error_msg = parse_result.get('error', 'Unknown error') if parse_result else 'Parser returned None'
-                raise Exception(f"Failed to parse chapters: {error_msg}")
+            # Also save individual chapter beat files for consistency
+            beats_dir = self.project.path / 'chapter-beats'
+            beats_dir.mkdir(exist_ok=True)
 
-            # Load saved chapters
-            chapters_data = self.project.get_chapters()
-            if not chapters_data:
-                # Try loading from new format
-                chapters_yaml = self.project.get_chapters_yaml()
-                if chapters_yaml:
-                    chapters_data = chapters_yaml.get('chapters', [])
+            # Save foundation if not already saved
+            foundation_path = beats_dir / 'foundation.yaml'
+            if not foundation_path.exists():
+                foundation_path.write_text(
+                    yaml.dump(foundation, sort_keys=False, allow_unicode=True),
+                    encoding='utf-8'
+                )
 
-            if not chapters_data:
-                raise Exception("No chapters found after parsing")
+            # Save each chapter
+            for chapter in chapters_data:
+                chapter_num = chapter.get('number', 0)
+                if chapter_num:
+                    chapter_path = beats_dir / f'chapter-{chapter_num:02d}.yaml'
+                    chapter_path.write_text(
+                        yaml.dump(chapter, sort_keys=False, allow_unicode=True),
+                        encoding='utf-8'
+                    )
+
+            if logger:
+                logger.debug(f"Saved complete structure to chapters.yaml and individual beat files without validation")
 
             # Convert to ChapterOutline objects
             chapters = []
