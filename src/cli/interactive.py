@@ -1806,16 +1806,19 @@ class InteractiveSession:
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
             return
 
-        # Parse options (chapter count or word count or --auto)
+        # Parse options (chapter count or word count or --auto or --single)
         chapter_count = None
         total_words = None  # Let generator calculate smart default
         auto_fix = False
+        single_shot = False  # Generate all chapters in one call
 
         if options:
             parts = options.split()
             for part in parts:
                 if part == '--auto':
                     auto_fix = True
+                elif part == '--single':
+                    single_shot = True
                 elif part.isdigit():
                     num = int(part)
                     if num < 50:  # Assume it's chapter count
@@ -1831,7 +1834,14 @@ class InteractiveSession:
             mode_label = "🏆 Generating chapter outlines with multi-model competition"
             if auto_fix:
                 mode_label += " (auto-fix enabled)"
+            if single_shot:
+                mode_label += " (single-shot mode)"
             self.console.print(f"[cyan]{mode_label}...[/cyan]\n")
+
+            # Note: Multi-model competition doesn't support single-shot mode
+            if single_shot:
+                self.console.print("[yellow]Note: Single-shot mode not supported in multi-model competition[/yellow]")
+
             chapters = await generator.generate_with_competition(
                 chapter_count=chapter_count,
                 total_words=total_words,
@@ -1842,11 +1852,14 @@ class InteractiveSession:
             mode_label = "Generating chapter outlines"
             if auto_fix:
                 mode_label += " (auto-fix enabled)"
+            if single_shot:
+                mode_label += " (single-shot: all chapters in one call)"
             self.console.print(f"[cyan]{mode_label}...[/cyan]\n")
             chapters = await generator.generate(
                 chapter_count=chapter_count,
                 total_words=total_words,
-                auto_fix=auto_fix
+                auto_fix=auto_fix,
+                single=single_shot  # Pass the single-shot flag
             )
             commit_prefix = "Generate"
 

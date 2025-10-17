@@ -9,6 +9,7 @@ from ...api import OpenRouterClient
 from ...models import Project
 from .base import AnalysisResult, Issue, Severity
 from .unified_analyzer import UnifiedAnalyzer
+from .treatment_deviation_analyzer import TreatmentDeviationAnalyzer
 
 
 class AnalysisCoordinator:
@@ -34,8 +35,9 @@ class AnalysisCoordinator:
         self.project = project
         self.model = model
 
-        # Initialize unified analyzer
+        # Initialize analyzers
         self.analyzer = UnifiedAnalyzer(client, self.model)
+        self.treatment_analyzer = TreatmentDeviationAnalyzer(client, self.model)
 
     async def analyze(
         self,
@@ -68,8 +70,18 @@ class AnalysisCoordinator:
         # Run unified analysis
         result = await self.analyzer.analyze(content, content_type, context)
 
-        # Build aggregated response (single result, but keep format for compatibility)
-        aggregated = self._build_result_dict(result, content_type, target_id)
+        # Run treatment deviation analysis for chapters (if treatment exists)
+        treatment_result = None
+        if content_type == 'chapters' and 'treatment' in context:
+            treatment_result = await self.treatment_analyzer.analyze(content, content_type, context)
+
+        # Build aggregated response
+        if treatment_result:
+            # Combine both analyses
+            aggregated = self._build_combined_result_dict(result, treatment_result, content_type, target_id)
+        else:
+            # Single result (backward compatibility)
+            aggregated = self._build_result_dict(result, content_type, target_id)
 
         # Generate report
         report_path = await self._generate_report(
@@ -298,6 +310,61 @@ class AnalysisCoordinator:
                     lines.append(f"Character Developments ({len(char_devs)} total)")
 
         return "\n".join(lines)
+
+    def _build_combined_result_dict(
+        self,
+        unified_result: AnalysisResult,
+        treatment_result: AnalysisResult,
+        content_type: str,
+        target_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Build result dictionary from combined analyses."""
+        # Combine issues from both analyses
+        all_issues = unified_result.issues + treatment_result.issues
+
+        # Sort by severity
+        severity_order = {
+            Severity.CRITICAL: 0,
+            Severity.HIGH: 1,
+            Severity.MEDIUM: 2,
+            Severity.LOW: 3
+        }
+        all_issues = sorted(all_issues, key=lambda i: severity_order[i.severity])
+
+        # Priority issues (top 10)
+        priority_issues = all_issues[:10]
+
+        # Combine strengths
+        all_strengths = unified_result.strengths + treatment_result.strengths
+
+        # Average the scores
+        overall_score = (unified_result.score + treatment_result.score) / 2
+
+        # Build result dict
+        result_dict = {
+            'content_type': content_type,
+            'target_id': target_id,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'model': self.model,
+            'overall_score': overall_score,
+            'overall_grade': self._score_to_grade(overall_score),
+            'dimension_results': [
+                unified_result.to_dict(),
+                treatment_result.to_dict()
+            ],
+            'priority_issues': [i.to_dict() for i in priority_issues],
+            'all_issues': [i.to_dict() for i in all_issues],
+            'highlights': [s.to_dict() for s in all_strengths[:5]],
+            'total_issues': len(all_issues),
+            'critical_issues': len([i for i in all_issues if i.severity == Severity.CRITICAL]),
+            'high_issues': len([i for i in all_issues if i.severity == Severity.HIGH]),
+        }
+
+        # Add path_to_a_plus if present
+        if unified_result.path_to_a_plus:
+            result_dict['path_to_a_plus'] = unified_result.path_to_a_plus.to_dict()
+
+        return result_dict
 
     def _build_result_dict(
         self,
