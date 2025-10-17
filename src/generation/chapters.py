@@ -2639,7 +2639,9 @@ chapters:
             chapter = ChapterOutline.from_api_response(chapter_dict)
             chapters.append(chapter)
 
-        return chapters    async def _generate_single_shot(
+        return chapters
+
+    async def _generate_single_shot(
         self,
         context: Dict[str, Any],
         total_words: int,
