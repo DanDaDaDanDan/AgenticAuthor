@@ -1215,7 +1215,12 @@ IMPORTANT:
         self.console.print("  • Press Enter to include all issues (default)")
         self.console.print()
 
-        selection = input("Enter selection: ").strip()
+        try:
+            selection = input("Enter selection: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            # User cancelled - abort the entire operation
+            self.console.print(f"\n[yellow]Selection cancelled by user.[/yellow]")
+            raise KeyboardInterrupt("User cancelled issue selection")
 
         # Default to all if empty
         if not selection or selection.lower() == 'all':
@@ -1233,6 +1238,13 @@ IMPORTANT:
                     start, end = part.split('-')
                     start_idx = int(start.strip())
                     end_idx = int(end.strip())
+
+                    # Validate range direction
+                    if start_idx > end_idx:
+                        self.console.print(f"[yellow]⚠️  Range '{part}' is reversed. Did you mean {end_idx}-{start_idx}?[/yellow]")
+                        # Swap to make it work
+                        start_idx, end_idx = end_idx, start_idx
+
                     for idx in range(start_idx, end_idx + 1):
                         if 1 <= idx <= len(issues):
                             selected_indices.add(idx)

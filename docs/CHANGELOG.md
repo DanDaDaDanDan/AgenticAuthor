@@ -83,6 +83,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   **Impact**: Prevents story drift from plot inventions while maintaining creativity for scene elaboration
 
+- **Selective Validation Issue Incorporation** 🎯 (v0.3.1+)
+  - **Feature**: Interactive selection UI for choosing which validation issues to fix during iteration
+  - **Problem**: All-or-nothing iteration forced fixing every detected issue, even minor/debatable ones
+  - **Solution**: User selects specific issues to incorporate before iteration begins
+
+  **Selection Interface**:
+  - Numbered list of all validation issues with severity colors (red=critical, yellow=high, dim=medium)
+  - Each issue shows: type, element, problem description
+  - Selection formats supported:
+    - Single numbers: `1,3,5`
+    - Ranges: `1-3`
+    - `all` or Enter: all issues (default)
+    - Reverse range auto-correction: `3-1` → `1-3` with warning
+  - Keyboard interrupt (Ctrl+C): Cancels selection and aborts iteration
+
+  **Iteration Flow**:
+  - Foundation validation issues: User selects which to fix
+  - Chapter validation issues: User selects which to fix
+  - Retry validation issues: User selects which new issues to address
+  - Only selected issues included in iteration prompt
+  - LLM receives previous YAML + selected issues only
+
+  **Benefits**:
+  - User control: Choose critical fixes, defer minor tweaks
+  - Flexibility: Focus iteration on what matters most
+  - Transparency: See all issues before committing to fixes
+  - Iterative refinement: Different selections on retry attempts
+  - Prevents over-correction: Don't fix things that aren't really problems
+
+  **Example Workflow**:
+  ```
+  Detected 5 validation issue(s) in foundation:
+
+  1. [critical] Character Contradiction
+     Element: Protagonist backstory
+     Problem: Treatment says orphaned, foundation says parents alive
+
+  2. [high] Plot Invention
+     Element: Magic system origin
+     Problem: Foundation adds "ancient prophecy" not in treatment
+
+  3. [medium] World Contradiction
+     Element: Geography
+     Problem: Treatment has coastal setting, foundation has mountains
+
+  Which issues should be incorporated into iteration?
+  Enter selection: 1,2
+
+  ✓ Selected 2 of 5 issues
+  ```
+
+  **Code Quality Improvements**:
+  - Added KeyboardInterrupt/EOFError handling for clean cancellation
+  - Reverse range detection with auto-swap (`3-1` → `1-3`)
+  - Invalid input fallback (returns all issues with warning)
+  - Empty selection default (all issues)
+  - Duplicate removal via set deduplication
+
+  **Files Modified**:
+  - `src/generation/chapters.py`:
+    - New `_select_validation_issues()` method (lines 1176-1257)
+    - Foundation iteration integration (line 1833)
+    - Chapter iteration integration (line 2199)
+    - Retry iteration integration (line 2273)
+
+  **Impact**: Users have fine-grained control over iteration scope, can focus on critical issues while deferring minor suggestions
+
 - **LLM Call Debug Files** 🐛 (v0.3.1+)
   - **Feature**: Every LLM call automatically saved to individual text file for debugging
   - **Location**: `.agentic/debug/llm-calls/`
