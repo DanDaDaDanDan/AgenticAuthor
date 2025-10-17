@@ -271,10 +271,9 @@ Generate foundation (metadata + characters + world) from the treatment.
 
 Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
 
-# OUTPUT FORMAT
-Return ONLY valid YAML (no markdown fences):
+# OUTPUT
+Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
 
-```yaml
 {metadata_yaml_example}
 
 characters:
@@ -304,7 +303,6 @@ world:
       description: |
         ...
   social_context: ["...", "..."]
-```
 
 IMPORTANT: Return all 3 sections (metadata, characters, world). No chapters section."""
 
@@ -405,6 +403,16 @@ When the feedback mentions duplicate or repetitive content:
             raise Exception("No response from API for foundation generation")
 
         response_text = result.get('content', result) if isinstance(result, dict) else result
+
+        # Strip markdown fences if present (defensive - LLM should not add them)
+        response_text = response_text.strip()
+        if response_text.startswith('```yaml'):
+            response_text = response_text[7:]  # Remove ```yaml
+        elif response_text.startswith('```'):
+            response_text = response_text[3:]  # Remove ```
+        if response_text.endswith('```'):
+            response_text = response_text[:-3]  # Remove closing ```
+        response_text = response_text.strip()
 
         # Parse YAML
         try:
@@ -518,10 +526,9 @@ Generate Chapter {chapter_num} of {total_chapters} ({default_act}, {chapter_role
 - Scenes: {scene_count}
 - Target: {words_total:,} words (~{words_scenes // scene_count}w per scene)
 
-# OUTPUT FORMAT
-Return ONLY valid YAML (no markdown fences):
+# OUTPUT
+Return plain YAML starting with "number:" (DO NOT wrap in ```yaml or ``` fences):
 
-```yaml
 number: {chapter_num}
 title: "Chapter Title"
 pov: "Character Name"
@@ -545,8 +552,7 @@ relationship_beats: ["...", "..."]
 tension_points: ["...", "..."]
 sensory_details: ["...", "..."]
 subplot_threads: ["..."]  # if applicable
-word_count_target: {words_total}
-```"""
+word_count_target: {words_total}"""
 
         # Add feedback instruction if iterating
         if feedback:
@@ -571,6 +577,16 @@ word_count_target: {words_total}
             raise Exception(f"No response from API for chapter {chapter_num}")
 
         response_text = result.get('content', result) if isinstance(result, dict) else result
+
+        # Strip markdown fences if present (defensive - LLM should not add them)
+        response_text = response_text.strip()
+        if response_text.startswith('```yaml'):
+            response_text = response_text[7:]  # Remove ```yaml
+        elif response_text.startswith('```'):
+            response_text = response_text[3:]  # Remove ```
+        if response_text.endswith('```'):
+            response_text = response_text[:-3]  # Remove closing ```
+        response_text = response_text.strip()
 
         # Check finish_reason for early truncation detection
         if isinstance(result, dict) and result.get('finish_reason') == 'connection_error':
@@ -2344,10 +2360,9 @@ Generate complete chapter structure (metadata + characters + world + chapters).
 
 Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
 
-# OUTPUT FORMAT
-Return ONLY valid YAML (no markdown fences):
+# OUTPUT
+Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
 
-```yaml
 metadata:
   genre: "..."
   tone: "..."
@@ -2409,7 +2424,7 @@ chapters:
     subplot_threads: ["..."]
     {word_count_distribution}
   # {chapter_count} chapters total
-```{feedback_instruction}"""
+{feedback_instruction}"""
 
         # Create multi-model generator
         multi_gen = MultiModelGenerator(self.client, self.project)
