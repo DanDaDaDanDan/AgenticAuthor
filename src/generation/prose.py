@@ -714,8 +714,8 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                 chapter_number=chapter_number
             )
 
-            # Retry logic for iteration (max 2 attempts)
-            max_iteration_attempts = 2
+            # Retry logic for iteration (max 5 attempts, matching chapter iteration)
+            max_iteration_attempts = 5
             iteration_attempt = 0
 
             while not is_valid and critical_issues and iteration_attempt < max_iteration_attempts:
@@ -788,36 +788,40 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                     issues_formatted = self._format_validation_issues(selected_issues)
                     chapter_yaml = yaml.dump(current_chapter, default_flow_style=False, allow_unicode=True)
 
-                    iteration_feedback = f"""PROSE ITERATION - FIX VALIDATION ISSUES:
+                    iteration_feedback = f"""SURGICAL PROSE FIXES FOR CHAPTER {chapter_number}:
 
-The prose below contradicts the chapter outline in specific ways.
-Fix ONLY the flagged issues while preserving well-written elements.
+The prose below has specific validation issues that need targeted fixes.
+Your task is to fix these issues with surgical precision, making minimal changes.
 
 CHAPTER OUTLINE (source of truth):
 ```yaml
 {chapter_yaml}
 ```
 
-YOUR PREVIOUS PROSE:
+YOUR PREVIOUS PROSE (mostly good - needs targeted fixes):
 ```
 {prose_text}
 ```
 
-VALIDATION ISSUES TO FIX:
+ISSUES TO FIX:
 
 {issues_formatted}
 
-INSTRUCTIONS:
-1. Review each issue carefully
-2. Cross-reference the chapter outline (provided above)
-3. Address each flagged issue:
+INSTRUCTIONS - BE SURGICAL:
+1. Focus primarily on fixing the specific issues listed above
+2. Preserve the existing prose quality and voice
+3. You may make small adjustments to surrounding content if needed for flow
+4. Avoid unnecessary rewrites of working scenes
+5. For each issue:
    - Missing scenes: Add the complete scene (not a summary)
    - Skipped development: Develop the character moment fully
-   - Wrong POV: Rewrite in correct POV perspective
-   - Word count deviation: Expand or trim as needed
-4. Keep everything that was correct and well-written
-5. Maintain prose quality and flow
-6. Do NOT summarize or rush - write full dramatic scenes
+   - Wrong POV: Adjust POV perspective as needed
+   - Word count deviation: Expand or trim targeted areas
+6. Keep the same narrative tone and style
+7. Maintain continuity with the rest of the prose
+
+Think of this as surgical editing - fix what's broken with minimal collateral changes.
+The goal is targeted fixes that resolve the violations while preserving what works.
 
 Return the corrected prose as flowing narrative text (NOT YAML)."""
 
@@ -878,6 +882,12 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                             self.console.print(f"\n[yellow]⚠️  Prose still has issues after {max_iteration_attempts} attempts:[/yellow]")
                             for issue in critical_issues:
                                 self.console.print(f"  • {issue.get('element', 'Unknown')}: {issue.get('reasoning', '')}")
+
+                            # In auto mode, abort on failure
+                            if auto_fix:
+                                self.console.print(f"\n[red]Auto-fix: Max retries exhausted, aborting generation[/red]")
+                                raise Exception(f"Auto-fix failed after {max_iteration_attempts} iteration attempts for chapter {chapter_number} prose")
+
                             self.console.print(f"\n[yellow]Continuing anyway (max iteration attempts reached)...[/yellow]\n")
                             break  # Exit retry loop
                         else:
