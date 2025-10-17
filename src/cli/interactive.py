@@ -1806,14 +1806,17 @@ class InteractiveSession:
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
             return
 
-        # Parse options (chapter count or word count)
+        # Parse options (chapter count or word count or --auto)
         chapter_count = None
         total_words = None  # Let generator calculate smart default
+        auto_fix = False
 
         if options:
             parts = options.split()
             for part in parts:
-                if part.isdigit():
+                if part == '--auto':
+                    auto_fix = True
+                elif part.isdigit():
                     num = int(part)
                     if num < 50:  # Assume it's chapter count
                         chapter_count = num
@@ -1825,17 +1828,25 @@ class InteractiveSession:
         # Check if multi-model mode is enabled
         generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
         if self.settings.multi_model_mode:
-            self.console.print(f"[cyan]🏆 Generating chapter outlines with multi-model competition...[/cyan]\n")
+            mode_label = "🏆 Generating chapter outlines with multi-model competition"
+            if auto_fix:
+                mode_label += " (auto-fix enabled)"
+            self.console.print(f"[cyan]{mode_label}...[/cyan]\n")
             chapters = await generator.generate_with_competition(
                 chapter_count=chapter_count,
-                total_words=total_words
+                total_words=total_words,
+                auto_fix=auto_fix
             )
             commit_prefix = "Generate (multi-model)"
         else:
-            self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
+            mode_label = "Generating chapter outlines"
+            if auto_fix:
+                mode_label += " (auto-fix enabled)"
+            self.console.print(f"[cyan]{mode_label}...[/cyan]\n")
             chapters = await generator.generate(
                 chapter_count=chapter_count,
-                total_words=total_words
+                total_words=total_words,
+                auto_fix=auto_fix
             )
             commit_prefix = "Generate"
 
@@ -1866,22 +1877,37 @@ class InteractiveSession:
             self.console.print("[yellow]No chapter outlines found. Generate chapters first with /generate chapters[/yellow]")
             return
 
-        # Parse options: chapter number or "all"
+        # Parse options: chapter number or "all" or --auto
         if not options:
-            self.console.print("[yellow]Usage: /generate prose <chapter_number|all>[/yellow]")
+            self.console.print("[yellow]Usage: /generate prose <chapter_number|all> [--auto][/yellow]")
             self.console.print("[dim]  Examples:[/dim]")
-            self.console.print("[dim]    /generate prose 1   - Generate chapter 1 with full context[/dim]")
-            self.console.print("[dim]    /generate prose all - Generate all chapters sequentially[/dim]")
+            self.console.print("[dim]    /generate prose 1       - Generate chapter 1 with full context[/dim]")
+            self.console.print("[dim]    /generate prose all     - Generate all chapters sequentially[/dim]")
+            self.console.print("[dim]    /generate prose 1 --auto  - Auto-fix validation issues[/dim]")
             return
+
+        # Parse flags
+        parts = options.split()
+        auto_fix = '--auto' in parts
+        parts = [p for p in parts if p != '--auto']
+
+        if not parts:
+            self.console.print("[yellow]Must specify chapter number or 'all'[/yellow]")
+            return
+
+        target = parts[0]
 
         generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
 
-        if options.lower() == "all":
+        if target.lower() == "all":
             # Generate all chapters sequentially
-            self.console.print(f"[cyan]Generating all chapters sequentially with full context...[/cyan]")
+            mode_label = "Generating all chapters sequentially with full context"
+            if auto_fix:
+                mode_label += " (auto-fix enabled)"
+            self.console.print(f"[cyan]{mode_label}...[/cyan]")
 
             try:
-                results = await generator.generate_all_chapters()
+                results = await generator.generate_all_chapters(auto_fix=auto_fix)
 
                 if results:
                     # Git commit
@@ -1899,7 +1925,7 @@ class InteractiveSession:
         else:
             # Generate single chapter
             try:
-                chapter_num = int(options.split()[0])
+                chapter_num = int(target)
 
                 # Show token analysis first
                 token_calc = await generator.calculate_prose_context_tokens(chapter_num)
@@ -1908,24 +1934,30 @@ class InteractiveSession:
 
                 # Check if multi-model mode is enabled
                 if self.settings.multi_model_mode:
-                    self.console.print(f"[cyan]🏆 Generating prose for chapter {chapter_num} with multi-model competition...[/cyan]")
+                    mode_label = f"🏆 Generating prose for chapter {chapter_num} with multi-model competition"
+                    if auto_fix:
+                        mode_label += " (auto-fix)"
+                    self.console.print(f"[cyan]{mode_label}...[/cyan]")
                     self.console.print(f"[dim]Mode: Sequential (Full Context) + Multi-Model[/dim]")
                     self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
                     self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
                     self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
                     self.console.print()
 
-                    result = await generator.generate_chapter_with_competition(chapter_number=chapter_num)
+                    result = await generator.generate_chapter_with_competition(chapter_number=chapter_num, auto_fix=auto_fix)
                     commit_suffix = "(sequential, multi-model)"
                 else:
-                    self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
+                    mode_label = f"Generating prose for chapter {chapter_num}"
+                    if auto_fix:
+                        mode_label += " (auto-fix)"
+                    self.console.print(f"[cyan]{mode_label}...[/cyan]")
                     self.console.print(f"[dim]Mode: Sequential (Full Context)[/dim]")
                     self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
                     self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
                     self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
                     self.console.print()
 
-                    result = await generator.generate_chapter(chapter_number=chapter_num)
+                    result = await generator.generate_chapter(chapter_number=chapter_num, auto_fix=auto_fix)
                     commit_suffix = "(sequential)"
 
                 if result:

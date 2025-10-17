@@ -457,7 +457,8 @@ Return ONLY the JSON, no additional commentary."""
     async def generate_chapter_sequential(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited"
+        narrative_style: str = "third person limited",
+        auto_fix: bool = False
     ) -> str:
         """
         Generate full prose for a chapter using ONLY chapters.yaml (self-contained).
@@ -465,6 +466,7 @@ Return ONLY the JSON, no additional commentary."""
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
+            auto_fix: If True, automatically regenerate with all validation issues (no prompts)
 
         Returns:
             Chapter prose text
@@ -736,16 +738,23 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                 self.console.print(f"[bold yellow]⚠️  Prose contradicts the chapter outline.[/bold yellow]")
                 self.console.print(f"[yellow]This may result in missing scenes or poor narrative quality.[/yellow]\n")
 
-                self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
-                self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold] - review outline or regenerate manually")
-                self.console.print(f"  [cyan]2.[/cyan] Iterate on prose to fix specific issues")
-                self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may result in poor quality")
+                # Check if auto-fix is enabled
+                if auto_fix:
+                    # Auto-fix: automatically iterate with ALL issues (no prompts)
+                    prose_choice = "2"
+                    self.console.print(f"[cyan]Auto-fix enabled: Automatically iterating with all {len(critical_issues)} issues...[/cyan]\n")
+                else:
+                    # Normal mode: show choices and prompt user
+                    self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+                    self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold] - review outline or regenerate manually")
+                    self.console.print(f"  [cyan]2.[/cyan] Iterate on prose to fix specific issues")
+                    self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may result in poor quality")
 
-                try:
-                    prose_choice = input("\nEnter choice (1-3): ").strip()
-                except (KeyboardInterrupt, EOFError):
-                    self.console.print(f"\n[yellow]Cancelled by user. Aborting...[/yellow]")
-                    raise KeyboardInterrupt("User cancelled prose validation")
+                    try:
+                        prose_choice = input("\nEnter choice (1-3): ").strip()
+                    except (KeyboardInterrupt, EOFError):
+                        self.console.print(f"\n[yellow]Cancelled by user. Aborting...[/yellow]")
+                        raise KeyboardInterrupt("User cancelled prose validation")
 
                 if prose_choice == "1":
                     # Abort generation
@@ -766,8 +775,14 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                     debug_file = debug_dir / f"chapter-{chapter_number:02d}_failed_{timestamp}.md"
                     debug_file.write_text(full_prose, encoding='utf-8')
 
-                    # Let user select which issues to incorporate
-                    selected_issues = self._select_validation_issues(critical_issues, context=f"chapter {chapter_number} prose")
+                    # Select issues: auto-fix uses ALL, normal mode prompts user
+                    if auto_fix:
+                        # Auto-fix: include ALL issues without prompting
+                        selected_issues = critical_issues
+                        self.console.print(f"[green]✓[/green] Auto-fix: Including all {len(critical_issues)} issues\n")
+                    else:
+                        # Normal mode: let user select which issues to incorporate
+                        selected_issues = self._select_validation_issues(critical_issues, context=f"chapter {chapter_number} prose")
 
                     # Build iteration prompt with previous prose and selected issues
                     issues_formatted = self._format_validation_issues(selected_issues)
@@ -895,7 +910,8 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
     async def generate_chapter(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited"
+        narrative_style: str = "third person limited",
+        auto_fix: bool = False
     ) -> str:
         """
         Generate full prose for a chapter with complete story context.
@@ -903,20 +919,23 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
+            auto_fix: If True, automatically regenerate with all validation issues (no prompts)
 
         Returns:
             Chapter prose text
         """
         return await self.generate_chapter_sequential(
             chapter_number=chapter_number,
-            narrative_style=narrative_style
+            narrative_style=narrative_style,
+            auto_fix=auto_fix
         )
 
     async def generate_all_chapters(
         self,
         narrative_style: str = "third person limited",
         start_chapter: int = 1,
-        end_chapter: Optional[int] = None
+        end_chapter: Optional[int] = None,
+        auto_fix: bool = False
     ) -> Dict[int, str]:
         """
         Generate prose for all chapters sequentially with full context.
@@ -925,6 +944,7 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
             narrative_style: Narrative voice/style
             start_chapter: First chapter to generate
             end_chapter: Last chapter (None for all)
+            auto_fix: If True, automatically regenerate with all validation issues (no prompts)
 
         Returns:
             Dict mapping chapter numbers to prose
@@ -966,7 +986,8 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
 
                     prose = await self.generate_chapter(
                         chapter_number=chapter_num,
-                        narrative_style=narrative_style
+                        narrative_style=narrative_style,
+                        auto_fix=auto_fix
                     )
                     results[chapter_num] = prose
                     success = True

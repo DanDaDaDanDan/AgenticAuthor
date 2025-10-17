@@ -1239,7 +1239,8 @@ IMPORTANT:
         chapter_count: Optional[int] = None,
         total_words: Optional[int] = None,
         template: Optional[str] = None,
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
+        auto_fix: bool = False
     ) -> List[ChapterOutline]:
         """
         Generate chapter outlines using sequential generation with full context.
@@ -1260,6 +1261,7 @@ IMPORTANT:
         - Built-in resume (checks for existing chapter-beats/, asks user)
         - Incremental saves (can inspect/debug partial results)
         - Better error recovery (clear failure point, easy resume)
+        - Auto-fix mode: Automatically iterates with all validation issues (when enabled)
 
         File structure:
         - chapter-beats/foundation.yaml (saved once)
@@ -1947,12 +1949,19 @@ Return the corrected foundation as complete YAML."""
                     self.console.print(f"[bold yellow]⚠️  This chapter invents major plot elements not in the treatment.[/bold yellow]")
                     self.console.print(f"[yellow]Continuing may cause story drift and compound errors in future chapters.[/yellow]\n")
 
-                    self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
-                    self.console.print(f"  [cyan]1.[/cyan] Abort generation - fix treatment or modify chapter manually")
-                    self.console.print(f"  [cyan]2.[/cyan] Iterate on chapter {chapter_num} to fix specific issues [bold](recommended)[/bold]")
-                    self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may cause story drift")
+                    # Check if auto-fix is enabled
+                    if auto_fix:
+                        # Auto-fix: automatically iterate with ALL issues (no prompts)
+                        choice = "2"
+                        self.console.print(f"[cyan]Auto-fix enabled: Automatically iterating with all {len(critical_issues)} issues...[/cyan]\n")
+                    else:
+                        # Normal mode: show choices and prompt user
+                        self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+                        self.console.print(f"  [cyan]1.[/cyan] Abort generation - fix treatment or modify chapter manually")
+                        self.console.print(f"  [cyan]2.[/cyan] Iterate on chapter {chapter_num} to fix specific issues [bold](recommended)[/bold]")
+                        self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may cause story drift")
 
-                    choice = input("\nEnter choice (1-3): ").strip()
+                        choice = input("\nEnter choice (1-3): ").strip()
 
                     if choice == "1":
                         # Abort generation
@@ -1974,8 +1983,14 @@ Return the corrected foundation as complete YAML."""
                         with open(debug_file, 'w', encoding='utf-8') as f:
                             yaml.dump(chapter_data, f, default_flow_style=False, allow_unicode=True)
 
-                        # Let user select which issues to incorporate
-                        selected_issues = self._select_validation_issues(critical_issues, context=f"chapter {chapter_num}")
+                        # Select issues: auto-fix uses ALL, normal mode prompts user
+                        if auto_fix:
+                            # Auto-fix: include ALL issues without prompting
+                            selected_issues = critical_issues
+                            self.console.print(f"[green]✓[/green] Auto-fix: Including all {len(critical_issues)} issues\n")
+                        else:
+                            # Normal mode: let user select which issues to incorporate
+                            selected_issues = self._select_validation_issues(critical_issues, context=f"chapter {chapter_num}")
 
                         # Build iteration prompt with previous chapter and selected issues
                         chapter_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
@@ -2048,8 +2063,14 @@ Return the corrected chapter as complete YAML."""
                                     if retry_attempt < max_retries:
                                         self.console.print(f"[yellow]Chapter still has issues. Retrying iteration...[/yellow]")
 
-                                        # Let user select which new issues to incorporate for retry
-                                        retry_selected_issues = self._select_validation_issues(iter_issues, context=f"chapter {chapter_num} retry")
+                                        # Select issues for retry: auto-fix uses ALL, normal mode prompts user
+                                        if auto_fix:
+                                            # Auto-fix: include ALL issues without prompting
+                                            retry_selected_issues = iter_issues
+                                            self.console.print(f"[green]✓[/green] Auto-fix: Including all {len(iter_issues)} issues for retry\n")
+                                        else:
+                                            # Normal mode: let user select which new issues to incorporate for retry
+                                            retry_selected_issues = self._select_validation_issues(iter_issues, context=f"chapter {chapter_num} retry")
 
                                         # Update iteration_feedback with selected new issues for next attempt
                                         issues_formatted = self._format_validation_issues(retry_selected_issues)
