@@ -1935,6 +1935,11 @@ Return the corrected foundation as complete YAML."""
 
                 if logger:
                     logger.debug(f"Saved chapter {chapter_num} to chapter-beats/chapter-{chapter_num:02d}.yaml")
+                    # Log details for debugging
+                    logger.info(f"=== SAVING INITIAL CHAPTER {chapter_num} (pre-validation) ===")
+                    initial_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
+                    has_parkinson = "parkinson" in initial_yaml.lower()
+                    logger.info(f"Parkinson mentioned in initial chapter: {has_parkinson}")
 
                 # Validate treatment fidelity (separate LLM call)
                 self.console.print(f"[dim]Validating treatment fidelity...[/dim]")
@@ -2077,6 +2082,27 @@ Return the fixed chapter as complete YAML with same structure."""
 
                                 if logger:
                                     logger.debug(f"Iterated chapter {chapter_num} (attempt {retry_attempt})")
+                                    # Log details about what we're saving to help debug Parkinson issue
+                                    logger.info(f"=== SAVING ITERATED CHAPTER {chapter_num} ===")
+                                    logger.info(f"Iteration attempt: {retry_attempt}")
+                                    # Check if Parkinson is mentioned in the iterated content
+                                    iterated_yaml = yaml.dump(iterated_chapter, default_flow_style=False, allow_unicode=True)
+                                    has_parkinson = "parkinson" in iterated_yaml.lower()
+                                    logger.info(f"Parkinson mentioned in iterated chapter: {has_parkinson}")
+                                    if has_parkinson:
+                                        logger.warning("WARNING: Parkinson still present after iteration!")
+                                    logger.info(f"Chapter saved to: chapter-beats/chapter-{chapter_num:02d}.yaml")
+
+                                    # Verify save by reading back
+                                    readback = self.project.get_chapter_beat(chapter_num)
+                                    if readback:
+                                        readback_yaml = yaml.dump(readback, default_flow_style=False, allow_unicode=True)
+                                        readback_has_parkinson = "parkinson" in readback_yaml.lower()
+                                        logger.info(f"Verification: Parkinson in saved file: {readback_has_parkinson}")
+                                        if readback_has_parkinson != has_parkinson:
+                                            logger.error(f"MISMATCH: Memory has parkinson={has_parkinson}, disk has parkinson={readback_has_parkinson}")
+                                    else:
+                                        logger.error(f"Failed to read back saved chapter {chapter_num}")
 
                                 # Validate iterated chapter
                                 self.console.print(f"[dim]Validating corrected chapter...[/dim]")
@@ -2187,6 +2213,7 @@ Return the fixed chapter as complete YAML with same structure."""
                         raise Exception("Invalid validation choice")
 
                 # Save chapter immediately (enables resume)
+                # This final save ensures the correct version is persisted after all validation/iteration
                 self.project.save_chapter_beat(chapter_num, chapter_data)
 
                 # Show progress
@@ -2194,6 +2221,13 @@ Return the fixed chapter as complete YAML with same structure."""
 
                 if logger:
                     logger.debug(f"Saved chapter {chapter_num} to chapter-beats/chapter-{chapter_num:02d}.yaml")
+                    # Log details for debugging
+                    logger.info(f"=== SAVING FINAL CHAPTER {chapter_num} (post-validation) ===")
+                    final_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
+                    has_parkinson = "parkinson" in final_yaml.lower()
+                    logger.info(f"Parkinson mentioned in final chapter: {has_parkinson}")
+                    if has_parkinson:
+                        logger.warning("WARNING: Parkinson present in final saved version!")
 
             # Load all chapters for assembly
             all_chapters = []
