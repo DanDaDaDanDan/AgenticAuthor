@@ -2054,16 +2054,15 @@ Return the fixed chapter as complete YAML with same structure."""
                             self.console.print(f"[dim]Attempt {retry_attempt}/{max_retries}...[/dim]")
 
                             try:
-                                # Include the failed chapter in previous_chapters so LLM can see its structure
-                                # This helps maintain consistency while fixing issues
-                                previous_chapters_with_failed = previous_chapters + [chapter_data]
-
+                                # Use previous_chapters (1 to N-1) for context
+                                # Do NOT include the failed chapter - it's already shown in the feedback
+                                # Including it causes LLM to preserve elements that should be removed
                                 iterated_chapter = await self._generate_single_chapter(
                                     chapter_num=chapter_num,
                                     total_chapters=chapter_count,
                                     context_yaml=context_yaml,
                                     foundation=foundation,
-                                    previous_chapters=previous_chapters_with_failed,
+                                    previous_chapters=previous_chapters,
                                     form=form,
                                     pacing=pacing,
                                     chapter_budget=chapter_budget,
@@ -2168,12 +2167,22 @@ Return the fixed chapter as complete YAML with same structure."""
                                 if logger:
                                     logger.error(f"Iteration attempt {retry_attempt} failed: {iter_e}")
 
+                                # If we had a successful iteration before this failure, preserve it
+                                # Check if iterated_chapter exists in this scope (from a previous successful iteration)
+                                if retry_attempt > 1 and 'iterated_chapter' in locals():
+                                    chapter_data = iterated_chapter  # Use last successful iteration
+                                    if logger:
+                                        logger.info(f"Preserving last successful iteration from attempt {retry_attempt - 1}")
+
                                 if retry_attempt < max_retries:
                                     self.console.print(f"[red]Iteration failed: {iter_e}[/red]")
                                     self.console.print(f"[yellow]Retrying...[/yellow]")
                                 else:
                                     self.console.print(f"[red]All iteration attempts failed: {iter_e}[/red]")
-                                    self.console.print(f"[yellow]Continuing with original chapter...[/yellow]\n")
+                                    if 'iterated_chapter' in locals():
+                                        self.console.print(f"[yellow]Using last successful iteration (attempt {retry_attempt - 1})...[/yellow]\n")
+                                    else:
+                                        self.console.print(f"[yellow]Continuing with original chapter...[/yellow]\n")
                                     break
 
                     elif choice == "3":
