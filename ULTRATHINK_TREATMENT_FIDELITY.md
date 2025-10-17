@@ -1,8 +1,16 @@
 # ULTRATHINK: Treatment Fidelity Crisis
 
+**STATUS: FIXED** ✅
+- Treatment (premise + taxonomy + treatment text) now visible in all chapter generation prompts
+- Temperature: 0.6 (balanced)
+- System message: Professional and balanced
+- Prompts: Simplified, keep treatment visible
+
+---
+
 ## ROOT CAUSE IDENTIFIED 🎯
 
-**The chapter generation prompt doesn't show the TREATMENT to the LLM!**
+**The chapter generation prompt doesn't show the TREATMENT (premise + taxonomy + treatment) to the LLM!**
 
 ### Evidence
 
