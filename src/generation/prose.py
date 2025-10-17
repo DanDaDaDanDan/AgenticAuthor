@@ -6,6 +6,8 @@ from typing import Optional, Dict, Any, List
 from pathlib import Path
 
 from jinja2 import Template
+from rich.console import Console
+from datetime import datetime
 
 from ..api import OpenRouterClient
 from ..models import Project
@@ -35,6 +37,7 @@ class ProseGenerator:
         self.model = model
         self.context_builder = LODContextBuilder()
         self.parser = LODResponseParser()
+        self.console = Console()
 
 
     def load_all_chapters_with_prose(self) -> List[Dict[str, Any]]:
@@ -79,6 +82,275 @@ class ProseGenerator:
         if self.project.metadata and self.project.metadata.genre:
             return f"Genre: {self.project.metadata.genre}"
         return None
+
+    def _format_validation_issues(self, issues: List[Dict[str, Any]]) -> str:
+        """
+        Format validation issues for readable display in iteration prompt.
+
+        Args:
+            issues: List of validation issues from _validate_prose_fidelity()
+                    Each issue has: type, severity, element, reasoning, recommendation
+
+        Returns:
+            Formatted string with numbered issues ready for prompt inclusion
+        """
+        if not issues:
+            return "No issues detected."
+
+        formatted = []
+
+        for i, issue in enumerate(issues, 1):
+            issue_type = issue.get('type', 'unknown')
+            element = issue.get('element', 'Unknown element')
+            reasoning = issue.get('reasoning', 'No reasoning provided')
+            recommendation = issue.get('recommendation', 'Fix this issue')
+
+            # Format type nicely (e.g., "missing_scene" -> "Missing Scene")
+            issue_type_formatted = issue_type.replace('_', ' ').title()
+
+            formatted.append(
+                f"Issue #{i}: {issue_type_formatted}\n"
+                f"  Element: {element}\n"
+                f"  Problem: {reasoning}\n"
+                f"  Fix: {recommendation}"
+            )
+
+        return "\n\n".join(formatted)
+
+    def _select_validation_issues(self, issues: List[Dict[str, Any]], context: str = "validation") -> List[Dict[str, Any]]:
+        """
+        Display validation issues and let user select which ones to incorporate.
+
+        Args:
+            issues: List of validation issues
+            context: Context string for display (e.g., "chapter 3 prose")
+
+        Returns:
+            Filtered list of selected issues (or all issues if user selects all)
+        """
+        if not issues:
+            return []
+
+        self.console.print(f"\n[yellow]Detected {len(issues)} validation issue(s) in {context}:[/yellow]\n")
+
+        # Display all issues with numbers
+        for i, issue in enumerate(issues, 1):
+            issue_type = issue.get('type', 'unknown')
+            element = issue.get('element', 'Unknown element')
+            reasoning = issue.get('reasoning', 'No reasoning provided')
+            severity = issue.get('severity', 'medium')
+
+            # Format type nicely
+            issue_type_formatted = issue_type.replace('_', ' ').title()
+
+            # Color code by severity
+            severity_color = "red" if severity == "critical" else "yellow" if severity == "high" else "dim"
+
+            self.console.print(f"[cyan]{i}.[/cyan] [{severity_color}]{issue_type_formatted}[/{severity_color}]")
+            self.console.print(f"   Element: {element}")
+            self.console.print(f"   Problem: {reasoning}")
+            self.console.print()
+
+        # Prompt for selection
+        self.console.print("[yellow]Which issues should be incorporated into iteration?[/yellow]")
+        self.console.print("[dim]Options:[/dim]")
+        self.console.print("  • Enter numbers (e.g., '1,3,5' or '1-3')")
+        self.console.print("  • Enter 'all' to include all issues")
+        self.console.print("  • Press Enter to include all issues (default)")
+        self.console.print()
+
+        try:
+            selection = input("Enter selection: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            # User cancelled - abort the entire operation
+            self.console.print(f"\n[yellow]Selection cancelled by user.[/yellow]")
+            raise KeyboardInterrupt("User cancelled issue selection")
+
+        # Default to all if empty
+        if not selection or selection.lower() == 'all':
+            self.console.print(f"[green]✓[/green] Including all {len(issues)} issues\n")
+            return issues
+
+        # Parse selection
+        selected_indices = set()
+        try:
+            parts = selection.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    # Range (e.g., "1-3")
+                    start, end = part.split('-')
+                    start_idx = int(start.strip())
+                    end_idx = int(end.strip())
+
+                    # Validate range direction
+                    if start_idx > end_idx:
+                        self.console.print(f"[yellow]⚠️  Range '{part}' is reversed. Did you mean {end_idx}-{start_idx}?[/yellow]")
+                        # Swap to make it work
+                        start_idx, end_idx = end_idx, start_idx
+
+                    for idx in range(start_idx, end_idx + 1):
+                        if 1 <= idx <= len(issues):
+                            selected_indices.add(idx)
+                else:
+                    # Single number
+                    idx = int(part)
+                    if 1 <= idx <= len(issues):
+                        selected_indices.add(idx)
+        except ValueError:
+            self.console.print(f"[red]Invalid selection format. Including all issues.[/red]\n")
+            return issues
+
+        # Filter issues
+        selected_issues = [issues[i - 1] for i in sorted(selected_indices)]
+
+        if selected_issues:
+            self.console.print(f"[green]✓[/green] Selected {len(selected_issues)} of {len(issues)} issues\n")
+        else:
+            self.console.print(f"[yellow]No valid issues selected. Including all issues.[/yellow]\n")
+            return issues
+
+        return selected_issues
+
+    async def _validate_prose_fidelity(
+        self,
+        prose_text: str,
+        chapter_outline: Dict[str, Any],
+        chapter_number: int
+    ) -> tuple[bool, List[Dict[str, Any]]]:
+        """
+        Validate prose against chapter outline (separate LLM call).
+
+        This validates that the prose faithfully implements the chapter outline
+        without missing scenes, skipping character development, or deviating
+        from the structural plan.
+
+        Uses low temperature (0.1) for consistent, strict evaluation.
+
+        Args:
+            prose_text: Generated prose text
+            chapter_outline: Chapter outline dict (from chapters.yaml)
+            chapter_number: Chapter number for context
+
+        Returns:
+            Tuple of (is_valid, issues_list)
+            - is_valid: True if no critical issues found
+            - issues_list: List of issue dicts with type, severity, element, reasoning, recommendation
+        """
+        # Build validation prompt
+        chapter_yaml = yaml.dump(chapter_outline, default_flow_style=False, allow_unicode=True)
+
+        # Get scene/event count
+        scenes = chapter_outline.get('scenes', chapter_outline.get('key_events', []))
+        num_scenes = len(scenes)
+
+        prompt = f"""You are a strict prose validation system. Your job is to detect when prose deviates from its chapter outline.
+
+CHAPTER OUTLINE (source of truth):
+```yaml
+{chapter_yaml}
+```
+
+GENERATED PROSE TO VALIDATE:
+```
+{prose_text}
+```
+
+VALIDATION CRITERIA:
+
+**ALLOWED** (expected variations):
+- Specific dialogue and action details (as long as scene objectives are met)
+- Sensory descriptions and atmospheric details
+- Internal character thoughts and reactions
+- Pacing and sentence-level style choices
+- Minor sequence adjustments within a scene
+- Elaboration on outline points with additional description
+
+**FORBIDDEN** (critical deviations to flag):
+- Missing entire scenes from the outline (prose has {num_scenes} required scenes)
+- Skipping character development moments listed in outline
+- Ignoring emotional beats specified in outline
+- Wrong POV character (outline specifies: {chapter_outline.get('pov', 'N/A')})
+- Significantly different scene outcomes than specified
+- Missing major plot points or story beats
+- Severe word count deviation (target: {chapter_outline.get('word_count_target', 3000)}, acceptable range: 70-130%)
+
+YOUR TASK:
+
+1. Check if ALL scenes from the outline are present in the prose (in some form)
+2. Verify character developments and emotional beats were addressed
+3. Check if word count is within acceptable range (70-130% of target)
+4. Verify POV character consistency
+5. Check that scene outcomes align with outline specifications
+
+Return your analysis as JSON:
+
+{{
+  "valid": true|false,
+  "issues": [
+    {{
+      "type": "missing_scene|skipped_development|wrong_pov|word_count_deviation|wrong_outcome|insufficient_detail",
+      "severity": "critical|high|medium",
+      "element": "Brief description of what's wrong",
+      "reasoning": "Detailed explanation of the deviation",
+      "recommendation": "How to fix it"
+    }}
+  ],
+  "scene_coverage": {{
+    "outlined_scenes": {num_scenes},
+    "found_scenes": <number>,
+    "missing_scenes": ["list of missing scene titles"]
+  }},
+  "word_count_check": {{
+    "target": {chapter_outline.get('word_count_target', 3000)},
+    "actual": <actual word count>,
+    "percentage": <percentage of target>
+  }}
+}}
+
+IMPORTANT:
+- Only flag CRITICAL deviations (missing scenes, skipped developments, etc.)
+- Do NOT flag creative elaboration or stylistic choices
+- Do NOT flag minor reordering within scenes
+- Be strict but not pedantic - the outline is a guide, not a script
+
+Return ONLY the JSON, no additional commentary."""
+
+        try:
+            # Call validation API (temperature 0.1 for consistency)
+            result = await self.client.json_completion(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a strict prose validation system. Return only valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1,  # Low temp for consistent evaluation
+                operation=f"prose-validation-chapter-{chapter_number}"
+            )
+
+            if not result:
+                # Validation failed - assume valid (don't block on validation errors)
+                return (True, [])
+
+            # Parse result
+            is_valid = result.get('valid', True)
+            issues = result.get('issues', [])
+
+            # Filter to critical/high severity only
+            critical_issues = [
+                issue for issue in issues
+                if issue.get('severity') in ['critical', 'high']
+            ]
+
+            # Overall valid if no critical issues
+            is_valid = len(critical_issues) == 0
+
+            return (is_valid, critical_issues)
+
+        except Exception as e:
+            # Validation error - log but don't block generation
+            print(f"⚠️  Prose validation error: {e}")
+            return (True, [])  # Assume valid on error
 
     async def calculate_prose_context_tokens(self, chapter_number: int) -> Dict[str, Any]:
         """Calculate tokens needed for sequential generation with full context."""
@@ -435,6 +707,187 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
             full_prose = f"# Chapter {chapter_number}: {current_chapter['title']}\n\n{prose_text}"
 
             chapter_file.write_text(full_prose, encoding='utf-8')
+
+            # Validate prose fidelity (separate LLM call)
+            # NOTE: Validation happens AFTER saving to aid debugging
+            self.console.print(f"[dim]Validating prose fidelity...[/dim]")
+
+            is_valid, critical_issues = await self._validate_prose_fidelity(
+                prose_text=prose_text,
+                chapter_outline=current_chapter,
+                chapter_number=chapter_number
+            )
+
+            # Retry logic for iteration (max 2 attempts)
+            max_iteration_attempts = 2
+            iteration_attempt = 0
+
+            while not is_valid and critical_issues and iteration_attempt < max_iteration_attempts:
+                # Display critical issues
+                self.console.print(f"\n[bold red]{'='*70}[/bold red]")
+                self.console.print(f"[bold red]✗ CRITICAL ISSUE DETECTED in Chapter {chapter_number} Prose[/bold red]")
+                self.console.print(f"[bold red]{'='*70}[/bold red]\n")
+
+                for issue in critical_issues:
+                    self.console.print(f"[bold yellow]Issue Type:[/bold yellow] {issue.get('type', 'Unknown')}")
+                    self.console.print(f"[bold yellow]Element:[/bold yellow] {issue.get('element', 'Unknown')}\n")
+
+                    self.console.print(f"[yellow]Problem:[/yellow]")
+                    self.console.print(f"  {issue.get('reasoning', 'No details provided')}\n")
+
+                    self.console.print(f"[cyan]Recommendation:[/cyan]")
+                    self.console.print(f"  {issue.get('recommendation', 'Review and fix')}\n")
+                    self.console.print(f"[dim]{'-'*70}[/dim]\n")
+
+                self.console.print(f"[bold yellow]⚠️  Prose contradicts the chapter outline.[/bold yellow]")
+                self.console.print(f"[yellow]This may result in missing scenes or poor narrative quality.[/yellow]\n")
+
+                self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+                self.console.print(f"  [cyan]1.[/cyan] Abort generation [bold](recommended)[/bold] - review outline or regenerate manually")
+                self.console.print(f"  [cyan]2.[/cyan] Iterate on prose to fix specific issues")
+                self.console.print(f"  [cyan]3.[/cyan] Ignore and continue [bold](NOT recommended)[/bold] - may result in poor quality")
+
+                try:
+                    prose_choice = input("\nEnter choice (1-3): ").strip()
+                except (KeyboardInterrupt, EOFError):
+                    self.console.print(f"\n[yellow]Cancelled by user. Aborting...[/yellow]")
+                    raise KeyboardInterrupt("User cancelled prose validation")
+
+                if prose_choice == "1":
+                    # Abort generation
+                    self.console.print(f"\n[red]Generation aborted due to prose fidelity issues[/red]")
+                    self.console.print(f"[dim]Review prose at: chapters/chapter-{chapter_number:02d}.md[/dim]")
+                    raise Exception(f"Chapter {chapter_number} prose validation failed - user aborted generation")
+
+                elif prose_choice == "2":
+                    # Iterate on prose with specific feedback from validation
+                    iteration_attempt += 1
+                    self.console.print(f"\n[yellow]Iterating on prose to fix specific issues (attempt {iteration_attempt}/{max_iteration_attempts})...[/yellow]")
+                    self.console.print(f"[yellow]Previous prose saved to .agentic/debug/ for reference[/yellow]\n")
+
+                    # Save previous prose for reference
+                    debug_dir = self.project.path / ".agentic" / "debug"
+                    debug_dir.mkdir(parents=True, exist_ok=True)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    debug_file = debug_dir / f"chapter-{chapter_number:02d}_failed_{timestamp}.md"
+                    debug_file.write_text(full_prose, encoding='utf-8')
+
+                    # Let user select which issues to incorporate
+                    selected_issues = self._select_validation_issues(critical_issues, context=f"chapter {chapter_number} prose")
+
+                    # Build iteration prompt with previous prose and selected issues
+                    issues_formatted = self._format_validation_issues(selected_issues)
+                    chapter_yaml = yaml.dump(current_chapter, default_flow_style=False, allow_unicode=True)
+
+                    iteration_feedback = f"""PROSE ITERATION - FIX VALIDATION ISSUES:
+
+The prose below contradicts the chapter outline in specific ways.
+Fix ONLY the flagged issues while preserving well-written elements.
+
+CHAPTER OUTLINE (source of truth):
+```yaml
+{chapter_yaml}
+```
+
+YOUR PREVIOUS PROSE:
+```
+{prose_text}
+```
+
+VALIDATION ISSUES TO FIX:
+
+{issues_formatted}
+
+INSTRUCTIONS:
+1. Review each issue carefully
+2. Cross-reference the chapter outline (provided above)
+3. Address each flagged issue:
+   - Missing scenes: Add the complete scene (not a summary)
+   - Skipped development: Develop the character moment fully
+   - Wrong POV: Rewrite in correct POV perspective
+   - Word count deviation: Expand or trim as needed
+4. Keep everything that was correct and well-written
+5. Maintain prose quality and flow
+6. Do NOT summarize or rush - write full dramatic scenes
+
+Return the corrected prose as flowing narrative text (NOT YAML)."""
+
+                    # Regenerate prose with iteration feedback
+                    # Build full generation prompt with feedback
+                    word_count_target = current_chapter.get('word_count_target', 3000)
+                    scenes = current_chapter.get('scenes', current_chapter.get('key_events', []))
+                    num_scenes = len(scenes)
+
+                    iteration_prompt = f"""{iteration_feedback}
+
+TARGET: {word_count_target:,} words total = {num_scenes} full dramatic scenes
+
+Return ONLY the corrected prose text. Do NOT include:
+- YAML formatting
+- Chapter headers (we'll add those)
+- Explanations or notes
+- Scene markers or dividers
+
+Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full dramatic scenes)."""
+
+                    # Call API for iteration
+                    result = await self.client.streaming_completion(
+                        model=self.model,
+                        messages=[
+                            {"role": "system", "content": "You are a professional fiction writer. Return only the prose text without any formatting or explanations."},
+                            {"role": "user", "content": iteration_prompt}
+                        ],
+                        temperature=0.8,  # Same as generation for prose quality
+                        display=True,
+                        display_label=f"Iterating Chapter {chapter_number} prose",
+                        min_response_tokens=int(word_count_target * 1.3)
+                    )
+
+                    if not result:
+                        self.console.print(f"[red]✗ Iteration failed - no response from API[/red]")
+                        break  # Exit retry loop
+
+                    # Extract iteration result
+                    prose_text = result.get('content', result) if isinstance(result, dict) else result
+                    full_prose = f"# Chapter {chapter_number}: {current_chapter['title']}\n\n{prose_text}"
+
+                    # Save iterated prose
+                    chapter_file.write_text(full_prose, encoding='utf-8')
+                    self.console.print(f"[green]✓[/green] Prose iteration complete")
+
+                    # Validate again
+                    self.console.print(f"[dim]Validating corrected prose...[/dim]")
+                    is_valid, critical_issues = await self._validate_prose_fidelity(
+                        prose_text=prose_text,
+                        chapter_outline=current_chapter,
+                        chapter_number=chapter_number
+                    )
+
+                    # Show results
+                    if not is_valid and critical_issues:
+                        if iteration_attempt >= max_iteration_attempts:
+                            self.console.print(f"\n[yellow]⚠️  Prose still has issues after {max_iteration_attempts} attempts:[/yellow]")
+                            for issue in critical_issues:
+                                self.console.print(f"  • {issue.get('element', 'Unknown')}: {issue.get('reasoning', '')}")
+                            self.console.print(f"\n[yellow]Continuing anyway (max iteration attempts reached)...[/yellow]\n")
+                            break  # Exit retry loop
+                        else:
+                            self.console.print(f"\n[yellow]⚠️  Prose still has issues. Showing choices again...[/yellow]\n")
+                            # Loop will continue and show choices again
+                    else:
+                        self.console.print(f"[green]✓[/green] Prose validation passed!\n")
+                        break  # Exit retry loop
+
+                elif prose_choice == "3":
+                    # Ignore and continue
+                    self.console.print(f"\n[yellow]⚠️  Ignoring prose fidelity issues...[/yellow]")
+                    self.console.print(f"[yellow]Chapter may have quality issues or missing content.[/yellow]\n")
+                    break  # Exit validation loop
+
+                else:
+                    # Invalid choice - treat as ignore
+                    self.console.print(f"\n[yellow]Invalid choice. Ignoring issues and continuing...[/yellow]\n")
+                    break  # Exit validation loop
 
             word_count = len(prose_text.split())
             print(f"\n✅ Chapter {chapter_number} generated successfully")

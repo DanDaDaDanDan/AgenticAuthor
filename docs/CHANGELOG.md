@@ -150,6 +150,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   **Impact**: Users have fine-grained control over iteration scope, can focus on critical issues while deferring minor suggestions
 
+- **Prose Fidelity Validation** 📝 (v0.3.1+)
+  - **Feature**: Automatic validation that prose faithfully implements chapter outlines
+  - **Problem**: LLMs sometimes skip scenes, ignore POV, or miss character development beats
+  - **Solution**: Post-generation validation with selective issue fixing
+
+  **Validation Criteria**:
+  - **Allowed**: Dialogue details, sensory descriptions, pacing variations, minor sequence adjustments
+  - **Forbidden**: Missing scenes, skipped development, wrong POV, severe word count deviation (>30%)
+
+  **Validation Flow**:
+  - Validates after each chapter's prose is generated (in `generate_chapter_sequential()`)
+  - Separate LLM call with temperature 0.1 for consistent evaluation
+  - Detects: missing scenes, skipped development, wrong POV, word count issues
+  - Filters to critical/high severity issues only (medium issues ignored)
+
+  **User Actions** (when issues detected):
+  - **Choice 1**: Abort generation (recommended) - review outline or regenerate manually
+  - **Choice 2**: Iterate on prose to fix specific issues
+    - User selects which issues to incorporate (same UI as foundation/chapter validation)
+    - Previous prose saved to `.agentic/debug/` for reference
+    - Iteration prompt shows: chapter outline + previous prose + selected issues
+    - Max 2 iteration attempts with retry logic
+    - Temperature 0.8 for prose quality (same as generation)
+  - **Choice 3**: Ignore and continue (not recommended) - may result in poor quality
+
+  **Iteration Prompt**:
+  - Shows chapter outline (source of truth) as YAML
+  - Shows previous prose for context
+  - Lists selected validation issues with fix instructions
+  - Instructs: "Address each flagged issue - missing scenes: add complete scene (not summary)"
+  - Maintains prose quality: "Keep everything that was correct and well-written"
+
+  **Retry Logic**:
+  - Max 2 iteration attempts per chapter
+  - After each iteration: re-validates prose
+  - If still invalid after max attempts: warns user and continues
+  - If valid: success message and moves to next chapter
+
+  **Code Implementation**:
+  - New methods in `src/generation/prose.py`:
+    - `_validate_prose_fidelity()` (~140 lines) - LLM validation with JSON response
+    - `_format_validation_issues()` (~35 lines) - Format issues for prompt inclusion
+    - `_select_validation_issues()` (~95 lines) - Interactive issue selection UI
+  - Integration in `generate_chapter_sequential()` (~185 lines of validation flow)
+  - Temperature settings: validation 0.1, iteration 0.8 (maintains prose quality)
+
+  **User Experience**:
+  - Validation happens automatically after each chapter saves
+  - Clear feedback: "Validating prose fidelity..." or "✓ Prose validation passed!"
+  - Issue display: Type, element, problem, recommendation (color-coded by severity)
+  - Three-choice prompt with recommendations
+  - Debug files preserved for manual review if needed
+
+  **Impact**: Ensures generated prose faithfully implements chapter outlines, catches missing scenes/development early, maintains story quality
+
 - **LLM Call Debug Files** 🐛 (v0.3.1+)
   - **Feature**: Every LLM call automatically saved to individual text file for debugging
   - **Location**: `.agentic/debug/llm-calls/`
