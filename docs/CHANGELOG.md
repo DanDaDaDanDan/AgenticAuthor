@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Auto-Fix Flag for Automatic Validation Iteration** 🤖 (v0.3.2+)
+  - **Feature**: `--auto` flag for `/generate chapters` and `/generate prose` commands
+  - **Behavior**: When validation fails, automatically regenerates with ALL issues without user prompts
+  - **Usage**:
+    - `/generate chapters --auto` - Auto-fixes chapter validation issues
+    - `/generate prose all --auto` - Auto-fixes prose validation issues
+    - `/generate prose 3 --auto` - Auto-fixes specific chapter prose
+  - **Benefits**:
+    - No user intervention needed during generation
+    - Faster iteration for large books (no waiting for prompts)
+    - All validation issues automatically incorporated
+    - Still respects max iteration attempts (2 attempts per chapter)
+  - **Implementation**:
+    - prose.py: Added `auto_fix` parameter to all generation methods
+    - chapters.py: Added `auto_fix` parameter to `generate()` method
+    - interactive.py: Parses `--auto` flag and passes to generators
+    - Validation loops check `auto_fix` and skip user prompts when True
+    - Automatically selects ALL issues without prompting
+  - **Files Modified**: src/cli/interactive.py, src/generation/prose.py, src/generation/chapters.py
+
+### Fixed
+- **CRITICAL: Treatment Fidelity - Extraction Not Generation** 🎯 (v0.3.2+)
+  - **Root Cause**: Chapter generation prompt didn't show treatment to LLM!
+  - **Problem**: The `context_yaml` parameter (premise + treatment) was passed to `_generate_single_chapter()` but NEVER USED in the prompt
+  - **Impact**: LLM only saw foundation (metadata/characters/world) and previous chapters, but NOT the treatment plot
+  - **Result**: LLM forced to INVENT plot elements instead of EXTRACTING from treatment, causing validation failures
+  - **Fix**: Complete reframing from "generation" to "extraction"
+    1. Added treatment (context_yaml) to prompt - now visible as "SOURCE OF TRUTH"
+    2. Reframed instructions: "Generate Chapter N" → "Extract and structure Chapter N from treatment"
+    3. Added explicit extraction process (5 steps)
+    4. Added forbidden/allowed lists:
+       - ❌ FORBIDDEN: New antagonists, conspiracies, backstories, plot threads, revelations (not in treatment)
+       - ✅ ALLOWED: Dialogue specifics, sensory details, minor characters, scene transitions, internal thoughts
+    5. Lowered temperature: 0.6 → 0.3 (faithful extraction, not creative generation)
+    6. Updated system message: "story structure extraction specialist who never invents plot"
+  - **Applied to**: Both sequential generation and competition mode for consistency
+  - **Expected Impact**: Reduce treatment fidelity violations from ~50% to <5%, fewer iteration cycles
+  - **Why This Happened**: Recent prompt simplification removed formulaic advice (good) but also treatment fidelity guard rails (bad)
+  - **Files Modified**: src/generation/chapters.py (both _generate_single_chapter and generate_with_competition prompts)
+  - **Documentation**: ULTRATHINK_TREATMENT_FIDELITY.md - Complete analysis and implementation plan
+
 ### Changed
 - **Simplified Chapter Beat Structure** 🎯 (v0.3.2+)
   - **Problem**: Chapter generation used excessive tokens (~350 tokens per scene) with over-prescriptive metadata

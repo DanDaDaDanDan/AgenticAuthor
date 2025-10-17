@@ -393,10 +393,10 @@ When the feedback mentions duplicate or repetitive content:
         result = await self.client.streaming_completion(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                {"role": "system", "content": "You are a story structure extraction specialist. You extract metadata, characters, and world details from treatments. You never invent new plot elements. You always return valid YAML without additional formatting."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.6,  # Stricter adherence to treatment/foundation sources
+            temperature=0.3,  # Faithful extraction from treatment (not creative generation)
             stream=True,
             display=True,
             display_label="Generating foundation",
@@ -465,7 +465,8 @@ When the feedback mentions duplicate or repetitive content:
         form: str,
         pacing: str,
         chapter_budget: Dict[str, Any],
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
+        auto_fix: bool = False
     ) -> Dict[str, Any]:
         """
         Generate a single chapter with full context of all previous chapters.
@@ -480,6 +481,7 @@ When the feedback mentions duplicate or repetitive content:
             pacing: Story pacing (fast, moderate, slow)
             chapter_budget: Budget dict with role, act, words_total, words_scenes, typical_scenes
             feedback: Optional user feedback (for iteration)
+            auto_fix: If True, automatically fix validation issues without prompts
 
         Returns:
             Dict with chapter data (number, title, pov, act, summary, scenes, etc.)
@@ -658,10 +660,10 @@ word_count_target: {words_total}"""
                     result = await self.client.streaming_completion(
                         model=self.model,
                         messages=[
-                            {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                            {"role": "system", "content": "You are a story structure extraction specialist. You extract plot from treatments and structure it into chapters with scenes and beats. You never invent new plot elements. You always return valid YAML without additional formatting."},
                             {"role": "user", "content": prompt}
                         ],
-                        temperature=0.6,  # Stricter adherence to treatment/foundation sources
+                        temperature=0.3,  # Faithful extraction from treatment (not creative generation)
                         stream=True,
                         display=True,
                         min_response_tokens=min_tokens
@@ -1927,7 +1929,8 @@ Return the corrected foundation as complete YAML."""
                         form=form,
                         pacing=pacing,
                         chapter_budget=chapter_budget,
-                        feedback=feedback
+                        feedback=feedback,
+                        auto_fix=auto_fix
                     )
                 except Exception as e:
                     # Save error context for debugging
@@ -2074,7 +2077,8 @@ Return the corrected chapter as complete YAML."""
                                     form=form,
                                     pacing=pacing,
                                     chapter_budget=chapter_budget,
-                                    feedback=iteration_feedback
+                                    feedback=iteration_feedback,
+                                    auto_fix=auto_fix
                                 )
 
                                 # Save iterated chapter (overwrite previous)
@@ -2303,7 +2307,8 @@ Return the corrected chapter as complete YAML."""
         chapter_count: Optional[int] = None,
         total_words: Optional[int] = None,
         template: Optional[str] = None,
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
+        auto_fix: bool = False
     ) -> List[ChapterOutline]:
         """
         Generate chapter outlines using multi-model competition with unified context.
@@ -2313,6 +2318,7 @@ Return the corrected chapter as complete YAML."""
             total_words: Target total word count (auto-calculated if not provided)
             template: Optional custom template
             feedback: Optional user feedback to incorporate (for iteration)
+            auto_fix: If True, automatically fix validation issues without prompts (not yet implemented for competition mode)
 
         Returns:
             List of winning ChapterOutline objects
@@ -2410,15 +2416,32 @@ Return the corrected chapter as complete YAML."""
             word_count_instruction = f"- target_word_count: {total_words} # Current target - adjust based on feedback if needed"
             word_count_distribution = f"- word_count_target: distribute words across chapters (adjust total if feedback requires it)"
 
-        prompt = f"""# TREATMENT
+        prompt = f"""# TREATMENT (SOURCE OF TRUTH - EXTRACT FROM HERE)
 ```yaml
 {context_yaml}
 ```
 
-# YOUR TASK
-Generate complete chapter structure (metadata + characters + world + chapters).
+⚠️ CRITICAL INSTRUCTION:
+You are EXTRACTING and STRUCTURING content FROM THE TREATMENT ABOVE.
+Do NOT invent new plot elements. The treatment contains the complete plot.
+Your job is to divide it into chapters and structure it into scenes/beats.
 
-Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
+# YOUR TASK
+Extract and structure complete chapter structure (metadata + characters + world + chapters) from the treatment above.
+
+FORBIDDEN (causes treatment drift):
+❌ New antagonists or villains not in treatment
+❌ Secret organizations or conspiracies not in treatment
+❌ Character backstories not in treatment
+❌ New plot threads or subplots not in treatment
+❌ Major revelations not established in treatment
+
+ALLOWED (scene-level elaboration):
+✅ Dialogue specifics (treatment has plot, you add dialogue)
+✅ Sensory details (sight, sound, smell, touch, taste)
+✅ Minor characters (servants, officials, crowd, background)
+✅ Scene transitions and connective tissue
+✅ Internal character thoughts and reactions
 
 # OUTPUT
 Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
@@ -2506,10 +2529,10 @@ chapters:
             result = await self.client.streaming_completion(
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                    {"role": "system", "content": "You are a story structure extraction specialist. You extract plot from treatments and structure it into chapters with scenes and beats. You never invent new plot elements. You always return valid YAML without additional formatting."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.6,  # Stricter adherence to treatment/foundation sources
+                temperature=0.3,  # Faithful extraction from treatment (not creative generation)
                 stream=True,
                 display=True,
                 display_label=f"Generating chapters ({model})",
