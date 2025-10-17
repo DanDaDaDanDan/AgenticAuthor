@@ -2830,7 +2830,7 @@ FINAL CHECKLIST:
         try:
             # Estimate tokens
             from ..utils.tokens import estimate_messages_tokens
-            prompt_tokens = estimate_messages_tokens([{"role": "user", "content": prompt}], self.model)
+            prompt_tokens = estimate_messages_tokens([{"role": "user", "content": prompt}])
 
             # Response needs to include full structure
             estimated_response_tokens = 8000 + (chapter_count * 500)
