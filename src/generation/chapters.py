@@ -2025,31 +2025,36 @@ Return the corrected foundation as complete YAML."""
                         chapter_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
                         issues_formatted = self._format_validation_issues(selected_issues)
 
-                        iteration_feedback = f"""FIX ISSUES WITH EXISTING CHAPTER {chapter_num}:
+                        iteration_feedback = f"""APPLY MINIMAL FIXES TO CHAPTER {chapter_num}:
 
-The chapter below has validation issues that need to be fixed.
-Your task is to FIX these specific issues in the existing chapter structure,
-NOT to regenerate the chapter from scratch.
+The chapter below has specific validation issues that need surgical fixes.
+Your task is to make the ABSOLUTE MINIMUM changes needed to fix ONLY these issues.
 
-EXISTING CHAPTER {chapter_num} (to fix):
+EXISTING CHAPTER {chapter_num} (99% correct - needs minimal fixes):
 ```yaml
 {chapter_yaml}
 ```
 
-ISSUES TO FIX:
+SPECIFIC ISSUES TO FIX (and NOTHING else):
 
 {issues_formatted}
 
-INSTRUCTIONS:
-1. Review each issue carefully against the treatment (shown in context above)
-2. FIX ONLY the problematic elements (scenes, events, character moments)
-3. PRESERVE the existing chapter structure (title, POV, act, scene count)
-4. KEEP everything that was correct and well-structured
-5. Do NOT add new major plot elements not in treatment
-6. Do NOT change well-working scenes to fix unrelated issues
-7. Maintain consistency with previous chapters
+CRITICAL INSTRUCTIONS - MINIMAL CHANGES ONLY:
+1. FIX ONLY the specific elements mentioned in the issues above
+2. PRESERVE everything else EXACTLY as-is (even imperfect but non-violating content)
+3. Do NOT improve, enhance, or rewrite any scenes that aren't mentioned in issues
+4. Do NOT add new plot elements, scenes, or character moments
+5. Do NOT reorganize or restructure the chapter
+6. Do NOT fix things that aren't explicitly listed as issues
+7. If a scene has no issues mentioned, copy it VERBATIM
 
-Think of this as editing/fixing the existing chapter, not writing a new one.
+Think of this as a surgical edit - change ONLY what's broken, leave everything else untouched.
+The goal is the SMALLEST possible diff that fixes the violations.
+
+Example:
+- Issue says "Remove Parkinson subplot from scene 3" → Delete those specific lines from scene 3 ONLY
+- Issue says "Dr. Lang not in treatment" → Change Dr. Lang to a character from treatment
+- Everything else → COPY EXACTLY AS-IS
 
 Return the fixed chapter as complete YAML with same structure."""
 
@@ -2133,25 +2138,27 @@ Return the fixed chapter as complete YAML with same structure."""
 
                                         # Update iteration_feedback with selected new issues for next attempt
                                         issues_formatted = self._format_validation_issues(retry_selected_issues)
-                                        iteration_feedback = f"""FIX REMAINING ISSUES (Attempt {retry_attempt + 1}/{max_retries}):
+                                        iteration_feedback = f"""APPLY MINIMAL FIXES - RETRY (Attempt {retry_attempt + 1}/{max_retries}):
 
-Previous fix still has issues. Fix these remaining problems.
+Previous fix still has a few remaining issues. Apply MINIMAL fixes to address ONLY these.
 
-CURRENT CHAPTER {chapter_num} (still needs fixes):
+CURRENT CHAPTER {chapter_num} (mostly fixed - needs tiny adjustments):
 ```yaml
 {yaml.dump(iterated_chapter, default_flow_style=False, allow_unicode=True)}
 ```
 
-REMAINING ISSUES TO FIX:
+REMAINING ISSUES TO FIX (and NOTHING else):
 
 {issues_formatted}
 
-INSTRUCTIONS:
-1. Review each remaining issue carefully against the treatment
-2. FIX ONLY the problematic elements
-3. PRESERVE the existing chapter structure
-4. Keep everything that was correct
-5. Do NOT add new major plot elements not in treatment
+CRITICAL - MINIMAL CHANGES ONLY:
+1. FIX ONLY the specific elements mentioned above
+2. PRESERVE everything else EXACTLY as-is
+3. Do NOT improve or rewrite unrelated content
+4. Do NOT add any new content
+5. Copy everything that isn't mentioned in the issues VERBATIM
+
+This is a surgical fix - change ONLY what's listed as an issue, nothing more.
 
 Return the fixed chapter as complete YAML with same structure."""
                                         # Update chapter_data for next iteration's context
@@ -2199,6 +2206,12 @@ Return the fixed chapter as complete YAML with same structure."""
                                     self.console.print(f"[yellow]Retrying...[/yellow]")
                                 else:
                                     self.console.print(f"[red]All iteration attempts failed: {iter_e}[/red]")
+
+                                    # In auto mode, abort on failure
+                                    if auto_fix:
+                                        self.console.print(f"[red]Auto-fix: Max retries exhausted, aborting generation[/red]")
+                                        raise Exception(f"Auto-fix failed after {max_retries} iteration attempts for chapter {chapter_num}: {iter_e}")
+
                                     self.console.print(f"[yellow]Continuing with original chapter...[/yellow]\n")
                                     break
 
