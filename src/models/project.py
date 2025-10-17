@@ -437,31 +437,25 @@ class Project:
 
     def get_chapters(self) -> Optional[List[Dict[str, Any]]]:
         """
-        Load chapters list - supports both old and new formats.
-
-        New format: Aggregates from chapter-beats/*.yaml files
-        Old format: Reads from chapters.yaml
+        Load chapters list from chapter-beats/*.yaml files.
 
         Returns:
-            List of chapter dicts, or None if not found
+            List of chapter dicts sorted by number, or None if not found
         """
-        # Try new format first (chapter-beats/)
-        if self.chapter_beats_dir.exists():
-            chapters = []
-            for chapter_file in self.list_chapter_beats():
-                with open(chapter_file, 'r', encoding='utf-8') as f:
-                    chapter_data = yaml.safe_load(f)
-                    if chapter_data:
-                        chapters.append(chapter_data)
-            if chapters:
-                # Sort by chapter number
-                return sorted(chapters, key=lambda x: x.get('number', 0))
+        if not self.chapter_beats_dir.exists():
+            return None
 
-        # Fall back to old format (chapters.yaml)
-        outlines = self.get_chapter_outlines()
-        # chapters.yaml contains a direct list of chapter dicts
-        if outlines and isinstance(outlines, list):
-            return outlines
+        chapters = []
+        for chapter_file in self.list_chapter_beats():
+            with open(chapter_file, 'r', encoding='utf-8') as f:
+                chapter_data = yaml.safe_load(f)
+                if chapter_data:
+                    chapters.append(chapter_data)
+
+        if chapters:
+            # Sort by chapter number
+            return sorted(chapters, key=lambda x: x.get('number', 0))
+
         return None
 
     def get_taxonomy(self) -> Optional[Dict[str, Any]]:
@@ -483,35 +477,24 @@ class Project:
 
     def get_chapters_yaml(self) -> Optional[Dict[str, Any]]:
         """
-        Load complete chapters structure (self-contained format).
+        Load complete chapters structure from chapter-beats/ directory.
 
-        Supports both:
-        - New format: Aggregates from chapter-beats/ (foundation.yaml + chapter-NN.yaml)
-        - Old format: Reads from chapters.yaml
+        Aggregates foundation.yaml + chapter-NN.yaml files into unified structure.
 
-        Returns full structure with metadata, characters, world, chapters sections.
-        Returns None if not found or for legacy list format.
+        Returns:
+            Dict with metadata, characters, world, chapters sections, or None if not found
         """
-        # Try new format first (chapter-beats/)
-        if self.chapter_beats_dir.exists():
-            foundation = self.get_foundation()
-            chapters = self.get_chapters()
-            if foundation and chapters:
-                # Aggregate into old format for backward compatibility
-                return {
-                    **foundation,  # metadata, characters, world
-                    'chapters': chapters
-                }
+        if not self.chapter_beats_dir.exists():
+            return None
 
-        # Fall back to old format (chapters.yaml)
-        if self.chapters_file.exists():
-            with open(self.chapters_file) as f:
-                data = yaml.safe_load(f)
-                # Check if it's the self-contained format
-                if isinstance(data, dict) and 'metadata' in data:
-                    return data
-                # Legacy format (list or old dict) - return None
-                return None
+        foundation = self.get_foundation()
+        chapters = self.get_chapters()
+
+        if foundation and chapters:
+            return {
+                **foundation,  # metadata, characters, world
+                'chapters': chapters
+            }
 
         return None
 

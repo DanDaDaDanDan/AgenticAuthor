@@ -16,22 +16,17 @@ Examples:
 This is intentional: you provide existing content as context, then ask the
 LLM to generate the NEXT level or iterate the CURRENT level.
 
-Format Evolution
-================
-The system has evolved to use different formats for different purposes:
+Format Design
+=============
+The system uses efficient, purpose-specific formats:
 
-1. EFFICIENT FORMAT (current generation):
-   - Treatment: Returns ONLY treatment (uses premise as input context)
-   - Chapters: Returns ONLY self-contained chapters.yaml (uses premise+treatment as input)
-   - Prose: Returns ONLY prose text (uses chapters.yaml as input)
-
-2. LEGACY FORMAT (backward compatibility):
-   - Some iteration paths may still return premise+treatment+chapters
-   - Parser detects and handles both formats automatically
+- Treatment: Returns ONLY treatment (uses premise as input context)
+- Chapters: Returns ONLY self-contained chapters.yaml (uses premise+treatment as input)
+- Prose: Returns ONLY prose text (uses chapters.yaml as input)
 
 Self-Contained Chapters Format
 ===============================
-Chapters.yaml is special - it contains everything prose generation needs:
+Chapters.yaml contains everything prose generation needs:
     - metadata: genre, pacing, tone, themes, narrative_style
     - characters: full profiles with backgrounds, motivations, arcs
     - world: setting, locations, systems, atmosphere
@@ -82,7 +77,7 @@ class LODContextBuilder:
         """
         context = {}
 
-        # NEW LOGIC: chapters.yaml is self-contained
+        # chapters.yaml is self-contained
         # When iterating chapters, ONLY return chapters.yaml
         # When generating chapters, return premise + treatment (as input)
 
@@ -94,11 +89,6 @@ class LODContextBuilder:
                 # Return the full chapters.yaml structure at top level
                 # This has: metadata, characters, world, chapters
                 return chapters_yaml
-            else:
-                # Legacy format fallback - nest under 'chapters' key
-                chapters = project.get_chapters()
-                if chapters:
-                    return {'chapters': chapters}
             return {}
 
         # For all other cases, use the old logic:
@@ -124,11 +114,6 @@ class LODContextBuilder:
             chapters_yaml = project.get_chapters_yaml()
             if chapters_yaml:
                 context['chapters'] = chapters_yaml
-            else:
-                # Legacy format fallback
-                chapters = project.get_chapters()
-                if chapters:
-                    context['chapters'] = chapters
 
         # Include prose if needed
         if context_level == 'prose' or include_downstream:
@@ -201,11 +186,6 @@ class LODContextBuilder:
         chapters_yaml = project.get_chapters_yaml()
         if chapters_yaml:
             context['chapters'] = chapters_yaml
-        else:
-            # Legacy format fallback
-            chapters = project.get_chapters()
-            if chapters:
-                context['chapters'] = chapters
 
         # Include FULL prose for ALL chapters (untruncated)
         prose = self._load_all_prose(project)
