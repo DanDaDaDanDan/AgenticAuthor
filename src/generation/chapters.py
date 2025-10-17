@@ -2025,36 +2025,36 @@ Return the corrected foundation as complete YAML."""
                         chapter_yaml = yaml.dump(chapter_data, default_flow_style=False, allow_unicode=True)
                         issues_formatted = self._format_validation_issues(selected_issues)
 
-                        iteration_feedback = f"""APPLY MINIMAL FIXES TO CHAPTER {chapter_num}:
+                        iteration_feedback = f"""SURGICAL FIXES FOR CHAPTER {chapter_num}:
 
-The chapter below has specific validation issues that need surgical fixes.
-Your task is to make the ABSOLUTE MINIMUM changes needed to fix ONLY these issues.
+The chapter below has specific validation issues that need targeted fixes.
+Your task is to fix these issues with surgical precision, making minimal changes.
 
-EXISTING CHAPTER {chapter_num} (99% correct - needs minimal fixes):
+EXISTING CHAPTER {chapter_num} (mostly good - needs targeted fixes):
 ```yaml
 {chapter_yaml}
 ```
 
-SPECIFIC ISSUES TO FIX (and NOTHING else):
+ISSUES TO FIX:
 
 {issues_formatted}
 
-CRITICAL INSTRUCTIONS - MINIMAL CHANGES ONLY:
-1. FIX ONLY the specific elements mentioned in the issues above
-2. PRESERVE everything else EXACTLY as-is (even imperfect but non-violating content)
-3. Do NOT improve, enhance, or rewrite any scenes that aren't mentioned in issues
-4. Do NOT add new plot elements, scenes, or character moments
-5. Do NOT reorganize or restructure the chapter
-6. Do NOT fix things that aren't explicitly listed as issues
-7. If a scene has no issues mentioned, copy it VERBATIM
+INSTRUCTIONS - BE SURGICAL:
+1. Focus primarily on fixing the specific issues listed above
+2. Preserve the existing chapter structure and most content
+3. You may make small adjustments to surrounding content if needed for coherence
+4. Avoid unnecessary improvements or rewrites of working scenes
+5. Don't add new plot elements unless essential for fixing an issue
+6. Keep the same scene count, POV, and act structure
+7. Maintain consistency with previous chapters
 
-Think of this as a surgical edit - change ONLY what's broken, leave everything else untouched.
-The goal is the SMALLEST possible diff that fixes the violations.
+Think of this as surgical editing - fix what's broken with minimal collateral changes.
+The goal is targeted fixes that resolve the violations while preserving what works.
 
-Example:
-- Issue says "Remove Parkinson subplot from scene 3" → Delete those specific lines from scene 3 ONLY
-- Issue says "Dr. Lang not in treatment" → Change Dr. Lang to a character from treatment
-- Everything else → COPY EXACTLY AS-IS
+Examples:
+- Issue says "Remove Parkinson subplot from scene 3" → Remove it from scene 3, adjusting dialogue flow as needed
+- Issue says "Dr. Lang not in treatment" → Replace with appropriate character, updating related references
+- Working scenes without issues → Preserve their essence, minor tweaks OK if needed
 
 Return the fixed chapter as complete YAML with same structure."""
 
@@ -2138,27 +2138,27 @@ Return the fixed chapter as complete YAML with same structure."""
 
                                         # Update iteration_feedback with selected new issues for next attempt
                                         issues_formatted = self._format_validation_issues(retry_selected_issues)
-                                        iteration_feedback = f"""APPLY MINIMAL FIXES - RETRY (Attempt {retry_attempt + 1}/{max_retries}):
+                                        iteration_feedback = f"""SURGICAL FIXES - RETRY (Attempt {retry_attempt + 1}/{max_retries}):
 
-Previous fix still has a few remaining issues. Apply MINIMAL fixes to address ONLY these.
+Previous fix addressed most issues. A few remain that need targeted attention.
 
-CURRENT CHAPTER {chapter_num} (mostly fixed - needs tiny adjustments):
+CURRENT CHAPTER {chapter_num} (mostly fixed - needs final adjustments):
 ```yaml
 {yaml.dump(iterated_chapter, default_flow_style=False, allow_unicode=True)}
 ```
 
-REMAINING ISSUES TO FIX (and NOTHING else):
+REMAINING ISSUES:
 
 {issues_formatted}
 
-CRITICAL - MINIMAL CHANGES ONLY:
-1. FIX ONLY the specific elements mentioned above
-2. PRESERVE everything else EXACTLY as-is
-3. Do NOT improve or rewrite unrelated content
-4. Do NOT add any new content
-5. Copy everything that isn't mentioned in the issues VERBATIM
+INSTRUCTIONS - SURGICAL APPROACH:
+1. Focus on fixing the specific issues listed above
+2. Preserve what's already working well
+3. Make small adjustments to surrounding content only if needed
+4. Avoid introducing new changes unrelated to the issues
+5. Keep the fixes targeted and minimal
 
-This is a surgical fix - change ONLY what's listed as an issue, nothing more.
+This is a refinement pass - address the remaining issues with precision.
 
 Return the fixed chapter as complete YAML with same structure."""
                                         # Update chapter_data for next iteration's context
