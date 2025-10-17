@@ -261,61 +261,20 @@ class ChapterGenerator:
             word_count_note = " # Current target - adjust based on feedback if needed"
             chapter_count_note = " # Current count - adjust based on feedback if needed"
 
-        prompt = f"""Generate the FOUNDATION for a chapter structure. This is PART 1 of multi-phase generation.
-
-INPUT CONTEXT:
+        prompt = f"""# TREATMENT
 ```yaml
 {context_yaml}
 ```
 {unique_context}
-TASK:
-Create ONLY the metadata + characters + world sections. DO NOT generate chapters yet.
+# YOUR TASK
+Generate foundation (metadata + characters + world) from the treatment.
 
-Note on Treatment Fidelity:
-Your job is to extract and structure elements from the treatment, not invent new major plot elements. Elaborate fully on what's mentioned (add character backstories, detailed locations, scene-level specifics), but don't add major characters, plot threads, or world systems that aren't in the treatment. Minor characters (servants, officials) and elaboration of existing elements are fine.
+Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
 
-SECTION 1: METADATA
-Generate high-level story parameters:
-- genre, subgenre (if applicable)
-- tone (e.g., "dark, tense", "light, humorous")
-- pacing (e.g., "fast", "moderate", "slow")
-- themes: 2-4 core themes from the story
-- story_structure (e.g., "three_act", "hero_journey")
-- narrative_style (e.g., "third_person_limited", "first_person")
-- target_audience (e.g., "adult", "young adult")
-- target_word_count: {total_words}{word_count_note}
-- chapter_count: {chapter_count}{chapter_count_note}
-- setting_period (e.g., "contemporary", "historical", "future")
-- setting_location (e.g., "urban", "rural", "multiple")
-- content_warnings: list any if applicable
-{"- original_concept: " + json.dumps(original_concept) if original_concept else ""}
-{"- core_unique_elements: " + json.dumps(unique_elements) if unique_elements else ""}
-
-SECTION 2: CHARACTERS
-Extract ALL major characters from the treatment with COMPLETE profiles.
-Include AT MINIMUM: protagonist, main supporting character(s), antagonist.
-
-For each character provide:
-- name, role (protagonist/deuteragonist/antagonist/supporting)
-- background: 2-3 paragraphs of history, formative experiences, context
-- motivation: 1-2 paragraphs on what drives them, their goals
-- character_arc: 3-4 sentences on how they change across acts
-- personality_traits: 3-5 key traits
-- internal_conflict: Their psychological struggle
-- relationships: List of relationships with other characters
-
-SECTION 3: WORLD
-Extract ALL world-building elements from the treatment.
-
-Provide:
-- setting_overview: 2-3 paragraph description of the world
-- key_locations: 4-8 important places with name, description, atmosphere, significance
-- systems_and_rules: How the world works (magic systems, tech, social structures, etc.)
-- social_context: Cultural, political, historical backdrop
-
-RETURN FORMAT:
+# OUTPUT FORMAT
 Return ONLY valid YAML (no markdown fences):
 
+```yaml
 {metadata_yaml_example}
 
 characters:
@@ -327,14 +286,12 @@ characters:
       ...
     character_arc: |
       ...
-    personality_traits:
-      - "..."
+    personality_traits: ["...", "..."]
     internal_conflict: |
       ...
     relationships:
       - character: "..."
         dynamic: "..."
-        evolution: "..."
 
 world:
   setting_overview: |
@@ -342,23 +299,14 @@ world:
   key_locations:
     - name: "..."
       description: "..."
-      atmosphere: "..."
-      significance: "..."
   systems_and_rules:
     - system: "..."
       description: |
         ...
-  social_context:
-    - "..."
+  social_context: ["...", "..."]
+```
 
-CRITICAL REQUIREMENTS:
-1. You MUST return ALL THREE sections: metadata, characters, AND world
-2. The 'world:' section is REQUIRED - do not omit it
-3. DO NOT include a 'chapters:' section
-4. Do NOT wrap in markdown code fences
-5. Return ONLY valid YAML content
-
-If you omit any of the three required sections (metadata, characters, world), the response will be rejected."""
+IMPORTANT: Return all 3 sections (metadata, characters, world). No chapters section."""
 
         # Add treatment analysis instruction for initial generation
         if is_initial_generation and min_words and max_words:
@@ -552,142 +500,53 @@ When the feedback mentions duplicate or repetitive content:
         if previous_chapters:
             previous_yaml = yaml.dump(previous_chapters, default_flow_style=False, allow_unicode=True)
 
-        # Build prompt
-        prompt = f"""Generate chapter {chapter_num} of {total_chapters} for a book.
-
-FULL STORY CONTEXT:
-```yaml
-{context_yaml}
-```
-
-FOUNDATION (metadata + characters + world):
+        # Build prompt (drastically simplified - trust the LLM)
+        prompt = f"""# STORY FOUNDATION
 ```yaml
 {foundation_yaml}
 ```
 
-PREVIOUS CHAPTERS (full details with all scenes):
+# PREVIOUS CHAPTERS
 ```yaml
-{previous_yaml if previous_yaml else "# This is chapter 1 - no previous chapters"}
+{previous_yaml if previous_yaml else "# Chapter 1 - no previous chapters"}
 ```
 
-CRITICAL - STORY FIDELITY:
-The FOUNDATION (metadata, characters, world) and TREATMENT above are your DUAL SOURCES OF TRUTH. Chapter {chapter_num} must advance THIS story, building naturally on these sources.
+**CRITICAL**: Review previous chapters carefully. Each scene must be NEW events and conflicts. Do NOT duplicate plot beats already covered.
 
-GUIDELINES:
-1. MAJOR PLOT ELEMENTS come from treatment and foundation:
-   - Antagonists, plot twists, character revelations, story threads
-   - These sources define the story's direction - support and elaborate on them
-   - Add richness to existing elements rather than inventing new plot-level elements
+# YOUR TASK
+Generate Chapter {chapter_num} of {total_chapters} ({default_act}, {chapter_role} role)
+- Scenes: {scene_count}
+- Target: {words_total:,} words (~{words_scenes // scene_count}w per scene)
 
-2. ELABORATION is welcomed for scene-level details:
-   - Character gestures, props, location specifics, sensory elements, dialogue
-   - These bring the story to life without changing its direction
-   - Build on what's in the foundation and treatment
+# OUTPUT FORMAT
+Return ONLY valid YAML (no markdown fences):
 
-Example of supportive elaboration:
-✓ Treatment says "Lang confronts Elias" → You add: specific dialogue, chess board prop, warehouse details
-✓ Foundation establishes "chess symbolism" → You elaborate: white king piece, specific moves
-✗ Treatment has one antagonist → Adding: secret organization, government experiments (major new plot thread)
-✗ Foundation shows realistic world → Adding: supernatural conspiracy (contradicts world rules)
-
-This chapter should support and enrich the story outlined in the foundation and treatment.
-
-BEAT-DRIVEN ARCHITECTURE:
-This is chapter {chapter_num} in {default_act} (role: {chapter_role}).
-- Chapter budget: {words_total:,} words total
-- Scene count: {scene_count} scenes
-- Each scene has 6 beat descriptions tracking narrative progression
-
-TASK:
-Generate chapter {chapter_num} with COMPLETE BEAT STRUCTURE for all scenes.
-
-Required fields:
-- number: {chapter_num}
-- title: evocative, specific (2-6 words)
-- pov: character name
-- act: "{default_act}" (or adjust based on story flow)
-- summary: 3-4 sentences describing this chapter
-- scenes: {scene_count} complete scenes with FULL STRUCTURE including beats array
-- character_developments: 3-4 internal changes
-- relationship_beats: 2-3 relationship evolutions
-- tension_points: 2-3 stakes/urgency moments
-- sensory_details: 2-3 atmospheric elements
-- subplot_threads: 1-2 if applicable
-- word_count_target: {words_total}
-
-SCENE STRUCTURE:
-Each scene includes:
-  - scene: Brief scene title (2-4 words)
-  - location: Specific place where scene occurs
-  - objective: VERB phrase - what character wants (must be fail-able)
-  - exit_hook: (OPTIONAL) Forward momentum if there's a strong one aligned with treatment
-  - beats: Array of 6 beat descriptions (simple strings)
-
-BEAT STRUCTURE (6 beats per scene):
-Each scene should have 6 beats describing the narrative progression.
-Write them as simple descriptive sentences (1-2 sentences each).
-
-Example pattern:
-  1. Setup - Establish location, character state, what's happening
-  2. Complication - First obstacle or problem arises
-  3. Development - Stakes increase, tension builds
-  4. Turning Point - Peak moment, decision, or revelation
-  5. Aftermath - Immediate consequences and character reaction
-  6. Transition - Bridge to next scene
-
-Write beats as flowing narrative descriptions, not analytical labels.
-
-Guidelines:
-- Maintain consistency with foundation (characters, world, metadata)
-- Continue narrative flow from previous chapters
-- Review previous chapters' scenes CAREFULLY to avoid duplication
-- Each scene must advance the story with NEW events and conflicts
-- Do NOT repeat plot beats, events, or character moments already covered
-- Treatment fidelity: Elaborate on treatment elements, don't contradict them
-- Be specific with names, places, emotions
-- objective must be VERB phrase ("convince mentor", NOT "talking to mentor")
-- exit_hook is optional - only include if it's strong and aligns with treatment
-- beats should be narrative descriptions of what happens
-
-RETURN FORMAT:
-Return ONLY valid YAML for this ONE chapter (no markdown fences):
-
+```yaml
 number: {chapter_num}
-title: "..."
-pov: "..."
+title: "Chapter Title"
+pov: "Character Name"
 act: "{default_act}"
-summary: "..."
+summary: "3-4 sentence summary"
 scenes:
-  - scene: "Mentor's Office"
-    location: "NYPD precinct, Captain Reyes's office"
-    objective: "convince mentor to reopen the Hartley case"
-    exit_hook: "Mentor asks about the missing artifact from evidence room"  # Optional
+  - scene: "Brief Title"
+    location: "Where"
+    objective: "what character wants (verb phrase)"
+    exit_hook: "optional - only if strong"
     beats:
-      - "Protagonist enters office with new forensic report, mentor reviewing budget files"
-      - "Mentor dismisses case citing jurisdiction issues and political pressure from above"
-      - "Protagonist reveals connection to mentor's decades-old cold case, raising personal stakes"
-      - "Mentor pauses, visible internal conflict between duty and old wounds, reluctantly agrees"
-      - "They discuss next steps and evidence protocols, mentor issues stern warnings about consequences"
-      - "Scene closes with mentor's cryptic question about the missing artifact, hinting at conspiracy"
-  # ... continue for all {scene_count} scenes (chapter target: {words_total} words total = ~{words_scenes // scene_count} words per scene)
-character_developments:
-  - "..."
-relationship_beats:
-  - "..."
-tension_points:
-  - "..."
-sensory_details:
-  - "..."
-subplot_threads:
-  - "..."
+      - "Beat 1: what happens"
+      - "Beat 2: what happens"
+      - "Beat 3: what happens"
+      - "Beat 4: what happens"
+      - "Beat 5: what happens"
+      - "Beat 6: what happens"
+  # {scene_count} scenes total
+character_developments: ["...", "..."]
+relationship_beats: ["...", "..."]
+tension_points: ["...", "..."]
+sensory_details: ["...", "..."]
+subplot_threads: ["..."]  # if applicable
 word_count_target: {words_total}
-
-IMPORTANT:
-- Return ONLY the YAML for chapter {chapter_num}
-- Do NOT wrap in markdown code fences
-- Scene required fields: scene, location, objective, beats (6 items)
-- exit_hook is optional - only include if strong and aligned with treatment
-- beats must be 6 simple descriptive strings (not objects)"""
+```"""
 
         # Add feedback instruction if iterating
         if feedback:
@@ -2475,121 +2334,82 @@ Return the corrected chapter as complete YAML."""
             word_count_instruction = f"- target_word_count: {total_words} # Current target - adjust based on feedback if needed"
             word_count_distribution = f"- word_count_target: distribute words across chapters (adjust total if feedback requires it)"
 
-        prompt = f"""Generate a comprehensive, self-contained chapter structure for a book.
-
-INPUT CONTEXT:
+        prompt = f"""# TREATMENT
 ```yaml
 {context_yaml}
 ```
 
-TASK:
-Create a complete chapters.yaml file with 4 sections that contains ALL information needed for prose generation.
-This file will be used STANDALONE - prose generation will NOT have access to premise or treatment.
+# YOUR TASK
+Generate complete chapter structure (metadata + characters + world + chapters).
 
-SECTION 1: METADATA
-Generate high-level story parameters based on the taxonomy and treatment:
-- genre, subgenre (if applicable)
-- tone (e.g., "dark, tense", "light, humorous")
-- pacing (e.g., "fast", "moderate", "slow")
-- themes: 2-4 core themes from the story
-- story_structure (e.g., "three_act", "hero_journey")
-- narrative_style (e.g., "third_person_limited", "first_person")
-- target_audience (e.g., "adult", "young adult")
-{word_count_instruction}
-- setting_period (e.g., "contemporary", "historical", "future")
-- setting_location (e.g., "urban", "rural", "multiple")
-- content_warnings: list any if applicable
+Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
 
-NOTE: Base this on the taxonomy provided, but YOU MAY ADAPT based on what the actual story requires.
-
-SECTION 2: CHARACTERS
-Extract ALL major characters from the treatment with COMPLETE profiles.
-Include AT MINIMUM: protagonist, main supporting character(s), antagonist.
-
-For each character provide:
-- name, role (protagonist/deuteragonist/antagonist/supporting)
-- background: 2-3 paragraphs of history, formative experiences, context
-- motivation: 1-2 paragraphs on what drives them, their goals
-- character_arc: 3-4 sentences on how they change across acts
-- personality_traits: 3-5 key traits
-- internal_conflict: Their psychological struggle
-- relationships: List of relationships with other characters, including:
-  * character name
-  * dynamic description
-  * evolution across story
-
-CRITICAL: Ensure NO material character information from the treatment is missing.
-
-SECTION 3: WORLD
-Extract ALL world-building elements from the treatment.
-
-Provide:
-- setting_overview: 2-3 paragraph description of the world
-- key_locations: 4-8 important places, each with:
-  * name
-  * description
-  * atmosphere
-  * significance to story
-- systems_and_rules: How the world works (magic systems, tech, social structures, etc.)
-- social_context: Cultural, political, historical backdrop
-
-CRITICAL: Ensure NO material world-building from the treatment is missing.
-
-SECTION 4: CHAPTERS
-Generate {chapter_count} comprehensive chapter outlines.
-
-For each chapter:
-- number, title (evocative, specific)
-- pov, act, summary (3-4 sentences)
-- scenes: 2-4 full dramatic scenes with structure
-  * CRITICAL: Each scene is a COMPLETE DRAMATIC UNIT (1,000-2,000 words when written)
-  * NOT bullet point summaries - use simplified scene structure:
-    - scene: Brief scene title (2-4 words)
-    - location: Where the scene takes place
-    - objective: VERB phrase - what character wants (must be fail-able)
-    - exit_hook: (OPTIONAL) Forward momentum if there's a strong one aligned with treatment
-    - beats: Array of 6 beat descriptions (simple strings describing narrative progression)
-- character_developments: 3-4 internal changes
-- relationship_beats: 2-3 relationship evolutions
-- tension_points: 2-3 stakes/urgency moments
-- sensory_details: 2-3 atmospheric elements
-- subplot_threads: 1-2 if applicable
-{word_count_distribution}
-
-Guidelines:
-- Each scene should be specific and complete with full structure
-- Character developments show internal change
-- Relationship beats track evolving dynamics
-- Be specific with names, places, emotions
-- Act I: ~25% chapters (setup)
-- Act II: ~50% chapters (rising action)
-- Act III: ~25% chapters (climax, resolution){feedback_instruction}
-
-RETURN FORMAT:
+# OUTPUT FORMAT
 Return ONLY valid YAML (no markdown fences):
+
 ```yaml
 metadata:
   genre: "..."
-  # ... all metadata fields
+  tone: "..."
+  pacing: "..."
+  themes: ["...", "..."]
+  narrative_style: "..."
+  {word_count_instruction}
 
 characters:
   - name: "..."
     role: "protagonist"
-    # ... all character fields
+    background: |
+      ...
+    motivation: |
+      ...
+    character_arc: |
+      ...
+    personality_traits: ["...", "..."]
+    internal_conflict: |
+      ...
+    relationships:
+      - character: "..."
+        dynamic: "..."
 
 world:
   setting_overview: |
     ...
-  # ... all world fields
+  key_locations:
+    - name: "..."
+      description: "..."
+  systems_and_rules:
+    - system: "..."
+      description: |
+        ...
+  social_context: ["...", "..."]
 
 chapters:
   - number: 1
     title: "..."
-    # ... all chapter fields
-```
-
-Do NOT wrap in markdown code fences.
-Return ONLY the YAML content with metadata+characters+world+chapters sections."""
+    pov: "..."
+    act: "Act I"
+    summary: "..."
+    scenes:
+      - scene: "Brief Title"
+        location: "Where"
+        objective: "what character wants (verb phrase)"
+        exit_hook: "optional"
+        beats:
+          - "Beat 1: what happens"
+          - "Beat 2: what happens"
+          - "Beat 3: what happens"
+          - "Beat 4: what happens"
+          - "Beat 5: what happens"
+          - "Beat 6: what happens"
+    character_developments: ["...", "..."]
+    relationship_beats: ["...", "..."]
+    tension_points: ["...", "..."]
+    sensory_details: ["...", "..."]
+    subplot_threads: ["..."]
+    {word_count_distribution}
+  # {chapter_count} chapters total
+```{feedback_instruction}"""
 
         # Create multi-model generator
         multi_gen = MultiModelGenerator(self.client, self.project)

@@ -62,6 +62,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   **Impact**: Significantly reduced token usage while maintaining prose quality
 
+- **Drastically Simplified Generation Prompts** 🎯 (v0.3.2+)
+  - **Problem**: Over-prescriptive prompts (130+ lines) explained things LLMs already know
+  - **Solution**: Trust the LLM - reduce to essentials only
+
+  **Prompt Simplification** (3 major prompts reduced):
+  - Foundation generation: 133 lines → ~45 lines (66% reduction)
+  - Chapter generation: 133 lines → ~45 lines (66% reduction)
+  - Full structure: 113 lines → ~75 lines (34% reduction)
+
+  **What was removed:**
+  - Beat pattern explanations ("Setup → Complication → Turn...")
+  - Long field lists (LLM knows what characters/world need)
+  - Repetitive guidelines
+  - Verbose examples
+  - "CRITICAL REQUIREMENTS" sections (merged into task)
+
+  **What was kept:**
+  - Clean markdown sections for context (# TREATMENT, # PREVIOUS CHAPTERS)
+  - Anti-duplication warning (critical guard rail)
+  - What to generate (specs: X scenes, Y words)
+  - Output format example (YAML structure)
+  - Simple treatment fidelity note
+
+  **Benefits:**
+  - Cleaner, more focused prompts
+  - Trust LLM expertise (knows story structure)
+  - Easier to maintain and update
+  - Same quality output with less noise
+
+  **Files Modified**:
+  - `src/generation/chapters.py`: All 3 major prompts simplified
+    - `_generate_foundation()` prompt (lines 264-309)
+    - `_generate_single_chapter()` prompt (lines 556-601)
+    - `generate_with_competition()` prompt (lines 2337-2412)
+
+  **Impact**: Dramatically cleaner prompts that trust LLM capabilities
+
 ### Added
 - **YAML Truncation Detection and Auto-Retry** 🔄 (v0.3.1+)
   - **Problem**: Network interruptions during chapter generation caused immediate failure with cryptic YAML parsing errors
