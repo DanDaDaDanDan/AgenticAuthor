@@ -261,15 +261,19 @@ class ChapterGenerator:
             word_count_note = " # Current target - adjust based on feedback if needed"
             chapter_count_note = " # Current count - adjust based on feedback if needed"
 
-        prompt = f"""# TREATMENT
+        prompt = f"""# TREATMENT (SOURCE OF TRUTH)
 ```yaml
 {context_yaml}
 ```
 {unique_context}
 # YOUR TASK
-Generate foundation (metadata + characters + world) from the treatment.
+Extract and structure foundation (metadata + characters + world) from the treatment above.
 
-Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
+⚠️ CRITICAL: You are EXTRACTING from the treatment, not generating new content.
+- Extract metadata that reflects treatment's scope
+- Extract characters that are IN the treatment
+- Extract world details that are IN the treatment
+- Elaborate on details, but DO NOT invent new major plot elements, antagonists, or conspiracies
 
 # OUTPUT
 Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
@@ -508,23 +512,58 @@ When the feedback mentions duplicate or repetitive content:
         if previous_chapters:
             previous_yaml = yaml.dump(previous_chapters, default_flow_style=False, allow_unicode=True)
 
-        # Build prompt (drastically simplified - trust the LLM)
-        prompt = f"""# STORY FOUNDATION
+        # Build prompt with treatment as source of truth for extraction
+        prompt = f"""# TREATMENT (SOURCE OF TRUTH - EXTRACT FROM HERE)
+```
+{context_yaml}
+```
+
+⚠️ CRITICAL INSTRUCTION:
+You are EXTRACTING and STRUCTURING content FROM THE TREATMENT ABOVE.
+Do NOT invent new plot elements. The treatment contains the complete plot.
+Your job is to divide it into chapters and structure it into scenes/beats.
+
+# STORY FOUNDATION (extracted from treatment)
 ```yaml
 {foundation_yaml}
 ```
 
-# PREVIOUS CHAPTERS
+# PREVIOUS CHAPTERS (already extracted and structured)
 ```yaml
 {previous_yaml if previous_yaml else "# Chapter 1 - no previous chapters"}
 ```
 
-**CRITICAL**: Review previous chapters carefully. Each scene must be NEW events and conflicts. Do NOT duplicate plot beats already covered.
+**CRITICAL**: Review previous chapters carefully. Each scene must be NEW events from treatment. Do NOT duplicate plot beats already covered.
 
 # YOUR TASK
-Generate Chapter {chapter_num} of {total_chapters} ({default_act}, {chapter_role} role)
-- Scenes: {scene_count}
-- Target: {words_total:,} words (~{words_scenes // scene_count}w per scene)
+Extract and structure Chapter {chapter_num} of {total_chapters} from the treatment above.
+
+EXTRACTION PROCESS:
+1. Review the treatment plot (shown at top)
+2. Identify which treatment sections/events belong in chapter {chapter_num}
+3. Divide those treatment events into {scene_count} scenes
+4. Structure each scene with beats showing HOW the treatment events unfold
+5. DO NOT add plot elements not present in the treatment
+
+FORBIDDEN (causes treatment drift):
+❌ New antagonists or villains not in treatment
+❌ Secret organizations or conspiracies not in treatment
+❌ Character backstories not in treatment
+❌ New plot threads or subplots not in treatment
+❌ Major revelations not established in treatment
+
+ALLOWED (scene-level elaboration):
+✅ Dialogue specifics (treatment has plot, you add dialogue)
+✅ Sensory details (sight, sound, smell, touch, taste)
+✅ Minor characters (servants, officials, crowd, background)
+✅ Scene transitions and connective tissue
+✅ Internal character thoughts and reactions
+✅ Action choreography (treatment says "fight", you show how)
+
+Chapter {chapter_num} role: {chapter_role}
+Act: {default_act}
+Scenes: {scene_count}
+Target: {words_total:,} words (~{words_scenes // scene_count}w per scene)
 
 # OUTPUT
 Return plain YAML starting with "number:" (DO NOT wrap in ```yaml or ``` fences):
@@ -564,10 +603,10 @@ word_count_target: {words_total}"""
         result = await self.client.streaming_completion(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
+                {"role": "system", "content": "You are a story structure extraction specialist. You extract plot from treatments and structure it into chapters with scenes and beats. You never invent new plot elements. You always return valid YAML without additional formatting."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.6,  # Stricter adherence to treatment/foundation sources
+            temperature=0.3,  # Faithful extraction from treatment (not creative generation)
             stream=True,
             display=True,
             min_response_tokens=min_tokens
