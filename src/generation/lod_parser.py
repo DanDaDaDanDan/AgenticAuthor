@@ -14,7 +14,7 @@ The parser automatically detects which format the LLM used:
      chapters: [{number, title, key_events, ...}]
    }
 
-   Used by: Normal chapters generation, competition mode
+   Used by: Normal chapters generation
    Validation: Strict structural checks for all required fields
    Saves to: chapter-beats/ architecture:
      - chapter-beats/foundation.yaml (metadata + characters + world)
@@ -81,24 +81,22 @@ class LODResponseParser:
         response: str,
         project: Project,
         target_lod: str,
-        original_context: Optional[Dict[str, Any]] = None,
-        dry_run: bool = False
+        original_context: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Parse YAML response and optionally save to appropriate files.
+        Parse YAML response and save to appropriate files.
 
         Args:
             response: Raw LLM response (may include markdown fences)
             project: Current project
             target_lod: What we were iterating/generating
             original_context: Original context before iteration (to detect changes)
-            dry_run: If True, parse and validate but don't save files (for multi-model competition)
 
         Returns:
             Dict with:
                 - 'parsed_data': Parsed YAML dict (always included)
-                - 'updated_files': List of files that would be/were updated
-                - 'deleted_files': List of files that would be/were deleted (culled)
+                - 'updated_files': List of files that were updated
+                - 'deleted_files': List of files that were deleted (culled)
                 - 'changes': Dict of what changed per LOD
         """
         # Strip markdown fences if present
@@ -123,96 +121,61 @@ class LODResponseParser:
         if original_context:
             changes = self._detect_changes(original_context, data)
 
-        # If dry_run, only track what WOULD be updated, don't actually save
-        if not dry_run:
-            # Save premise if present
-            if 'premise' in data:
-                premise_data = data['premise']
-                if isinstance(premise_data, dict) and 'text' in premise_data:
-                    # Build unified metadata structure
-                    metadata = {
-                        'premise': premise_data['text']
-                    }
+        # Save premise if present
+        if 'premise' in data:
+            premise_data = data['premise']
+            if isinstance(premise_data, dict) and 'text' in premise_data:
+                # Build unified metadata structure
+                metadata = {
+                    'premise': premise_data['text']
+                }
 
-                    # Merge in any additional metadata fields
-                    if 'metadata' in premise_data:
-                        metadata.update(premise_data['metadata'])
+                # Merge in any additional metadata fields
+                if 'metadata' in premise_data:
+                    metadata.update(premise_data['metadata'])
 
-                    # Save to single source of truth
-                    project.save_premise_metadata(metadata)
-                    updated_files.append('premise_metadata.json')
-
-            # Save treatment if present
-            if 'treatment' in data:
-                treatment_data = data['treatment']
-                if isinstance(treatment_data, dict) and 'text' in treatment_data:
-                    project.save_treatment(treatment_data['text'])
-                    updated_files.append('treatment.md')
-
-            # Save chapters if present
-            if 'chapters' in data:
-                # Detect format: NEW self-contained has metadata/characters/world at top level
-                if 'metadata' in data and 'characters' in data and 'world' in data:
-                    # NEW self-contained format (flat) - save to chapter-beats/ architecture
-                    updated_files.extend(self._save_chapters_to_beats(project, data))
-                else:
-                    # Could be OLD/LEGACY format or nested format
-                    chapters = data['chapters']
-                    if isinstance(chapters, dict) and 'metadata' in chapters:
-                        # Nested new format (backward compat): chapters: {metadata, characters, world, chapters}
-                        updated_files.extend(self._save_chapters_to_beats(project, chapters))
-                    elif isinstance(chapters, dict):
-                        # Dict format (could be partial new format)
-                        updated_files.extend(self._save_chapters_to_beats(project, chapters))
-                    elif isinstance(chapters, list):
-                        # List format - could be partial update or legacy full list
-                        # CRITICAL: Check if this is a partial update before clobbering!
-                        updated_files.extend(self._save_chapters_list_to_beats(project, chapters))
-
-            # Save prose if present
-            if 'prose' in data:
-                for prose_entry in data['prose']:
-                    if isinstance(prose_entry, dict) and 'chapter' in prose_entry and 'text' in prose_entry:
-                        chapter_num = prose_entry['chapter']
-                        prose_text = prose_entry['text']
-                        project.save_chapter(chapter_num, prose_text)
-                        updated_files.append(f'chapters/chapter-{chapter_num:02d}.md')
-
-            # Apply culling based on target_lod (NOT what LLM changed)
-            deleted_files = self._apply_culling(project, target_lod, data)
-        else:
-            # Dry run: just track what would be updated
-            if 'premise' in data:
+                # Save to single source of truth
+                project.save_premise_metadata(metadata)
                 updated_files.append('premise_metadata.json')
 
-            if 'treatment' in data:
+        # Save treatment if present
+        if 'treatment' in data:
+            treatment_data = data['treatment']
+            if isinstance(treatment_data, dict) and 'text' in treatment_data:
+                project.save_treatment(treatment_data['text'])
                 updated_files.append('treatment.md')
 
-            if 'chapters' in data:
-                # Dry run: track chapter-beats/ files that would be updated
-                updated_files.append('chapter-beats/foundation.yaml')
-                chapters_list = data.get('chapters', [])
-                if isinstance(chapters_list, list):
-                    for ch in chapters_list:
-                        ch_num = ch.get('number')
-                        if ch_num:
-                            updated_files.append(f'chapter-beats/chapter-{ch_num:02d}.yaml')
-                elif isinstance(data, dict) and 'metadata' in data:
-                    # Full structure
-                    updated_files.append('chapter-beats/foundation.yaml')
-                    for ch in data.get('chapters', []):
-                        ch_num = ch.get('number')
-                        if ch_num:
-                            updated_files.append(f'chapter-beats/chapter-{ch_num:02d}.yaml')
+        # Save chapters if present
+        if 'chapters' in data:
+            # Detect format: NEW self-contained has metadata/characters/world at top level
+            if 'metadata' in data and 'characters' in data and 'world' in data:
+                # NEW self-contained format (flat) - save to chapter-beats/ architecture
+                updated_files.extend(self._save_chapters_to_beats(project, data))
+            else:
+                # Could be OLD/LEGACY format or nested format
+                chapters = data['chapters']
+                if isinstance(chapters, dict) and 'metadata' in chapters:
+                    # Nested new format (backward compat): chapters: {metadata, characters, world, chapters}
+                    updated_files.extend(self._save_chapters_to_beats(project, chapters))
+                elif isinstance(chapters, dict):
+                    # Dict format (could be partial new format)
+                    updated_files.extend(self._save_chapters_to_beats(project, chapters))
+                elif isinstance(chapters, list):
+                    # List format - could be partial update or legacy full list
+                    # CRITICAL: Check if this is a partial update before clobbering!
+                    updated_files.extend(self._save_chapters_list_to_beats(project, chapters))
 
-            if 'prose' in data:
-                for prose_entry in data['prose']:
-                    if isinstance(prose_entry, dict) and 'chapter' in prose_entry:
-                        chapter_num = prose_entry['chapter']
-                        updated_files.append(f'chapters/chapter-{chapter_num:02d}.md')
+        # Save prose if present
+        if 'prose' in data:
+            for prose_entry in data['prose']:
+                if isinstance(prose_entry, dict) and 'chapter' in prose_entry and 'text' in prose_entry:
+                    chapter_num = prose_entry['chapter']
+                    prose_text = prose_entry['text']
+                    project.save_chapter(chapter_num, prose_text)
+                    updated_files.append(f'chapters/chapter-{chapter_num:02d}.md')
 
-            # Dry run culling simulation
-            deleted_files = self._simulate_culling(project, target_lod, data)
+        # Apply culling based on target_lod (NOT what LLM changed)
+        deleted_files = self._apply_culling(project, target_lod, data)
 
         return {
             'parsed_data': data,
@@ -259,67 +222,6 @@ class LODResponseParser:
             changes['prose'] = True
 
         return changes
-
-    def _simulate_culling(
-        self,
-        project: Project,
-        target_lod: str,
-        llm_data: Dict[str, Any]
-    ) -> List[str]:
-        """
-        Simulate culling for dry_run mode (don't actually delete files).
-
-        Args:
-            project: Current project
-            target_lod: What we directly iterated/generated
-            llm_data: Parsed LLM response
-
-        Returns:
-            List of file paths that WOULD be deleted
-        """
-        deleted = []
-
-        if target_lod == 'premise':
-            # Would delete treatment, chapter-beats/, prose
-            if project.treatment_file.exists():
-                deleted.append('treatment.md')
-
-            # Delete all chapter-beats/ files
-            beats_dir = project.path / 'chapter-beats'
-            if beats_dir.exists():
-                deleted.append('chapter-beats/foundation.yaml')
-                for beat_file in beats_dir.glob('chapter-*.yaml'):
-                    deleted.append(f'chapter-beats/{beat_file.name}')
-
-            for chapter_file in project.list_chapters():
-                deleted.append(str(chapter_file.relative_to(project.path)))
-
-        elif target_lod == 'treatment':
-            # Would delete chapter-beats/, prose (keep premise)
-            beats_dir = project.path / 'chapter-beats'
-            if beats_dir.exists():
-                deleted.append('chapter-beats/foundation.yaml')
-                for beat_file in beats_dir.glob('chapter-*.yaml'):
-                    deleted.append(f'chapter-beats/{beat_file.name}')
-
-            for chapter_file in project.list_chapters():
-                deleted.append(str(chapter_file.relative_to(project.path)))
-
-        elif target_lod == 'chapters':
-            # Would delete prose for chapters that changed
-            old_chapters = project.get_chapters() or []
-            new_chapters = llm_data.get('chapters', [])
-
-            for new_ch in new_chapters:
-                ch_num = new_ch['number']
-                old_ch = next((c for c in old_chapters if c['number'] == ch_num), None)
-
-                if old_ch is None or self._chapter_differs(old_ch, new_ch):
-                    prose_file = project.chapters_dir / f'chapter-{ch_num:02d}.md'
-                    if prose_file.exists():
-                        deleted.append(f'chapters/chapter-{ch_num:02d}.md')
-
-        return deleted
 
     def _apply_culling(
         self,

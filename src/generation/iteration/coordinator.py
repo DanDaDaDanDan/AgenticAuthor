@@ -19,8 +19,7 @@ class IterationCoordinator:
         project: Project,
         model: Optional[str] = None,
         default_target: Optional[str] = None,
-        target_chapters: Optional[list] = None,
-        settings=None
+        target_chapters: Optional[list] = None
     ):
         """
         Initialize iteration coordinator.
@@ -31,11 +30,9 @@ class IterationCoordinator:
             model: Model to use for generation tasks (optional)
             default_target: Default target for iterations (premise/treatment/chapters/prose)
             target_chapters: List of specific chapters to regenerate (None = all)
-            settings: Settings object (for multi-model mode detection)
         """
         self.client = client
         self.project = project
-        self.settings = settings
         self.model = model
         self.default_target = default_target
         self.target_chapters = target_chapters
@@ -231,11 +228,7 @@ class IterationCoordinator:
             from ..treatment import TreatmentGenerator
             generator = TreatmentGenerator(self.client, self.project, self.model)
 
-            # Use multi-model competition if enabled
-            if self.settings and self.settings.multi_model_mode:
-                result = await generator.generate_with_competition()
-            else:
-                result = await generator.generate()
+            result = await generator.generate()
 
             # Save treatment
             self.project.save_treatment(result)
@@ -352,20 +345,11 @@ class IterationCoordinator:
                 else:
                     feedback_text = focus_instruction
 
-            # Use multi-model competition if enabled
-            if self.settings and self.settings.multi_model_mode:
-                result = await generator.generate_with_competition(
-                    chapter_count=chapter_count,
-                    total_words=total_words,
-                    template=None,
-                    feedback=feedback_text
-                )
-            else:
-                result = await generator.generate(
-                    chapter_count=chapter_count,
-                    total_words=total_words,
-                    feedback=feedback_text
-                )
+            result = await generator.generate(
+                chapter_count=chapter_count,
+                total_words=total_words,
+                feedback=feedback_text
+            )
 
             changes.append({
                 'type': 'regenerate',
@@ -422,11 +406,7 @@ class IterationCoordinator:
                     if logger:
                         logger.info(f"COORDINATOR: Regenerating chapter {chapter_num}...")
 
-                    # Use multi-model competition if enabled
-                    if self.settings and self.settings.multi_model_mode:
-                        result = await generator.generate_chapter_with_competition(chapter_num)
-                    else:
-                        result = await generator.generate_chapter_sequential(chapter_num)
+                    result = await generator.generate_chapter_sequential(chapter_num)
 
                     # Save chapter
                     chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"

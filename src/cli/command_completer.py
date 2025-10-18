@@ -261,10 +261,6 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Show recent log entries',
             'usage': '/logs'
         },
-        'multimodel': {
-            'description': 'Toggle or configure multi-model competition mode',
-            'usage': '/multimodel [config|add|remove|judge|reset]'
-        },
         'wordcount': {
             'description': 'Assign word count targets to chapters based on content',
             'usage': '/wordcount'
