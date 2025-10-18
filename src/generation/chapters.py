@@ -2656,10 +2656,13 @@ chapters:
         feedback: Optional[str] = None
     ) -> List[ChapterOutline]:
         """
-        Generate all chapters in a single LLM call.
+        Generate all chapters in a single LLM call using OLD PROVEN FORMAT.
 
         This prevents duplication of character development beats and plot events
         by giving the LLM a global view of the entire story structure.
+
+        Uses simple key_events format (not complex scenes structure) which has
+        historically produced higher quality results with less duplication.
 
         Args:
             context: Story context (premise + treatment)
@@ -2690,7 +2693,8 @@ chapters:
                 logger.debug(f"Calculated chapter count: {chapter_count}")
 
         self.console.print(f"\n[cyan]Generating all {chapter_count} chapters in single call...[/cyan]")
-        self.console.print(f"[dim]Target: {total_words:,} words across {chapter_count} chapters[/dim]\n")
+        self.console.print(f"[dim]Target: {total_words:,} words across {chapter_count} chapters[/dim]")
+        self.console.print(f"[dim]Using classic key_events format (proven quality)[/dim]\n")
 
         # Serialize context to YAML
         context_yaml = self.context_builder.to_yaml_string(context)
@@ -2698,105 +2702,101 @@ chapters:
         # Serialize foundation to YAML for inclusion in prompt
         foundation_yaml = yaml.dump(foundation, sort_keys=False, allow_unicode=True)
 
-        # Build unified prompt for single-shot generation
+        # Build feedback instruction if present
         feedback_instruction = ""
         if feedback:
-            feedback_instruction = f"""
+            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nPlease incorporate the above feedback while generating the chapters."
 
-USER FEEDBACK: {feedback}
+        # Build comprehensive single-shot chapters generation prompt (OLD STYLE from 4c28f59)
+        prompt = f"""Generate a comprehensive chapter structure for a book.
 
-CRITICAL - AVOID DUPLICATE CHARACTER DEVELOPMENT:
-- Each character arc should PROGRESS linearly across chapters
-- Do NOT repeat the same development beat (e.g., "learns to trust" should happen ONCE)
-- Character growth should be cumulative and irreversible
-- Track what development has occurred in each chapter
-
-CRITICAL - AVOID DUPLICATE PLOT EVENTS:
-- Each plot event should occur EXACTLY ONCE
-- Do NOT repeat similar events (e.g., one alliance formation, not multiple)
-- Events should build on each other causally
-- Maintain clear timeline progression"""
-
-        prompt = f"""# PREMISE AND TREATMENT
+INPUT CONTEXT:
 ```yaml
 {context_yaml}
 ```
 
-# FOUNDATION (METADATA, CHARACTERS, WORLD)
+FOUNDATION (already generated):
 ```yaml
 {foundation_yaml}
 ```
-{feedback_instruction}
 
-# YOUR TASK
-Generate ONLY the chapter structures for a {chapter_count}-chapter story ({total_words:,} words total).
-The metadata, characters, and world have already been generated (see FOUNDATION above).
+TASK:
+Generate {chapter_count} comprehensive chapter outlines for the complete story.
+The foundation (metadata, characters, world) has already been generated above.
 
-CRITICAL INSTRUCTIONS FOR AVOIDING DUPLICATION:
-1. Character development must PROGRESS linearly - no repeated beats
-2. Each plot event occurs EXACTLY ONCE - no redundant scenes
-3. Chapters should form a clear causal chain - each builds on previous
-4. Track what has been established to avoid re-establishing
+CRITICAL - PLAN THE COMPLETE ARC:
+Since you're generating ALL chapters at once, you have the unique opportunity to:
+- Plan the entire story progression before committing to any chapter
+- Distribute character development evenly across the arc
+- Ensure each chapter has a UNIQUE role in the story
+- Avoid duplicating plot beats or character moments
+- Create clear causal progression from chapter to chapter
 
-# OUTPUT
-Return plain YAML (DO NOT wrap in ```yaml or ``` fences) with ONLY the chapters list:
+CHAPTER STRUCTURE:
+For each chapter provide:
+- number, title (evocative, specific)
+- pov, act (Act I/Act II/Act III based on position), summary (3-4 sentences)
+- key_events: 8-10 specific plot beats (UNIQUE to this chapter, not repeated)
+- character_developments: 3-4 internal changes (LINEAR progression, no repeated beats)
+- relationship_beats: 2-3 relationship evolutions (UNIQUE dynamics)
+- tension_points: 2-3 stakes/urgency moments
+- sensory_details: 2-3 atmospheric elements
+- subplot_threads: 1-2 if applicable
+- word_count_target: distribute {total_words} across chapters proportionally
 
-chapters:"""
+GUIDELINES:
+- Each key_event should be specific and complete (not vague or generic)
+- Character developments show PROGRESSIVE internal change (no resets or repeats)
+- Relationship beats track EVOLVING dynamics (each interaction builds on previous)
+- Be specific with names, places, emotions, concrete details
+- Act I: ~25% chapters (setup and introduction)
+- Act II: ~50% chapters (rising action and complications)
+- Act III: ~25% chapters (climax and resolution){feedback_instruction}
 
-        # Calculate chapter structure using DepthCalculator
-        budget = DepthCalculator.calculate_top_down_budget(
-            total_words=total_words,
-            chapter_count=chapter_count
-        )
+RETURN FORMAT:
+Return ONLY valid YAML (no markdown fences):
 
-        # Get chapter budgets from the calculation
-        chapter_budgets = budget['chapter_budgets']
-
-        for ch_budget in chapter_budgets:
-            i = ch_budget['number']
-            words_total = ch_budget['words_total']
-            scene_count = ch_budget.get('typical_scenes', 3)  # Use typical scenes from budget
-            act = ch_budget['act']
-            role = ch_budget['role']
-
-            prompt += f"""
-  - number: {i}
-    title: "Chapter Title"
-    pov: "Character Name"
-    act: "{act}"
-    role: "{role}"
-    summary: "3-4 sentence summary"
-    word_count_target: {words_total}
-    scenes:  # {scene_count} scenes"""
-
-            # Add scene structure
-            for j in range(1, scene_count + 1):
-                words_per_scene = words_total // scene_count
-                prompt += f"""
-      - scene: "Scene Title"
-        location: "Where"
-        pov_goal: "What POV character wants"
-        conflict: "What opposes them"
-        stakes: "What happens if they fail"
-        outcome: "How scene resolves"
-        emotional_beat: "Internal change"
-        sensory_focus: ["sight", "sound", "etc"]
-        target_words: {words_per_scene}"""
-
-            prompt += """
+chapters:
+  - number: 1
+    title: "..."
+    pov: "..."
+    act: "Act I"
+    summary: "..."
+    key_events:
+      - "..."
+      - "..."
+      - "..."
+      - "..."
+      - "..."
+      - "..."
+      - "..."
+      - "..."
     character_developments:
-      - "UNIQUE development for this chapter (not repeated from earlier)"
-    value_shift: "beginning_state → ending_state"
-    cliffhanger_or_hook: "What propels reader forward"
-"""
+      - "..."
+      - "..."
+      - "..."
+    relationship_beats:
+      - "..."
+      - "..."
+    tension_points:
+      - "..."
+      - "..."
+    sensory_details:
+      - "..."
+      - "..."
+    subplot_threads:
+      - "..."
+    word_count_target: XXXX
+  - number: 2
+    title: "..."
+    # ... continue for all {chapter_count} chapters
 
-        prompt += """
-FINAL CHECKLIST:
-- ✓ No repeated character development beats across chapters
-- ✓ No duplicate plot events or redundant scenes
-- ✓ Each chapter advances the story uniquely
-- ✓ Clear causal progression from chapter to chapter
-- ✓ Character arcs progress linearly without resets"""
+IMPORTANT:
+- Do NOT wrap in markdown code fences
+- Return ONLY the YAML content starting with "chapters:"
+- Each chapter must have UNIQUE plot events (no duplication across chapters)
+- Character arcs must PROGRESS linearly (no repeated development beats)
+"""
 
         # Generate with API
         try:
@@ -2804,8 +2804,9 @@ FINAL CHECKLIST:
             from ..utils.tokens import estimate_messages_tokens
             prompt_tokens = estimate_messages_tokens([{"role": "user", "content": prompt}])
 
-            # Response needs to include full structure
-            estimated_response_tokens = 8000 + (chapter_count * 500)
+            # Response needs ~600-800 tokens per chapter for rich outlines
+            # Plus overhead for structure
+            estimated_response_tokens = 2000 + (chapter_count * 700)
 
             if logger:
                 logger.debug(f"Single-shot generation: ~{prompt_tokens} prompt tokens, ~{estimated_response_tokens} response tokens")
@@ -2813,10 +2814,10 @@ FINAL CHECKLIST:
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a professional story outliner. Create a complete story structure with no duplicate character development beats or plot events. Return valid YAML without formatting."},
+                    {"role": "system", "content": "You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.5,  # Lower temp for consistency
+                temperature=0.7,  # Slightly higher for creative variety across chapters
                 display=True,
                 display_label=f"Generating all {chapter_count} chapters",
                 min_response_tokens=estimated_response_tokens
@@ -2837,7 +2838,7 @@ FINAL CHECKLIST:
                 response_text = response_text[:-3]  # Remove closing ```
             response_text = response_text.strip()
 
-            # Parse the chapters-only YAML
+            # Parse the chapters YAML
             try:
                 parsed_data = yaml.safe_load(response_text)
             except yaml.YAMLError as e:
@@ -2861,14 +2862,14 @@ FINAL CHECKLIST:
                 'chapters': chapters_data  # Add the generated chapters
             }
 
-            # Save the complete structure (no validation in single-shot mode)
+            # Save the complete structure
             chapters_yaml_path = self.project.path / 'chapters.yaml'
             chapters_yaml_path.write_text(
                 yaml.dump(full_structure, sort_keys=False, allow_unicode=True),
                 encoding='utf-8'
             )
 
-            # Also save individual chapter beat files for consistency
+            # Also save individual chapter beat files for consistency with sequential mode
             beats_dir = self.project.path / 'chapter-beats'
             beats_dir.mkdir(exist_ok=True)
 
@@ -2880,7 +2881,7 @@ FINAL CHECKLIST:
                     encoding='utf-8'
                 )
 
-            # Save each chapter
+            # Save each chapter as individual file
             for chapter in chapters_data:
                 chapter_num = chapter.get('number', 0)
                 if chapter_num:
@@ -2891,7 +2892,7 @@ FINAL CHECKLIST:
                     )
 
             if logger:
-                logger.debug(f"Saved complete structure to chapters.yaml and individual beat files without validation")
+                logger.debug(f"Saved {len(chapters_data)} chapters to chapters.yaml and individual beat files")
 
             # Convert to ChapterOutline objects
             chapters = []

@@ -1828,6 +1828,20 @@ class InteractiveSession:
 
         self.console.rule(style="dim")
 
+        # Show generation mode info
+        if single_shot:
+            self.console.print("[cyan]📖 Single-shot mode:[/cyan] All chapters generated in one call")
+            self.console.print("[dim]  ✓ Uses classic key_events format (proven quality)[/dim]")
+            self.console.print("[dim]  ✓ Prevents event duplication across chapters[/dim]")
+            self.console.print("[dim]  ✓ LLM plans complete story arc before generating[/dim]")
+            self.console.print("[dim]  ✗ No incremental saves or resume capability[/dim]\n")
+        else:
+            self.console.print("[cyan]🔄 Sequential mode:[/cyan] Generates chapters one at a time")
+            self.console.print("[dim]  ✓ Incremental saves (can inspect partial results)[/dim]")
+            self.console.print("[dim]  ✓ Resume capability (continue after interruption)[/dim]")
+            self.console.print("[dim]  ✓ Detailed validation for each chapter[/dim]")
+            self.console.print("[dim]  ℹ️  Use --single flag for higher quality if duplication occurs[/dim]\n")
+
         # Check if multi-model mode is enabled
         generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
         if self.settings.multi_model_mode:

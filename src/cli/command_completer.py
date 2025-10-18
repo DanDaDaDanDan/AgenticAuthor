@@ -218,7 +218,8 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
         },
         'generate': {
             'description': 'Generate content (premise/premises/treatment/chapters/prose/marketing)',
-            'usage': '/generate <type> [options]'
+            'usage': '/generate <type> [options]\n' +
+                     '  chapters: [count] [--auto] [--single]  (--single uses proven format, prevents duplication)'
         },
         'iterate': {
             'description': 'Set iteration target (premise/treatment/chapters/prose/taxonomy)',
