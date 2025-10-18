@@ -268,15 +268,11 @@ scenes:
   - Prose generation ONLY uses chapters.yaml (no premise/treatment needed)
   - Unidirectional data flow: premise → treatment → chapters → prose (no sync back)
   - /cull command for cascade deletion (prose, chapters, treatment, premise)
-  - Dry-run mode for multi-model competition (validate without saving)
 - **Automatic genre detection** - LLM auto-detects genre from concept
 - **Interactive taxonomy editor** - Full-screen checkbox UI for taxonomy selection
 - **Interactive model selector** - Live-filtering model search with keyboard navigation
 - **Taxonomy iteration** - Modify story parameters and regenerate premise
 - **Strict model enforcement** - Single user-selected model for ALL operations (no fallbacks)
-- **Multi-model competition mode** - Generate with 3 models in parallel, judge picks winner (tournament mode)
-  - **NEW**: Competition mode works during iteration (`/iterate chapters` runs tournament)
-  - Feedback incorporated into all competing models, judge evaluates results
 - **Smart chapter iteration** - chapters.yaml supports patch and regenerate modes
   - Patch: Fast unified diffs for targeted edits (10-15x faster)
   - Regenerate: Full AI regeneration for structural changes
@@ -319,8 +315,6 @@ agentic           # Start REPL (main interface)
 /generate premises 5 fantasy "a magical library"  # Generate 5 options to choose from
 /iterate taxonomy # Interactive taxonomy editor
 /cull prose       # Delete prose files (or chapters/treatment/premise - cascades downstream)
-/multimodel       # Toggle multi-model competition mode (3 generators + 1 judge)
-/multimodel config # Configure competition models and judge
 /logs             # View recent log entries
 /help             # Show all commands
 ```
@@ -579,35 +573,6 @@ context = {
 # at TOP LEVEL. Nesting breaks detection.
 ```
 
-### Multi-Model Competition
-```python
-# Enable tournament mode
-/multimodel  # Toggle on/off
-
-# Configure models
-/multimodel config           # Show current configuration
-/multimodel add <model>      # Add competitor
-/multimodel remove <model>   # Remove competitor
-/multimodel judge <model>    # Set judge model
-/multimodel reset            # Reset to defaults
-
-# Generation with competition (when enabled)
-/generate treatment
-→ Runs 3 models in parallel (grok-4-fast, claude-sonnet-4.5, claude-opus-4.1)
-→ Shows all candidates side-by-side
-→ Judge model (gemini-2.5-pro) evaluates with criteria
-→ Displays scores and reasoning
-→ Winner auto-saved, all candidates saved to multimodel/
-→ Git commit includes judging results
-
-# Files created:
-project/multimodel/
-  ├── treatment_20250106_143022_x-ai_grok-4-fast.md
-  ├── treatment_20250106_143022_anthropic_claude-sonnet-4-5.md
-  ├── treatment_20250106_143022_anthropic_claude-opus-4-1.md
-  └── decisions.json  # Full judging history
-```
-
 ### Git Integration
 - Auto-commit with descriptive messages
 - Unified diff support
@@ -666,9 +631,6 @@ books/                      # All projects root
 │   │   ├── frontmatter.md   # Book frontmatter
 │   │   ├── dedication.md    # Book dedication
 │   │   └── *.rtf, *.md      # Exported books
-│   ├── multimodel/          # Multi-model competition results
-│   │   ├── *_candidate_*.md # All candidate outputs
-│   │   └── decisions.json   # Judging history
 │   └── project.yaml         # Project metadata
 └── [project-name-2]/
     └── ... (same structure)
@@ -729,7 +691,6 @@ def _commit(self, message: str):
 - `src/generation/wordcount.py` - Word count assignment with scene-based calculations
   - Uses `scene_count × act_ws` formula (was `event_count × act_we`)
   - Supports both structured scenes and legacy key_events
-- `src/generation/multi_model.py` - Multi-model competition coordinator with judging logic
 - `src/generation/iteration/` - Natural language feedback processing (coordinator, intent, diff, scale)
 - `src/generation/cull.py` - Content deletion manager with cascade (prose → chapters → treatment → premise)
 - `src/storage/git_manager.py` - Git operations wrapper
