@@ -954,10 +954,30 @@ IMPORTANT:
 
                 # Save foundation immediately
                 self.project.save_foundation(foundation)
-                self.console.print(f"[green]✓[/green] Foundation complete\n")
+                self.console.print(f"[green]✓[/green] Foundation complete")
 
-                # Note: Foundation validation removed for simplicity
-                # Single-shot generation is more forgiving and self-correcting
+                # Validate foundation fidelity (separate LLM call)
+                self.console.print(f"[dim]Validating foundation fidelity...[/dim]")
+
+                treatment_text = context.get('treatment', {}).get('text', '')
+                is_valid, critical_issues = await self._validate_foundation_fidelity(
+                    foundation_data=foundation,
+                    treatment_text=treatment_text
+                )
+
+                if not is_valid and critical_issues:
+                    # Display critical issues as warnings
+                    self.console.print(f"\n[bold yellow]⚠️  Foundation Validation Issues:[/bold yellow]\n")
+
+                    for issue in critical_issues:
+                        self.console.print(f"  • [yellow]{issue.get('element', 'Unknown')}:[/yellow]")
+                        self.console.print(f"    {issue.get('reasoning', 'No details')}\n")
+
+                    self.console.print(f"[yellow]Continuing with chapter generation...[/yellow]\n")
+                else:
+                    if logger:
+                        logger.debug("Foundation validation passed")
+                    self.console.print(f"[green]✓[/green] Foundation validation passed\n")
 
             # Generate all chapters with single-shot method
             self.console.print(f"[cyan][2/2] Generating all {chapter_count} chapters in one call...[/cyan]")
