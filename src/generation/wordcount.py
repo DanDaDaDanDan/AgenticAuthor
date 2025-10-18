@@ -140,12 +140,11 @@ class WordCountAssigner:
             chapter['word_count_target'] = new_target
             new_targets[ch_num] = new_target
 
-        # Update chapters in original data structure
-        chapters_data['chapters'] = chapters
-
-        # Save updated chapters.yaml
-        with open(self.project.chapters_file, 'w', encoding='utf-8') as f:
-            yaml.dump(chapters_data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        # Save updated chapters to individual beat files (NOT chapters.yaml)
+        for chapter in chapters:
+            ch_num = chapter.get('number')
+            if ch_num:
+                self.project.save_chapter_beat(ch_num, chapter)
 
         total_target = sum(new_targets.values())
 
