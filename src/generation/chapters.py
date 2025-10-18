@@ -956,28 +956,124 @@ IMPORTANT:
                 self.project.save_foundation(foundation)
                 self.console.print(f"[green]✓[/green] Foundation complete")
 
-                # Validate foundation fidelity (separate LLM call)
-                self.console.print(f"[dim]Validating foundation fidelity...[/dim]")
+                # Validate foundation fidelity with interactive iteration loop
+                validation_loop_count = 0
+                max_validation_iterations = 3
 
-                treatment_text = context.get('treatment', {}).get('text', '')
-                is_valid, critical_issues = await self._validate_foundation_fidelity(
-                    foundation_data=foundation,
-                    treatment_text=treatment_text
-                )
+                while validation_loop_count < max_validation_iterations:
+                    self.console.print(f"[dim]Validating foundation fidelity...[/dim]")
 
-                if not is_valid and critical_issues:
-                    # Display critical issues as warnings
-                    self.console.print(f"\n[bold yellow]⚠️  Foundation Validation Issues:[/bold yellow]\n")
+                    treatment_text = context.get('treatment', {}).get('text', '')
+                    is_valid, critical_issues = await self._validate_foundation_fidelity(
+                        foundation_data=foundation,
+                        treatment_text=treatment_text
+                    )
 
-                    for issue in critical_issues:
-                        self.console.print(f"  • [yellow]{issue.get('element', 'Unknown')}:[/yellow]")
-                        self.console.print(f"    {issue.get('reasoning', 'No details')}\n")
+                    if not is_valid and critical_issues:
+                        # Show validation issues
+                        self.console.print(f"\n[bold yellow]{'='*70}[/bold yellow]")
+                        self.console.print(f"[bold yellow]⚠️  FOUNDATION VALIDATION ISSUES[/bold yellow]")
+                        self.console.print(f"[bold yellow]{'='*70}[/bold yellow]\n")
 
-                    self.console.print(f"[yellow]Continuing with chapter generation...[/yellow]\n")
-                else:
-                    if logger:
-                        logger.debug("Foundation validation passed")
-                    self.console.print(f"[green]✓[/green] Foundation validation passed\n")
+                        for i, issue in enumerate(critical_issues, 1):
+                            issue_type = issue.get('type', 'unknown').replace('_', ' ').title()
+                            element = issue.get('element', 'Unknown')
+                            reasoning = issue.get('reasoning', 'No details')
+                            recommendation = issue.get('recommendation', '')
+                            severity = issue.get('severity', 'medium')
+
+                            severity_color = "red" if severity == "critical" else "yellow"
+
+                            self.console.print(f"[cyan]{i}.[/cyan] [{severity_color}]{issue_type}[/{severity_color}]")
+                            self.console.print(f"   Element: {element}")
+                            self.console.print(f"   Problem: {reasoning}")
+                            if recommendation:
+                                self.console.print(f"   Fix: {recommendation}")
+                            self.console.print()
+
+                        # Prompt user for action
+                        self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+                        self.console.print(f"  [cyan]1.[/cyan] Continue anyway (ignore issues)")
+                        self.console.print(f"  [cyan]2.[/cyan] Iterate on selected issues (regenerate foundation)")
+                        self.console.print(f"  [cyan]3.[/cyan] Abort generation")
+
+                        try:
+                            choice = input("\nEnter choice (1-3): ").strip()
+                        except (KeyboardInterrupt, EOFError):
+                            self.console.print(f"\n[yellow]Generation cancelled by user[/yellow]")
+                            raise KeyboardInterrupt("User cancelled validation")
+
+                        if choice == "1":
+                            # Continue anyway
+                            self.console.print(f"\n[yellow]⚠️  Continuing with foundation issues...[/yellow]\n")
+                            break  # Exit validation loop
+
+                        elif choice == "2":
+                            # Iterate - let user select which issues to address
+                            selected_issues = self._select_validation_issues(
+                                issues=critical_issues,
+                                context="foundation"
+                            )
+
+                            if not selected_issues:
+                                self.console.print(f"[yellow]No issues selected, continuing anyway...[/yellow]\n")
+                                break
+
+                            # Format selected issues for iteration prompt
+                            formatted_issues = self._format_validation_issues(selected_issues)
+
+                            # Build iteration feedback
+                            iteration_feedback = f"""FOUNDATION VALIDATION ISSUES TO FIX:
+
+{formatted_issues}
+
+INSTRUCTIONS:
+Regenerate the foundation addressing the issues above.
+- Fix the contradictions and inconsistencies
+- Ensure alignment with treatment
+- Maintain the overall structure and quality"""
+
+                            # Regenerate foundation with validation feedback
+                            self.console.print(f"\n[cyan]Regenerating foundation to address {len(selected_issues)} issue(s)...[/cyan]\n")
+
+                            foundation = await self._generate_foundation(
+                                context_yaml=context_yaml,
+                                taxonomy_data=taxonomy_data,
+                                total_words=total_words,
+                                chapter_count=chapter_count,
+                                original_concept=original_concept,
+                                unique_elements=unique_elements,
+                                feedback=iteration_feedback,  # Pass validation issues as feedback
+                                genre=genre
+                            )
+
+                            # Save regenerated foundation
+                            self.project.save_foundation(foundation)
+                            self.console.print(f"[green]✓[/green] Foundation regenerated\n")
+
+                            # Increment loop counter and continue validation
+                            validation_loop_count += 1
+
+                            if validation_loop_count >= max_validation_iterations:
+                                self.console.print(f"[yellow]⚠️  Max validation iterations ({max_validation_iterations}) reached.[/yellow]")
+                                self.console.print(f"[yellow]Continuing with current foundation...[/yellow]\n")
+                                break
+
+                        elif choice == "3":
+                            # Abort
+                            self.console.print(f"\n[red]Generation aborted due to foundation validation issues[/red]")
+                            raise Exception("User aborted generation due to foundation validation issues")
+
+                        else:
+                            self.console.print(f"\n[yellow]Invalid choice, treating as abort[/yellow]")
+                            raise Exception("Invalid validation choice")
+
+                    else:
+                        # Validation passed
+                        if logger:
+                            logger.debug("Foundation validation passed")
+                        self.console.print(f"[green]✓[/green] Foundation validation passed\n")
+                        break  # Exit validation loop
 
             # Generate all chapters with single-shot method
             self.console.print(f"[cyan][2/2] Generating all {chapter_count} chapters in one call...[/cyan]")
