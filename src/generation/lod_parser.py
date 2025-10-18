@@ -16,7 +16,9 @@ The parser automatically detects which format the LLM used:
 
    Used by: Normal chapters generation, competition mode
    Validation: Strict structural checks for all required fields
-   Saves to: chapters.yaml (entire structure)
+   Saves to: chapter-beats/ architecture:
+     - chapter-beats/foundation.yaml (metadata + characters + world)
+     - chapter-beats/chapter-NN.yaml (individual chapter outlines)
 
 2. OLD Efficient Format (treatment/prose):
    {
@@ -40,8 +42,8 @@ Culling Strategy
 ================
 Files are automatically deleted based on what was modified:
 
-- Modify premise → Delete treatment, chapters, prose
-- Modify treatment → Delete chapters, prose (keep premise)
+- Modify premise → Delete treatment, chapter-beats/, prose
+- Modify treatment → Delete chapter-beats/, prose (keep premise)
 - Modify chapters → Delete affected chapter prose files
 - Modify prose → No culling (just update that chapter)
 
@@ -51,17 +53,16 @@ becomes invalid and must be regenerated.
 Partial Chapter Updates
 ========================
 CRITICAL: When LLM returns only SOME chapters (e.g., chapters 4,7,11 during
-iteration), the parser must MERGE them into the existing chapters.yaml structure,
-NOT replace the entire file.
+iteration), the parser must only update those specific chapter beat files,
+NOT replace the entire chapter-beats/ directory.
 
-Problem: If LLM returns [ch4, ch7, ch11] and we blindly overwrite chapters.yaml,
-we lose the metadata, characters, and world sections.
+Problem: If LLM returns [ch4, ch7, ch11] and we blindly overwrite all files,
+we lose the other chapter outlines and potentially the foundation.
 
-Solution: _save_chapters_list() detects partial updates by comparing chapter
-counts and intelligently merges:
-- Partial update (3 new < 16 existing): Merge new chapters, keep rest
-- Complete replacement (16+ new >= 16 existing): Replace chapters list
-- Always preserve metadata, characters, world sections in self-contained format
+Solution: _save_chapters_list_to_beats() only updates specific chapter files:
+- Partial update (3 new): Only save chapter-04.yaml, chapter-07.yaml, chapter-11.yaml
+- Complete replacement (16+ new): Save all chapter-NN.yaml files
+- Always preserve foundation unless explicitly regenerated
 """
 
 import json
@@ -152,25 +153,21 @@ class LODResponseParser:
             if 'chapters' in data:
                 # Detect format: NEW self-contained has metadata/characters/world at top level
                 if 'metadata' in data and 'characters' in data and 'world' in data:
-                    # NEW self-contained format (flat) - save entire structure
-                    project.save_chapters_yaml(data)
-                    updated_files.append('chapters.yaml')
+                    # NEW self-contained format (flat) - save to chapter-beats/ architecture
+                    updated_files.extend(self._save_chapters_to_beats(project, data))
                 else:
                     # Could be OLD/LEGACY format or nested format
                     chapters = data['chapters']
                     if isinstance(chapters, dict) and 'metadata' in chapters:
                         # Nested new format (backward compat): chapters: {metadata, characters, world, chapters}
-                        project.save_chapters_yaml(chapters)
-                        updated_files.append('chapters.yaml')
+                        updated_files.extend(self._save_chapters_to_beats(project, chapters))
                     elif isinstance(chapters, dict):
                         # Dict format (could be partial new format)
-                        project.save_chapters_yaml(chapters)
-                        updated_files.append('chapters.yaml')
+                        updated_files.extend(self._save_chapters_to_beats(project, chapters))
                     elif isinstance(chapters, list):
                         # List format - could be partial update or legacy full list
                         # CRITICAL: Check if this is a partial update before clobbering!
-                        self._save_chapters_list(project, chapters)
-                        updated_files.append('chapters.yaml')
+                        updated_files.extend(self._save_chapters_list_to_beats(project, chapters))
 
             # Save prose if present
             if 'prose' in data:
@@ -192,7 +189,21 @@ class LODResponseParser:
                 updated_files.append('treatment.md')
 
             if 'chapters' in data:
-                updated_files.append('chapters.yaml')
+                # Dry run: track chapter-beats/ files that would be updated
+                updated_files.append('chapter-beats/foundation.yaml')
+                chapters_list = data.get('chapters', [])
+                if isinstance(chapters_list, list):
+                    for ch in chapters_list:
+                        ch_num = ch.get('number')
+                        if ch_num:
+                            updated_files.append(f'chapter-beats/chapter-{ch_num:02d}.yaml')
+                elif isinstance(data, dict) and 'metadata' in data:
+                    # Full structure
+                    updated_files.append('chapter-beats/foundation.yaml')
+                    for ch in data.get('chapters', []):
+                        ch_num = ch.get('number')
+                        if ch_num:
+                            updated_files.append(f'chapter-beats/chapter-{ch_num:02d}.yaml')
 
             if 'prose' in data:
                 for prose_entry in data['prose']:
@@ -269,20 +280,27 @@ class LODResponseParser:
         deleted = []
 
         if target_lod == 'premise':
-            # Would delete treatment, chapters, prose
+            # Would delete treatment, chapter-beats/, prose
             if project.treatment_file.exists():
                 deleted.append('treatment.md')
 
-            if project.chapters_file.exists():
-                deleted.append('chapters.yaml')
+            # Delete all chapter-beats/ files
+            beats_dir = project.path / 'chapter-beats'
+            if beats_dir.exists():
+                deleted.append('chapter-beats/foundation.yaml')
+                for beat_file in beats_dir.glob('chapter-*.yaml'):
+                    deleted.append(f'chapter-beats/{beat_file.name}')
 
             for chapter_file in project.list_chapters():
                 deleted.append(str(chapter_file.relative_to(project.path)))
 
         elif target_lod == 'treatment':
-            # Would delete chapters, prose (keep premise)
-            if project.chapters_file.exists():
-                deleted.append('chapters.yaml')
+            # Would delete chapter-beats/, prose (keep premise)
+            beats_dir = project.path / 'chapter-beats'
+            if beats_dir.exists():
+                deleted.append('chapter-beats/foundation.yaml')
+                for beat_file in beats_dir.glob('chapter-*.yaml'):
+                    deleted.append(f'chapter-beats/{beat_file.name}')
 
             for chapter_file in project.list_chapters():
                 deleted.append(str(chapter_file.relative_to(project.path)))
@@ -326,24 +344,37 @@ class LODResponseParser:
         deleted = []
 
         if target_lod == 'premise':
-            # Delete treatment, chapters, prose
+            # Delete treatment, chapter-beats/, prose
             if project.treatment_file.exists():
                 project.treatment_file.unlink()
                 deleted.append('treatment.md')
 
-            if project.chapters_file.exists():
-                project.chapters_file.unlink()
-                deleted.append('chapters.yaml')
+            # Delete all chapter-beats/ files
+            beats_dir = project.path / 'chapter-beats'
+            if beats_dir.exists():
+                foundation_file = beats_dir / 'foundation.yaml'
+                if foundation_file.exists():
+                    foundation_file.unlink()
+                    deleted.append('chapter-beats/foundation.yaml')
+                for beat_file in beats_dir.glob('chapter-*.yaml'):
+                    beat_file.unlink()
+                    deleted.append(f'chapter-beats/{beat_file.name}')
 
             for chapter_file in project.list_chapters():
                 chapter_file.unlink()
                 deleted.append(str(chapter_file.relative_to(project.path)))
 
         elif target_lod == 'treatment':
-            # Delete chapters, prose (keep premise)
-            if project.chapters_file.exists():
-                project.chapters_file.unlink()
-                deleted.append('chapters.yaml')
+            # Delete chapter-beats/, prose (keep premise)
+            beats_dir = project.path / 'chapter-beats'
+            if beats_dir.exists():
+                foundation_file = beats_dir / 'foundation.yaml'
+                if foundation_file.exists():
+                    foundation_file.unlink()
+                    deleted.append('chapter-beats/foundation.yaml')
+                for beat_file in beats_dir.glob('chapter-*.yaml'):
+                    beat_file.unlink()
+                    deleted.append(f'chapter-beats/{beat_file.name}')
 
             for chapter_file in project.list_chapters():
                 chapter_file.unlink()
@@ -351,7 +382,7 @@ class LODResponseParser:
 
         elif target_lod == 'chapters':
             # Delete prose for chapters that changed
-            # Compare LLM's chapters vs existing chapters.yaml
+            # Compare LLM's chapters vs existing chapter-beats/
             deleted.extend(self._cull_affected_prose(project, llm_data))
 
         # target_lod == 'prose': No culling, just update specific chapter
@@ -412,91 +443,67 @@ class LODResponseParser:
 
         return False
 
-    def _save_chapters_list(self, project: Project, new_chapters: List[Dict[str, Any]]):
+    def _save_chapters_to_beats(self, project: Project, data: Dict[str, Any]) -> List[str]:
         """
-        Save a list of chapters, intelligently merging partial updates.
+        Save chapters data to chapter-beats/ architecture.
 
-        CRITICAL BUG FIX: When LLM returns only updated chapters (e.g., chapters 4,7,11),
-        we must merge them into the existing chapters.yaml structure, NOT overwrite
-        the entire file. Otherwise we lose metadata, characters, and world sections.
+        Args:
+            project: Current project
+            data: Dict with metadata, characters, world, chapters sections
+
+        Returns:
+            List of updated file paths
+        """
+        updated_files = []
+
+        # Save foundation (metadata + characters + world)
+        foundation = {
+            'metadata': data.get('metadata', {}),
+            'characters': data.get('characters', []),
+            'world': data.get('world', {})
+        }
+        project.save_foundation(foundation)
+        updated_files.append('chapter-beats/foundation.yaml')
+
+        # Save each chapter as individual file
+        chapters = data.get('chapters', [])
+        for chapter in chapters:
+            ch_num = chapter.get('number')
+            if ch_num:
+                project.save_chapter_beat(ch_num, chapter)
+                updated_files.append(f'chapter-beats/chapter-{ch_num:02d}.yaml')
+
+        return updated_files
+
+    def _save_chapters_list_to_beats(self, project: Project, new_chapters: List[Dict[str, Any]]) -> List[str]:
+        """
+        Save a list of chapters to chapter-beats/, intelligently merging partial updates.
+
+        CRITICAL: When LLM returns only updated chapters (e.g., chapters 4,7,11),
+        we must merge them with existing chapter beat files, NOT overwrite everything.
 
         Args:
             project: Current project
             new_chapters: List of chapter dicts from LLM
 
+        Returns:
+            List of updated file paths
+
         Strategy:
-            1. If chapters.yaml exists with full structure (metadata, characters, world, chapters),
-               merge new chapters into existing structure
-            2. If chapters.yaml is just a list (legacy), replace with new list
-            3. If chapters.yaml doesn't exist, create as list (legacy format)
+            1. If foundation exists, preserve it
+            2. Only update the specific chapter beat files in the new_chapters list
+            3. Leave other chapter beat files unchanged
         """
-        chapters_file = project.chapters_file
+        updated_files = []
 
-        if not chapters_file.exists():
-            # No existing file - save as list (legacy format)
-            with open(chapters_file, 'w', encoding='utf-8') as f:
-                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-            return
+        # Save each new/updated chapter
+        for chapter in new_chapters:
+            ch_num = chapter.get('number')
+            if ch_num:
+                project.save_chapter_beat(ch_num, chapter)
+                updated_files.append(f'chapter-beats/chapter-{ch_num:02d}.yaml')
 
-        # Load existing chapters.yaml
-        try:
-            with open(chapters_file, 'r', encoding='utf-8') as f:
-                existing = yaml.safe_load(f)
-        except Exception as e:
-            # If we can't read existing file, just overwrite with new data
-            with open(chapters_file, 'w', encoding='utf-8') as f:
-                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-            return
-
-        # Check format of existing file
-        if isinstance(existing, list):
-            # Legacy list format - replace entire list
-            with open(chapters_file, 'w', encoding='utf-8') as f:
-                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-            return
-
-        elif isinstance(existing, dict) and 'metadata' in existing and 'characters' in existing and 'world' in existing:
-            # NEW self-contained format - MERGE chapters intelligently
-            existing_chapters_list = existing.get('chapters', [])
-
-            # Build map of new chapters by number
-            new_ch_map = {ch['number']: ch for ch in new_chapters if 'number' in ch}
-
-            # Detect if this is a partial update
-            new_ch_numbers = sorted(new_ch_map.keys())
-            existing_ch_numbers = sorted([ch['number'] for ch in existing_chapters_list if 'number' in ch])
-
-            is_partial = len(new_ch_numbers) < len(existing_ch_numbers)
-
-            if is_partial:
-                # PARTIAL UPDATE: Merge new chapters into existing list
-                merged_chapters = []
-                for old_ch in existing_chapters_list:
-                    ch_num = old_ch.get('number')
-                    if ch_num in new_ch_map:
-                        # Replace with updated version
-                        merged_chapters.append(new_ch_map[ch_num])
-                    else:
-                        # Keep existing version
-                        merged_chapters.append(old_ch)
-
-                # Update the chapters list in existing structure
-                existing['chapters'] = merged_chapters
-
-                # Save merged structure
-                with open(chapters_file, 'w', encoding='utf-8') as f:
-                    yaml.dump(existing, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-            else:
-                # COMPLETE REPLACEMENT: New list has all or more chapters
-                existing['chapters'] = new_chapters
-
-                # Save updated structure
-                with open(chapters_file, 'w', encoding='utf-8') as f:
-                    yaml.dump(existing, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
-        else:
-            # Unknown format - replace with new data
-            with open(chapters_file, 'w', encoding='utf-8') as f:
-                yaml.dump(new_chapters, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        return updated_files
 
     def _save_premise_metadata(self, project: Project, metadata: Dict[str, Any]):
         """Save premise metadata to premise_metadata.json."""

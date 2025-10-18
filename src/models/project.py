@@ -500,20 +500,22 @@ class Project:
 
     def save_chapters_yaml(self, data: Dict[str, Any]):
         """
-        Save complete chapters.yaml structure (self-contained format).
+        DEPRECATED: This method is no longer used.
+
+        Use save_foundation() and save_chapter_beat() instead to save to chapter-beats/ architecture.
 
         Args:
             data: Dict with metadata, characters, world, chapters sections
-        """
-        with open(self.chapters_file, 'w') as f:
-            yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-        if self.metadata:
-            self.metadata.update_timestamp()
-            # Extract chapter count from new structure
-            chapters = data.get('chapters', [])
-            self.metadata.chapter_count = len(chapters)
-            self.save_metadata()
+        Raises:
+            DeprecationWarning: Always raises - method should not be used
+        """
+        raise DeprecationWarning(
+            "save_chapters_yaml() is deprecated. "
+            "Use save_foundation() for metadata/characters/world and "
+            "save_chapter_beat(chapter_num, chapter_data) for individual chapters. "
+            "All data is now saved to chapter-beats/ directory, NOT chapters.yaml."
+        )
 
     def get_chapter(self, chapter_num: int) -> Optional[str]:
         """
