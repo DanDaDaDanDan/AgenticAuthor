@@ -1806,20 +1806,14 @@ class InteractiveSession:
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
             return
 
-        # Parse options (chapter count or word count or --auto or --single)
+        # Parse options (chapter count or word count)
         chapter_count = None
         total_words = None  # Let generator calculate smart default
-        auto_fix = False
-        single_shot = False  # Generate all chapters in one call
 
         if options:
             parts = options.split()
             for part in parts:
-                if part == '--auto':
-                    auto_fix = True
-                elif part == '--single':
-                    single_shot = True
-                elif part.isdigit():
+                if part.isdigit():
                     num = int(part)
                     if num < 50:  # Assume it's chapter count
                         chapter_count = num
@@ -1828,52 +1822,21 @@ class InteractiveSession:
 
         self.console.rule(style="dim")
 
-        # Show generation mode info
-        if single_shot:
-            self.console.print("[cyan]📖 Single-shot mode:[/cyan] All chapters generated in one call")
-            self.console.print("[dim]  ✓ Uses classic key_events format (proven quality)[/dim]")
-            self.console.print("[dim]  ✓ Prevents event duplication across chapters[/dim]")
-            self.console.print("[dim]  ✓ LLM plans complete story arc before generating[/dim]")
-            self.console.print("[dim]  ✗ No incremental saves or resume capability[/dim]\n")
-        else:
-            self.console.print("[cyan]🔄 Sequential mode:[/cyan] Generates chapters one at a time")
-            self.console.print("[dim]  ✓ Incremental saves (can inspect partial results)[/dim]")
-            self.console.print("[dim]  ✓ Resume capability (continue after interruption)[/dim]")
-            self.console.print("[dim]  ✓ Detailed validation for each chapter[/dim]")
-            self.console.print("[dim]  ℹ️  Use --single flag for higher quality if duplication occurs[/dim]\n")
-
         # Check if multi-model mode is enabled
         generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
         if self.settings.multi_model_mode:
-            mode_label = "🏆 Generating chapter outlines with multi-model competition"
-            if auto_fix:
-                mode_label += " (auto-fix enabled)"
-            if single_shot:
-                mode_label += " (single-shot mode)"
-            self.console.print(f"[cyan]{mode_label}...[/cyan]\n")
-
-            # Note: Multi-model competition doesn't support single-shot mode
-            if single_shot:
-                self.console.print("[yellow]Note: Single-shot mode not supported in multi-model competition[/yellow]")
+            self.console.print(f"[cyan]🏆 Generating chapter outlines with multi-model competition...[/cyan]\n")
 
             chapters = await generator.generate_with_competition(
                 chapter_count=chapter_count,
-                total_words=total_words,
-                auto_fix=auto_fix
+                total_words=total_words
             )
             commit_prefix = "Generate (multi-model)"
         else:
-            mode_label = "Generating chapter outlines"
-            if auto_fix:
-                mode_label += " (auto-fix enabled)"
-            if single_shot:
-                mode_label += " (single-shot: all chapters in one call)"
-            self.console.print(f"[cyan]{mode_label}...[/cyan]\n")
+            self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
             chapters = await generator.generate(
                 chapter_count=chapter_count,
-                total_words=total_words,
-                auto_fix=auto_fix,
-                single=single_shot  # Pass the single-shot flag
+                total_words=total_words
             )
             commit_prefix = "Generate"
 
