@@ -30,7 +30,6 @@ class ChapterGenerator:
     - chapter-beats/chapter-01.yaml     (chapter 1 outline)
     - chapter-beats/chapter-02.yaml     (chapter 2 outline)
     - chapter-beats/chapter-NN.yaml     (chapter N outline)
-    - chapters.yaml                     (complete structure for backward compatibility)
 
     Benefits:
     - Global arc planning prevents duplicate events
@@ -52,8 +51,8 @@ class ChapterGenerator:
 
     BACKWARD COMPATIBILITY:
     =======================
-    Old format (chapters.yaml) supported for reading.
-    New generations create both chapter-beats/ files and chapters.yaml.
+    Old format (chapters.yaml) supported for READING legacy projects only.
+    New generations write ONLY to chapter-beats/ directory (never chapters.yaml).
     """
 
     def __init__(self, client: OpenRouterClient, project: Project, model: str):
@@ -1582,20 +1581,7 @@ IMPORTANT:
             if not chapters_data:
                 raise Exception("Empty chapters list in response")
 
-            # Combine foundation with chapters to create the full structure
-            full_structure = {
-                **foundation,  # Include metadata, characters, world
-                'chapters': chapters_data  # Add the generated chapters
-            }
-
-            # Save the complete structure
-            chapters_yaml_path = self.project.path / 'chapters.yaml'
-            chapters_yaml_path.write_text(
-                yaml.dump(full_structure, sort_keys=False, allow_unicode=True),
-                encoding='utf-8'
-            )
-
-            # Also save individual chapter beat files for consistency with sequential mode
+            # Save individual chapter beat files (ONLY format - no chapters.yaml)
             beats_dir = self.project.path / 'chapter-beats'
             beats_dir.mkdir(exist_ok=True)
 
@@ -1618,7 +1604,7 @@ IMPORTANT:
                     )
 
             if logger:
-                logger.debug(f"Saved {len(chapters_data)} chapters to chapters.yaml and individual beat files")
+                logger.debug(f"Saved {len(chapters_data)} chapters to individual beat files")
 
             # Convert to ChapterOutline objects
             chapters = []
