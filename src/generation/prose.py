@@ -495,24 +495,43 @@ Return ONLY the JSON, no additional commentary."""
         # Get previous chapters for context
         prev_chapters = [ch for ch in chapters if ch['number'] < chapter_number]
 
-        # Build previous chapters summary
+        # Build previous chapters context with FULL PROSE (authoritative)
         prev_summary = ""
         if prev_chapters:
-            prev_summary = "\nPREVIOUS CHAPTERS SUMMARY:\n"
+            prev_summary = "\nPREVIOUS CHAPTERS (full prose - authoritative):\n"
             for ch in prev_chapters:
-                prev_summary += f"\nChapter {ch['number']}: {ch['title']}\n"
-                prev_summary += f"Summary: {ch.get('summary', 'N/A')}\n"
+                prev_summary += f"\n{'='*70}\n"
+                prev_summary += f"Chapter {ch['number']}: {ch['title']}\n"
+                prev_summary += f"{'='*70}\n\n"
+
                 # Check if prose exists for this chapter
                 prose_file = self.project.chapters_dir / f"chapter-{ch['number']:02d}.md"
                 if prose_file.exists():
+                    # Include FULL PROSE (authoritative - not outline)
                     prose_text = prose_file.read_text(encoding='utf-8')
-                    # Include last paragraph for continuity
-                    paragraphs = [p.strip() for p in prose_text.split('\n\n') if p.strip()]
-                    if paragraphs:
-                        prev_summary += f"Ending: ...{paragraphs[-1]}\n"
+                    # Strip chapter header if present
+                    if prose_text.startswith(f"# Chapter {ch['number']}:"):
+                        prose_text = '\n'.join(prose_text.split('\n')[1:]).strip()
+                    prev_summary += f"{prose_text}\n\n"
+                else:
+                    # Fallback to outline summary (if prose not yet generated)
+                    prev_summary += f"Summary (from outline): {ch.get('summary', 'N/A')}\n"
+                    prev_summary += f"Note: Full prose not yet generated for this chapter\n\n"
 
-        # Serialize to YAML for prompt
-        chapters_yaml = yaml.dump(chapters_data, sort_keys=False)
+        # Build modified chapters_data excluding previous chapter outlines (only current + future)
+        # This prevents confusion about authority - prose is authoritative for completed chapters
+        modified_chapters_data = {
+            'metadata': chapters_data.get('metadata', {}),
+            'characters': chapters_data.get('characters', []),
+            'world': chapters_data.get('world', {}),
+            'chapters': [
+                ch for ch in chapters
+                if ch['number'] >= chapter_number  # Only current + future chapters
+            ]
+        }
+
+        # Serialize modified context to YAML for prompt
+        chapters_yaml = yaml.dump(modified_chapters_data, sort_keys=False)
 
         # Build prose generation prompt
         word_count_target = current_chapter.get('word_count_target', 3000)
