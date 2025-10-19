@@ -42,23 +42,75 @@ class ChapterOutline(BaseModel):
         # Clean up key_events field - handle mixed formats (string vs dict)
         # LLM sometimes returns structured scenes format instead of simple strings
         if 'key_events' in filtered_data:
+            from ..utils.logging import get_logger
+            logger = get_logger()
+
             cleaned_events = []
-            for event in filtered_data['key_events']:
+            for i, event in enumerate(filtered_data['key_events']):
                 if isinstance(event, str):
+                    # Already a string - use as-is
                     cleaned_events.append(event)
+
                 elif isinstance(event, dict):
-                    # Extract string representation from dict (scenes format)
-                    # Prefer 'scene' field, fallback to first string value found
-                    if 'scene' in event:
-                        cleaned_events.append(event['scene'])
-                    elif 'note' in event:
-                        cleaned_events.append(event['note'])
+                    # Extract string from dict (prefer 'scene', then 'note', then first string value)
+                    extracted = None
+
+                    # Try 'scene' field first (with type checking)
+                    if 'scene' in event and isinstance(event['scene'], str):
+                        extracted = event['scene']
+                        if logger:
+                            logger.debug(f"key_events[{i}]: Extracted from 'scene' field")
+
+                    # Try 'note' field (with type checking)
+                    elif 'note' in event and isinstance(event['note'], str):
+                        extracted = event['note']
+                        if logger:
+                            logger.debug(f"key_events[{i}]: Extracted from 'note' field")
+
                     else:
-                        # Fallback: use first string value found in dict
-                        for v in event.values():
-                            if isinstance(v, str):
-                                cleaned_events.append(v)
+                        # Fallback: find first string value in dict
+                        for key, value in event.items():
+                            if isinstance(value, str):
+                                extracted = value
+                                if logger:
+                                    logger.debug(f"key_events[{i}]: Extracted from '{key}' field")
                                 break
+
+                    # If we found a string, use it. Otherwise convert dict to string representation
+                    if extracted:
+                        cleaned_events.append(extracted)
+                    else:
+                        # No string found - convert to string representation as fallback
+                        # Use first value or str(dict) if empty
+                        if event:
+                            fallback_str = str(next(iter(event.values())))
+                            cleaned_events.append(fallback_str)
+                            if logger:
+                                logger.warning(f"key_events[{i}]: No string found in dict, converted to string: {fallback_str[:50]}...")
+                        else:
+                            # Empty dict - skip with warning
+                            if logger:
+                                logger.warning(f"key_events[{i}]: Empty dict, skipping event")
+
+                elif event is None:
+                    # None - skip with warning
+                    if logger:
+                        logger.warning(f"key_events[{i}]: None value, skipping event")
+
+                elif isinstance(event, (list, tuple)):
+                    # List/tuple - join items into string
+                    event_str = ', '.join(str(item) for item in event)
+                    cleaned_events.append(event_str)
+                    if logger:
+                        logger.warning(f"key_events[{i}]: Converted {type(event).__name__} to string: {event_str[:50]}...")
+
+                else:
+                    # Other types (int, bool, etc.) - convert to string
+                    event_str = str(event)
+                    cleaned_events.append(event_str)
+                    if logger:
+                        logger.warning(f"key_events[{i}]: Converted {type(event).__name__} to string: {event_str[:50]}...")
+
             filtered_data['key_events'] = cleaned_events
 
         return cls(**filtered_data)
