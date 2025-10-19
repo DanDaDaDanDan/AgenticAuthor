@@ -758,7 +758,7 @@ IMPORTANT:
         total_words: Optional[int] = None,
         template: Optional[str] = None,
         feedback: Optional[str] = None
-    ) -> List[ChapterOutline]:
+    ) -> Dict[str, Any]:
         """
         Generate chapter outlines using single-shot generation.
 
@@ -782,7 +782,7 @@ IMPORTANT:
             feedback: Optional user feedback to incorporate (for iteration)
 
         Returns:
-            List of ChapterOutline objects
+            Dict with: count, files_saved, total_words
         """
         from ..utils.logging import get_logger
         logger = get_logger()
@@ -1099,7 +1099,7 @@ Regenerate the foundation addressing the issues above.
         genre: str,
         pacing: str,
         feedback: Optional[str] = None
-    ) -> List[ChapterOutline]:
+    ) -> Dict[str, Any]:
         """
         Generate all chapters in a single LLM call using OLD PROVEN FORMAT.
 
@@ -1119,7 +1119,7 @@ Regenerate the foundation addressing the issues above.
             feedback: Optional feedback for iteration
 
         Returns:
-            List of ChapterOutline objects
+            Dict with: count, files_saved, total_words
         """
         from ..utils.logging import get_logger
         logger = get_logger()
@@ -1208,39 +1208,47 @@ chapters:
     act: "Act I"
     summary: "..."
     key_events:
-      - "..."
-      - "..."
-      - "..."
-      - "..."
-      - "..."
-      - "..."
-      - "..."
-      - "..."
+      - "First event description"
+      - "Second event description"
+      - "Third event description"
+      - "Fourth event description"
+      - "Fifth event description"
+      - "Sixth event description"
+      - "Seventh event description"
+      - "Eighth event description"
     character_developments:
-      - "..."
-      - "..."
-      - "..."
+      - "First development"
+      - "Second development"
+      - "Third development"
     relationship_beats:
-      - "..."
-      - "..."
+      - "First relationship change"
+      - "Second relationship change"
     tension_points:
-      - "..."
-      - "..."
+      - "First tension point"
+      - "Second tension point"
     sensory_details:
-      - "..."
-      - "..."
+      - "First sensory detail"
+      - "Second sensory detail"
     subplot_threads:
-      - "..."
+      - "First subplot thread"
     word_count_target: XXXX
   - number: 2
     title: "..."
     # ... continue for all {chapter_count} chapters
+
+CRITICAL YAML SYNTAX RULES:
+- ALWAYS wrap ALL list items in double quotes: - "Event text"
+- NEVER use unquoted text with colons in list items
+- For dialogue in events, use single quotes inside doubles: - "He said: 'Hello'."
+- Do NOT use bare text with colons like: - Detective says: 'something'  ← INVALID!
+- CORRECT format: - "Detective says: 'something'"  ← Always quote the whole item
 
 IMPORTANT:
 - Do NOT wrap in markdown code fences
 - Return ONLY the YAML content starting with "chapters:"
 - Each chapter must have UNIQUE plot events (no duplication across chapters)
 - Character arcs must PROGRESS linearly (no repeated development beats)
+- Follow YAML syntax rules above to avoid parsing errors
 """
 
         # Generate with API
@@ -1259,7 +1267,7 @@ IMPORTANT:
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting."},
+                    {"role": "system", "content": "You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting. CRITICAL: All YAML list items MUST be fully quoted strings. Never use unquoted text with colons in list items. Format: - \"Event text here\"."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,  # Slightly higher for creative variety across chapters
@@ -1326,19 +1334,19 @@ IMPORTANT:
             if logger:
                 logger.debug(f"Saved {len(chapters_data)} chapters to individual beat files")
 
-            # Convert to ChapterOutline objects
-            chapters = []
-            for chapter_dict in chapters_data:
-                chapter = ChapterOutline.from_api_response(chapter_dict)
-                chapters.append(chapter)
+            # Basic validation (no ChapterOutline conversion - files are source of truth)
+            chapter_count_saved = len([ch for ch in chapters_data if ch.get('number')])
+            total_word_target = sum(ch.get('word_count_target', 0) for ch in chapters_data)
 
-            self.console.print(f"\n[green]✓[/green] Generated {len(chapters)} chapters successfully")
+            self.console.print(f"\n[green]✓[/green] Generated {chapter_count_saved} chapters successfully")
+            self.console.print(f"[dim]Total word target: {total_word_target:,} words[/dim]")
 
-            # Calculate total words
-            total_generated = sum(ch.word_count_target for ch in chapters)
-            self.console.print(f"[dim]Total word target: {total_generated:,} words[/dim]")
-
-            return chapters
+            # Return summary dict (not ChapterOutline objects)
+            return {
+                'count': len(chapters_data),
+                'files_saved': chapter_count_saved,
+                'total_words': total_word_target
+            }
 
         except Exception as e:
             if logger:
