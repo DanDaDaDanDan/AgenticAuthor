@@ -2160,9 +2160,9 @@ Regenerate the foundation addressing the issues above.
         # Ensure git repo exists
         self._ensure_git_repo()
 
-        # Check for chapter outlines
-        chapters_file = self.project.path / "chapters.yaml"
-        if not chapters_file.exists():
+        # Check for chapter outlines using new architecture
+        chapters_data = self.project.get_chapters_yaml()
+        if not chapters_data or not chapters_data.get('chapters'):
             self.console.print("[yellow]No chapter outlines found. Generate chapters first with /generate chapters[/yellow]")
             return
 
