@@ -1098,7 +1098,9 @@ Regenerate the foundation addressing the issues above.
         chapter_count: Optional[int],
         genre: str,
         pacing: str,
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
+        temperature: float = 0.7,
+        output_dir: Optional[Path] = None
     ) -> Dict[str, Any]:
         """
         Generate all chapters in a single LLM call using OLD PROVEN FORMAT.
@@ -1117,6 +1119,8 @@ Regenerate the foundation addressing the issues above.
             genre: Story genre
             pacing: Story pacing
             feedback: Optional feedback for iteration
+            temperature: LLM temperature (default 0.7, higher = more creative)
+            output_dir: Custom output directory (default: project.chapter_beats_dir)
 
         Returns:
             Dict with: count, files_saved, total_words
@@ -1267,7 +1271,7 @@ IMPORTANT:
                     {"role": "system", "content": "You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting. CRITICAL: All YAML list items MUST be fully quoted strings. Never use unquoted text with colons in list items. Format: - \"Event text here\"."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,  # Slightly higher for creative variety across chapters
+                temperature=temperature,  # Use parameter for temperature variation
                 display=True,
                 display_label=f"Generating all {chapter_count} chapters",
                 min_response_tokens=estimated_response_tokens
@@ -1307,8 +1311,13 @@ IMPORTANT:
                 raise Exception("Empty chapters list in response")
 
             # Save individual chapter beat files (ONLY format - no chapters.yaml)
-            beats_dir = self.project.path / 'chapter-beats'
-            beats_dir.mkdir(exist_ok=True)
+            # Use custom output_dir if provided, otherwise use default chapter-beats/
+            if output_dir is None:
+                beats_dir = self.project.chapter_beats_dir
+            else:
+                beats_dir = output_dir
+
+            beats_dir.mkdir(parents=True, exist_ok=True)
 
             # Save foundation if not already saved
             foundation_path = beats_dir / 'foundation.yaml'

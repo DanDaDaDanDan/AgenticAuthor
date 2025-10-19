@@ -43,6 +43,8 @@ class CullManager:
         """
         Delete chapter-beats/ directory (foundation + all chapters) and cascade to prose.
 
+        Also deletes chapter-beats-variants/ directory if present (multi-variant generation artifacts).
+
         Returns:
             Dict with deleted_files list
         """
@@ -51,7 +53,7 @@ class CullManager:
 
         deleted_files = []
 
-        # Delete entire chapter-beats/ directory
+        # Delete entire chapter-beats/ directory (finalized chapters)
         beats_dir = self.project.chapter_beats_dir
 
         if logger:
@@ -94,6 +96,58 @@ class CullManager:
             except OSError as e:
                 if logger:
                     logger.debug(f"Could not remove directory (not empty or error): {e}")
+
+        # NEW: Delete chapter-beats-variants/ directory (multi-variant artifacts)
+        variants_dir = self.project.path / 'chapter-beats-variants'
+
+        if logger:
+            logger.debug(f"Cull chapters: checking variants directory {variants_dir}")
+            logger.debug(f"Variants directory exists: {variants_dir.exists()}")
+
+        if variants_dir.exists():
+            # Delete all variant-N/ subdirectories
+            for variant_dir in variants_dir.glob('variant-*'):
+                if variant_dir.is_dir():
+                    # Delete all chapter files in this variant
+                    for chapter_file in variant_dir.glob('*.yaml'):
+                        if logger:
+                            logger.debug(f"Deleting variant file: {chapter_file}")
+                        chapter_file.unlink()
+                        deleted_files.append(str(chapter_file.relative_to(self.project.path)))
+
+                    # Remove variant directory
+                    try:
+                        variant_dir.rmdir()
+                        if logger:
+                            logger.debug(f"Removed variant directory: {variant_dir}")
+                    except OSError as e:
+                        if logger:
+                            logger.debug(f"Could not remove variant directory: {e}")
+
+            # Delete shared foundation.yaml
+            foundation_file = variants_dir / 'foundation.yaml'
+            if foundation_file.exists():
+                if logger:
+                    logger.debug(f"Deleting variants foundation: {foundation_file}")
+                foundation_file.unlink()
+                deleted_files.append(str(foundation_file.relative_to(self.project.path)))
+
+            # Delete decision.json if present
+            decision_file = variants_dir / 'decision.json'
+            if decision_file.exists():
+                if logger:
+                    logger.debug(f"Deleting decision file: {decision_file}")
+                decision_file.unlink()
+                deleted_files.append(str(decision_file.relative_to(self.project.path)))
+
+            # Try to remove variants directory
+            try:
+                variants_dir.rmdir()
+                if logger:
+                    logger.debug(f"Removed variants directory: {variants_dir}")
+            except OSError as e:
+                if logger:
+                    logger.debug(f"Could not remove variants directory: {e}")
 
         # Also delete legacy chapters.yaml if it exists
         legacy_chapters_file = self.project.path / "chapters.yaml"

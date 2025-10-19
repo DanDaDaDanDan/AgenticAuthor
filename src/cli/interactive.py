@@ -69,6 +69,7 @@ class InteractiveSession:
             'model': self.change_model,
             'models': self.list_models,
             'generate': self.generate_content,
+            'finalize': self.finalize_content,
             'iterate': self.iterate_content,
             'cull': self.cull_content,
             'analyze': self.analyze_story,
@@ -1337,6 +1338,128 @@ class InteractiveSession:
         except Exception as e:
             self.console.print(f"[red]Generation failed: {e}[/red]")
 
+    async def finalize_content(self, args: str):
+        """
+        Finalize chapter variants by judging and selecting winner.
+
+        Usage: /finalize chapters
+        """
+        if not self.project:
+            self.console.print("[yellow]No project loaded. Use /new or /open first.[/yellow]")
+            return
+
+        if not self.client:
+            self.console.print("[red]API client not initialized[/red]")
+            return
+
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
+        # Parse finalize type
+        parts = args.strip().split(None, 1)
+        if not parts:
+            self.console.print("[yellow]Usage: /finalize chapters[/yellow]")
+            return
+
+        finalize_type = parts[0].lower()
+
+        if finalize_type != "chapters":
+            self.console.print(f"[red]Unknown finalize type: {finalize_type}[/red]")
+            self.console.print("[dim]Valid types: chapters[/dim]")
+            return
+
+        try:
+            await self._finalize_chapters()
+        except Exception as e:
+            self.console.print(f"[red]Finalization failed: {e}[/red]")
+            from ..utils.logging import get_logger
+            logger = get_logger()
+            if logger:
+                logger.error(f"Finalization error: {e}")
+
+    async def _finalize_chapters(self):
+        """
+        Judge chapter variants and finalize winner to chapter-beats/.
+
+        This method:
+        1. Loads all variants from chapter-beats-variants/
+        2. Calls LLM judge to evaluate and select best variant
+        3. Copies winning variant to chapter-beats/ directory
+        4. Saves decision record to decision.json
+        """
+        from ..generation.variants import VariantManager
+        from ..generation.judging import JudgingCoordinator
+
+        # Check for variants directory
+        variants_dir = self.project.path / 'chapter-beats-variants'
+        if not variants_dir.exists():
+            self.console.print("[yellow]No variants found. Generate chapter variants first with /generate chapters[/yellow]")
+            return
+
+        # Load variant manager and judging coordinator
+        # Note: We need a ChapterGenerator instance for VariantManager, but we're only using it for reading variants
+        from ..generation.chapters import ChapterGenerator
+        generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
+
+        variant_manager = VariantManager(generator, self.project)
+        judging_coordinator = JudgingCoordinator(self.client, self.project, model=self.settings.active_model)
+
+        # Load foundation
+        foundation = variant_manager.get_foundation()
+        if not foundation:
+            self.console.print("[red]Foundation not found in variants directory[/red]")
+            self.console.print("[dim]Expected: chapter-beats-variants/foundation.yaml[/dim]")
+            return
+
+        # Load all variant data
+        variants_data = variant_manager.get_all_variants_data()
+
+        if not variants_data:
+            self.console.print("[yellow]No variant chapter data found[/yellow]")
+            self.console.print("[dim]Expected: chapter-beats-variants/variant-1/, variant-2/, etc.[/dim]")
+            return
+
+        if len(variants_data) < 2:
+            self.console.print(f"[yellow]Only {len(variants_data)} variant(s) found. Need at least 2 to judge.[/yellow]")
+            return
+
+        self.console.rule(style="dim")
+        self.console.print(f"[cyan]Loaded {len(variants_data)} variants for judging[/cyan]\n")
+
+        # Display variant summary
+        for variant_num in sorted(variants_data.keys()):
+            chapters = variants_data[variant_num]
+            chapter_count = len(chapters)
+            total_words = sum(ch.get('word_count_target', 0) for ch in chapters)
+
+            # Get variant config label
+            from ..generation.variants import VARIANT_CONFIGS
+            config = next((c for c in VARIANT_CONFIGS if c['variant'] == variant_num), None)
+            label = config['label'] if config else f"Temperature {config['temperature']}" if config else ""
+
+            self.console.print(f"  • Variant {variant_num} ({label}): {chapter_count} chapters, {total_words:,} words")
+
+        self.console.print()
+
+        # Judge and finalize
+        try:
+            winner = await judging_coordinator.judge_and_finalize(
+                foundation=foundation,
+                variants_data=variants_data
+            )
+
+            # Success - commit changes
+            self._commit(f"Finalize chapters: selected Variant {winner}")
+
+            self.console.print(f"[green]✓ Chapter finalization complete[/green]")
+            self.console.print(f"\n[yellow]→ Next step: /generate prose (generate full prose from finalized chapters)[/yellow]")
+
+        except KeyboardInterrupt:
+            self.console.print("\n[yellow]Finalization cancelled by user[/yellow]")
+        except Exception as e:
+            self.console.print(f"\n[red]Finalization error: {e}[/red]")
+            raise
+
     async def _generate_premise(self, user_input: str = ""):
         """Generate story premise with enhanced genre and taxonomy support."""
         # Ensure git repo exists
@@ -1780,7 +1903,12 @@ class InteractiveSession:
             self.console.print("[red]Failed to generate treatment[/red]")
 
     async def _generate_chapters(self, options: str = ""):
-        """Generate chapter outlines."""
+        """
+        Generate chapter outline variants using multi-variant generation.
+
+        Creates 4 variants with different temperatures (0.65, 0.70, 0.75, 0.80)
+        saved to chapter-beats-variants/ for judging with /finalize chapters.
+        """
         # Ensure git repo exists
         self._ensure_git_repo()
 
@@ -1805,32 +1933,112 @@ class InteractiveSession:
 
         self.console.rule(style="dim")
 
-        # Generate chapter outlines
+        # Create chapter generator for foundation
+        from ..generation.chapters import ChapterGenerator
+        from ..generation.variants import VariantManager
+        from ..generation.lod_context import LODContextBuilder
+
         generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
-        self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
-        result = await generator.generate(
-            chapter_count=chapter_count,
-            total_words=total_words
+
+        # Build context for foundation generation
+        context_builder = LODContextBuilder()
+        context = context_builder.build_context(
+            project=self.project,
+            context_level='treatment',
+            include_downstream=False
         )
-        commit_prefix = "Generate"
 
-        if result:
-            # Result is now a dict: {count, files_saved, total_words}
-            # Chapters are saved to individual files in chapter-beats/
-            count = result.get('count', 0)
-            files_saved = result.get('files_saved', 0)
-            total_words_target = result.get('total_words', 0)
+        if 'premise' not in context:
+            self.console.print("[yellow]No premise found. Generate premise first with /generate premise[/yellow]")
+            return
 
-            self.console.print()  # Blank line
-            self.console.rule(style="dim")
-            self.console.print(f"[green]✓  Generated {files_saved} chapter outlines[/green]")
-            self.console.print(f"[dim]Total word target: {total_words_target:,} words[/dim]")
-            self.console.print(f"[dim]Saved to chapter-beats/ directory[/dim]")
+        if 'treatment' not in context:
+            self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
+            return
 
-            # Git commit
-            self._commit(f"{commit_prefix} {files_saved} chapter outlines")
+        # Get taxonomy and genre for smart defaults
+        taxonomy_data = self.project.get_taxonomy() or {}
+        premise_metadata = context.get('premise', {}).get('metadata', {})
+        genre = premise_metadata.get('genre') or self.project.metadata.genre if self.project.metadata else None
+
+        # Extract pacing
+        pacing_value = taxonomy_data.get('pacing', 'moderate')
+        if isinstance(pacing_value, list) and pacing_value:
+            pacing = pacing_value[0]
         else:
-            self.console.print("[red]Failed to generate chapters[/red]")
+            pacing = pacing_value if isinstance(pacing_value, str) else 'moderate'
+
+        # Extract length_scope
+        length_scope_value = taxonomy_data.get('length_scope')
+        if isinstance(length_scope_value, list) and length_scope_value:
+            length_scope = length_scope_value[0]
+        else:
+            length_scope = length_scope_value if isinstance(length_scope_value, str) else None
+
+        # Calculate structure if needed
+        if total_words is None:
+            from ..generation.depth_calculator import DepthCalculator
+            total_words = DepthCalculator.get_default_word_count(length_scope or 'novel', genre or 'general')
+
+        if chapter_count is None:
+            from ..generation.depth_calculator import DepthCalculator
+            structure = DepthCalculator.calculate_structure(total_words, pacing, length_scope)
+            chapter_count = structure['chapter_count']
+
+        # Generate foundation (ONCE for all variants)
+        self.console.print(f"[cyan][1/2] Generating foundation (metadata + characters + world)...[/cyan]\n")
+
+        original_concept = premise_metadata.get('original_concept', '')
+        unique_elements = premise_metadata.get('unique_elements', [])
+
+        context_yaml = context_builder.to_yaml_string(context)
+
+        foundation = await generator._generate_foundation(
+            context_yaml=context_yaml,
+            taxonomy_data=taxonomy_data,
+            total_words=total_words,
+            chapter_count=chapter_count,
+            original_concept=original_concept,
+            unique_elements=unique_elements,
+            feedback=None,
+            genre=genre
+        )
+
+        self.console.print(f"[green]✓ Foundation complete[/green]\n")
+
+        # Generate 4 variants in parallel
+        self.console.print(f"[cyan][2/2] Generating 4 chapter outline variants in parallel...[/cyan]\n")
+
+        variant_manager = VariantManager(generator, self.project)
+
+        try:
+            successful_variants = await variant_manager.generate_variants(
+                context=context,
+                foundation=foundation,
+                total_words=total_words,
+                chapter_count=chapter_count,
+                genre=genre or 'general',
+                pacing=pacing
+            )
+
+            if successful_variants:
+                self.console.print()  # Blank line
+                self.console.rule(style="dim")
+                self.console.print(f"[green]✓  Generated {len(successful_variants)} variants[/green]")
+                self.console.print(f"[dim]Variants saved to chapter-beats-variants/ directory[/dim]")
+                self.console.print(f"\n[yellow]→ Next step: /finalize chapters (judge variants and select winner)[/yellow]")
+
+                # Git commit
+                self._commit(f"Generate {len(successful_variants)} chapter outline variants")
+            else:
+                self.console.print("[red]Failed to generate chapter variants[/red]")
+
+        except Exception as e:
+            self.console.print(f"[red]Variant generation failed: {e}[/red]")
+            from ..utils.logging import get_logger
+            logger = get_logger()
+            if logger:
+                logger.error(f"Variant generation error: {e}")
 
     async def _generate_prose(self, options: str = ""):
         """Generate prose for chapters with full sequential context."""
