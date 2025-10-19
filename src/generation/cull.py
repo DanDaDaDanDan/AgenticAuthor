@@ -254,3 +254,67 @@ class CullManager:
             'updated_files': [],
             'count': len(deleted_files)
         }
+
+    def cull_debug(self) -> Dict[str, Any]:
+        """
+        Delete all files in .agentic/ directory (logs, debug files, history, etc.).
+
+        This cleans up all debug artifacts, session logs, and temporary files
+        without affecting generated content (premise, treatment, chapters, prose).
+
+        Returns:
+            Dict with deleted_files list
+        """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        deleted_files = []
+
+        # .agentic directory path
+        agentic_dir = self.project.path / '.agentic'
+
+        if logger:
+            logger.debug(f"Cull debug: checking directory {agentic_dir}")
+            logger.debug(f"Directory exists: {agentic_dir.exists()}")
+
+        if not agentic_dir.exists():
+            if logger:
+                logger.debug("Cull debug: .agentic directory does not exist, nothing to delete")
+            return {
+                'deleted_files': deleted_files,
+                'updated_files': [],
+                'count': 0
+            }
+
+        # Recursively delete all files and subdirectories in .agentic/
+        # Keep the .agentic directory itself
+        def delete_recursively(directory: Path):
+            """Helper to recursively delete all contents of a directory."""
+            for item in directory.iterdir():
+                if item.is_file():
+                    if logger:
+                        logger.debug(f"Deleting file: {item}")
+                    item.unlink()
+                    deleted_files.append(str(item.relative_to(self.project.path)))
+                elif item.is_dir():
+                    # Recursively delete subdirectory contents
+                    delete_recursively(item)
+                    # Remove the now-empty subdirectory
+                    try:
+                        item.rmdir()
+                        if logger:
+                            logger.debug(f"Removed directory: {item}")
+                    except OSError as e:
+                        if logger:
+                            logger.debug(f"Could not remove directory {item}: {e}")
+
+        delete_recursively(agentic_dir)
+
+        if logger:
+            logger.debug(f"Cull debug complete: deleted {len(deleted_files)} files")
+
+        return {
+            'deleted_files': deleted_files,
+            'updated_files': [],
+            'count': len(deleted_files)
+        }

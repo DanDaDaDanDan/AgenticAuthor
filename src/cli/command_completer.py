@@ -230,7 +230,7 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/analyze [type]'
         },
         'cull': {
-            'description': 'Delete generated content (prose/chapters/treatment/premise)',
+            'description': 'Delete generated content (prose/chapters/treatment/premise/debug)',
             'usage': '/cull <target>'
         },
         'metadata': {

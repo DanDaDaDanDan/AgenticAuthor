@@ -2571,10 +2571,11 @@ Regenerate the foundation addressing the issues above.
             self._print("  [bold]/cull chapters[/bold]    - Delete chapter-beats/ (foundation + all chapters) + prose")
             self._print("  [bold]/cull treatment[/bold]   - Delete treatment/ + chapters + prose")
             self._print("  [bold]/cull premise[/bold]     - Delete premise/ + all downstream")
+            self._print("  [bold]/cull debug[/bold]       - Delete all .agentic/ files (logs, debug, history)")
             return
 
         target = args.strip().lower()
-        valid_targets = ['prose', 'chapters', 'treatment', 'premise']
+        valid_targets = ['prose', 'chapters', 'treatment', 'premise', 'debug']
 
         if target not in valid_targets:
             self._print(f"[red]Invalid target:[/red] {target}")
@@ -2583,7 +2584,10 @@ Regenerate the foundation addressing the issues above.
 
         # Confirm deletion
         from rich.prompt import Confirm
-        confirmed = Confirm.ask(f"Delete {target} and all downstream content?")
+        if target == 'debug':
+            confirmed = Confirm.ask(f"Delete all debug files in .agentic/ directory?")
+        else:
+            confirmed = Confirm.ask(f"Delete {target} and all downstream content?")
 
         if not confirmed:
             self._print("[dim]Cancelled[/dim]")
@@ -2606,6 +2610,8 @@ Regenerate the foundation addressing the issues above.
                 result = cull_manager.cull_treatment()
             elif target == 'premise':
                 result = cull_manager.cull_premise()
+            elif target == 'debug':
+                result = cull_manager.cull_debug()
 
             # Show results
             if result['deleted_files']:
@@ -2615,8 +2621,8 @@ Regenerate the foundation addressing the issues above.
             else:
                 self._print(f"[dim]No files to delete[/dim]")
 
-            # Commit changes
-            if result['deleted_files']:
+            # Commit changes (skip for debug - those files are .gitignored)
+            if result['deleted_files'] and target != 'debug':
                 self._commit(f"Cull {target}")
                 self._print(f"\n[green]✓ Changes committed[/green]")
 
