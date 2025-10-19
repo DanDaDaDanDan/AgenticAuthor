@@ -15,10 +15,10 @@ from .chapters import ChapterGenerator
 
 # Variant configuration with temperature variation
 VARIANT_CONFIGS = [
-    {"variant": 1, "temperature": 0.65, "label": "Conservative"},
-    {"variant": 2, "temperature": 0.70, "label": "Balanced-Conservative"},
-    {"variant": 3, "temperature": 0.75, "label": "Balanced-Creative"},
-    {"variant": 4, "temperature": 0.80, "label": "Creative"},
+    {"variant": 1, "temperature": 0.55, "label": "Conservative"},
+    {"variant": 2, "temperature": 0.60, "label": "Balanced-Conservative"},
+    {"variant": 3, "temperature": 0.65, "label": "Balanced-Creative"},
+    {"variant": 4, "temperature": 0.70, "label": "Creative"},
 ]
 
 
