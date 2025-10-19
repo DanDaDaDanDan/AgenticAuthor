@@ -163,10 +163,9 @@ except ValueError as e:
 2. **LODResponseParser** (`src/generation/lod_parser.py`)
    - Splits LLM's unified YAML back to individual files
    - Methods:
-     - `parse_and_save(response, project, target_lod, original_context, dry_run=False)`
+     - `parse_and_save(response, project, target_lod, original_context)`
      - `_validate_response(data, target_lod)` - Ensures complete response
      - `_apply_culling(project, target_lod, llm_data)` - Deletes downstream (deprecated)
-     - `_simulate_culling(...)` - Dry-run version for multi-model
    - Features:
      - Automatic markdown fence stripping
      - Validation and file-saving logic
@@ -247,65 +246,11 @@ Return ONLY the YAML content."""
             response=response_text,
             project=self.project,
             target_lod='treatment',
-            original_context=context,
-            dry_run=False  # Set True for multi-model competition
+            original_context=context
         )
 
         # 6. Return saved content
         return self.project.get_treatment()
-```
-
-#### Multi-Model Competition Pattern
-
-```python
-async def generate_with_competition(self, **kwargs):
-    # Build context once
-    context = self.context_builder.build_context(...)
-    context_yaml = self.context_builder.to_yaml_string(context)
-
-    # Build prompt
-    prompt = f"""..."""
-
-    # Competitor function
-    async def generate_with_model(model: str) -> str:
-        result = await self.client.streaming_completion(
-            model=model,
-            messages=[...],
-            ...
-        )
-
-        response_text = result.get('content', result) if isinstance(result, dict) else result
-
-        # Validate but DON'T save (dry_run=True)
-        parse_result = self.parser.parse_and_save(
-            response=response_text,
-            project=self.project,
-            target_lod='treatment',
-            original_context=context,
-            dry_run=True  # CRITICAL: Don't save during competition
-        )
-
-        return response_text  # Return for comparison
-
-    # Run competition
-    multi_gen = MultiModelGenerator(self.client, self.project)
-    competition_result = await multi_gen.generate_parallel(
-        generator_func=generate_with_model,
-        content_type="treatment",
-        ...
-    )
-
-    # Save winner for real
-    winning_response = competition_result['winner']['content']
-    parse_result = self.parser.parse_and_save(
-        response=winning_response,
-        project=self.project,
-        target_lod='treatment',
-        original_context=context,
-        dry_run=False  # Actually save this time
-    )
-
-    return self.project.get_treatment()
 ```
 
 #### Content Deletion with CullManager
@@ -1085,7 +1030,7 @@ async def _validate_treatment_fidelity(
 **Generation**: 0.6 (stricter than default 0.7)
 - Foundation generation: `temperature=0.6`
 - Chapter generation: `temperature=0.6`
-- Applied to: foundation, chapters, retry logic, multimodel competition
+- Applied to: foundation, chapters, retry logic
 
 **Validation**: 0.1 (strict consistency)
 - Foundation validation: `temperature=0.1`
@@ -1427,7 +1372,6 @@ Just redistributes between edited and original - doesn't grow!
 ## Future Architecture Considerations
 
 - Plugin system for custom generators
-- Multi-model orchestration
 - Real-time collaboration support
 - Cloud storage integration
 

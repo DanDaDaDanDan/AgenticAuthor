@@ -43,10 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
        - ✅ ALLOWED: Dialogue specifics, sensory details, minor characters, scene transitions, internal thoughts
     5. Lowered temperature: 0.6 → 0.3 (faithful extraction, not creative generation)
     6. Updated system message: "story structure extraction specialist who never invents plot"
-  - **Applied to**: Both sequential generation and competition mode for consistency
+  - **Applied to**: Sequential generation
   - **Expected Impact**: Reduce treatment fidelity violations from ~50% to <5%, fewer iteration cycles
   - **Why This Happened**: Recent prompt simplification removed formulaic advice (good) but also treatment fidelity guard rails (bad)
-  - **Files Modified**: src/generation/chapters.py (both _generate_single_chapter and generate_with_competition prompts)
+  - **Files Modified**: src/generation/chapters.py (_generate_single_chapter prompt)
   - **Documentation**: ULTRATHINK_TREATMENT_FIDELITY.md - Complete analysis and implementation plan
 
 ### Changed
@@ -424,6 +424,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Files Modified**: `src/generation/chapters.py` (lines 667-674, 698, 834)
 
 ### Removed
+- **Multi-Model Competition Mode** 🏆 (**Complete Feature Removal**)
+  - **Rationale**: Feature added complexity without sufficient user value; single-model approach is simpler and more predictable
+  - **Files Deleted**:
+    - `src/generation/multi_model.py` - Complete file deleted (tournament orchestration, judging logic)
+  - **Files Modified** (12 files, 4,066 lines removed, 98 lines added):
+    - `src/config/constants.py` - Removed MULTIMODEL_DIR, DEFAULT_COMPETITION_MODELS, DEFAULT_JUDGE_MODEL constants
+    - `src/config/settings.py` - Removed multi_model_mode, competition_models, judge_model fields (Pydantic extra='ignore' for backward compatibility)
+    - `src/generation/lod_parser.py` - Removed dry_run parameter and _simulate_culling method
+    - `src/cli/interactive.py` - Removed /multimodel command handler
+    - `src/cli/command_completer.py` - Removed multimodel from autocomplete
+    - `src/generation/chapters.py` - Removed generate_with_competition method (277 lines)
+    - `src/generation/treatment.py` - Removed generate_with_competition method (165 lines)
+    - `src/generation/prose.py` - Removed generate_chapter_with_competition method (285 lines)
+    - `src/generation/iteration/coordinator.py` - Removed settings parameter, simplified to single-model approach
+    - `config.yaml` - Removed multimodel settings
+    - `CLAUDE.md` - Removed all multimodel documentation
+    - `docs/USER_GUIDE.md` - Removed /multimodel command documentation and feature descriptions
+    - `docs/DEVELOPER_GUIDE.md` - Removed dry_run references and multi-model pattern documentation
+  - **Backward Compatibility**:
+    - Old config.yaml files with multimodel settings: Settings uses `extra='ignore'` to silently ignore unknown keys
+    - Old project directories with `multimodel/` folders: No issues, just legacy user data
+    - Missing /multimodel command: Clean "Unknown command" error
+  - **Impact**: Cleaner codebase focused on single-model iteration, reduced maintenance burden, simplified user mental model
+  - **Migration**: None required - existing projects continue working without changes
+
 - **Dead Code and Unused Scripts** 🧹 (**Phase 1**)
   - Removed unused methods from `src/utils/tokens.py`:
     - `split_text_for_context()` - Text chunking for context limits, never used
@@ -1513,7 +1538,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### To Add
 - [ ] Export functionality (md, html, epub, pdf)
 - [ ] Git branching and merging for experiments
-- [ ] Multi-model comparison for generations
 - [ ] Character sheets and tracking
 - [ ] World-building wiki
 
@@ -1694,7 +1718,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Custom formats
 
 ### Advanced Features
-- [ ] Multi-model collaboration
 - [ ] Batch generation
 - [ ] Style transfer
 - [ ] Chapter dependencies
