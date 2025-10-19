@@ -10,7 +10,8 @@ from ..api import OpenRouterClient
 from ..models import Project
 from ..config import get_settings
 from .lod_context import LODContextBuilder
-from .lod_parser import LODResponseParser
+from .lod_extractor import LODResponseExtractor
+from .cull import CullManager
 
 
 DEFAULT_TREATMENT_TEMPLATE = """Based on this premise:
@@ -62,7 +63,7 @@ class TreatmentGenerator:
         self.project = project
         self.model = model
         self.context_builder = LODContextBuilder()
-        self.parser = LODResponseParser()
+        self.extractor = LODResponseExtractor()
 
     async def generate(
         self,
@@ -171,21 +172,21 @@ Return ONLY the treatment section."""
                 # Extract content from response
                 response_text = result.get('content', result) if isinstance(result, dict) else result
 
-                # Parse and save to files (includes culling downstream)
-                parse_result = self.parser.parse_and_save(
-                    response=response_text,
-                    project=self.project,
-                    target_lod='treatment',
-                    original_context=context
-                )
+                # Extract data (pure function, no I/O)
+                data = self.extractor.extract(response_text, target='treatment')
+                treatment_text = data['treatment']['text']
+
+                # Generator handles saving explicitly
+                self.project.save_treatment(treatment_text)
+
+                # Generator handles culling explicitly
+                CullManager(self.project).cull_treatment()
 
                 # Save metadata
                 treatment_metadata = {
-                    'word_count': len(self.project.get_treatment().split()),
+                    'word_count': len(treatment_text.split()),
                     'target_words': target_words,
-                    'model': self.model,
-                    'updated_files': parse_result['updated_files'],
-                    'deleted_files': parse_result['deleted_files']
+                    'model': self.model
                 }
                 # Ensure treatment directory exists
                 self.project.treatment_dir.mkdir(exist_ok=True)
@@ -193,8 +194,8 @@ Return ONLY the treatment section."""
                 with open(metadata_file, 'w', encoding='utf-8') as f:
                     json.dump(treatment_metadata, f, indent=2)
 
-                # Return treatment text for display
-                return self.project.get_treatment()
+                # Return treatment text directly (no file read round-trip)
+                return treatment_text
 
             return None
 

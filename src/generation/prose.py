@@ -14,7 +14,6 @@ from ..models import Project
 from ..utils.tokens import estimate_tokens
 from ..config import get_settings
 from .lod_context import LODContextBuilder
-from .lod_parser import LODResponseParser
 from .depth_calculator import DepthCalculator
 
 
@@ -36,7 +35,6 @@ class ProseGenerator:
         self.project = project
         self.model = model
         self.context_builder = LODContextBuilder()
-        self.parser = LODResponseParser()
         self.console = Console()
 
 

@@ -6,8 +6,6 @@ from pathlib import Path
 from ...api import OpenRouterClient
 from ...models import Project
 from .intent import IntentAnalyzer
-from ..lod_context import LODContextBuilder
-from ..lod_parser import LODResponseParser
 
 
 class IterationCoordinator:
@@ -43,8 +41,6 @@ class IterationCoordinator:
 
         # Initialize components (all use the same model)
         self.intent_analyzer = IntentAnalyzer(client, model, default_target=default_target)
-        self.context_builder = LODContextBuilder()
-        self.parser = LODResponseParser()
 
     async def process_feedback(
         self,
