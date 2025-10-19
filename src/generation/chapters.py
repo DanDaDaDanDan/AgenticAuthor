@@ -1090,6 +1090,67 @@ Regenerate the foundation addressing the issues above.
         except Exception as e:
             raise Exception(f"Failed to generate chapters: {e}")
 
+    def _extract_chapters_by_pattern(self, response_text: str) -> List[tuple[int, str]]:
+        """
+        Extract chapters by finding '- number: N' boundaries.
+
+        Used as fallback when strict YAML parsing fails. This method finds chapter
+        boundaries by pattern matching and extracts raw YAML text between them.
+
+        Args:
+            response_text: Raw LLM response text containing chapters
+
+        Returns:
+            List of (chapter_num, raw_yaml_text) tuples
+
+        Note: Does NOT validate YAML - just extracts text between boundaries.
+              Validation happens per-chapter when this data is used.
+        """
+        import re
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        lines = response_text.split('\n')
+
+        # Find all chapter start lines: "- number: N" or "  - number: N"
+        chapter_starts = []
+        pattern = r'^\s*-\s*number:\s*(\d+)'
+
+        for line_num, line in enumerate(lines):
+            match = re.match(pattern, line)
+            if match:
+                chapter_num = int(match.group(1))
+                chapter_starts.append((line_num, chapter_num))
+
+                if logger:
+                    logger.debug(f"Found chapter {chapter_num} at line {line_num + 1}")
+
+        if not chapter_starts:
+            if logger:
+                logger.warning("Pattern extraction found no chapters")
+            return []
+
+        if logger:
+            logger.info(f"Pattern extraction found {len(chapter_starts)} chapter boundaries")
+
+        # Extract text between chapter boundaries
+        chapters = []
+        for i, (start_line, chapter_num) in enumerate(chapter_starts):
+            if i + 1 < len(chapter_starts):
+                end_line = chapter_starts[i + 1][0]
+            else:
+                end_line = len(lines)
+
+            chapter_lines = lines[start_line:end_line]
+            chapter_yaml = '\n'.join(chapter_lines).strip()
+
+            chapters.append((chapter_num, chapter_yaml))
+
+            if logger:
+                logger.debug(f"Extracted chapter {chapter_num}: {len(chapter_yaml)} characters")
+
+        return chapters
+
     async def _generate_single_shot(
         self,
         context: Dict[str, Any],
@@ -1292,23 +1353,93 @@ IMPORTANT:
                 response_text = response_text[:-3]  # Remove closing ```
             response_text = response_text.strip()
 
-            # Parse the chapters YAML
+            # Parse the chapters YAML with fallback strategy
+            # STRATEGY: Try strict YAML first (fast path), fall back to pattern matching if needed
+            chapters_data = []
+            warnings = []  # Collect YAML issues for warning display
+
             try:
+                # FAST PATH: Strict YAML parsing (works for 99% of cases)
                 parsed_data = yaml.safe_load(response_text)
-            except yaml.YAMLError as e:
-                raise Exception(f"Failed to parse chapters YAML: {e}")
 
-            # Extract chapters list
-            if isinstance(parsed_data, dict) and 'chapters' in parsed_data:
-                chapters_data = parsed_data['chapters']
-            elif isinstance(parsed_data, list):
-                # Response might be just the list of chapters
-                chapters_data = parsed_data
-            else:
-                raise Exception(f"Response missing 'chapters' section. Got keys: {list(parsed_data.keys()) if isinstance(parsed_data, dict) else 'not a dict'}")
+                # Extract chapters list
+                if isinstance(parsed_data, dict) and 'chapters' in parsed_data:
+                    chapters_data = parsed_data['chapters']
+                elif isinstance(parsed_data, list):
+                    # Response might be just the list of chapters
+                    chapters_data = parsed_data
+                else:
+                    raise yaml.YAMLError(f"Response missing 'chapters' section. Got keys: {list(parsed_data.keys()) if isinstance(parsed_data, dict) else 'not a dict'}")
 
-            if not chapters_data:
-                raise Exception("Empty chapters list in response")
+                if not chapters_data:
+                    raise yaml.YAMLError("Empty chapters list in response")
+
+                if logger:
+                    logger.debug(f"Strict YAML parsing succeeded: {len(chapters_data)} chapters")
+
+            except yaml.YAMLError as yaml_error:
+                # FALLBACK PATH: Pattern matching extraction
+                if logger:
+                    logger.warning(f"Strict YAML parsing failed: {yaml_error}")
+                    logger.info("Falling back to pattern-based chapter extraction")
+
+                self.console.print(f"[yellow]⚠️  YAML parsing failed, using fallback extraction...[/yellow]")
+
+                # Extract chapters by pattern matching
+                extracted_chapters = self._extract_chapters_by_pattern(response_text)
+
+                if not extracted_chapters:
+                    # Complete failure - no chapters extracted
+                    raise Exception(
+                        f"Failed to extract chapters from response:\n"
+                        f"  1. Strict YAML parsing failed: {yaml_error}\n"
+                        f"  2. Pattern extraction found no chapters\n"
+                        f"Response preview (first 500 chars):\n{response_text[:500]}"
+                    )
+
+                # Try to parse each extracted chapter individually
+                for chapter_num, chapter_yaml_text in extracted_chapters:
+                    try:
+                        # Try to parse this individual chapter
+                        chapter_data = yaml.safe_load(chapter_yaml_text)
+
+                        # Validate chapter has required 'number' field
+                        if isinstance(chapter_data, dict) and chapter_data.get('number'):
+                            chapters_data.append(chapter_data)
+
+                            if logger:
+                                logger.debug(f"Chapter {chapter_num}: YAML valid")
+                        else:
+                            # Chapter data is malformed
+                            warnings.append({
+                                'chapter': chapter_num,
+                                'issue': 'Chapter data missing required "number" field',
+                                'raw_data': chapter_yaml_text[:200]  # First 200 chars for debugging
+                            })
+                            if logger:
+                                logger.warning(f"Chapter {chapter_num}: Missing 'number' field")
+
+                    except yaml.YAMLError as chapter_yaml_error:
+                        # This specific chapter has YAML errors
+                        warnings.append({
+                            'chapter': chapter_num,
+                            'issue': f'YAML syntax error: {str(chapter_yaml_error)[:100]}',
+                            'raw_data': chapter_yaml_text[:200]  # First 200 chars for debugging
+                        })
+                        if logger:
+                            logger.warning(f"Chapter {chapter_num}: YAML error - {chapter_yaml_error}")
+
+                if logger:
+                    logger.info(f"Pattern extraction: {len(chapters_data)}/{len(extracted_chapters)} chapters valid, {len(warnings)} warnings")
+
+                if not chapters_data:
+                    # No valid chapters after extraction - total failure
+                    raise Exception(
+                        f"No valid chapters extracted:\n"
+                        f"  Pattern extraction found {len(extracted_chapters)} chapters\n"
+                        f"  All {len(extracted_chapters)} chapters had YAML errors\n"
+                        f"  First error: {warnings[0]['issue'] if warnings else 'unknown'}"
+                    )
 
             # Save individual chapter beat files (ONLY format - no chapters.yaml)
             # Use custom output_dir if provided, otherwise use default chapter-beats/
@@ -1351,11 +1482,25 @@ IMPORTANT:
             self.console.print(f"\n[green]✓[/green] Generated {chapter_count_saved} chapters successfully")
             self.console.print(f"[dim]Total word target: {total_word_target:,} words[/dim]")
 
+            # Display warnings if any YAML issues were encountered
+            if warnings:
+                self.console.print(f"\n[yellow]⚠️  YAML Warnings ({len(warnings)} chapter(s) with issues):[/yellow]")
+                for warning in warnings:
+                    chapter_num = warning.get('chapter', 'unknown')
+                    issue = warning.get('issue', 'No issue details')
+                    self.console.print(f"  [yellow]•[/yellow] Chapter {chapter_num}: {issue}")
+
+                self.console.print(f"\n[cyan]Note: These chapters were saved but may need manual review[/cyan]")
+
+                if logger:
+                    logger.warning(f"Generated with {len(warnings)} YAML warnings - manual review recommended")
+
             # Return summary dict (not ChapterOutline objects)
             return {
                 'count': len(chapters_data),
                 'files_saved': chapter_count_saved,
-                'total_words': total_word_target
+                'total_words': total_word_target,
+                'warnings': warnings  # Include warnings for caller
             }
 
         except Exception as e:
