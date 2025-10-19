@@ -1808,25 +1808,27 @@ class InteractiveSession:
         # Generate chapter outlines
         generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
         self.console.print(f"[cyan]Generating chapter outlines...[/cyan]\n")
-        chapters = await generator.generate(
+        result = await generator.generate(
             chapter_count=chapter_count,
             total_words=total_words
         )
         commit_prefix = "Generate"
 
-        if chapters:
-            # Show all chapters
-            for chapter in chapters:
-                self.console.print(f"Chapter {chapter.number}: {chapter.title}")
-                self.console.print(f"  [dim]{chapter.summary}[/dim]")
+        if result:
+            # Result is now a dict: {count, files_saved, total_words}
+            # Chapters are saved to individual files in chapter-beats/
+            count = result.get('count', 0)
+            files_saved = result.get('files_saved', 0)
+            total_words_target = result.get('total_words', 0)
 
             self.console.print()  # Blank line
             self.console.rule(style="dim")
-            self.console.print(f"[green]✓  Generated {len(chapters)} chapter outlines[/green]")
-            self.console.print("[dim]Saved to chapters.yaml[/dim]")
+            self.console.print(f"[green]✓  Generated {files_saved} chapter outlines[/green]")
+            self.console.print(f"[dim]Total word target: {total_words_target:,} words[/dim]")
+            self.console.print(f"[dim]Saved to chapter-beats/ directory[/dim]")
 
             # Git commit
-            self._commit(f"{commit_prefix} {len(chapters)} chapter outlines")
+            self._commit(f"{commit_prefix} {files_saved} chapter outlines")
         else:
             self.console.print("[red]Failed to generate chapters[/red]")
 
