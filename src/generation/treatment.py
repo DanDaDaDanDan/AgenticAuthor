@@ -3,11 +3,11 @@
 from typing import Optional, Dict, Any
 from pathlib import Path
 import json
+import yaml
 
 from ..api import OpenRouterClient
 from ..models import Project
 from .lod_context import LODContextBuilder
-from .lod_extractor import LODResponseExtractor
 from .cull import CullManager
 
 
@@ -60,7 +60,6 @@ class TreatmentGenerator:
         self.project = project
         self.model = model
         self.context_builder = LODContextBuilder()
-        self.extractor = LODResponseExtractor()
 
     async def generate(
         self,
@@ -169,14 +168,38 @@ Return ONLY the treatment section."""
                 # Extract content from response
                 response_text = result.get('content', result) if isinstance(result, dict) else result
 
-                # Extract data (pure function, no I/O)
-                data = self.extractor.extract(response_text, target='treatment')
+                # Strip markdown fences if present
+                response_text = response_text.strip()
+                if response_text.startswith('```yaml'):
+                    response_text = response_text[7:]  # Remove ```yaml
+                elif response_text.startswith('```'):
+                    response_text = response_text[3:]  # Remove ```
+                if response_text.endswith('```'):
+                    response_text = response_text[:-3]  # Remove closing ```
+                response_text = response_text.strip()
+
+                # Parse YAML
+                try:
+                    data = yaml.safe_load(response_text)
+                except yaml.YAMLError as e:
+                    raise ValueError(f"Failed to parse treatment response as YAML: {e}")
+
+                if not isinstance(data, dict):
+                    raise ValueError(f"Expected YAML dict, got {type(data)}")
+
+                # Validate structure
+                if 'treatment' not in data:
+                    raise ValueError("Response missing 'treatment' section")
+                if not isinstance(data['treatment'], dict) or 'text' not in data['treatment']:
+                    raise ValueError("Treatment section must have 'text' field")
+
+                # Extract treatment text
                 treatment_text = data['treatment']['text']
 
-                # Generator handles saving explicitly
+                # Save treatment
                 self.project.save_treatment(treatment_text)
 
-                # Generator handles culling explicitly
+                # Cull downstream content
                 CullManager(self.project).cull_treatment()
 
                 # Save metadata
