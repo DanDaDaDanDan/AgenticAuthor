@@ -1320,8 +1320,12 @@ IMPORTANT:
             beats_dir.mkdir(parents=True, exist_ok=True)
 
             # Save foundation if not already saved
+            # IMPORTANT: Skip foundation save for variant directories (variant-N/)
+            # VariantManager saves foundation once to parent chapter-beats-variants/
+            is_variant_dir = 'variant-' in str(beats_dir)
             foundation_path = beats_dir / 'foundation.yaml'
-            if not foundation_path.exists():
+
+            if not is_variant_dir and not foundation_path.exists():
                 foundation_path.write_text(
                     yaml.dump(foundation, sort_keys=False, allow_unicode=True),
                     encoding='utf-8'

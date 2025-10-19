@@ -699,7 +699,7 @@ Return JSON with this EXACT structure:
   ]
 }}
 
-CRITICAL: Generate exactly {count} distinct premises. Each must be substantially different from the others in concept, conflict, and hook."""
+Generate exactly {count} distinct premises. Each must be substantially different from the others in concept, conflict, and hook."""
 
         try:
             result = await self.client.json_completion(

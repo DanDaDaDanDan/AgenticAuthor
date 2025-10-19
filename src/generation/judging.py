@@ -101,6 +101,9 @@ FOUNDATION (shared by all variants):
 """
 
         # Add judging instructions with MINIMAL structure
+        # Build list of actual variant numbers (e.g., "1, 3, 4" if variant 2 failed)
+        variant_numbers = ', '.join(map(str, sorted(variants_data.keys())))
+
         prompt += f"""YOUR TASK:
 Evaluate all {len(variants_data)} variants and select the BEST one for this story.
 
@@ -117,7 +120,7 @@ You have complete freedom to judge as you see fit. Trust your editorial judgment
 
 RETURN FORMAT (JSON):
 {{
-  "winner": <variant number 1-{len(variants_data)}>,
+  "winner": <one of: {variant_numbers}>,
   "reasoning": "<Your explanation for why this variant is best - be specific about what makes it superior>"
 }}
 
@@ -218,6 +221,15 @@ Return ONLY valid JSON, no markdown fences or additional text."""
 
             if not winner:
                 raise Exception("Judging response missing 'winner' field")
+
+            # Convert winner to int (LLM might return string "1" instead of int 1)
+            try:
+                winner = int(winner)
+            except (TypeError, ValueError) as e:
+                raise Exception(
+                    f"Invalid winner type: {type(winner).__name__} (value: {winner}). "
+                    f"Expected integer variant number."
+                )
 
             # Validate winner is in valid range
             if winner not in variants_data:
