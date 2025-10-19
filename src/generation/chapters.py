@@ -1236,15 +1236,12 @@ chapters:
     title: "..."
     # ... continue for all {chapter_count} chapters
 
-CRITICAL YAML SYNTAX RULES:
+YAML SYNTAX RULES:
 - ALWAYS wrap ALL list items in double quotes: - "Event text"
-- NEVER use unquoted text with colons in list items
 - For dialogue in events, use single quotes inside doubles: - "He said: 'Hello'."
-- Do NOT use bare text with colons like: - Detective says: 'something'  ← INVALID!
-- CORRECT format: - "Detective says: 'something'"  ← Always quote the whole item
+- Do NOT wrap in markdown code fences
 
 IMPORTANT:
-- Do NOT wrap in markdown code fences
 - Return ONLY the YAML content starting with "chapters:"
 - Each chapter must have UNIQUE plot events (no duplication across chapters)
 - Character arcs must PROGRESS linearly (no repeated development beats)
