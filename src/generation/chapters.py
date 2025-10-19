@@ -84,30 +84,6 @@ class ChapterGenerator:
         """
         return DepthCalculator.calculate_structure(total_words, pacing, length_scope=length_scope)
 
-    def _is_yaml_truncated(self, error: yaml.YAMLError) -> bool:
-        """
-        Detect if YAML parsing error is due to truncation/network interruption.
-
-        Args:
-            error: The YAML parsing error
-
-        Returns:
-            True if error indicates truncation, False otherwise
-        """
-        if not error:
-            return False
-
-        truncation_indicators = [
-            "found unexpected end of stream",
-            "unexpected end of stream",
-            "while scanning a quoted scalar",
-            "unclosed quoted scalar",
-            "mapping values are not allowed here",
-            "expected <block end>",
-        ]
-        error_str = str(error).lower()
-        return any(indicator in error_str for indicator in truncation_indicators)
-
     async def _generate_foundation(
         self,
         context_yaml: str,
