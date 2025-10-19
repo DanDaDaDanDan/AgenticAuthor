@@ -318,10 +318,8 @@ Return ONLY the JSON, no additional commentary."""
             # Call validation API (temperature 0.1 for consistency)
             result = await self.client.json_completion(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are a strict prose validation system. Return only valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
+                prompt=prompt,
+                system_prompt="You are a strict prose validation system. Return only valid JSON.",
                 temperature=0.1,  # Low temp for consistent evaluation
                 operation=f"prose-validation-chapter-{chapter_number}"
             )
