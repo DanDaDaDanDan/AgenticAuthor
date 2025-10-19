@@ -255,7 +255,16 @@ scenes:
 **Expected Impact**: 80-100% word count achievement (vs 50-60% baseline), professional scene quality
 
 **Recent Major Features (v0.3.0 and Unreleased)**:
-- **Sequential Chapter Generation** 🔄 - Zero information loss with full context accumulation
+- **Multi-Variant Chapter Generation with LLM Judging** 🎯 - Generate multiple chapter outline options and let LLM select the best
+  - Workflow: `/generate chapters` → `/finalize chapters` → `/generate prose`
+  - Generates 4 variants in parallel with different temperatures (0.65, 0.70, 0.75, 0.80)
+  - LLM judge evaluates all variants with minimal structure (free to use own criteria)
+  - Winner automatically copied to chapter-beats/ for prose generation
+  - Transparent decision tracking in decision.json
+  - Storage: chapter-beats-variants/ for variants, chapter-beats/ for finalized winner
+  - Benefits: Multiple creative options, objective evaluation, better chapter quality
+  - Clean architecture: Reuses ChapterGenerator._generate_single_shot() (no code duplication)
+- **Sequential Chapter Generation** 🔄 - Zero information loss with full context accumulation (deprecated in favor of multi-variant)
   - Three phases: Foundation (metadata/characters/world) → Sequential Chapters → Assembly
   - File structure: `chapter-beats/foundation.yaml` + `chapter-beats/chapter-NN.yaml`
   - Each chapter sees 100% of previous chapters (not 5% summaries - eliminates duplicate scenes)
@@ -314,6 +323,10 @@ agentic           # Start REPL (main interface)
 /generate premise "a magical library"  # Auto-detects genre (fantasy)
 /generate premises 5 fantasy "a magical library"  # Generate 5 options to choose from
 /iterate taxonomy # Interactive taxonomy editor
+/generate treatment           # Generate treatment from premise
+/generate chapters            # Generate 4 chapter outline variants (parallel)
+/finalize chapters            # LLM judges variants and selects winner
+/generate prose all           # Generate full prose from finalized chapters
 /cull prose       # Delete prose files (or chapters/treatment/premise - cascades downstream)
 /logs             # View recent log entries
 /help             # Show all commands
@@ -616,9 +629,20 @@ books/                      # All projects root
 │   │   └── premises_candidates.json  # Batch generation results (when using /generate premises N)
 │   ├── treatment/           # LOD2 - Treatment artifacts
 │   │   └── treatment.md
-│   ├── chapter-beats/       # LOD2 - Chapter structure (source of truth)
+│   ├── chapter-beats-variants/  # LOD2 - Multi-variant generation (temporary)
+│   │   ├── foundation.yaml  # Shared foundation for all variants
+│   │   ├── variant-1/       # Variant 1 (temp=0.65, Conservative)
+│   │   │   └── chapter-*.yaml
+│   │   ├── variant-2/       # Variant 2 (temp=0.70, Balanced-Conservative)
+│   │   │   └── chapter-*.yaml
+│   │   ├── variant-3/       # Variant 3 (temp=0.75, Balanced-Creative)
+│   │   │   └── chapter-*.yaml
+│   │   ├── variant-4/       # Variant 4 (temp=0.80, Creative)
+│   │   │   └── chapter-*.yaml
+│   │   └── decision.json    # LLM judging decision record
+│   ├── chapter-beats/       # LOD2 - Chapter structure (finalized winner)
 │   │   ├── foundation.yaml  # Metadata, characters, world
-│   │   └── chapter-*.yaml   # Individual chapter outlines
+│   │   └── chapter-*.yaml   # Individual chapter outlines (from winning variant)
 │   ├── chapters.yaml        # LOD2 - Self-contained (deprecated, for backward compatibility)
 │   ├── chapters/            # LOD0 - Prose
 │   │   └── chapter-*.md
