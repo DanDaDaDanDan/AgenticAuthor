@@ -39,19 +39,21 @@ class ProseGenerator:
     def load_all_chapters_with_prose(self) -> List[Dict[str, Any]]:
         """Load all chapter outlines and merge with any existing prose."""
 
-        # Load chapter outlines
-        chapters_file = self.project.path / "chapters.yaml"
-        if not chapters_file.exists():
+        # Load chapter outlines from new architecture (chapter-beats/)
+        chapters_data = self.project.get_chapters_yaml()
+        if not chapters_data:
             raise Exception("No chapter outlines found. Generate chapters first with /generate chapters")
 
-        with open(chapters_file, 'r') as f:
-            chapters = yaml.safe_load(f) or []
+        # Extract chapters list from the structure
+        chapters = chapters_data.get('chapters', [])
+        if not chapters:
+            raise Exception("No chapters found in chapter outlines. Generate chapters first with /generate chapters")
 
         # For each chapter, check if prose exists and load it
         for chapter in chapters:
-            chapter_file = self.project.path / "chapters" / f"chapter-{chapter['number']:02d}.md"
+            chapter_file = self.project.chapters_dir / f"chapter-{chapter['number']:02d}.md"
             if chapter_file.exists():
-                with open(chapter_file, 'r') as f:
+                with open(chapter_file, 'r', encoding='utf-8') as f:
                     chapter['full_prose'] = f.read()
                     chapter['prose_generated'] = True
             else:
@@ -699,6 +701,7 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.8,  # Higher for creative prose
+                top_p=0.9,  # Focused sampling for quality
                 display=True,
                 display_label=f"Generating Chapter {chapter_number} prose",
                 min_response_tokens=estimated_response_tokens
@@ -866,6 +869,7 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                             {"role": "user", "content": iteration_prompt}
                         ],
                         temperature=0.8,  # Same as generation for prose quality
+                        top_p=0.9,  # Focused sampling for quality
                         display=True,
                         display_label=f"Iterating Chapter {chapter_number} prose",
                         min_response_tokens=int(word_count_target * 1.3)
