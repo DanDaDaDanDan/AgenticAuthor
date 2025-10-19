@@ -39,6 +39,28 @@ class ChapterOutline(BaseModel):
             if field not in filtered_data:
                 raise ValueError(f"Required field '{field}' missing from chapter data")
 
+        # Clean up key_events field - handle mixed formats (string vs dict)
+        # LLM sometimes returns structured scenes format instead of simple strings
+        if 'key_events' in filtered_data:
+            cleaned_events = []
+            for event in filtered_data['key_events']:
+                if isinstance(event, str):
+                    cleaned_events.append(event)
+                elif isinstance(event, dict):
+                    # Extract string representation from dict (scenes format)
+                    # Prefer 'scene' field, fallback to first string value found
+                    if 'scene' in event:
+                        cleaned_events.append(event['scene'])
+                    elif 'note' in event:
+                        cleaned_events.append(event['note'])
+                    else:
+                        # Fallback: use first string value found in dict
+                        for v in event.values():
+                            if isinstance(v, str):
+                                cleaned_events.append(v)
+                                break
+            filtered_data['key_events'] = cleaned_events
+
         return cls(**filtered_data)
 
 
