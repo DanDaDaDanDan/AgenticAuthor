@@ -108,39 +108,6 @@ class ChapterGenerator:
         error_str = str(error).lower()
         return any(indicator in error_str for indicator in truncation_indicators)
 
-    # Removed _find_last_complete_chapter() and _fix_truncated_yaml() - no longer needed with sequential generation
-    # Old batched generation used these for truncation recovery
-    # Sequential generation has built-in resume via generate() loop
-
-    # Removed _calculate_batch_size() and _summarize_chapters() - no longer needed with sequential generation
-    # Sequential generation passes full chapter context (100% of data) to each new chapter
-
-    def _save_partial(self, data: Dict[str, Any], phase: str):
-        """
-        Save partial generation progress.
-
-        Args:
-            data: Partial data to save
-            phase: Phase identifier (e.g., 'foundation', 'batch_1')
-        """
-        from ..utils.logging import get_logger
-        logger = get_logger()
-
-        partial_path = self.project.path / f'chapters.partial.{phase}.yaml'
-
-        try:
-            import yaml
-            with open(partial_path, 'w', encoding='utf-8') as f:
-                yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
-
-            if logger:
-                logger.debug(f"Saved partial progress: {partial_path}")
-
-        except Exception as e:
-            if logger:
-                logger.warning(f"Failed to save partial progress: {e}")
-            # Non-fatal - continue anyway
-
     async def _generate_foundation(
         self,
         context_yaml: str,
@@ -420,9 +387,6 @@ When the feedback mentions duplicate or repetitive content:
             logger.debug(f"Foundation generated successfully")
 
         return foundation_data
-
-    # Removed _generate_single_chapter() - sequential generation removed, single-shot only
-    # Removed _validate_treatment_fidelity() - per-chapter validation removed, single-shot only
 
     def _format_validation_issues(self, issues: List[Dict[str, Any]]) -> str:
         """
@@ -742,15 +706,6 @@ IMPORTANT:
                 # Invalid choice - treat as abort
                 self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
                 raise Exception("Invalid foundation validator failure choice")
-
-    # Removed _generate_chapter_batch() - replaced by sequential _generate_single_chapter() calls
-    # Sequential generation eliminates information loss and enables better resume capability
-
-    # Removed _resume_generation() - sequential generation has built-in resume via generate() loop
-    # Resume now happens naturally: check for existing chapter files and ask user to continue/regenerate
-
-    # Removed _merge_yaml() - no longer needed with sequential generation
-    # Individual chapter files don't need merging
 
     async def generate(
         self,
@@ -1197,8 +1152,9 @@ Regenerate the foundation addressing the issues above.
                 logger.debug(f"Using default word count for {genre} novel: {total_words}")
 
         if chapter_count is None:
-            # Calculate chapter count from word count
-            chapter_count = self._calculate_chapter_count(total_words)
+            # Calculate chapter count from word count using structure calculator
+            structure = self._calculate_structure(total_words, pacing, length_scope=None)
+            chapter_count = structure['chapter_count']
             if logger:
                 logger.debug(f"Calculated chapter count: {chapter_count}")
 
@@ -1398,13 +1354,29 @@ IMPORTANT:
                     )
 
                 # Try to parse each extracted chapter individually
+                # Track seen chapter numbers to detect duplicates
+                seen_numbers = set()
+
                 for chapter_num, chapter_yaml_text in extracted_chapters:
+                    # Check for duplicate chapter number
+                    if chapter_num in seen_numbers:
+                        warnings.append({
+                            'chapter': chapter_num,
+                            'issue': f'Duplicate chapter number {chapter_num} detected - skipping duplicate',
+                            'raw_data': chapter_yaml_text[:200]
+                        })
+                        if logger:
+                            logger.warning(f"Chapter {chapter_num}: Duplicate number detected, skipping")
+                        continue  # Skip duplicate
+
+                    seen_numbers.add(chapter_num)
+
                     try:
                         # Try to parse this individual chapter
                         chapter_data = yaml.safe_load(chapter_yaml_text)
 
                         # Validate chapter has required 'number' field
-                        if isinstance(chapter_data, dict) and chapter_data.get('number'):
+                        if isinstance(chapter_data, dict) and 'number' in chapter_data:
                             chapters_data.append(chapter_data)
 
                             if logger:
@@ -1476,7 +1448,7 @@ IMPORTANT:
                 logger.debug(f"Saved {len(chapters_data)} chapters to individual beat files")
 
             # Basic validation (no ChapterOutline conversion - files are source of truth)
-            chapter_count_saved = len([ch for ch in chapters_data if ch.get('number')])
+            chapter_count_saved = len(chapters_data)
             total_word_target = sum(ch.get('word_count_target', 0) for ch in chapters_data)
 
             self.console.print(f"\n[green]✓[/green] Generated {chapter_count_saved} chapters successfully")
@@ -1490,7 +1462,7 @@ IMPORTANT:
                     issue = warning.get('issue', 'No issue details')
                     self.console.print(f"  [yellow]•[/yellow] Chapter {chapter_num}: {issue}")
 
-                self.console.print(f"\n[cyan]Note: These chapters were saved but may need manual review[/cyan]")
+                self.console.print(f"\n[cyan]Note: {len(chapters_data)} chapters saved, {len(warnings)} chapters skipped due to YAML errors[/cyan]")
 
                 if logger:
                     logger.warning(f"Generated with {len(warnings)} YAML warnings - manual review recommended")
