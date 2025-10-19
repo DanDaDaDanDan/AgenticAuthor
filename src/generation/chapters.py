@@ -8,7 +8,6 @@ from typing import Optional, List, Dict, Any
 from ..api import OpenRouterClient
 from ..models import Project, ChapterOutline
 from rich.console import Console
-from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .depth_calculator import DepthCalculator
 

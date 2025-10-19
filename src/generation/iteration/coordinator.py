@@ -1,7 +1,6 @@
 """Iteration coordinator to orchestrate the iteration process."""
 
 from typing import Dict, Any, Optional
-from pathlib import Path
 
 from ...api import OpenRouterClient
 from ...models import Project

@@ -4,11 +4,8 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 import json
 
-from jinja2 import Template
-
 from ..api import OpenRouterClient
 from ..models import Project
-from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .lod_extractor import LODResponseExtractor
 from .cull import CullManager

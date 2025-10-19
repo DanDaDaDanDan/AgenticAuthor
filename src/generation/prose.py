@@ -5,14 +5,12 @@ import yaml
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 
-from jinja2 import Template
 from rich.console import Console
 from datetime import datetime
 
 from ..api import OpenRouterClient
 from ..models import Project
 from ..utils.tokens import estimate_tokens
-from ..config import get_settings
 from .lod_context import LODContextBuilder
 from .depth_calculator import DepthCalculator
 
