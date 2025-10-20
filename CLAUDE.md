@@ -37,81 +37,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Always check these files at the end of your work session and update them!**
 
-## CRITICAL: Git Commit Workflow
+## Git Commits
 
-**You MUST commit changes to git after every meaningful change with a descriptive commit message.**
+**Commit changes regularly with descriptive messages.**
 
-### When to Commit
+- Commit after each meaningful change (bug fix, feature, refactor, etc.)
+- Use clear commit messages that explain what and why
+- Don't accumulate multiple unrelated changes before committing
 
-Commit immediately after:
-1. **Bug fixes** - "Fix chapter iteration compatibility with multi-phase generation"
-2. **Feature implementations** - "Add automatic resume on network truncation"
-3. **Documentation updates** - "Update CHANGELOG with iteration fixes"
-4. **Refactoring** - "Refactor LODContextBuilder to return flat structure for chapters"
-5. **Test additions/fixes** - "Add tests for YAML recovery logic"
-6. **Any working state** - Don't let multiple changes accumulate without commits
+**Message format:** `Type: Short description` (e.g., "Fix: Resolve chapter duplication issue")
+- Common types: Fix, Add, Update, Refactor, Docs
 
-### Commit Message Guidelines
-
-**Format:**
-```
-<Type>: <Short description (50 chars max)>
-
-<Detailed explanation if needed (wrap at 72 chars)>
-- Bullet points for multiple changes
-- Why the change was needed
-- What problem it solves
-```
-
-**Types:**
-- `Fix:` - Bug fixes
-- `Add:` - New features
-- `Update:` - Updates to existing features
-- `Refactor:` - Code restructuring without behavior change
-- `Docs:` - Documentation only changes
-- `Test:` - Test additions or fixes
-- `Chore:` - Build, dependencies, tooling
-
-**Good Examples:**
-```bash
-git add .
-git commit -m "Fix: Chapter iteration compatibility with multi-phase generation
-
-- LODContextBuilder now returns flat structure for chapter iteration
-- Parser handles both flat and nested formats for backward compatibility
-- Fixes parser format detection which checks for metadata at top level"
-
-git add .
-git commit -m "Add: Automatic resume on truncation for chapter generation
-
-- Detects YAML truncation from network drops
-- Analyzes partial to find last complete chapter
-- Resumes for missing chapters with custom prompt
-- Saves ~25-30% tokens vs full retry"
-
-git add .
-git commit -m "Docs: Update CHANGELOG and CLAUDE.md with iteration fixes"
-```
-
-**Bad Examples:**
-```bash
-git commit -m "fix"  # Too vague
-git commit -m "updates"  # No information
-git commit -m "work in progress"  # Commit working states with better description
-```
-
-### Workflow
-
-1. Make changes to code
-2. Test that changes work
-3. **CRITICAL: Ultrathink and double-check implementation** (see section below)
-4. Update relevant documentation
-5. Stage all changes: `git add .`
-6. Commit with descriptive message: `git commit -m "Type: Description"`
-7. Continue to next change
-
-**DO NOT accumulate multiple unrelated changes before committing.**
-**Each logical change should be its own commit.**
+After making changes:
+1. Test that it works
+2. **CRITICAL: Ultrathink and double-check implementation** (see section below)
+3. Update relevant documentation
+4. `git add .` and `git commit -m "Type: Description"`
 
 ## CRITICAL: Ultrathink and Double-Check Implementation
 
