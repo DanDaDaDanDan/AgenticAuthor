@@ -369,12 +369,18 @@ Return JSON with this structure:
                 if user_input:
                     result['original_concept'] = user_input
 
-                # Ensure length_scope is in the selections if it was specified
+                # Ensure length_scope and series_structure are in the selections
+                if 'selections' not in result:
+                    result['selections'] = {}
+
+                # Hardcode length_scope to 'novel' if not specified or if specified
                 if length_scope:
-                    if 'selections' not in result:
-                        result['selections'] = {}
-                    # Ensure length_scope is set in the selections
                     result['selections']['length_scope'] = [length_scope]
+                else:
+                    result['selections']['length_scope'] = ['novel']
+
+                # Hardcode series_structure to 'standalone'
+                result['selections']['series_structure'] = ['standalone']
 
                 self.project.save_premise_metadata(result)
 
@@ -726,12 +732,18 @@ Generate exactly {count} distinct premises. Each must be substantially different
                 if logger:
                     logger.warning(f"LLM returned {len(premises)} premises instead of requested {count}")
 
-            # Add number field and original_concept to each premise for reference
+            # Add number field, original_concept, and hardcoded taxonomy values to each premise
             for i, premise in enumerate(premises, 1):
                 premise['number'] = i
                 # Add original concept if user_input was provided
                 if user_input:
                     premise['original_concept'] = user_input
+
+                # Hardcode length_scope to 'novel' and series_structure to 'standalone' for each premise
+                if 'selections' not in premise:
+                    premise['selections'] = {}
+                premise['selections']['length_scope'] = ['novel']
+                premise['selections']['series_structure'] = ['standalone']
 
             return premises
 
