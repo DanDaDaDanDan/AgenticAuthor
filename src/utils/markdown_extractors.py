@@ -148,11 +148,12 @@ class MarkdownExtractor:
 
         for field in fields:
             # Try various formats: "Field: value", "- Field: value", "**Field:** value"
-            escaped_field = re.escape(field.replace('_', '[ _]'))  # Allow both space and underscore
+            field_display = field.replace('_', ' ').title()
             patterns = [
-                rf'\*\*{field.replace("_", " ").title()}\*\*:\s*(.*?)(?:\n|$)',  # **Field Name:** format
-                rf'{field}:\s*(.*?)(?:\n|$)',  # field: format
-                rf'-\s*{field}:\s*(.*?)(?:\n|$)'  # - field: format
+                rf'\*\*{re.escape(field_display)}:\*\*\s*([^\n]+)',  # **Field Name:** format (correct markdown)
+                rf'{re.escape(field_display)}:\s*([^\n]+)',  # Field Name: format
+                rf'{re.escape(field)}:\s*([^\n]+)',  # field_name: format
+                rf'-\s*{re.escape(field)}:\s*([^\n]+)'  # - field_name: format
             ]
 
             for pattern in patterns:
@@ -167,13 +168,23 @@ class MarkdownExtractor:
                         # Check if it's already a list format
                         if value.startswith('['):
                             metadata[field] = cls._parse_list_value(value)
-                        else:
+                        # Check if value is empty (just found the field with no inline value)
+                        elif not value or value == '**':
                             # Extract subsequent bullet points
                             list_items = cls._extract_bullet_list_after(text, match.end())
                             if list_items:
                                 metadata[field] = list_items
                             else:
-                                metadata[field] = [value] if value else []
+                                metadata[field] = []
+                        else:
+                            # Value on same line, check for more bullet points
+                            # Clean the value - remove bullet prefix if present
+                            clean_value = re.sub(r'^\s*[-*]\s*', '', value).strip()
+                            list_items = cls._extract_bullet_list_after(text, match.end())
+                            if list_items:
+                                metadata[field] = [clean_value] + list_items if clean_value else list_items
+                            else:
+                                metadata[field] = [clean_value] if clean_value else []
                     # Handle numbers
                     elif field in ['target_word_count', 'chapter_count']:
                         try:
@@ -236,12 +247,22 @@ class MarkdownExtractor:
 
         for field_option in field_options:
             field_option = field_option.strip()
-            # Try various formats
-            patterns = [
-                rf'\*\*{re.escape(field_option)}\*\*:\s*(.*?)(?:\n\n|\*\*|\n##|$)',
-                rf'{re.escape(field_option)}:\s*(.*?)(?:\n\n|\*\*|\n##|$)',
-                rf'^\s*{re.escape(field_option)}:\s*(.*?)(?:\n\n|\*\*|\n##|$)'
-            ]
+            # Try various formats - capture until newline or end
+            # Note: Markdown bold is **Field:** not **Field**:
+            if multiline:
+                # For multiline, capture until double newline, next field, or end
+                patterns = [
+                    rf'^\*\*{re.escape(field_option)}:\*\*\s*(.*?)(?=\n\n|\*\*[^:]+:\*\*|##|$)',
+                    rf'\*\*{re.escape(field_option)}:\*\*\s*(.*?)(?=\n\n|\*\*[^:]+:\*\*|##|$)',
+                    rf'^{re.escape(field_option)}:\s*(.*?)(?=\n\n|\*\*[^:]+:\*\*|##|$)',
+                ]
+            else:
+                # For single line, capture until newline
+                patterns = [
+                    rf'^\*\*{re.escape(field_option)}:\*\*\s*([^\n]+)',
+                    rf'\*\*{re.escape(field_option)}:\*\*\s*([^\n]+)',
+                    rf'^{re.escape(field_option)}:\s*([^\n]+)',
+                ]
 
             flags = re.IGNORECASE | re.MULTILINE
             if multiline:
@@ -252,7 +273,8 @@ class MarkdownExtractor:
                 if match and match.group(1):
                     value = match.group(1).strip()
                     # Clean up excessive whitespace
-                    value = re.sub(r'\n\s*\n', '\n', value)
+                    if multiline:
+                        value = re.sub(r'\n\s*\n', '\n', value)
                     return value
 
         return None
@@ -278,18 +300,20 @@ class MarkdownExtractor:
     @classmethod
     def _extract_list_section(cls, text: str, section_name: str) -> List[str]:
         """Extract a list section (like Key Events)."""
-        # Handle OR in section names
+        # Handle OR in section names (remove ? for optional plurals)
+        section_name = section_name.replace('?', '')
         section_options = section_name.split('|')
 
         for section_option in section_options:
             section_option = section_option.strip()
-            # Find section header
-            pattern = rf'#{2,3}\s*{re.escape(section_option)}\s*\n'
+            # Find section header - allow flexible matching
+            # Build pattern without f-string conflict
+            pattern = r'#{2,3}\s*' + re.escape(section_option) + r's?\s*\n'
             match = re.search(pattern, text, re.IGNORECASE)
 
             if match:
                 # Find next section or end
-                next_section = re.search(r'#{2,3}\s*\w+', text[match.end():])
+                next_section = re.search(r'#{2,3}\s+', text[match.end():])
                 end_pos = match.end() + next_section.start() if next_section else len(text)
 
                 section_text = text[match.end():end_pos]
@@ -297,15 +321,21 @@ class MarkdownExtractor:
                 # Extract numbered or bulleted items
                 items = []
 
-                # Try numbered list first
-                numbered = re.findall(r'^\d+\.\s*(.*?)(?=\n\d+\.|$)', section_text, re.MULTILINE | re.DOTALL)
-                if numbered:
-                    items = [item.strip() for item in numbered]
-                else:
-                    # Try bullet points
-                    bullets = re.findall(r'^[-*]\s*(.*?)(?=\n[-*]|$)', section_text, re.MULTILINE | re.DOTALL)
-                    if bullets:
-                        items = [item.strip() for item in bullets]
+                # Try numbered list first (1. Item text)
+                numbered_lines = []
+                for line in section_text.split('\n'):
+                    numbered_match = re.match(r'^\d+\.\s+(.+)', line)
+                    if numbered_match:
+                        numbered_lines.append(numbered_match.group(1).strip())
+
+                if numbered_lines:
+                    return numbered_lines
+
+                # Try bullet points (- Item text)
+                for line in section_text.split('\n'):
+                    bullet_match = re.match(r'^[-*]\s+(.+)', line)
+                    if bullet_match:
+                        items.append(bullet_match.group(1).strip())
 
                 return items
 
@@ -356,15 +386,25 @@ class MarkdownExtractor:
         """Extract key locations."""
         locations = []
 
-        # Look for Key Locations section
-        loc_match = re.search(r'Key Locations?:?\s*\n', text, re.IGNORECASE)
+        # Look for Key Locations section - handle both **Key Locations:** and plain Key Locations:
+        loc_patterns = [
+            r'\*\*Key Locations?:\*\*',  # **Key Locations:**
+            r'Key Locations?:',  # Key Locations:
+        ]
+
+        loc_match = None
+        for pattern in loc_patterns:
+            loc_match = re.search(pattern, text, re.IGNORECASE)
+            if loc_match:
+                break
+
         if loc_match:
             loc_text = text[loc_match.end():]
 
-            # Look for pattern: "### Location Name" or "- **Location Name:**"
-            # Split by location headers
-            loc_pattern = r'(?:#{3}\s*|[-*]\s*\*\*)(.*?)(?:\*\*)?:\s*(.*?)(?=#{3}|[-*]\s*\*\*|\n\n|$)'
-            matches = re.findall(loc_pattern, loc_text, re.MULTILINE | re.DOTALL)
+            # Look for pattern: "- **Location Name:** description"
+            # Updated pattern to properly capture location items
+            loc_pattern = r'[-*]\s*\*\*([^:]+):\*\*\s*([^\n]+)'
+            matches = re.findall(loc_pattern, loc_text)
 
             for name, description in matches:
                 locations.append({
