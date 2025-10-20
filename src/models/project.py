@@ -974,14 +974,16 @@ This is a work of fiction. Names, characters, places, and incidents are either t
 
     def get_export_path(self, format_name: str) -> Path:
         """
-        Get default export file path for given format.
+        Get default export file path for given format with timestamp.
 
         Args:
             format_name: Format extension (rtf, md, html, etc.)
 
         Returns:
-            Path to export file in exports/ directory
+            Path to export file in exports/ directory with timestamp
         """
+        from datetime import datetime
+
         self.ensure_exports_dir()
         title = self.get_book_metadata('title', self.name)
         # Create safe filename
@@ -989,4 +991,7 @@ This is a work of fiction. Names, characters, places, and incidents are either t
         safe_title = safe_title.replace(' ', '-').lower()
         if not safe_title:
             safe_title = self.name
-        return self.exports_dir / f"{safe_title}.{format_name}"
+
+        # Add timestamp to filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return self.exports_dir / f"{safe_title}_{timestamp}.{format_name}"
