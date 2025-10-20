@@ -44,6 +44,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Automatically selects ALL issues without prompting
   - **Files Modified**: src/cli/interactive.py, src/generation/prose.py, src/generation/chapters.py
 
+- **LLM Prompt Template System** 📝 (v0.3.2+, Completed 2025-10-19)
+  - **Problem**: All LLM prompts were hardcoded inline in Python files (500+ lines of f-strings), making them difficult to read, modify, and version
+  - **Solution**: External template system with Jinja2, centralizing all prompts in `src/prompts/` directory
+  - **Architecture**:
+    - PromptLoader class with template caching and rendering (singleton pattern)
+    - Jinja2 templates with `{{ variable }}` syntax for variable interpolation
+    - System/User prompt separation with `[SYSTEM]` and `[USER]` section markers
+    - Centralized metadata in `config.yaml` (temperature, format, min_tokens, top_p per prompt)
+    - Template variables documented in header comments
+  - **Directory Structure**:
+    ```
+    src/prompts/
+    ├── config.yaml              # Metadata for all prompts
+    ├── generation/              # Generation prompts
+    │   ├── prose_generation.j2
+    │   ├── prose_iteration.j2
+    │   ├── chapter_foundation.j2
+    │   ├── chapter_single_shot.j2
+    │   └── treatment_generation.j2
+    ├── validation/              # Validation prompts
+    │   ├── prose_fidelity.j2
+    │   └── treatment_fidelity.j2
+    └── analysis/                # Analysis prompts
+        ├── intent_check.j2
+        └── chapter_judging.j2
+    ```
+  - **Implementation Details**:
+    - 9 prompts extracted from inline code to external templates
+    - All LLM calls refactored to use `{"role": "system", "content": prompts['system']}, {"role": "user", "content": prompts['user']}`
+    - Consistent pattern: `prompts = self.prompt_loader.render("path/to/template", **variables)`
+    - In-memory caching prevents repeated disk reads
+    - Global `get_prompt_loader()` function provides singleton instance
+  - **Files Refactored** (5 files, 98 insertions, 522 deletions):
+    - `src/generation/prose.py`: 3 prompts (generation, validation, iteration)
+    - `src/generation/chapters.py`: 3 prompts (foundation, validation, single-shot)
+    - `src/generation/treatment.py`: 1 prompt (treatment generation)
+    - `src/generation/iteration/intent.py`: 1 prompt (intent analysis)
+    - `src/generation/judging.py`: 1 prompt (variant judging)
+  - **Benefits**:
+    - Prompts now easily visible and modifiable as text files
+    - Version control for prompt evolution (track what changed and when)
+    - Easier prompt engineering (edit templates directly, no Python string escaping)
+    - Cleaner Python code (no 50-line f-strings interrupting logic)
+    - Centralized metadata management
+    - Template reusability with Jinja2 features (inheritance, includes, conditionals)
+  - **Commits**: 919b03a (initial setup), 6bcdde7 (complete refactoring)
+  - **Documentation**: CLAUDE.md updated, prompt templates fully documented with variable lists
+
 ### Fixed
 - **CRITICAL: Treatment Fidelity - Extraction Not Generation** 🎯 (v0.3.2+)
   - **Root Cause**: Chapter generation prompt didn't show treatment to LLM!
