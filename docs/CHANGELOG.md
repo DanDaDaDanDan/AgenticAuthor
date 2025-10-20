@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Quality-First Prose Generation Architecture** ✨ (v0.3.2+, Completed 2025-10-19)
+  - **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content
+  - **Root Cause**: `num_scenes = len(key_events)` treated plot points as separate scenes → 9 dramatic scenes with 9 "reversals" → massive duplication
+  - **Solution**: Removed all word count pressure from prompts
+  - **Philosophy**: Let LLM determine natural scene structure (2-4 scenes), focus on "write excellently" not "write N words"
+  - **Changes Made**:
+    - depth_calculator.py: Simplified 566 → 284 lines (50% reduction)
+    - wordcount.py: DELETED entirely (361 lines removed)
+    - prose.py: Quality-first prompt rewrite (SHOW vs TELL examples, natural scene breaks)
+    - chapters.py: Removed per-chapter word_count_target field
+    - analyzer.py: Removed per-chapter target display
+    - interactive.py + command_completer.py: Removed /wordcount command
+  - **Impact**: Eliminates duplication, natural scene flow, quality-focused prose, variable chapter lengths (2k-5k words)
+  - **Commits**: 82069da, 81c1946, e6fa14c, a9c7b5b, 595992b, cfe6e50, f230b4c
+  - **Documentation**: docs/PROSE_REFACTOR_PLAN.md, CLAUDE.md updated
+
 - **Auto-Fix Flag for Automatic Validation Iteration** 🤖 (v0.3.2+)
   - **Feature**: `--auto` flag for `/generate chapters` and `/generate prose` commands
   - **Behavior**: When validation fails, automatically regenerates with ALL issues without user prompts
