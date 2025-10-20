@@ -205,40 +205,20 @@ class ChapterGenerator:
 
         response_text = result.get('content', result) if isinstance(result, dict) else result
 
-        # Strip markdown fences if present (defensive - LLM should not add them)
-        response_text = response_text.strip()
-        if response_text.startswith('```yaml'):
-            response_text = response_text[7:]  # Remove ```yaml
-        elif response_text.startswith('```'):
-            response_text = response_text[3:]  # Remove ```
-        if response_text.endswith('```'):
-            response_text = response_text[:-3]  # Remove closing ```
-        response_text = response_text.strip()
+        # Use robust YAML parser with fallbacks
+        from ..utils.yaml_utils import parse_foundation_robust
 
-        # Parse YAML
         try:
-            foundation_data = yaml.safe_load(response_text)
-        except yaml.YAMLError as e:
-            raise Exception(f"Failed to parse foundation YAML: {e}")
-
-        # Validate structure
-        if not isinstance(foundation_data, dict):
-            raise Exception("Foundation response is not a valid dict structure")
-
-        required_sections = ['metadata', 'characters', 'world']
-        missing = [s for s in required_sections if s not in foundation_data]
-        if missing:
-            found_sections = list(foundation_data.keys())
-            # Save failed response for debugging
-            debug_file = self.project.path / '.agentic' / 'debug' / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}.yaml'
+            foundation_data = parse_foundation_robust(response_text, self.project.path)
+        except Exception as e:
+            # Save raw response for debugging before failing
+            debug_file = self.project.path / '.agentic' / 'debug' / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.txt'
             debug_file.parent.mkdir(parents=True, exist_ok=True)
             debug_file.write_text(response_text, encoding='utf-8')
 
             raise Exception(
-                f"Foundation missing required sections: {', '.join(missing)}\n"
-                f"Found sections: {', '.join(found_sections)}\n"
-                f"Full response saved to: {debug_file.relative_to(self.project.path)}\n"
-                f"Response preview (first 500 chars):\n{response_text[:500]}"
+                f"Failed to parse foundation: {e}\n"
+                f"Raw response saved to: {debug_file.relative_to(self.project.path)}"
             )
 
         # Make sure chapters section is NOT present
