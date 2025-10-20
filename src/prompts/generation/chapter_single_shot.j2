@@ -1,0 +1,111 @@
+{#
+    Single-shot chapter generation - all chapters in one call.
+
+    Variables:
+    - context_yaml: Full premise + treatment as YAML
+    - foundation_yaml: Foundation (metadata + characters + world) as YAML
+    - chapter_count: Number of chapters to generate
+    - feedback: Optional user feedback for iteration
+#}
+
+[SYSTEM]
+You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting. CRITICAL: All YAML list items MUST be fully quoted strings. Never use unquoted text with colons in list items. Format: - "Event text here".
+
+[USER]
+Generate a comprehensive chapter structure for a book.
+
+INPUT CONTEXT:
+```yaml
+{{ context_yaml }}
+```
+
+FOUNDATION (already generated):
+```yaml
+{{ foundation_yaml }}
+```
+
+TASK:
+Generate {{ chapter_count }} comprehensive chapter outlines for the complete story.
+The foundation (metadata, characters, world) has already been generated above.
+
+CRITICAL - PLAN THE COMPLETE ARC:
+Since you're generating ALL chapters at once, you have the unique opportunity to:
+- Plan the entire story progression before committing to any chapter
+- Distribute character development evenly across the arc
+- Ensure each chapter has a UNIQUE role in the story
+- Avoid duplicating plot beats or character moments
+- Create clear causal progression from chapter to chapter
+
+CHAPTER STRUCTURE:
+For each chapter provide:
+- number, title (evocative, specific)
+- pov, act (Act I/Act II/Act III based on position), summary (3-4 sentences)
+- key_events: 8-10 specific plot beats (UNIQUE to this chapter, not repeated)
+- character_developments: 3-4 internal changes (LINEAR progression, no repeated beats)
+- relationship_beats: 2-3 relationship evolutions (UNIQUE dynamics)
+- tension_points: 2-3 stakes/urgency moments
+- sensory_details: 2-3 atmospheric elements
+- subplot_threads: 1-2 if applicable
+
+GUIDELINES:
+- Each key_event should be specific and complete (not vague or generic)
+- Character developments show PROGRESSIVE internal change (no resets or repeats)
+- Relationship beats track EVOLVING dynamics (each interaction builds on previous)
+- Be specific with names, places, emotions, concrete details
+- Act I: ~25% chapters (setup and introduction)
+- Act II: ~50% chapters (rising action and complications)
+- Act III: ~25% chapters (climax and resolution)
+{% if feedback %}
+
+USER FEEDBACK: {{ feedback }}
+
+Please incorporate the above feedback while generating the chapters.
+{% endif %}
+
+RETURN FORMAT:
+Return ONLY valid YAML (no markdown fences):
+
+chapters:
+  - number: 1
+    title: "..."
+    pov: "..."
+    act: "Act I"
+    summary: "..."
+    key_events:
+      - "First event description"
+      - "Second event description"
+      - "Third event description"
+      - "Fourth event description"
+      - "Fifth event description"
+      - "Sixth event description"
+      - "Seventh event description"
+      - "Eighth event description"
+    character_developments:
+      - "First development"
+      - "Second development"
+      - "Third development"
+    relationship_beats:
+      - "First relationship change"
+      - "Second relationship change"
+    tension_points:
+      - "First tension point"
+      - "Second tension point"
+    sensory_details:
+      - "First sensory detail"
+      - "Second sensory detail"
+    subplot_threads:
+      - "First subplot thread"
+  - number: 2
+    title: "..."
+    # ... continue for all {{ chapter_count }} chapters
+
+YAML SYNTAX RULES:
+- ALWAYS wrap ALL list items in double quotes: - "Event text"
+- For dialogue in events, use single quotes inside doubles: - "He said: 'Hello'."
+- Do NOT wrap in markdown code fences
+
+IMPORTANT:
+- Return ONLY the YAML content starting with "chapters:"
+- Each chapter must have UNIQUE plot events (no duplication across chapters)
+- Character arcs must PROGRESS linearly (no repeated development beats)
+- Follow YAML syntax rules above to avoid parsing errors

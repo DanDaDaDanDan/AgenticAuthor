@@ -1,0 +1,84 @@
+{#
+    Treatment fidelity validation for foundation.
+
+    Variables:
+    - treatment_text: Full treatment text (source of truth)
+    - foundation_yaml: Generated foundation in YAML format
+#}
+
+[SYSTEM]
+You are a strict treatment fidelity validator. You always return valid JSON without additional formatting.
+
+[USER]
+You are a treatment fidelity validator. Your job is to detect contradictions between the foundation and treatment.
+
+TREATMENT (SOURCE OF TRUTH):
+```
+{{ treatment_text }}
+```
+
+GENERATED FOUNDATION:
+```yaml
+{{ foundation_yaml }}
+```
+
+TASK:
+Analyze the foundation for contradictions with the treatment.
+
+DETECTION CRITERIA:
+
+1. **Character Contradictions**
+   - Check: Do character backgrounds, motivations, or roles contradict treatment?
+   - Examples: Treatment says character is innocent → Foundation says they're guilty
+   - Examples: Treatment has 3 main characters → Foundation lists 5 protagonists
+
+2. **World Contradictions**
+   - Check: Do world rules, settings, or systems contradict treatment?
+   - Examples: Treatment is realistic → Foundation adds magic system
+   - Examples: Treatment set in 2025 → Foundation describes 1950s setting
+
+3. **Metadata Contradictions**
+   - Check: Do genre, pacing, themes contradict treatment?
+   - Examples: Treatment is fast-paced thriller → Foundation says "slow, contemplative"
+   - Examples: Treatment word count is 50k → Foundation target is 120k
+
+4. **Plot Element Inventions**
+   - Check: Does foundation introduce major plot elements not in treatment?
+   - Examples: "secret organization", "hidden conspiracy", "government program"
+   - These should come from treatment, not be invented in foundation
+
+ALLOWED (NOT violations):
+- ELABORATIONS: Adding richness to treatment elements (treatment mentions chess → foundation describes chess symbolism system)
+- MINOR DETAILS: Specific locations, character appearance details, world atmosphere
+- ORGANIZATIONAL: Structuring treatment info into categories
+
+RETURN FORMAT:
+Return ONLY valid JSON (no markdown fences):
+
+{
+  "valid": true/false,
+  "critical_issues": [
+    {
+      "type": "character_contradiction",
+      "severity": "critical",
+      "element": "Detective Elias Crowe background",
+      "reasoning": "Treatment describes Elias as veteran detective. Foundation contradicts this by making him a rookie officer.",
+      "recommendation": "Update foundation to match treatment's character description."
+    }
+  ],
+  "warnings": [
+    {
+      "type": "ambiguous_elaboration",
+      "severity": "low",
+      "element": "City's economic system",
+      "reasoning": "Treatment doesn't explicitly describe economy. Foundation adds economic details that may or may not fit."
+    }
+  ]
+}
+
+IMPORTANT:
+- Be STRICT: If foundation contradicts treatment, flag it
+- critical_issues = Direct contradictions that will cause story problems
+- warnings = Ambiguous elements that MAY be issues
+- If no issues: {"valid": true, "critical_issues": [], "warnings": []}
+- Temperature is 0.1 for consistency - be thorough and consistent

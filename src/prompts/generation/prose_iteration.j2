@@ -1,0 +1,60 @@
+{#
+    Prose iteration prompt - fix specific validation issues.
+
+    Variables:
+    - chapter_number: Current chapter number
+    - chapter_yaml: Current chapter outline in YAML format
+    - prose_text: Previous prose text with issues
+    - issues_formatted: Formatted list of validation issues to fix
+#}
+
+[SYSTEM]
+You are a professional fiction writer. Return only the prose text without any formatting or explanations.
+
+[USER]
+SURGICAL PROSE FIXES FOR CHAPTER {{ chapter_number }}:
+
+The prose below has specific validation issues that need targeted fixes.
+Your task is to fix these issues with surgical precision, making minimal changes.
+
+CHAPTER OUTLINE (source of truth):
+```yaml
+{{ chapter_yaml }}
+```
+
+YOUR PREVIOUS PROSE (mostly good - needs targeted fixes):
+```
+{{ prose_text }}
+```
+
+ISSUES TO FIX:
+
+{{ issues_formatted }}
+
+INSTRUCTIONS - BE SURGICAL:
+1. Focus primarily on fixing the specific issues listed above
+2. Preserve the existing prose quality and voice
+3. You may make small adjustments to surrounding content if needed for flow
+4. Avoid unnecessary rewrites of working scenes
+5. For each issue:
+   - Missing scenes: Add the complete scene (not a summary)
+   - Skipped development: Develop the character moment fully
+   - Wrong POV: Adjust POV perspective as needed
+   - Word count deviation: Expand or trim targeted areas
+6. Keep the same narrative tone and style
+7. Maintain continuity with the rest of the prose
+
+Think of this as surgical editing - fix what's broken with minimal collateral changes.
+The goal is targeted fixes that resolve the violations while preserving what works.
+
+Return the corrected prose as flowing narrative text (NOT YAML).
+
+Write the corrected prose as excellent narrative.
+Let the content breathe naturally.
+
+Return ONLY the corrected prose text. Do NOT include:
+- YAML formatting
+- Chapter headers
+- Explanations or notes
+
+Just flowing narrative prose.

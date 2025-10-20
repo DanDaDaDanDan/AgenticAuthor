@@ -1,0 +1,96 @@
+{#
+    Prose generation prompt for chapters.
+
+    Variables:
+    - chapters_yaml: Full chapters.yaml content (metadata, characters, world, chapters)
+    - prev_summary: Context from previous chapters (full prose)
+    - chapter_number: Current chapter number
+    - current_chapter: Current chapter dict from chapters.yaml
+    - chapter_summary: Summary of current chapter
+    - moments_text: Formatted list of key moments to include
+    - metadata: Story metadata dict
+    - narrative_style: Narrative voice/style (default: "third person limited")
+#}
+
+[SYSTEM]
+You are a professional fiction writer. Return only the prose text without any formatting or explanations.
+
+[USER]
+Generate excellent prose for a chapter using this story context.
+
+STORY CONTEXT (chapters.yaml):
+```yaml
+{{ chapters_yaml }}
+```
+{{ prev_summary }}
+
+CHAPTER TO WRITE:
+- Chapter {{ chapter_number }}: "{{ current_chapter['title'] }}"
+- POV: {{ current_chapter.get('pov', 'N/A') }}
+- Act: {{ current_chapter.get('act', 'N/A') }}
+
+CHAPTER SUMMARY:
+{{ chapter_summary }}
+{{ moments_text }}
+
+YOUR MISSION:
+Write this chapter as EXCELLENT PROSE.
+
+Let each moment breathe naturally - don't rush or pad content.
+Scenes end when they're complete, not when they hit a word count.
+Show the story vividly through {{ current_chapter.get('pov', 'the character') }}'s perspective.
+Trust your narrative instincts over arithmetic.
+
+STRUCTURE GUIDANCE:
+- Natural scene breaks (typically 2-4 scenes for material like this)
+- Progressive development, no repetition
+- Each key moment happens ONCE, fully realized
+- Let the story determine chapter length
+
+SHOW vs TELL - CRITICAL:
+
+❌ TELLING (summary - avoid):
+"Sarah was angry about the birthday. She confronted him and he apologized."
+(20 words - rushed)
+
+✅ SHOWING (full scene - do):
+Sarah's jaw clenched as Mark walked in, whistling. Her birthday. Her thirtieth. Forgotten.
+
+"Hey," he said. "What's for dinner?"
+
+The question hit like a slap. She'd waited all day. "You're kidding."
+
+"What?" He opened the fridge, oblivious.
+
+"Mark." Her voice came out flat. "What day is it?"
+
+He paused. His eyes widened. "Oh God. Sarah, I—"
+
+"Don't." She held up a hand. "Just don't."
+
+(380 words - full scene with emotion, dialogue, action)
+
+GUIDELINES:
+1. Use metadata (tone, pacing, themes) to guide your voice
+2. Draw on character backgrounds and motivations
+3. Use world-building details to ground scenes
+4. Perfect continuity from previous chapters
+5. Narrative style: {{ metadata.get('narrative_style', narrative_style) }}
+6. SHOW emotions through action, dialogue, physical reactions
+7. Include sensory details (sight, sound, touch, smell, taste)
+8. Let dialogue breathe - reactions, pauses, processing
+9. Honor act context ({{ current_chapter.get('act', 'N/A') }}):
+   - Act I: Efficient but full scenes
+   - Act II: Standard dramatic development
+   - Act III: Deeper emotional intensity
+
+These guidelines serve the story. Prioritize what makes the prose excellent.
+You have creative latitude when prescriptive details conflict with narrative flow.
+
+Return ONLY the prose text. Do NOT include:
+- YAML formatting
+- Chapter headers (we'll add those)
+- Explanations or notes
+- Scene markers or dividers
+
+Just flowing narrative prose - write the best version of this chapter.

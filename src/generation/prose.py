@@ -13,6 +13,7 @@ from ..models import Project
 from ..utils.tokens import estimate_tokens
 from .lod_context import LODContextBuilder
 from .depth_calculator import DepthCalculator
+from ..prompts import get_prompt_loader
 
 
 class ProseGenerator:
@@ -34,6 +35,7 @@ class ProseGenerator:
         self.model = model
         self.context_builder = LODContextBuilder()
         self.console = Console()
+        self.prompt_loader = get_prompt_loader()
 
 
     def load_all_chapters_with_prose(self) -> List[Dict[str, Any]]:
@@ -547,84 +549,20 @@ Return ONLY the JSON, no additional commentary."""
                     else:
                         moments_text += f"- {event}\n"
 
-        prompt = f"""Generate excellent prose for a chapter using this story context.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/prose_generation",
+            chapters_yaml=chapters_yaml,
+            prev_summary=prev_summary,
+            chapter_number=chapter_number,
+            current_chapter=current_chapter,
+            chapter_summary=chapter_summary,
+            moments_text=moments_text,
+            metadata=metadata,
+            narrative_style=narrative_style
+        )
 
-STORY CONTEXT (chapters.yaml):
-```yaml
-{chapters_yaml}
-```
-{prev_summary}
-
-CHAPTER TO WRITE:
-- Chapter {chapter_number}: "{current_chapter['title']}"
-- POV: {current_chapter.get('pov', 'N/A')}
-- Act: {current_chapter.get('act', 'N/A')}
-
-CHAPTER SUMMARY:
-{chapter_summary}
-{moments_text}
-
-YOUR MISSION:
-Write this chapter as EXCELLENT PROSE.
-
-Let each moment breathe naturally - don't rush or pad content.
-Scenes end when they're complete, not when they hit a word count.
-Show the story vividly through {current_chapter.get('pov', 'the character')}'s perspective.
-Trust your narrative instincts over arithmetic.
-
-STRUCTURE GUIDANCE:
-- Natural scene breaks (typically 2-4 scenes for material like this)
-- Progressive development, no repetition
-- Each key moment happens ONCE, fully realized
-- Let the story determine chapter length
-
-SHOW vs TELL - CRITICAL:
-
-❌ TELLING (summary - avoid):
-"Sarah was angry about the birthday. She confronted him and he apologized."
-(20 words - rushed)
-
-✅ SHOWING (full scene - do):
-Sarah's jaw clenched as Mark walked in, whistling. Her birthday. Her thirtieth. Forgotten.
-
-"Hey," he said. "What's for dinner?"
-
-The question hit like a slap. She'd waited all day. "You're kidding."
-
-"What?" He opened the fridge, oblivious.
-
-"Mark." Her voice came out flat. "What day is it?"
-
-He paused. His eyes widened. "Oh God. Sarah, I—"
-
-"Don't." She held up a hand. "Just don't."
-
-(380 words - full scene with emotion, dialogue, action)
-
-GUIDELINES:
-1. Use metadata (tone, pacing, themes) to guide your voice
-2. Draw on character backgrounds and motivations
-3. Use world-building details to ground scenes
-4. Perfect continuity from previous chapters
-5. Narrative style: {metadata.get('narrative_style', narrative_style)}
-6. SHOW emotions through action, dialogue, physical reactions
-7. Include sensory details (sight, sound, touch, smell, taste)
-8. Let dialogue breathe - reactions, pauses, processing
-9. Honor act context ({current_chapter.get('act', 'N/A')}):
-   - Act I: Efficient but full scenes
-   - Act II: Standard dramatic development
-   - Act III: Deeper emotional intensity
-
-These guidelines serve the story. Prioritize what makes the prose excellent.
-You have creative latitude when prescriptive details conflict with narrative flow.
-
-Return ONLY the prose text. Do NOT include:
-- YAML formatting
-- Chapter headers (we'll add those)
-- Explanations or notes
-- Scene markers or dividers
-
-Just flowing narrative prose - write the best version of this chapter."""
+        prompt = prompts['user']
 
         # Generate with API
         try:
@@ -632,15 +570,19 @@ Just flowing narrative prose - write the best version of this chapter."""
             from ..utils.tokens import estimate_messages_tokens
             estimated_response_tokens = 5000  # Reasonable default for quality prose
 
+            # Get temperature and top_p from prompt config
+            temperature = self.prompt_loader.get_temperature("generation/prose_generation", default=0.8)
+            top_p = self.prompt_loader.get_metadata("generation/prose_generation").get('top_p', 0.9)
+
             # Use streaming_completion for prose (plain text, not YAML)
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a professional fiction writer. Return only the prose text without any formatting or explanations."},
+                    {"role": "system", "content": prompts['system']},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.8,  # Higher for creative prose
-                top_p=0.9,  # Focused sampling for quality
+                temperature=temperature,
+                top_p=top_p,
                 display=True,
                 display_label=f"Generating Chapter {chapter_number} prose",
                 min_response_tokens=estimated_response_tokens

@@ -723,6 +723,95 @@ def _commit(self, message: str):
 - `src/cli/taxonomy_editor.py` - Full-screen checkbox UI for taxonomy selection
 - `src/cli/model_selector.py` - Interactive model selector with live fuzzy search
 - `src/utils/logging.py` - Comprehensive logging system
+- **`src/prompts/`** - Prompt templates and management system
+  - **PromptLoader class**: Loads and renders Jinja2 templates for all LLM calls
+  - **config.yaml**: Metadata for each prompt (temperature, format, min_tokens, top_p)
+  - **Template organization**: generation/, validation/, analysis/ subdirectories
+  - **Benefits**: Easy to view/edit prompts, centralized configuration, system/user prompt separation
+
+### Prompt Extraction System
+
+**Architecture**: All LLM prompts are extracted into Jinja2 templates in `src/prompts/` for easy viewing and modification.
+
+**Directory Structure:**
+```
+src/prompts/
+├── __init__.py              # PromptLoader class
+├── config.yaml              # Metadata (temperature, format, tokens)
+├── generation/
+│   ├── prose_generation.j2
+│   ├── prose_iteration.j2
+│   ├── chapter_foundation.j2
+│   ├── chapter_single_shot.j2
+│   └── treatment_generation.j2
+├── validation/
+│   ├── prose_fidelity.j2
+│   └── treatment_fidelity.j2
+└── analysis/
+    ├── intent_check.j2
+    └── chapter_judging.j2
+```
+
+**Template Format:**
+Each .j2 file has [SYSTEM] and [USER] sections:
+```jinja2
+{# Variable documentation in header comments #}
+
+[SYSTEM]
+You are a professional story development assistant.
+
+[USER]
+Generate a treatment based on this premise:
+{{ premise_text }}
+
+Target: {{ target_words }} words
+```
+
+**Usage Pattern:**
+```python
+from src.prompts import get_prompt_loader
+
+# In __init__:
+self.prompt_loader = get_prompt_loader()
+
+# When making LLM call:
+prompts = self.prompt_loader.render(
+    "generation/prose_generation",
+    chapters_yaml=chapters_yaml,
+    chapter_number=chapter_number,
+    current_chapter=current_chapter,
+    # ... other variables
+)
+
+# Get metadata from config
+temperature = self.prompt_loader.get_temperature("generation/prose_generation", default=0.8)
+top_p = self.prompt_loader.get_metadata("generation/prose_generation").get('top_p', 0.9)
+
+# Use in API call
+result = await self.client.streaming_completion(
+    model=self.model,
+    messages=[
+        {"role": "system", "content": prompts['system']},
+        {"role": "user", "content": prompts['user']}
+    ],
+    temperature=temperature,
+    top_p=top_p,
+    ...
+)
+```
+
+**Benefits:**
+- **Visibility**: All prompts viewable in one place
+- **Separation**: System vs user prompts clearly distinguished
+- **Configuration**: Temperature, format, tokens centralized in config.yaml
+- **Maintenance**: Easy to update prompts without touching code
+- **Testing**: Can test prompt changes independently
+
+**When Adding New LLM Calls:**
+1. Create template in appropriate directory (generation/, validation/, analysis/)
+2. Add metadata to config.yaml
+3. Use PromptLoader.render() to get prompts
+4. Use PromptLoader.get_temperature() / get_metadata() for config
 
 ## Fail-Early Paradigm
 
