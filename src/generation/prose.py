@@ -238,10 +238,6 @@ class ProseGenerator:
         # Build validation prompt
         chapter_yaml = yaml.dump(chapter_outline, default_flow_style=False, allow_unicode=True)
 
-        # Get scene/event count
-        scenes = chapter_outline.get('scenes', chapter_outline.get('key_events', []))
-        num_scenes = len(scenes)
-
         prompt = f"""You are a strict prose validation system. Your job is to detect when prose deviates from its chapter outline.
 
 CHAPTER OUTLINE (source of truth):
@@ -263,23 +259,22 @@ VALIDATION CRITERIA:
 - Pacing and sentence-level style choices
 - Minor sequence adjustments within a scene
 - Elaboration on outline points with additional description
+- Natural variation in prose length (chapters breathe based on content)
 
 **FORBIDDEN** (critical deviations to flag):
-- Missing entire scenes from the outline (prose has {num_scenes} required scenes)
+- Missing entire key moments from the outline
 - Skipping character development moments listed in outline
 - Ignoring emotional beats specified in outline
 - Wrong POV character (outline specifies: {chapter_outline.get('pov', 'N/A')})
 - Significantly different scene outcomes than specified
 - Missing major plot points or story beats
-- Severe word count deviation (target: {chapter_outline.get('word_count_target', 3000)}, acceptable range: 70-130%)
 
 YOUR TASK:
 
-1. Check if ALL scenes from the outline are present in the prose (in some form)
+1. Check if ALL key moments from the outline are present in the prose (in some form)
 2. Verify character developments and emotional beats were addressed
-3. Check if word count is within acceptable range (70-130% of target)
-4. Verify POV character consistency
-5. Check that scene outcomes align with outline specifications
+3. Verify POV character consistency
+4. Check that scene outcomes align with outline specifications
 
 Return your analysis as JSON:
 
@@ -287,30 +282,21 @@ Return your analysis as JSON:
   "valid": true|false,
   "issues": [
     {{
-      "type": "missing_scene|skipped_development|wrong_pov|word_count_deviation|wrong_outcome|insufficient_detail",
+      "type": "missing_moment|skipped_development|wrong_pov|wrong_outcome|insufficient_detail",
       "severity": "critical|high|medium",
       "element": "Brief description of what's wrong",
       "reasoning": "Detailed explanation of the deviation",
       "recommendation": "How to fix it"
     }}
-  ],
-  "scene_coverage": {{
-    "outlined_scenes": {num_scenes},
-    "found_scenes": <number>,
-    "missing_scenes": ["list of missing scene titles"]
-  }},
-  "word_count_check": {{
-    "target": {chapter_outline.get('word_count_target', 3000)},
-    "actual": <actual word count>,
-    "percentage": <percentage of target>
-  }}
+  ]
 }}
 
 IMPORTANT:
-- Only flag CRITICAL deviations (missing scenes, skipped developments, etc.)
+- Only flag CRITICAL deviations (missing key moments, skipped developments, etc.)
 - Do NOT flag creative elaboration or stylistic choices
+- Do NOT flag prose length - let chapters breathe naturally
 - Do NOT flag minor reordering within scenes
-- Be strict but not pedantic - the outline is a guide, not a script
+- The outline is a guide for quality, not a strict script
 
 Return ONLY the JSON, no additional commentary."""
 
@@ -534,11 +520,8 @@ Return ONLY the JSON, no additional commentary."""
         chapters_yaml = yaml.dump(modified_chapters_data, sort_keys=False)
 
         # Build prose generation prompt
-        word_count_target = current_chapter.get('word_count_target', 3000)
-
-        # Support both new (scenes) and old (key_events) formats
-        scenes = current_chapter.get('scenes', current_chapter.get('key_events', []))
-        num_scenes = len(scenes)
+        #  Support both new (scenes) and old (key_events) formats
+        key_moments = current_chapter.get('scenes', current_chapter.get('key_events', []))
         uses_structured_scenes = 'scenes' in current_chapter and isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict)
 
         # Calculate scene depth guidance from actual scene targets

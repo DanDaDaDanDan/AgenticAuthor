@@ -261,10 +261,6 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Show recent log entries',
             'usage': '/logs'
         },
-        'wordcount': {
-            'description': 'Assign word count targets to chapters based on content',
-            'usage': '/wordcount'
-        },
         'exit': {
             'description': 'Exit the application',
             'usage': '/exit'
