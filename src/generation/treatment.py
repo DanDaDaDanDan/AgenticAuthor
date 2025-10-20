@@ -9,6 +9,7 @@ from ..api import OpenRouterClient
 from ..models import Project
 from .lod_context import LODContextBuilder
 from .cull import CullManager
+from ..prompts import get_prompt_loader
 
 
 DEFAULT_TREATMENT_TEMPLATE = """Based on this premise:
@@ -60,6 +61,7 @@ class TreatmentGenerator:
         self.project = project
         self.model = model
         self.context_builder = LODContextBuilder()
+        self.prompt_loader = get_prompt_loader()
 
     async def generate(
         self,
@@ -107,47 +109,13 @@ class TreatmentGenerator:
                 unique_context += f"Unique Elements: {', '.join(unique_elements)}\n"
                 unique_context += "Ensure these elements are woven throughout and expanded upon in the treatment.\n"
 
-        # Build prompt
-        prompt = f"""Here is the current book content for context:
-
-```yaml
-{context_yaml}
-```
-{unique_context}
-Generate a detailed treatment (LOD2) based on the premise above.
-
-Target: {target_words} words
-
-Guidelines:
-1. Expand the world and characters
-2. Outline the three-act structure clearly
-3. Maintain the core premise essence and unique elements
-4. Act I (25%): Setup, ordinary world, inciting incident
-5. Act II (50%): Rising action, midpoint turn, complications
-6. Act III (25%): Climax, resolution, denouement
-
-Include:
-- Character arcs for main characters
-- Key plot points and turning moments
-- Thematic elements woven throughout
-- World-building details relevant to the story
-
-Format as flowing narrative prose, not bullet points.
-
-CRITICAL: Return ONLY the treatment as YAML:
-```yaml
-treatment:
-  text: |
-    ### Your Treatment Title
-
-    Your treatment narrative here (Act I, Act II, Act III)...
-
-    Target ~{target_words} words of flowing prose.
-```
-
-Do NOT include premise, chapters, or prose sections.
-Do NOT wrap in additional markdown code fences.
-Return ONLY the treatment section."""
+        # Render treatment prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/treatment_generation",
+            context_yaml=context_yaml,
+            unique_context=unique_context,
+            target_words=target_words
+        )
 
         # Generate with API
         try:
@@ -155,8 +123,8 @@ Return ONLY the treatment section."""
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": prompts['system']},
+                    {"role": "user", "content": prompts['user']}
                 ],
                 temperature=0.7,  # Balanced for coherent narrative
                 display=True,  # Show streaming progress

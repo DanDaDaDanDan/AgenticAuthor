@@ -2,10 +2,10 @@
 
 import json
 from typing import Dict, Any, Optional
-from jinja2 import Template
 
 from ...api import OpenRouterClient
 from ...models import Project
+from ...prompts import get_prompt_loader
 
 
 INTENT_ANALYSIS_TEMPLATE = """You are analyzing user feedback for a book generation system.
@@ -101,6 +101,7 @@ class IntentAnalyzer:
         self.client = client
         self.model = model
         self.default_target = default_target
+        self.prompt_loader = get_prompt_loader()
 
     async def analyze(
         self,
@@ -146,8 +147,8 @@ class IntentAnalyzer:
         if logger:
             logger.info("INTENT: Rendering prompt template...")
 
-        template = Template(INTENT_ANALYSIS_TEMPLATE)
-        prompt = template.render(
+        prompts = self.prompt_loader.render(
+            "analysis/intent_check",
             project_name=project.name,
             genre=project_context['genre'],
             status=project_context['status'],
@@ -155,17 +156,17 @@ class IntentAnalyzer:
             has_treatment="Yes" if project_context['has_treatment'] else "No",
             chapter_count=project_context['chapter_count'],
             prose_chapters=project_context['prose_chapters'],
-            default_target=self.default_target,
+            default_target=self.default_target or "",
             feedback=feedback
         )
 
         if logger:
-            logger.debug(f"INTENT: Prompt length: {len(prompt)} chars")
+            logger.debug(f"INTENT: Prompt length: {len(prompts['user'])} chars")
 
         # Call LLM for intent analysis
         messages = [
-            {"role": "system", "content": "You are an expert at analyzing user intent. Always respond with valid JSON only."},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": prompts['system']},
+            {"role": "user", "content": prompts['user']}
         ]
 
         try:

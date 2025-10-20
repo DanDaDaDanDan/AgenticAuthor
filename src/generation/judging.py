@@ -11,6 +11,7 @@ from rich.console import Console
 
 from ..api import OpenRouterClient
 from ..models import Project
+from ..prompts import get_prompt_loader
 
 
 class JudgingCoordinator:
@@ -37,6 +38,7 @@ class JudgingCoordinator:
         self.project = project
         self.model = model
         self.console = Console()
+        self.prompt_loader = get_prompt_loader()
         self.variants_dir = project.path / 'chapter-beats-variants'
         self.decisions_file = self.variants_dir / 'decision.json'
 
@@ -44,9 +46,9 @@ class JudgingCoordinator:
         self,
         foundation: Dict[str, Any],
         variants_data: Dict[int, List[Dict[str, Any]]]
-    ) -> str:
+    ) -> Dict[str, str]:
         """
-        Build judging prompt with minimal structure.
+        Build judging prompt with minimal structure using PromptLoader.
 
         User requirement: "allow the LLM freedom to judge how it sees fit; no need to overly provide structure"
 
@@ -58,26 +60,15 @@ class JudgingCoordinator:
             variants_data: Dict mapping variant_num -> list of chapter dicts
 
         Returns:
-            Prompt string for LLM judging
+            Dict with 'system' and 'user' prompts
         """
         from .variants import VARIANT_CONFIGS
 
         # Serialize foundation
         foundation_yaml = yaml.dump(foundation, sort_keys=False, allow_unicode=True)
 
-        # Build prompt with all variants
-        prompt = f"""You are judging {len(variants_data)} different chapter outline variants for the same story.
-
-All variants share the same foundation (metadata, characters, world) but differ in their chapter-by-chapter execution.
-
-FOUNDATION (shared by all variants):
-```yaml
-{foundation_yaml}
-```
-
-"""
-
-        # Add each variant
+        # Build variants sections
+        variants_sections = ""
         for variant_num in sorted(variants_data.keys()):
             chapters = variants_data[variant_num]
 
@@ -93,40 +84,26 @@ FOUNDATION (shared by all variants):
                 allow_unicode=True
             )
 
-            prompt += f"""VARIANT {variant_num}{temp_label}:
+            variants_sections += f"""VARIANT {variant_num}{temp_label}:
 ```yaml
 {variant_yaml}
 ```
 
 """
 
-        # Add judging instructions with MINIMAL structure
         # Build list of actual variant numbers (e.g., "1, 3, 4" if variant 2 failed)
         variant_numbers = ', '.join(map(str, sorted(variants_data.keys())))
 
-        prompt += f"""YOUR TASK:
-Evaluate all {len(variants_data)} variants and select the BEST one for this story.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "analysis/chapter_judging",
+            variants_count=len(variants_data),
+            foundation_yaml=foundation_yaml,
+            variants_sections=variants_sections,
+            variant_numbers=variant_numbers
+        )
 
-Consider whatever criteria you find most important for story quality. This might include:
-- Narrative coherence and flow
-- Character development arcs
-- Plot structure and pacing
-- Uniqueness and freshness of events
-- Emotional impact and stakes
-- Treatment fidelity
-- Or any other factors you deem relevant
-
-You have complete freedom to judge as you see fit. Trust your editorial judgment.
-
-RETURN FORMAT (JSON):
-{{
-  "winner": <one of: {variant_numbers}>,
-  "reasoning": "<Your explanation for why this variant is best - be specific about what makes it superior>"
-}}
-
-Return ONLY valid JSON, no markdown fences or additional text."""
-
-        return prompt
+        return prompts
 
     async def judge_variants(
         self,
@@ -155,10 +132,10 @@ Return ONLY valid JSON, no markdown fences or additional text."""
             logger.info(f"Using model: {self.model}")
 
         # Build prompt
-        prompt = self._build_judging_prompt(foundation, variants_data)
+        prompts = self._build_judging_prompt(foundation, variants_data)
 
         if logger:
-            logger.debug(f"Judging prompt length: {len(prompt)} characters")
+            logger.debug(f"Judging prompt length: {len(prompts['user'])} characters")
 
         # Make judging call with LOW temperature for consistency
         self.console.print(f"\n[cyan]Judging {len(variants_data)} variants...[/cyan]")
@@ -168,14 +145,8 @@ Return ONLY valid JSON, no markdown fences or additional text."""
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert story editor with deep understanding of narrative structure, character development, and plot construction. You provide clear, specific editorial judgments. You always return valid JSON without additional formatting."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "system", "content": prompts['system']},
+                    {"role": "user", "content": prompts['user']}
                 ],
                 temperature=0.1,  # Low temperature for consistent, reliable judgment
                 stream=False,  # No streaming for judging (want complete response)

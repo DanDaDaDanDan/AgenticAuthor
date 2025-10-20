@@ -11,6 +11,7 @@ from ..models import Project, ChapterOutline
 from rich.console import Console
 from .lod_context import LODContextBuilder
 from .depth_calculator import DepthCalculator
+from ..prompts import get_prompt_loader
 
 
 class ChapterGenerator:
@@ -70,6 +71,7 @@ class ChapterGenerator:
         self.model = model
         self.console = Console()
         self.context_builder = LODContextBuilder()
+        self.prompt_loader = get_prompt_loader()
 
     def _calculate_structure(self, total_words: int, pacing: str, length_scope: Optional[str] = None) -> Dict:
         """
@@ -168,143 +170,29 @@ class ChapterGenerator:
             for elem in unique_elements:
                 metadata_yaml_example += f'\n    - "{elem}"'
 
-        # Iteration-specific instructions for structural flexibility
-        word_count_note = ""
-        chapter_count_note = ""
-        if feedback:
-            word_count_note = " # Current target - adjust based on feedback if needed"
-            chapter_count_note = " # Current count - adjust based on feedback if needed"
-
-        prompt = f"""# TREATMENT
-```yaml
-{context_yaml}
-```
-{unique_context}
-# YOUR TASK
-Generate foundation (metadata + characters + world) from the treatment above.
-
-Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
-
-# OUTPUT
-Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
-
-{metadata_yaml_example}
-
-characters:
-  - name: "..."
-    role: "protagonist"
-    background: |
-      ...
-    motivation: |
-      ...
-    character_arc: |
-      ...
-    personality_traits: ["...", "..."]
-    internal_conflict: |
-      ...
-    relationships:
-      - character: "..."
-        dynamic: "..."
-
-world:
-  setting_overview: |
-    ...
-  key_locations:
-    - name: "..."
-      description: "..."
-  systems_and_rules:
-    - system: "..."
-      description: |
-        ...
-  social_context: ["...", "..."]
-
-IMPORTANT: Return all 3 sections (metadata, characters, world). No chapters section."""
-
-        # Add treatment analysis instruction for initial generation
-        if is_initial_generation and min_words and max_words:
-            prompt += f"""
-
-TREATMENT ANALYSIS FOR WORD COUNT:
-
-Before setting target_word_count, analyze the treatment to determine the story's natural scope.
-
-Consider these factors from the treatment:
-1. STORY COMPLEXITY: How many major plot threads are outlined?
-2. CHARACTER COUNT: How many characters have significant roles?
-3. WORLD-BUILDING NEEDS: How much setting/system explanation is required?
-4. SUBPLOT DENSITY: How many parallel storylines are present?
-5. NATURAL PACING: Does the story suggest fast-paced action (fewer words) or deliberate literary exploration (more)?
-6. TIMELINE: Do events span days/weeks (shorter) or months/years (longer)?
-
-CONSTRAINTS:
-- Genre: {genre or 'general'}
-- Length scope: {length_scope} ({min_words:,}-{max_words:,} words)
-- Genre baseline: {genre_baseline:,} words (reference only - DO NOT default to this)
-
-CRITICAL: Set target_word_count based on the treatment's ACTUAL COMPLEXITY within the {length_scope} range ({min_words:,}-{max_words:,}).
-
-Examples of organic word count selection:
-- Tight thriller with single plot thread, 2-3 main characters, fast pacing → {int(min_words * 1.2):,} words
-- Complex mystery with multiple suspects, intricate plotting, moderate pacing → {int((min_words + max_words) / 2):,} words
-- Epic with extensive world-building, large cast, multiple subplots → {int(max_words * 0.9):,} words
-
-Your choice should reflect the treatment's inherent scope, not just match the genre default."""
-
-        # Add feedback instruction if iterating
-        if feedback:
-            prompt += f"\n\nUSER FEEDBACK:\n{feedback}\n\n"
-            prompt += f"""CRITICAL INSTRUCTION: Analyze the feedback's structural intent before setting target_word_count and chapter_count.
-
-Current baseline: {total_words:,} words, {chapter_count} chapters
-
-STEP 1: Identify the feedback's overall intent by looking for these indicators:
-
-CONSOLIDATION INDICATORS (→ REDUCE both word count and chapter count):
-  Keywords: "consolidate", "combine", "merge", "tighten", "condense", "streamline"
-  Problems: "padded", "repetitive", "redundant", "dragging", "slow", "bloated"
-  Actions: "remove", "cut", "trim", "reduce", "eliminate"
-
-  If feedback contains these → REDUCE by 15-25%
-  Example: {total_words:,} words → {int(total_words * 0.75):,}-{int(total_words * 0.85):,} words
-           {chapter_count} chapters → {max(int(chapter_count * 0.75), 1)}-{max(int(chapter_count * 0.85), 1)} chapters
-
-EXPANSION INDICATORS (→ INCREASE both word count and chapter count):
-  Keywords: "expand", "develop", "add more", "deepen", "flesh out", "elaborate"
-  Problems: "rushed", "underdeveloped", "needs more", "too brief", "shallow"
-  Actions: "add", "extend", "grow", "enrich"
-
-  If feedback contains these → INCREASE by 15-25%
-  Example: {total_words:,} words → {int(total_words * 1.15):,}-{int(total_words * 1.25):,} words
-           {chapter_count} chapters → {int(chapter_count * 1.15)}-{int(chapter_count * 1.25)} chapters
-
-MIXED/REFINEMENT (→ minimal or no adjustment):
-  Feedback addresses specific scenes/moments without overall length concerns
-  Both consolidation and expansion requested in different areas
-  Focus on content changes rather than structural changes
-
-  If mixed signals → Adjust by less than 10% or keep current
-  Example: {total_words:,} words → {int(total_words * 0.95):,}-{total_words:,} words
-           {chapter_count} chapters → {max(chapter_count - 2, 1)}-{chapter_count} chapters
-
-STEP 2: Set your target_word_count and chapter_count based on your analysis above.
-
-Your values should reflect the feedback's structural intent, not just specific edits.
-If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitive", "combine chapters"), you SHOULD reduce both metrics proportionally.
-
-CRITICAL - AVOID DUPLICATE EVENTS IN ITERATION:
-When the feedback mentions duplicate or repetitive content:
-- This means previous chapter generation created redundant scenes/events
-- Your job is to consolidate the structure to PREVENT duplication
-- Review the existing chapters carefully and eliminate duplicate plot beats
-- Each chapter should cover UNIQUE story events and character moments
-- Do NOT create separate chapters for events that should be combined into one"""
+        # Render foundation prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/chapter_foundation",
+            context_yaml=context_yaml,
+            unique_context=unique_context,
+            metadata_yaml_example=metadata_yaml_example,
+            total_words=total_words,
+            chapter_count=chapter_count,
+            feedback=feedback or "",
+            is_initial_generation=is_initial_generation,
+            min_words=min_words or 0,
+            max_words=max_words or 0,
+            genre_baseline=genre_baseline or 0,
+            length_scope=length_scope or "",
+            genre=genre or ""
+        )
 
         # Generate foundation
         result = await self.client.streaming_completion(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a professional story development assistant. You always return valid YAML without additional formatting."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": prompts['system']},
+                {"role": "user", "content": prompts['user']}
             ],
             temperature=0.6,  # Balanced creativity with adherence to treatment
             stream=True,
@@ -522,87 +410,20 @@ When the feedback mentions duplicate or repetitive content:
         # Serialize foundation for validator
         foundation_yaml = yaml.dump(foundation_data, default_flow_style=False, allow_unicode=True)
 
-        # Build validation prompt
-        validation_prompt = f"""You are a treatment fidelity validator. Your job is to detect contradictions between the foundation and treatment.
-
-TREATMENT (SOURCE OF TRUTH):
-```
-{treatment_text}
-```
-
-GENERATED FOUNDATION:
-```yaml
-{foundation_yaml}
-```
-
-TASK:
-Analyze the foundation for contradictions with the treatment.
-
-DETECTION CRITERIA:
-
-1. **Character Contradictions**
-   - Check: Do character backgrounds, motivations, or roles contradict treatment?
-   - Examples: Treatment says character is innocent → Foundation says they're guilty
-   - Examples: Treatment has 3 main characters → Foundation lists 5 protagonists
-
-2. **World Contradictions**
-   - Check: Do world rules, settings, or systems contradict treatment?
-   - Examples: Treatment is realistic → Foundation adds magic system
-   - Examples: Treatment set in 2025 → Foundation describes 1950s setting
-
-3. **Metadata Contradictions**
-   - Check: Do genre, pacing, themes contradict treatment?
-   - Examples: Treatment is fast-paced thriller → Foundation says "slow, contemplative"
-   - Examples: Treatment word count is 50k → Foundation target is 120k
-
-4. **Plot Element Inventions**
-   - Check: Does foundation introduce major plot elements not in treatment?
-   - Examples: "secret organization", "hidden conspiracy", "government program"
-   - These should come from treatment, not be invented in foundation
-
-ALLOWED (NOT violations):
-- ELABORATIONS: Adding richness to treatment elements (treatment mentions chess → foundation describes chess symbolism system)
-- MINOR DETAILS: Specific locations, character appearance details, world atmosphere
-- ORGANIZATIONAL: Structuring treatment info into categories
-
-RETURN FORMAT:
-Return ONLY valid JSON (no markdown fences):
-
-{{
-  "valid": true/false,
-  "critical_issues": [
-    {{
-      "type": "character_contradiction",
-      "severity": "critical",
-      "element": "Detective Elias Crowe background",
-      "reasoning": "Treatment describes Elias as veteran detective. Foundation contradicts this by making him a rookie officer.",
-      "recommendation": "Update foundation to match treatment's character description."
-    }}
-  ],
-  "warnings": [
-    {{
-      "type": "ambiguous_elaboration",
-      "severity": "low",
-      "element": "City's economic system",
-      "reasoning": "Treatment doesn't explicitly describe economy. Foundation adds economic details that may or may not fit."
-    }}
-  ]
-}}
-
-IMPORTANT:
-- Be STRICT: If foundation contradicts treatment, flag it
-- critical_issues = Direct contradictions that will cause story problems
-- warnings = Ambiguous elements that MAY be issues
-- If no issues: {{"valid": true, "critical_issues": [], "warnings": []}}
-- Temperature is 0.1 for consistency - be thorough and consistent"""
+        # Render validation prompt from template
+        prompts = self.prompt_loader.render(
+            "validation/treatment_fidelity",
+            treatment_text=treatment_text,
+            foundation_yaml=foundation_yaml
+        )
 
         # Make validation call with LOW temperature for consistency
         try:
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a strict treatment fidelity validator. You always return valid JSON without additional formatting."},
-                    {"role": "user", "content": validation_prompt}
+                    {"role": "system", "content": prompts['system']},
+                    {"role": "user", "content": prompts['user']}
                 ],
                 temperature=0.1,  # Low temperature for consistent strict evaluation
                 stream=False,  # No streaming for validation
@@ -1145,110 +966,20 @@ Regenerate the foundation addressing the issues above.
         # Serialize foundation to YAML for inclusion in prompt
         foundation_yaml = yaml.dump(foundation, sort_keys=False, allow_unicode=True)
 
-        # Build feedback instruction if present
-        feedback_instruction = ""
-        if feedback:
-            feedback_instruction = f"\n\nUSER FEEDBACK: {feedback}\n\nPlease incorporate the above feedback while generating the chapters."
-
-        # Build comprehensive single-shot chapters generation prompt (OLD STYLE from 4c28f59)
-        prompt = f"""Generate a comprehensive chapter structure for a book.
-
-INPUT CONTEXT:
-```yaml
-{context_yaml}
-```
-
-FOUNDATION (already generated):
-```yaml
-{foundation_yaml}
-```
-
-TASK:
-Generate {chapter_count} comprehensive chapter outlines for the complete story.
-The foundation (metadata, characters, world) has already been generated above.
-
-CRITICAL - PLAN THE COMPLETE ARC:
-Since you're generating ALL chapters at once, you have the unique opportunity to:
-- Plan the entire story progression before committing to any chapter
-- Distribute character development evenly across the arc
-- Ensure each chapter has a UNIQUE role in the story
-- Avoid duplicating plot beats or character moments
-- Create clear causal progression from chapter to chapter
-
-CHAPTER STRUCTURE:
-For each chapter provide:
-- number, title (evocative, specific)
-- pov, act (Act I/Act II/Act III based on position), summary (3-4 sentences)
-- key_events: 8-10 specific plot beats (UNIQUE to this chapter, not repeated)
-- character_developments: 3-4 internal changes (LINEAR progression, no repeated beats)
-- relationship_beats: 2-3 relationship evolutions (UNIQUE dynamics)
-- tension_points: 2-3 stakes/urgency moments
-- sensory_details: 2-3 atmospheric elements
-- subplot_threads: 1-2 if applicable
-
-GUIDELINES:
-- Each key_event should be specific and complete (not vague or generic)
-- Character developments show PROGRESSIVE internal change (no resets or repeats)
-- Relationship beats track EVOLVING dynamics (each interaction builds on previous)
-- Be specific with names, places, emotions, concrete details
-- Act I: ~25% chapters (setup and introduction)
-- Act II: ~50% chapters (rising action and complications)
-- Act III: ~25% chapters (climax and resolution){feedback_instruction}
-
-RETURN FORMAT:
-Return ONLY valid YAML (no markdown fences):
-
-chapters:
-  - number: 1
-    title: "..."
-    pov: "..."
-    act: "Act I"
-    summary: "..."
-    key_events:
-      - "First event description"
-      - "Second event description"
-      - "Third event description"
-      - "Fourth event description"
-      - "Fifth event description"
-      - "Sixth event description"
-      - "Seventh event description"
-      - "Eighth event description"
-    character_developments:
-      - "First development"
-      - "Second development"
-      - "Third development"
-    relationship_beats:
-      - "First relationship change"
-      - "Second relationship change"
-    tension_points:
-      - "First tension point"
-      - "Second tension point"
-    sensory_details:
-      - "First sensory detail"
-      - "Second sensory detail"
-    subplot_threads:
-      - "First subplot thread"
-  - number: 2
-    title: "..."
-    # ... continue for all {chapter_count} chapters
-
-YAML SYNTAX RULES:
-- ALWAYS wrap ALL list items in double quotes: - "Event text"
-- For dialogue in events, use single quotes inside doubles: - "He said: 'Hello'."
-- Do NOT wrap in markdown code fences
-
-IMPORTANT:
-- Return ONLY the YAML content starting with "chapters:"
-- Each chapter must have UNIQUE plot events (no duplication across chapters)
-- Character arcs must PROGRESS linearly (no repeated development beats)
-- Follow YAML syntax rules above to avoid parsing errors
-"""
+        # Render chapters generation prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/chapter_single_shot",
+            context_yaml=context_yaml,
+            foundation_yaml=foundation_yaml,
+            chapter_count=chapter_count,
+            feedback=feedback or ""
+        )
 
         # Generate with API
         try:
             # Estimate tokens
             from ..utils.tokens import estimate_messages_tokens
-            prompt_tokens = estimate_messages_tokens([{"role": "user", "content": prompt}])
+            prompt_tokens = estimate_messages_tokens([{"role": "user", "content": prompts['user']}])
 
             # Response needs ~600-800 tokens per chapter for rich outlines
             # Plus overhead for structure
@@ -1260,8 +991,8 @@ IMPORTANT:
             result = await self.client.streaming_completion(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting. CRITICAL: All YAML list items MUST be fully quoted strings. Never use unquoted text with colons in list items. Format: - \"Event text here\"."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": prompts['system']},
+                    {"role": "user", "content": prompts['user']}
                 ],
                 temperature=temperature,  # Use parameter for temperature variation
                 display=True,

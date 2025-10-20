@@ -240,74 +240,20 @@ class ProseGenerator:
         # Build validation prompt
         chapter_yaml = yaml.dump(chapter_outline, default_flow_style=False, allow_unicode=True)
 
-        prompt = f"""You are a strict prose validation system. Your job is to detect when prose deviates from its chapter outline.
-
-CHAPTER OUTLINE (source of truth):
-```yaml
-{chapter_yaml}
-```
-
-GENERATED PROSE TO VALIDATE:
-```
-{prose_text}
-```
-
-VALIDATION CRITERIA:
-
-**ALLOWED** (expected variations):
-- Specific dialogue and action details (as long as scene objectives are met)
-- Sensory descriptions and atmospheric details
-- Internal character thoughts and reactions
-- Pacing and sentence-level style choices
-- Minor sequence adjustments within a scene
-- Elaboration on outline points with additional description
-- Natural variation in prose length (chapters breathe based on content)
-
-**FORBIDDEN** (critical deviations to flag):
-- Missing entire key moments from the outline
-- Skipping character development moments listed in outline
-- Ignoring emotional beats specified in outline
-- Wrong POV character (outline specifies: {chapter_outline.get('pov', 'N/A')})
-- Significantly different scene outcomes than specified
-- Missing major plot points or story beats
-
-YOUR TASK:
-
-1. Check if ALL key moments from the outline are present in the prose (in some form)
-2. Verify character developments and emotional beats were addressed
-3. Verify POV character consistency
-4. Check that scene outcomes align with outline specifications
-
-Return your analysis as JSON:
-
-{{
-  "valid": true|false,
-  "issues": [
-    {{
-      "type": "missing_moment|skipped_development|wrong_pov|wrong_outcome|insufficient_detail",
-      "severity": "critical|high|medium",
-      "element": "Brief description of what's wrong",
-      "reasoning": "Detailed explanation of the deviation",
-      "recommendation": "How to fix it"
-    }}
-  ]
-}}
-
-IMPORTANT:
-- Only flag CRITICAL deviations (missing key moments, skipped developments, etc.)
-- Do NOT flag creative elaboration or stylistic choices
-- Do NOT flag prose length - let chapters breathe naturally
-- Do NOT flag minor reordering within scenes
-- The outline is a guide for quality, not a strict script
-
-Return ONLY the JSON, no additional commentary."""
+        # Render validation prompt from template
+        prompts = self.prompt_loader.render(
+            "validation/prose_fidelity",
+            chapter_yaml=chapter_yaml,
+            prose_text=prose_text,
+            chapter_outline=chapter_outline  # For POV in template
+        )
 
         try:
             # Call validation API (temperature 0.1 for consistency)
             result = await self.client.json_completion(
                 model=self.model,
-                prompt=prompt,
-                system_prompt="You are a strict prose validation system. Return only valid JSON.",
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
                 temperature=0.1,  # Low temp for consistent evaluation
                 operation=f"prose-validation-chapter-{chapter_number}"
             )
@@ -687,62 +633,21 @@ Return ONLY the JSON, no additional commentary."""
                     issues_formatted = self._format_validation_issues(selected_issues)
                     chapter_yaml = yaml.dump(current_chapter, default_flow_style=False, allow_unicode=True)
 
-                    iteration_feedback = f"""SURGICAL PROSE FIXES FOR CHAPTER {chapter_number}:
-
-The prose below has specific validation issues that need targeted fixes.
-Your task is to fix these issues with surgical precision, making minimal changes.
-
-CHAPTER OUTLINE (source of truth):
-```yaml
-{chapter_yaml}
-```
-
-YOUR PREVIOUS PROSE (mostly good - needs targeted fixes):
-```
-{prose_text}
-```
-
-ISSUES TO FIX:
-
-{issues_formatted}
-
-INSTRUCTIONS - BE SURGICAL:
-1. Focus primarily on fixing the specific issues listed above
-2. Preserve the existing prose quality and voice
-3. You may make small adjustments to surrounding content if needed for flow
-4. Avoid unnecessary rewrites of working scenes
-5. For each issue:
-   - Missing scenes: Add the complete scene (not a summary)
-   - Skipped development: Develop the character moment fully
-   - Wrong POV: Adjust POV perspective as needed
-   - Word count deviation: Expand or trim targeted areas
-6. Keep the same narrative tone and style
-7. Maintain continuity with the rest of the prose
-
-Think of this as surgical editing - fix what's broken with minimal collateral changes.
-The goal is targeted fixes that resolve the violations while preserving what works.
-
-Return the corrected prose as flowing narrative text (NOT YAML)."""
-
-                    # Regenerate prose with iteration feedback
-                    iteration_prompt = f"""{iteration_feedback}
-
-Write the corrected prose as excellent narrative.
-Let the content breathe naturally.
-
-Return ONLY the corrected prose text. Do NOT include:
-- YAML formatting
-- Chapter headers
-- Explanations or notes
-
-Just flowing narrative prose."""
+                    # Render iteration prompt from template
+                    prompts = self.prompt_loader.render(
+                        "generation/prose_iteration",
+                        chapter_number=chapter_number,
+                        chapter_yaml=chapter_yaml,
+                        prose_text=prose_text,
+                        issues_formatted=issues_formatted
+                    )
 
                     # Call API for iteration
                     result = await self.client.streaming_completion(
                         model=self.model,
                         messages=[
-                            {"role": "system", "content": "You are a professional fiction writer. Return only the prose text without any formatting or explanations."},
-                            {"role": "user", "content": iteration_prompt}
+                            {"role": "system", "content": prompts['system']},
+                            {"role": "user", "content": prompts['user']}
                         ],
                         temperature=0.8,  # Same as generation for prose quality
                         top_p=0.9,  # Focused sampling for quality
