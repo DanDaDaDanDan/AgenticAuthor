@@ -301,10 +301,74 @@ def my_command(self, args: str = ""):
 ```python
 # src/generation/my_generator.py
 from src.api import OpenRouterClient
+from src.models import Project
+from src.prompts import get_prompt_loader
 
 class MyGenerator:
+    def __init__(self, client: OpenRouterClient, project: Project, model: str):
+        if not model:
+            raise ValueError("No model selected. Use /model <model-name> to select a model.")
+        self.client = client
+        self.project = project
+        self.model = model
+        self.prompt_loader = get_prompt_loader()
+
     async def generate(self, context: str) -> str:
-        # Implementation
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/my_template",  # Path to template in src/prompts/
+            context=context,
+            variable1="value1",
+            variable2="value2"
+        )
+
+        # Call LLM with system/user prompts
+        result = await self.client.streaming_completion(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": prompts['system']},
+                {"role": "user", "content": prompts['user']}
+            ],
+            temperature=0.7,
+            display=True,
+            display_label="Generating content"
+        )
+
+        return result.get('content', result)
+```
+
+**Creating a Prompt Template:**
+1. Create template file in `src/prompts/generation/my_template.j2`:
+```jinja
+{#
+    My template description.
+
+    Variables:
+    - context: Context string
+    - variable1: Description
+    - variable2: Description
+#}
+
+[SYSTEM]
+You are a helpful assistant.
+
+[USER]
+Generate content based on this context:
+
+{{ context }}
+
+Additional parameters:
+- Variable 1: {{ variable1 }}
+- Variable 2: {{ variable2 }}
+```
+
+2. Add metadata to `src/prompts/config.yaml`:
+```yaml
+generation/my_template:
+  temperature: 0.7
+  format: text
+  min_tokens: 1000
+  description: "My template description"
 ```
 
 3. **New Model**: Add to `src/models/`
