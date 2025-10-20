@@ -1185,7 +1185,6 @@ For each chapter provide:
 - tension_points: 2-3 stakes/urgency moments
 - sensory_details: 2-3 atmospheric elements
 - subplot_threads: 1-2 if applicable
-- word_count_target: distribute {total_words} across chapters proportionally
 
 GUIDELINES:
 - Each key_event should be specific and complete (not vague or generic)
@@ -1229,7 +1228,6 @@ chapters:
       - "Second sensory detail"
     subplot_threads:
       - "First subplot thread"
-    word_count_target: XXXX
   - number: 2
     title: "..."
     # ... continue for all {chapter_count} chapters
@@ -1426,10 +1424,12 @@ IMPORTANT:
 
             # Basic validation (no ChapterOutline conversion - files are source of truth)
             chapter_count_saved = len(chapters_data)
-            total_word_target = sum(ch.get('word_count_target', 0) for ch in chapters_data)
+
+            # Get total word target from foundation (quality-first: no per-chapter targets)
+            total_word_target = foundation.get('metadata', {}).get('target_word_count', 0)
 
             self.console.print(f"\n[green]✓[/green] Generated {chapter_count_saved} chapters successfully")
-            self.console.print(f"[dim]Total word target: {total_word_target:,} words[/dim]")
+            self.console.print(f"[dim]Overall target: {total_word_target:,} words for {chapter_count_saved} chapters (~{total_word_target // chapter_count_saved if chapter_count_saved > 0 else 0:,} words/chapter average)[/dim]")
 
             # Display warnings if any YAML issues were encountered
             if warnings:
