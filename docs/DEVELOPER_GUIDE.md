@@ -1487,6 +1487,41 @@ Include:
 - Thematic elements
 ```
 
+#### Chapter Generation Template (Scene-Level Architecture)
+
+**Critical Design Decision** (Completed 2025-10-20):
+- **key_events**: 3-5 major plot points per chapter (SCENE-LEVEL, not beat-level)
+- **Rationale**: Each key_event expands to a complete dramatic scene (1,000-2,000 words) in prose generation
+- **Problem Solved**: Previous 8-10 granular beat-level events caused duplication cascade (prose generator developed each into scenes → fragmentation and repetition)
+
+```jinja2
+CHAPTER STRUCTURE:
+For each chapter provide:
+- number, title (evocative, specific)
+- pov, act (Act I/Act II/Act III based on position), summary (3-4 sentences)
+- key_events: 3-5 major plot points (each will become a complete scene in prose - UNIQUE to this chapter, not repeated)
+- character_developments: 3-4 internal changes (LINEAR progression, no repeated beats)
+- relationship_beats: 2-3 relationship evolutions (UNIQUE dynamics)
+- tension_points: 2-3 stakes/urgency moments
+- sensory_details: 2-3 atmospheric elements
+- subplot_threads: 1-2 if applicable
+
+GUIDELINES FOR KEY_EVENTS - CRITICAL:
+- Each key_event should be SCENE-LEVEL, not beat-level
+- Think: "What are the 3-5 major scenes in this chapter?" NOT "What are all the small beats?"
+- Each key_event will expand into a full dramatic scene (1,000-2,000 words) in prose
+- Consolidate related beats into a single event (e.g., "Character arrives at location, examines evidence, discovers clue" = ONE event)
+- AVOID fragmentation: Don't break a single interaction into multiple events
+- Example of TOO GRANULAR (beat-level): "Character arrives", "Character examines body", "Character discovers clue", "Character talks to witness"
+- Example of CORRECT (scene-level): "Character examines crime scene, discovering crucial clue while interviewing witness"
+```
+
+**Implementation Notes**:
+- Template location: `src/prompts/generation/chapter_single_shot.j2`
+- Used by: `ChapterGenerator._generate_single_shot()` for single-shot chapter generation
+- **Duplication Fix**: Reduced from 8-10 beats to 3-5 scenes eliminates chapter-side duplication root cause
+- Combined with quality-first prose refactoring (Oct 19), this addresses both sides of duplication cascade
+
 ### Token Management
 
 #### Dynamic Token Calculation

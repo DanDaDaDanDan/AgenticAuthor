@@ -93,6 +93,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Documentation**: CLAUDE.md updated, prompt templates fully documented with variable lists
 
 ### Fixed
+- **Chapter-Side Duplication Root Cause** 🎯 (v0.3.2+, Completed 2025-10-20)
+  - **Problem**: Despite quality-first prose refactoring (Oct 19), content duplication persisted in generated chapters
+  - **Root Cause Analysis**:
+    - Chapter generation created 8-10 granular `key_events` per chapter (too detailed, beat-level)
+    - Prose generator listed all 8-10 as "KEY MOMENTS TO INCLUDE"
+    - LLM saw 9 items and developed each into scene-like units
+    - **Result**: Fragmentation and repetition (e.g., body examined 4x, repeated sensory overload scenes)
+  - **Cascade Effect**: Chapter outline → Prose generation → Duplicate scenes
+  - **Evidence**: Analysis of books/crowes-gambit showed:
+    - Chapter analysis (B+ grade): Duplicate plot elements across 7 medium-severity issues
+    - Prose analysis (B grade): Heavy internal duplication, body examination described 4 times
+  - **Solution Implemented**:
+    - Modified `src/prompts/generation/chapter_single_shot.j2` template (line 43)
+    - Changed from "8-10 specific plot beats" to "3-5 major plot points"
+    - Added CRITICAL guidance section emphasizing SCENE-LEVEL vs beat-level granularity
+    - Each key_event now expands to full dramatic scene (1,000-2,000 words) in prose
+    - Examples of TOO GRANULAR vs CORRECT consolidation
+    - Updated example section to show 3-5 events (not 8)
+  - **Complete Duplication Fix**: Addresses both sides of the problem
+    - **Prose-side** (Oct 19): Removed word count pressure and scene fragmentation
+    - **Chapter-side** (Oct 20): Reduced key_events granularity from beat-level to scene-level
+  - **Expected Impact**: Eliminates duplication at source (chapter outlines), better pacing, no within-chapter repetition
+  - **Commits**: 46da8aa (template fix), 0a8a31f (documentation)
+  - **Documentation**: CLAUDE.md, CHANGELOG.md updated with complete root cause analysis
+
 - **CRITICAL: Treatment Fidelity - Extraction Not Generation** 🎯 (v0.3.2+)
   - **Root Cause**: Chapter generation prompt didn't show treatment to LLM!
   - **Problem**: The `context_yaml` parameter (premise + treatment) was passed to `_generate_single_chapter()` but NEVER USED in the prompt
