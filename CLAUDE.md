@@ -225,34 +225,31 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 
 **Key Innovation**: Natural language iteration with git-backed version control. Users simply describe what they want changed, and the system handles intent checking, execution, and auto-commits.
 
-**Critical Architecture: Scene-Based Word Count System** 🎬
-- **Problem Solved**: Old system achieved only 50-60% of target word counts (e.g., 2,300/3,800 words)
-- **Root Cause**: LLMs treated "key_events" as bullet point summaries (200-500 words) instead of full dramatic scenes
-- **Solution**: Complete refactoring to scene-based architecture with structured scene format
+**Critical Architecture: Quality-First Prose Generation** ✨
+- **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content
+- **Root Cause**: `num_scenes = len(key_events)` treated plot points as separate scenes → LLM created 9 dramatic scenes with 9 "reversals" → massive duplication
+- **Solution**: Quality-first architecture - removed all word count pressure from prompts
 
-**Scene Structure (New Format)**:
-```yaml
-scenes:
-  - scene: "Scene Title"              # Brief title (2-4 words)
-    location: "Where it happens"      # Setting
-    pov_goal: "What character wants"  # Character objective
-    conflict: "What prevents it"      # Obstacle
-    stakes: "What's at risk"          # Consequences
-    outcome: "How it resolves"        # Resolution
-    emotional_beat: "Internal change" # Character arc
-    sensory_focus:                    # Atmosphere
-      - "Sensory detail 1"
-      - "Sensory detail 2"
-    target_words: 1300                # Scene target (act-specific)
-```
+**Quality-First Philosophy**:
+- Let LLM determine natural scene structure (typically 2-4 scenes per chapter)
+- Focus on "write excellently" not "write exactly N words"
+- Chapters breathe based on content, not arithmetic
+- Trust narrative instincts over numerical targets
 
-**Key Changes**:
-- **Math Layer** (depth_calculator.py): All constants renamed (WORDS_PER_EVENT → WORDS_PER_SCENE), +35-37% increases, scene clamping (2-4 per chapter)
-- **Chapter Generation** (chapters.py): 3 major prompts updated to generate structured scenes, emphasize "COMPLETE DRAMATIC UNITS"
-- **Prose Generation** (prose.py): Complete prompt rewrite with 4-part scene structure, SHOW vs TELL examples, MINIMUM (not average) word counts
-- **Backward Compatible**: All systems support both 'scenes' (new) and 'key_events' (old) formats
+**Key Changes** (Refactor completed 2025-10-19):
+- **depth_calculator.py**: Simplified from 566 → 284 lines (50% reduction)
+  - Kept: Chapter count calculation, act distribution (25%/50%/25%), peak roles
+  - Removed: Word budgeting, scene budgets, beat calculations, glue fractions
+- **wordcount.py**: DELETED entirely (361 lines removed)
+- **prose.py**: Complete quality-first prompt rewrite
+  - Removed: Word count targets, scene fragmentation, arithmetic pressure
+  - Added: Chapter summary, key moments list, SHOW vs TELL examples
+  - Focus: "Write excellent prose" with natural scene breaks
+- **chapters.py**: Removed per-chapter word_count_target field
+  - Uses foundation's overall target_word_count for display only
+- **Backward Compatible**: Supports both new and legacy chapter formats
 
-**Expected Impact**: 80-100% word count achievement (vs 50-60% baseline), professional scene quality
+**Expected Impact**: Eliminates duplication, natural scene flow, quality-focused prose, variable chapter lengths (2k-5k words based on story needs)
 
 **Recent Major Features (v0.3.0 and Unreleased)**:
 - **Multi-Variant Chapter Generation with LLM Judging** 🎯 - Generate multiple chapter outline options and let LLM select the best
@@ -698,27 +695,29 @@ def _commit(self, message: str):
 
 - `src/generation/taxonomies.py` - Genre taxonomy system and premise analysis
 - `src/generation/premise.py` - Premise generation with auto-detection, taxonomy iteration
-- `src/generation/depth_calculator.py` - **Scene-based depth architecture** with act-aware word count calculation (mathematical, no LLM)
-  - All methods use "scene" terminology: `get_base_words_per_scene()`, `get_act_words_per_scene()`, `distribute_scenes_across_chapters()`
-  - Constants: WORDS_PER_SCENE (1,100-1,600 w/s), ACT_SCENE_MULTIPLIERS, ACT_WS_MULTIPLIERS
-  - Scene clamping: 2-4 scenes per chapter (professional novel structure)
-  - +35-37% word targets vs old event-based system
-- `src/generation/chapters.py` - Chapter outline generation with structured scene format
-  - Generates 9-field scene structures (scene/location/pov_goal/conflict/stakes/outcome/emotional_beat/sensory_focus/target_words)
-  - Prompts emphasize "COMPLETE DRAMATIC UNITS (1,000-2,000 words), NOT bullet point summaries"
-  - Backward compatible: accepts both 'scenes' (new) and 'key_events' (old)
-- `src/generation/prose.py` - Prose generation with 4-part scene structure
-  - Scene-by-scene breakdown embedded in prompt
-  - 4-part structure: Setup (15-20%) → Development (40-50%) → Climax (15-20%) → Resolution (15-20%)
-  - SHOW vs TELL examples (50 words vs 380 words = 7.6x difference)
-  - Emphasizes MINIMUM (not average) word counts per scene
-- `src/generation/wordcount.py` - Word count assignment with scene-based calculations
-  - Uses `scene_count × act_ws` formula (was `event_count × act_we`)
-  - Supports both structured scenes and legacy key_events
+- `src/generation/depth_calculator.py` - **Quality-first structure calculator** (mathematical, no LLM)
+  - Calculates chapter count from total words (~3500 words per chapter)
+  - Distributes chapters across acts (25% / 50% / 25%)
+  - Assigns peak roles (inciting_setup, midpoint, crisis, climax, denouement, escalation)
+  - No word budgeting - provides structural guidance only
+  - Simplified from 566 → 284 lines (50% reduction)
+- `src/generation/chapters.py` - Chapter outline generation (single-shot with global arc planning)
+  - Generates all chapters in ONE LLM call with complete story view
+  - Prevents event duplication by planning entire arc before generating details
+  - Uses simple key_events format (proven quality from historical testing)
+  - Backward compatible: accepts both foundation + individual files and legacy formats
+- `src/generation/prose.py` - **Quality-first prose generation**
+  - Prompts focus on "write excellent prose" not "write N words"
+  - Key moments listed (not counted as separate scenes)
+  - SHOW vs TELL examples (380-word full scene vs 20-word summary)
+  - Natural scene breaks (typically 2-4 scenes per chapter)
+  - Fixed token estimates (5000-6000) - no dependency on word count targets
+- `src/generation/multi_model.py` - Multi-model competition coordinator with judging logic
+- `src/generation/variant_manager.py` - Chapter variant generation and judging
 - `src/generation/iteration/` - Natural language feedback processing (coordinator, intent, diff, scale)
 - `src/generation/cull.py` - Content deletion manager with cascade (prose → chapters → treatment → premise)
 - `src/storage/git_manager.py` - Git operations wrapper
-- `src/generation/analysis.py` - Comprehensive story analysis
+- `src/generation/analysis/` - Comprehensive story analysis (unified analyzer, treatment deviation analyzer)
 - `src/cli/interactive.py` - REPL with prompt_toolkit, logging, and interactive editors
 - `src/cli/command_completer.py` - Advanced tab completion with genre support
 - `src/cli/taxonomy_editor.py` - Full-screen checkbox UI for taxonomy selection
@@ -892,18 +891,19 @@ If you're unsure whether to include something in context:
 - Fixing a poorly generated chapter: 30-60 minutes
 - Cost of that time >>> cost of a few thousand extra tokens
 
-### The Sequential Generation Architecture
+### The Single-Shot Chapter Generation Architecture
 
-This project uses **sequential generation** (not batched) specifically to maintain full context:
+This project uses **single-shot chapter generation** (all chapters in ONE LLM call) to maintain global arc planning:
 
 ```python
-# OLD batched system: 95% information loss
-# Passed only 3/60 fields (number, title, summary) between batches
-# Result: Duplicate scenes, inconsistencies, ~60% word count achievement
+# OLD batched/sequential systems: Fragmentation or complexity
+# Batched: 95% information loss between batches
+# Sequential: Better context but high complexity (deprecated)
 
-# NEW sequential system: ZERO information loss
-# Each chapter sees 100% of all previous chapters
-# Result: Perfect continuity, no duplicates, 80-100% word count achievement
+# NEW single-shot system: Global arc planning + zero duplication
+# All chapters generated in ONE call with complete story view
+# LLM plans entire story BEFORE generating any individual chapter details
+# Result: Perfect continuity, no duplicates, unique plot roles per chapter
 ```
 
 **Why we made this choice:**
