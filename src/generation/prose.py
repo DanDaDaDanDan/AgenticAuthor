@@ -372,15 +372,9 @@ Return ONLY the JSON, no additional commentary."""
         # Total context
         total_context = premise_tokens + treatment_tokens + taxonomy_tokens + chapters_tokens
 
-        # Get target words for current chapter
-        target_words = 3000  # default
-        for ch in chapters:
-            if ch.get('number') == chapter_number:
-                target_words = ch.get('word_count_target', 3000)
-                break
-
-        # Response space needed (1.3x target words)
-        response_needed = int(target_words * 1.3)
+        # Response space needed (generous for quality prose)
+        # Typical chapters: 3000-5000 words, allow flexibility
+        response_needed = 6000  # ~4500 words of prose + buffer
 
         # Total needed with buffer
         total_needed = total_context + response_needed + 1000
@@ -432,8 +426,7 @@ Return ONLY the JSON, no additional commentary."""
             "total_context_tokens": total_context,
             "response_tokens": response_needed,
             "total_needed": total_needed,
-            "recommended_model": recommended_model,
-            "target_words": target_words
+            "recommended_model": recommended_model
         }
 
     async def generate_chapter_sequential(
@@ -519,57 +512,42 @@ Return ONLY the JSON, no additional commentary."""
         # Serialize modified context to YAML for prompt
         chapters_yaml = yaml.dump(modified_chapters_data, sort_keys=False)
 
-        # Build prose generation prompt
-        #  Support both new (scenes) and old (key_events) formats
+        # Build prose generation prompt - QUALITY-FIRST approach
+        # Support both structured scenes (new) and simple key_events (old) formats
         key_moments = current_chapter.get('scenes', current_chapter.get('key_events', []))
-        uses_structured_scenes = 'scenes' in current_chapter and isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict)
+        uses_structured_scenes = (
+            'scenes' in current_chapter and
+            isinstance(key_moments, list) and
+            len(key_moments) > 0 and
+            isinstance(key_moments[0], dict)
+        )
 
-        # Calculate scene depth guidance from actual scene targets
-        if uses_structured_scenes and scenes:
-            # Get scene targets from structured scenes
-            scene_targets = [scene.get('target_words', 0) for scene in scenes]
-            avg_ws = sum(scene_targets) // len(scene_targets) if scene_targets else word_count_target // num_scenes
-        else:
-            # Fallback: distribute evenly
-            avg_ws = word_count_target // num_scenes if num_scenes > 0 else 1500
+        # Build chapter summary and key moments list
+        chapter_summary = current_chapter.get('summary', '')
 
-        # Simple guidance ranges based on average
-        setup_range = (int(avg_ws * 0.7), int(avg_ws * 0.9))      # 70-90% for setup/transition
-        standard_range = (int(avg_ws * 0.9), int(avg_ws * 1.1))   # 90-110% for standard
-        climax_range = (int(avg_ws * 1.2), int(avg_ws * 1.5))     # 120-150% for climax
-
-        # Build scene-by-scene breakdown if using structured format
-        scene_breakdown = ""
+        # Build key moments listing (not counting them as separate scenes!)
+        moments_text = ""
         if uses_structured_scenes:
-            scene_breakdown = "\n\nSCENE-BY-SCENE BREAKDOWN WITH BEAT STRUCTURE:\n"
-            for i, scene in enumerate(scenes, 1):
-                scene_breakdown += f"\nScene {i}: \"{scene.get('scene', 'Untitled')}\"\n"
-                scene_breakdown += f"  Location: {scene.get('location', 'N/A')}\n"
+            # Structured scenes: Extract objectives and outcomes
+            moments_text = "\nKEY MOMENTS TO INCLUDE:\n"
+            for moment in key_moments:
+                objective = moment.get('objective', moment.get('pov_goal', 'N/A'))
+                outcome = moment.get('outcome', '')
+                if outcome:
+                    moments_text += f"- {objective} → {outcome}\n"
+                else:
+                    moments_text += f"- {objective}\n"
+        else:
+            # Simple key_events: Use as-is
+            if key_moments:
+                moments_text = "\nKEY MOMENTS TO INCLUDE:\n"
+                for event in key_moments:
+                    if isinstance(event, dict):
+                        moments_text += f"- {event.get('description', str(event))}\n"
+                    else:
+                        moments_text += f"- {event}\n"
 
-                # Simplified scene fields (backward compatible)
-                objective = scene.get('objective', scene.get('pov_goal', 'N/A'))
-                scene_breakdown += f"  Objective: {objective}\n"
-
-                # Exit hook is optional
-                exit_hook = scene.get('exit_hook')
-                if exit_hook:
-                    scene_breakdown += f"  Exit Hook: {exit_hook}\n"
-
-                # Add beats array (handle both dict and string formats)
-                beats = scene.get('beats', [])
-                if beats:
-                    scene_breakdown += f"\n  BEAT STRUCTURE ({len(beats)} beats):\n"
-                    for j, beat in enumerate(beats, 1):
-                        # Handle both old format (dict with type/note/target_words) and new format (simple string)
-                        if isinstance(beat, dict):
-                            beat_note = beat.get('note', '')
-                            scene_breakdown += f"    {j}. {beat_note}\n"
-                        else:
-                            # New format: simple string
-                            scene_breakdown += f"    {j}. {beat}\n"
-                    scene_breakdown += f"  → Follow this beat structure for proper pacing and emphasis\n"
-
-        prompt = f"""Generate full prose for a chapter using this self-contained story context.
+        prompt = f"""Generate excellent prose for a chapter using this story context.
 
 STORY CONTEXT (chapters.yaml):
 ```yaml
@@ -577,88 +555,68 @@ STORY CONTEXT (chapters.yaml):
 ```
 {prev_summary}
 
-TASK:
-Generate {word_count_target:,} words of polished narrative prose for:
+CHAPTER TO WRITE:
 - Chapter {chapter_number}: "{current_chapter['title']}"
 - POV: {current_chapter.get('pov', 'N/A')}
 - Act: {current_chapter.get('act', 'N/A')}
-{scene_breakdown}
 
-CRITICAL - BEAT-DRIVEN SCENE DEVELOPMENT (NOT SUMMARIES):
-This chapter has {num_scenes} SCENES to develop in {word_count_target:,} words.
-Each scene is a COMPLETE DRAMATIC UNIT following its BEAT STRUCTURE (see breakdown above).
+CHAPTER SUMMARY:
+{chapter_summary}
+{moments_text}
 
-If beats are provided in the breakdown, follow them beat-by-beat:
-  1. SETUP (10-15% of scene): Establish location, character state, goal
-  2. OBSTACLE (15% of scene): First complication arises
-  3. COMPLICATION (20% of scene): Stakes increase, tension builds
-  4. REVERSAL (25% of scene): ★ PEAK MOMENT ★ - decision point, turn, revelation
-  5. CONSEQUENCE (20% of scene): Immediate aftermath, character processing
-  6. EXIT (10% of scene): Bridge to next scene with hook
+YOUR MISSION:
+Write this chapter as EXCELLENT PROSE.
 
-If no beats provided, use classic 4-part structure:
-  1. SETUP (15-20% of scene): Establish location, time, who's present
-  2. DEVELOPMENT (40-50% of scene): Action, dialogue, obstacles, complications
-  3. CLIMAX (15-20% of scene): Peak moment, emotional turning point
-  4. RESOLUTION (15-20% of scene): Aftermath, bridge to next scene
+Let each moment breathe naturally - don't rush or pad content.
+Scenes end when they're complete, not when they hit a word count.
+Show the story vividly through {current_chapter.get('pov', 'the character')}'s perspective.
+Trust your narrative instincts over arithmetic.
 
-★ REVERSAL/CLIMAX IS THE HEART OF THE SCENE ★
-The reversal beat (or climax in 4-part) gets the MOST WORDS (25-30%).
-This is the turn, the decision, the confrontation - don't rush it.
+STRUCTURE GUIDANCE:
+- Natural scene breaks (typically 2-4 scenes for material like this)
+- Progressive development, no repetition
+- Each key moment happens ONCE, fully realized
+- Let the story determine chapter length
 
-MINIMUM WORDS PER SCENE (not average - MINIMUM):
-• This chapter: ~{avg_ws} words per scene
-• Setup/transition scenes: {setup_range[0]}-{setup_range[1]} words minimum
-• Standard dramatic scenes: {standard_range[0]}-{standard_range[1]} words minimum
-• Climactic/peak scenes: {climax_range[0]}-{climax_range[1]}+ words minimum
+SHOW vs TELL - CRITICAL:
 
-SHOW vs TELL - CRITICAL DISTINCTION:
+❌ TELLING (summary - avoid):
+"Sarah was angry about the birthday. She confronted him and he apologized."
+(20 words - rushed)
 
-❌ TELLING (summary - avoid this):
-"Sarah was angry with her brother for forgetting her birthday. She confronted him about it and he apologized."
-(50 words - rushed summary)
+✅ SHOWING (full scene - do):
+Sarah's jaw clenched as Mark walked in, whistling. Her birthday. Her thirtieth. Forgotten.
 
-✅ SHOWING (full scene - do this):
-Sarah's jaw clenched as Mark walked in, whistling. Her birthday. Her thirtieth birthday. And he'd forgotten.
+"Hey," he said. "What's for dinner?"
 
-"Hey," he said, dropping his keys on the counter. "What's for dinner?"
-
-The casual question hit like a slap. She'd spent the morning checking her phone, waiting for his text, his call, anything. "You're kidding."
+The question hit like a slap. She'd waited all day. "You're kidding."
 
 "What?" He opened the fridge, oblivious.
 
 "Mark." Her voice came out flat. "What day is it?"
 
-He paused, milk carton in hand. His eyes widened. "Oh God. Sarah, I—"
+He paused. His eyes widened. "Oh God. Sarah, I—"
 
 "Don't." She held up a hand. "Just don't."
 
-(380 words - full scene with dialogue, action, emotion)
-
-WRITE EVERY SCENE AS A FULL DRAMATIC UNIT. Do NOT summarize or rush.
-Each scene should feel complete and immersive. Let moments breathe.
-
-NOTE: This chapter is in {current_chapter.get('act', 'N/A')}.
-- Act I: Efficient setup, but still FULL scenes (not summaries)
-- Act II: Standard dramatic development
-- Act III: DEEPER emotional intensity, more immersive
+(380 words - full scene with emotion, dialogue, action)
 
 GUIDELINES:
-1. FOLLOW THE BEAT STRUCTURE for each scene (setup → obstacle → complication → REVERSAL → consequence → exit)
-2. Give REVERSAL/TURN beats the most space (25-30% of scene) - this is where the magic happens
-3. Use the metadata (tone, pacing, themes, narrative style) to guide your writing
-4. Draw on character backgrounds, motivations, and arcs from the characters section
-5. Use world-building details (locations, systems, atmosphere) to ground scenes
-6. Follow scene objectives and value shifts (before → after transformation)
-7. Perfect continuity from previous chapters (if any)
-8. Use narrative style from metadata: {metadata.get('narrative_style', narrative_style)}
-9. TARGET: {word_count_target:,} words total = {num_scenes} scenes × {avg_ws} w/s MINIMUM per scene
-10. SHOW character emotions through action, dialogue, physical reactions
-11. Include sensory details in EVERY scene (sight, sound, touch, smell, taste)
-12. Let dialogue breathe - include reactions, pauses, character processing
-13. Honor exit hooks - each scene should propel forward with question/decision/reveal/peril
+1. Use metadata (tone, pacing, themes) to guide your voice
+2. Draw on character backgrounds and motivations
+3. Use world-building details to ground scenes
+4. Perfect continuity from previous chapters
+5. Narrative style: {metadata.get('narrative_style', narrative_style)}
+6. SHOW emotions through action, dialogue, physical reactions
+7. Include sensory details (sight, sound, touch, smell, taste)
+8. Let dialogue breathe - reactions, pauses, processing
+9. Honor act context ({current_chapter.get('act', 'N/A')}):
+   - Act I: Efficient but full scenes
+   - Act II: Standard dramatic development
+   - Act III: Deeper emotional intensity
 
-Note: These guidelines serve the story. If specific instructions conflict with good storytelling or prose quality, prioritize what makes the scene work. You have creative latitude to deviate from overly prescriptive details when needed for narrative flow, character authenticity, or dramatic impact.
+These guidelines serve the story. Prioritize what makes the prose excellent.
+You have creative latitude when prescriptive details conflict with narrative flow.
 
 Return ONLY the prose text. Do NOT include:
 - YAML formatting
@@ -666,13 +624,13 @@ Return ONLY the prose text. Do NOT include:
 - Explanations or notes
 - Scene markers or dividers
 
-Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full dramatic scenes)."""
+Just flowing narrative prose - write the best version of this chapter."""
 
         # Generate with API
         try:
-            # Estimate tokens (simplified - no longer checking premise/treatment)
+            # Estimate generous response space (typical chapter: 3000-5000 words)
             from ..utils.tokens import estimate_messages_tokens
-            estimated_response_tokens = word_count_target + 500  # ~1 token per word + buffer
+            estimated_response_tokens = 5000  # Reasonable default for quality prose
 
             # Use streaming_completion for prose (plain text, not YAML)
             result = await self.client.streaming_completion(
@@ -825,22 +783,17 @@ The goal is targeted fixes that resolve the violations while preserving what wor
 Return the corrected prose as flowing narrative text (NOT YAML)."""
 
                     # Regenerate prose with iteration feedback
-                    # Build full generation prompt with feedback
-                    word_count_target = current_chapter.get('word_count_target', 3000)
-                    scenes = current_chapter.get('scenes', current_chapter.get('key_events', []))
-                    num_scenes = len(scenes)
-
                     iteration_prompt = f"""{iteration_feedback}
 
-TARGET: {word_count_target:,} words total = {num_scenes} full dramatic scenes
+Write the corrected prose as excellent narrative.
+Let the content breathe naturally.
 
 Return ONLY the corrected prose text. Do NOT include:
 - YAML formatting
-- Chapter headers (we'll add those)
+- Chapter headers
 - Explanations or notes
-- Scene markers or dividers
 
-Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full dramatic scenes)."""
+Just flowing narrative prose."""
 
                     # Call API for iteration
                     result = await self.client.streaming_completion(
@@ -853,7 +806,7 @@ Just the flowing narrative prose ({word_count_target:,} words, {num_scenes} full
                         top_p=0.9,  # Focused sampling for quality
                         display=True,
                         display_label=f"Iterating Chapter {chapter_number} prose",
-                        min_response_tokens=int(word_count_target * 1.3)
+                        min_response_tokens=5000  # Generous default for quality prose
                     )
 
                     if not result:
