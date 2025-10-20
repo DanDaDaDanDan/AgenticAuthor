@@ -227,8 +227,12 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 
 **Critical Architecture: Quality-First Prose Generation** ✨
 - **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content
-- **Root Cause**: `num_scenes = len(key_events)` treated plot points as separate scenes → LLM created 9 dramatic scenes with 9 "reversals" → massive duplication
-- **Solution**: Quality-first architecture - removed all word count pressure from prompts
+- **Root Causes Fixed**:
+  - **Prose-side**: `num_scenes = len(key_events)` treated plot points as separate scenes → LLM created 9 dramatic scenes with 9 "reversals" → massive duplication
+  - **Chapter-side**: Chapter generation created 8-10 granular key_events → prose generator listed all as "KEY MOMENTS" → LLM developed each into scenes → fragmentation and repetition
+- **Solutions**:
+  - Quality-first prose architecture - removed all word count pressure from prompts (Oct 19, 2025)
+  - Scene-level key_events - reduced from 8-10 beats to 3-5 major plot points (Oct 20, 2025)
 
 **Quality-First Philosophy**:
 - Let LLM determine natural scene structure (typically 2-4 scenes per chapter)
@@ -704,7 +708,8 @@ def _commit(self, message: str):
 - `src/generation/chapters.py` - Chapter outline generation (single-shot with global arc planning)
   - Generates all chapters in ONE LLM call with complete story view
   - Prevents event duplication by planning entire arc before generating details
-  - Uses simple key_events format (proven quality from historical testing)
+  - Uses 3-5 scene-level key_events per chapter (not 8-10 granular beats)
+  - Each key_event expands to a complete scene (1,000-2,000 words) in prose
   - Backward compatible: accepts both foundation + individual files and legacy formats
 - `src/generation/prose.py` - **Quality-first prose generation**
   - Prompts focus on "write excellent prose" not "write N words"
