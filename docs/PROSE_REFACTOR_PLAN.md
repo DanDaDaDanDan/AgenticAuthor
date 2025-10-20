@@ -35,7 +35,7 @@ Result: LLM creates 9 separate dramatic scenes → 9 "reversals" → massive dup
 ### ✅ ALL SECTIONS COMPLETED
 
 1. **depth_calculator.py** (566 → 284 lines, 50% reduction) - Committed: 82069da
-   - ✅ Removed: Word budgeting, scene budgets, beat calculations, glue fractions
+   - ✅ Removed: Word budgeting, scene budgets, beat calculations
    - ✅ Kept: Chapter count calc, act distribution, peak roles
    - ✅ New method: `calculate_chapter_structure()` returns structural guidance only
 

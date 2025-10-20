@@ -239,7 +239,7 @@ AgenticAuthor is a Python CLI for iterative AI-powered book generation using Ope
 **Key Changes** (Refactor completed 2025-10-19):
 - **depth_calculator.py**: Simplified from 566 → 284 lines (50% reduction)
   - Kept: Chapter count calculation, act distribution (25%/50%/25%), peak roles
-  - Removed: Word budgeting, scene budgets, beat calculations, glue fractions
+  - Removed: Word budgeting, scene budgets, beat calculations
 - **wordcount.py**: DELETED entirely (361 lines removed)
 - **prose.py**: Complete quality-first prompt rewrite
   - Removed: Word count targets, scene fragmentation, arithmetic pressure

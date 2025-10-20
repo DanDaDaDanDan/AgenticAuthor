@@ -14,7 +14,7 @@ BOOK (Total Words)
 ACTS (Act I, Act II, Act III)
   ↓ Peak Multipliers
 CHAPTERS (with roles: inciting_setup, midpoint, crisis, climax, escalation)
-  ↓ Glue Fraction (75% scenes, 25% transitions)
+  ↓
 SCENES (with impact ratings: 1=connective, 2=important, 3=set-piece)
   ↓ Beat Weights
 BEATS (setup, obstacle, complication, reversal, consequence, exit)
@@ -46,13 +46,9 @@ BEATS (setup, obstacle, complication, reversal, consequence, exit)
 - Ch 16-19: escalation (×1.0) → 3,636 words each
 - **Ch 20: climax (×1.50) → 5,455 words** ← Peak chapter
 
-### Level 3: Scenes with Glue Fraction
+### Level 3: Scenes with Impact Ratings
 
 **Example: Chapter 8 (midpoint) = 6,122 words, 4 scenes**
-
-- **Glue fraction**: 25% (transitions, exposition, chapter opening/closing)
-- **Scene budget**: 6,122 × 0.75 = **4,592 words** for actual scenes
-- **Glue budget**: 6,122 × 0.25 = **1,530 words** for transitions
 
 **Scene allocation with impact ratings:**
 
@@ -62,7 +58,7 @@ Scene | Impact | Multiplier | Words | Purpose
 2     | 2      | 1.0×       | 1,224 | Important
 3     | 3      | 1.25×      | 1,531 | Set-piece (midpoint scene)
 4     | 1      | 0.75×      | 918   | Connective (last scene)
-**Total** | | | **4,591** | (scene budget)
+**Total** | | | **4,591** |
 
 ### Level 4: Beats within Scene 3 (set-piece, 1,531 words)
 
@@ -81,16 +77,7 @@ Beat | Type         | Weight | Words | Purpose
 
 ## Key Concepts
 
-### 1. Glue Fraction (default 25%)
-
-**Glue** = transitions, exposition, chapter openings/closings not inside dramatic scenes.
-
-- **Scene budget** = Chapter words × (1 - glue_fraction)
-- **Typical range**: 20-30%
-- **Too low** (< 20%): Chapters feel abrupt, scenes crash into each other
-- **Too high** (> 30%): Chapters feel padded with unnecessary exposition
-
-### 2. Peak Multipliers
+### 1. Peak Multipliers
 
 High-leverage chapters get more words:
 
@@ -108,7 +95,7 @@ denouement | 0.9× | Penultimate | Wind-down (shorter)
 - Midpoint: Everything changes (knowledge/power flip)
 - Climax: Everything pays off (resolution of main conflict)
 
-### 3. Scene Impact Ratings
+### 2. Scene Impact Ratings
 
 Scenes are assigned impact ratings (1-3) based on position and chapter role:
 
@@ -124,7 +111,7 @@ Impact | Type       | Multiplier | When Applied
 - Middle scenes in regular chapters → impact=2 (important)
 - Middle scenes in midpoint/crisis/climax chapters → impact=3 (set-piece)
 
-### 4. Beat Weights
+### 3. Beat Weights
 
 Beats are the smallest unit - individual moves within a scene.
 
@@ -263,8 +250,7 @@ metadata:
   genre: "mystery"
   target_word_count: 80000
   chapter_count: 20
-  glue_fraction: 0.25              # NEW: 25% for transitions
-  act_weights: [0.25, 0.50, 0.25]  # NEW: Act percentages
+  act_weights: [0.25, 0.50, 0.25]  # Act percentages
   # ... other fields
 ```
 
@@ -292,8 +278,7 @@ budget = DepthCalculator.calculate_top_down_budget(
     total_words=80000,
     chapter_count=20,
     form='novel',
-    act_weights=[0.25, 0.50, 0.25],
-    glue_fraction=0.25
+    act_weights=[0.25, 0.50, 0.25]
 )
 ```
 
@@ -302,7 +287,7 @@ Returns:
 - chapter_budgets: List of dicts with number, role, words_total, words_scenes
 
 ### Phase 2: Generate Foundation
-Foundation includes metadata with glue_fraction and act_weights.
+Foundation includes metadata with act_weights.
 
 ### Phase 3: Generate Chapters Sequentially
 For each chapter:
@@ -341,7 +326,6 @@ This implementation matches the provided beat-driven architecture document with 
 
 **Matches:**
 - ✅ Top-down budgeting (Book → Acts → Chapters → Scenes → Beats)
-- ✅ Glue fraction (20-30% for transitions)
 - ✅ Peak multipliers for high-leverage chapters
 - ✅ Scene impact ratings (1-3)
 - ✅ Beat weight patterns (turn gets 25-30%)
@@ -355,7 +339,6 @@ This implementation matches the provided beat-driven architecture document with 
 - chapter-beats/ file structure (foundation.yaml + chapter-NN.yaml)
 - Auto-assignment of scene impacts (based on position + chapter role)
 - LLM generates beat notes (not pre-defined)
-- Glue fraction stored in metadata (editable)
 - Validation happens automatically (no commands)
 
 All adaptations enhance the system without conflicting with the core philosophy.

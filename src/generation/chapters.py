@@ -157,7 +157,6 @@ class ChapterGenerator:
   target_audience: "..."
   target_word_count: {total_words}
   chapter_count: {chapter_count}
-  glue_fraction: 0.25  # 25% for transitions/exposition
   act_weights: [0.25, 0.50, 0.25]  # Act I, Act II, Act III percentages
   setting_period: "..."
   setting_location: "..."
