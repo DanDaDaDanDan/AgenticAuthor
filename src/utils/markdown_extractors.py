@@ -203,8 +203,10 @@ class MarkdownExtractor:
                     # Handle numbers
                     elif field in ['target_word_count', 'chapter_count']:
                         try:
-                            metadata[field] = int(re.sub(r'[^\d]', '', value))
-                        except:
+                            metadata[field] = cls._parse_numeric_value(value)
+                        except (ValueError, TypeError) as e:
+                            # Log the parsing issue but keep the original string
+                            logger.debug(f"Could not parse numeric value for {field}: {value} - {e}")
                             metadata[field] = value
                     else:
                         metadata[field] = value
@@ -459,6 +461,90 @@ class MarkdownExtractor:
         # Split by comma and clean
         items = [item.strip().strip('"\'') for item in value.split(',')]
         return [item for item in items if item]  # Filter empty strings
+
+    @classmethod
+    def _parse_numeric_value(cls, value: str) -> int:
+        """
+        Parse numeric values that may include ranges or approximations.
+
+        Handles formats like:
+        - "20-25" -> 23 (midpoint, rounded up)
+        - "20 to 25" -> 23 (midpoint, rounded up)
+        - "80-100k" -> 90000 (handles k suffix in ranges)
+        - "~20" -> 20
+        - "around 20" -> 20
+        - "approximately 25" -> 25
+        - "20+" -> 20
+        - "20,000" -> 20000
+        - "20k" -> 20000
+
+        Args:
+            value: String containing a numeric value
+
+        Returns:
+            Parsed integer value
+        """
+        # Clean the value
+        clean_value = value.strip().lower()
+
+        # Remove commas from numbers like "20,000"
+        clean_value = clean_value.replace(',', '')
+
+        # Check for range patterns WITH k suffix (80-100k, 80k-100k)
+        # First pattern: both have k (80k-100k)
+        range_k_match = re.match(r'(\d+)k\s*[-–]\s*(\d+)k', clean_value)
+        if range_k_match:
+            start = int(range_k_match.group(1)) * 1000
+            end = int(range_k_match.group(2)) * 1000
+            # Return midpoint of range (rounded up for odd sums)
+            return (start + end + 1) // 2
+
+        # Second pattern: only end has k (80-100k) - interpret as thousands
+        range_k_match = re.match(r'(\d+)\s*[-–]\s*(\d+)k', clean_value)
+        if range_k_match:
+            start = int(range_k_match.group(1)) * 1000  # assume k for consistency
+            end = int(range_k_match.group(2)) * 1000
+            # Return midpoint of range (rounded up for odd sums)
+            return (start + end + 1) // 2
+
+        # Handle thousands with 'k' suffix (for non-range values)
+        if 'k' in clean_value:
+            clean_value = clean_value.replace('k', '000')
+
+        # Check for range patterns (20-25, 20 to 25, 20–25 with em dash)
+        range_match = re.match(r'(\d+)\s*[-–]\s*(\d+)', clean_value)
+        if not range_match:
+            # Try "to" format
+            range_match = re.match(r'(\d+)\s+to\s+(\d+)', clean_value)
+
+        if range_match:
+            start = int(range_match.group(1))
+            end = int(range_match.group(2))
+            # Return midpoint of range (rounded up for odd sums)
+            return (start + end + 1) // 2
+
+        # Check for approximation patterns (~20, around 20, approximately 20, about 20)
+        approx_match = re.match(r'(?:~|around|approximately|about|approx\.?)\s*(\d+)', clean_value)
+        if approx_match:
+            return int(approx_match.group(1))
+
+        # Check for "20+" format
+        plus_match = re.match(r'(\d+)\+', clean_value)
+        if plus_match:
+            return int(plus_match.group(1))
+
+        # Try to extract first number found
+        number_match = re.search(r'\d+', clean_value)
+        if number_match:
+            return int(number_match.group())
+
+        # If all else fails, try stripping all non-digits (old behavior)
+        digits_only = re.sub(r'[^\d]', '', value)
+        if digits_only:
+            return int(digits_only)
+
+        # Return 0 if we can't parse anything
+        raise ValueError(f"Could not parse numeric value from: {value}")
 
     @classmethod
     def _validate_foundation(cls, foundation: Dict[str, Any], markdown_text: str) -> None:
