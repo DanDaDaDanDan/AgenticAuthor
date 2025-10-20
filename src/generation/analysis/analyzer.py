@@ -190,7 +190,6 @@ class AnalysisCoordinator:
         for ch in chapters:
             lines.append(f"Chapter {ch.get('number', '?')}: {ch.get('title', 'Untitled')}")
             lines.append(f"Summary: {ch.get('summary', '')}")
-            lines.append(f"Target words: {ch.get('word_count_target', 'N/A')}")
             lines.append("")
         return "\n".join(lines)
 
@@ -285,7 +284,6 @@ class AnalysisCoordinator:
                 lines.append(f"POV: {ch.get('pov', 'N/A')}")
                 lines.append(f"Act: {ch.get('act', 'N/A')}")
                 lines.append(f"Summary: {ch.get('summary', 'N/A')}")
-                lines.append(f"Target words: {ch.get('word_count_target', 'N/A')}")
 
                 # Support both scenes (new) and key_events (old) formats
                 scenes = ch.get('scenes', ch.get('key_events', []))
