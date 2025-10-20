@@ -1,8 +1,12 @@
 """Markdown extraction utilities for parsing structured data from natural language generation."""
 
 import re
+import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 class MarkdownExtractor:
@@ -75,6 +79,9 @@ class MarkdownExtractor:
         if world_match:
             foundation['world'] = cls._extract_world(world_match.group(1))
 
+        # Validate extraction
+        cls._validate_foundation(foundation, markdown_text)
+
         return foundation
 
     @classmethod
@@ -110,7 +117,12 @@ class MarkdownExtractor:
         # Process each chapter (skip first element if empty)
         i = 1 if chapter_splits[0].strip() == '' else 0
         while i < len(chapter_splits) - 2:
-            chapter_num = int(chapter_splits[i])
+            try:
+                chapter_num = int(chapter_splits[i])
+            except (ValueError, TypeError):
+                # If we can't parse the chapter number, the format is wrong
+                # Validate will handle the error message
+                break
             chapter_title = chapter_splits[i + 1].strip()
             chapter_content = chapter_splits[i + 2]
 
@@ -130,6 +142,9 @@ class MarkdownExtractor:
 
             chapters.append(chapter_data)
             i += 3
+
+        # Validate extraction
+        cls._validate_chapters(chapters, markdown_text)
 
         return chapters
 
@@ -444,6 +459,130 @@ class MarkdownExtractor:
         # Split by comma and clean
         items = [item.strip().strip('"\'') for item in value.split(',')]
         return [item for item in items if item]  # Filter empty strings
+
+    @classmethod
+    def _validate_foundation(cls, foundation: Dict[str, Any], markdown_text: str) -> None:
+        """
+        Validate extracted foundation data and raise warnings/errors for missing fields.
+
+        Args:
+            foundation: Extracted foundation dictionary
+            markdown_text: Original markdown text (for debugging)
+
+        Raises:
+            ValueError: For critical missing fields
+        """
+        errors = []
+        warnings = []
+
+        # Check metadata
+        metadata = foundation.get('metadata', {})
+        if not metadata:
+            errors.append("No metadata section found. Expected '# Metadata' section.")
+        else:
+            # Critical fields that should always be present
+            critical_fields = ['genre', 'target_word_count', 'chapter_count']
+            for field in critical_fields:
+                if not metadata.get(field):
+                    errors.append(f"Critical metadata field '{field}' is missing or null")
+
+            # Important fields that should usually be present
+            important_fields = ['themes', 'tone', 'pacing']
+            for field in important_fields:
+                if not metadata.get(field):
+                    warnings.append(f"Important metadata field '{field}' is missing or empty")
+
+        # Check characters
+        characters = foundation.get('characters', [])
+        if not characters:
+            errors.append("No characters found. Expected '# Characters' section with character profiles.")
+        else:
+            for i, char in enumerate(characters):
+                if not char.get('name'):
+                    errors.append(f"Character {i+1} has no name")
+                if not char.get('role'):
+                    warnings.append(f"Character '{char.get('name', f'{i+1}')}' has no role")
+                if not char.get('background'):
+                    warnings.append(f"Character '{char.get('name', f'{i+1}')}' has no background")
+
+        # Check world
+        world = foundation.get('world', {})
+        if not world or not world.get('setting_overview'):
+            warnings.append("No world setting overview found. Expected '# World' section with setting details.")
+
+        # Log warnings
+        for warning in warnings:
+            logger.warning(f"Markdown extraction warning: {warning}")
+
+        # Raise error if critical issues found
+        if errors:
+            error_msg = "Markdown extraction failed with errors:\n" + "\n".join(f"  - {e}" for e in errors)
+            if markdown_text and len(markdown_text) < 500:
+                error_msg += f"\n\nReceived text:\n{markdown_text[:500]}..."
+            raise ValueError(error_msg)
+
+    @classmethod
+    def _validate_chapters(cls, chapters: List[Dict[str, Any]], markdown_text: str) -> None:
+        """
+        Validate extracted chapter data and raise warnings/errors for missing fields.
+
+        Args:
+            chapters: List of extracted chapter dictionaries
+            markdown_text: Original markdown text (for debugging)
+
+        Raises:
+            ValueError: For critical missing fields
+        """
+        if not chapters:
+            # Check if there's any chapter-like content in the markdown
+            if 'Chapter' in markdown_text or 'chapter' in markdown_text:
+                raise ValueError(
+                    "No chapters could be extracted but 'Chapter' text found in markdown. "
+                    "Expected format: '# Chapter N: Title' or '## Chapter N: Title'"
+                )
+            else:
+                raise ValueError(
+                    "No chapters found in markdown. "
+                    "Expected format: '# Chapter N: Title' or '## Chapter N: Title'"
+                )
+
+        errors = []
+        warnings = []
+
+        for chapter in chapters:
+            num = chapter.get('number', '?')
+
+            # Critical fields
+            if not chapter.get('title'):
+                errors.append(f"Chapter {num} has no title")
+            if not chapter.get('pov'):
+                errors.append(f"Chapter {num} has no POV specified")
+            if not chapter.get('act'):
+                warnings.append(f"Chapter {num} has no act specified")
+            if not chapter.get('summary'):
+                warnings.append(f"Chapter {num} has no summary")
+
+            # Key events are critical for prose generation
+            key_events = chapter.get('key_events', [])
+            if not key_events:
+                errors.append(f"Chapter {num} has no key events. Expected '## Key Events' section with numbered or bulleted list.")
+            elif len(key_events) < 2:
+                warnings.append(f"Chapter {num} has only {len(key_events)} key event(s). Consider adding more for better prose generation.")
+
+            # Character development is important but not critical
+            if not chapter.get('character_developments'):
+                warnings.append(f"Chapter {num} has no character development notes")
+
+        # Log warnings
+        for warning in warnings:
+            logger.warning(f"Markdown extraction warning: {warning}")
+
+        # Raise error if critical issues found
+        if errors:
+            error_msg = "Chapter extraction failed with errors:\n" + "\n".join(f"  - {e}" for e in errors)
+            if markdown_text and len(markdown_text) < 1000:
+                error_msg += f"\n\nReceived text preview:\n{markdown_text[:1000]}..."
+            raise ValueError(error_msg)
 
 
 class MarkdownFormatter:
