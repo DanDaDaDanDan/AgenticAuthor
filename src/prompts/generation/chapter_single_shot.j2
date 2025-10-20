@@ -9,12 +9,10 @@
 #}
 
 [SYSTEM]
-You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting.
+You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You write in clear, natural markdown format.
 
-YAML RULES (STRICT):
-- All list items MUST be fully quoted strings. Format exactly: - "Text here"
-- Never include colons in unquoted list items
-- No markdown fences or commentary — YAML only
+OUTPUT FORMAT:
+Write in clear, natural markdown format. Focus on the story content, not formatting details.
 
 [USER]
 Generate a comprehensive chapter structure for a book.
@@ -87,46 +85,49 @@ Please incorporate the above feedback while generating the chapters.
 {% endif %}
 
 RETURN FORMAT:
-Return ONLY valid YAML (no markdown fences):
+Write comprehensive chapter outlines using natural markdown format:
 
-chapters:
-  - number: 1
-    title: "..."
-    pov: "..."
-    act: "Act I"
-    summary: "..."
-    key_events:
-      - "First major scene/plot point (scene-level, will expand to 1,000-2,000 words)"
-      - "Second major scene/plot point"
-      - "Third major scene/plot point"
-      - "Fourth major scene/plot point (optional)"
-      - "Fifth major scene/plot point (optional)"
-    character_developments:
-      - "Name: concrete internal change with evidence"
-      - "Name: specific shift caused by a scene outcome"
-      - "Name: decision that advances arc"
-    relationship_beats:
-      - "First relationship change"
-      - "Second relationship change"
-    tension_points:
-      - "First tension point"
-      - "Second tension point"
-    sensory_details:
-      - "First sensory detail"
-      - "Second sensory detail"
-    subplot_threads:
-      - "First subplot thread"
-  - number: 2
-    title: "..."
-    # ... continue for all {{ chapter_count }} chapters
+# Chapter 1: [Title]
 
-YAML SYNTAX RULES:
-- ALWAYS wrap ALL list items in double quotes: - "Event text"
-- For dialogue in events, use single quotes inside doubles: - "He said: 'Hello'."
-- Do NOT wrap in markdown code fences
+**POV:** [Character name]
+**Act:** Act I/II/III
+**Summary:** [3-4 sentence summary of the chapter]
+
+## Key Events
+1. [First major scene/plot point that will expand to 1,000-2,000 words]
+2. [Second major scene/plot point]
+3. [Third major scene/plot point]
+4. [Fourth major scene/plot point (optional)]
+5. [Fifth major scene/plot point (optional)]
+
+## Character Development
+- [Name]: [Concrete internal change with evidence]
+- [Name]: [Specific shift caused by a scene outcome]
+- [Name]: [Decision that advances arc]
+
+## Relationship Beats
+- [First relationship change]
+- [Second relationship change]
+
+## Tension Points
+- [First tension point]
+- [Second tension point]
+
+## Sensory Details
+- [First sensory detail]
+- [Second sensory detail]
+
+## Subplot Threads
+- [First subplot thread (if applicable)]
+
+---
+
+# Chapter 2: [Title]
+[Continue the same format for all {{ chapter_count }} chapters]
 
 IMPORTANT:
-- Return ONLY the YAML content starting with "chapters:"
-- Each chapter must have UNIQUE plot events (no duplication across chapters)
-- Character arcs must PROGRESS linearly (no repeated development beats)
-- Follow YAML syntax rules above to avoid parsing errors
+- Write in natural, readable markdown
+- Focus on story content, not formatting perfection
+- Each chapter must have UNIQUE plot events (no duplication)
+- Character arcs must PROGRESS linearly (no repeated beats)
+- Use clear section headers and bullet points

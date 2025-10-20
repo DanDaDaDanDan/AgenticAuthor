@@ -1,0 +1,588 @@
+"""Markdown extraction utilities for parsing structured data from natural language generation."""
+
+import re
+from typing import Dict, Any, List, Optional
+from pathlib import Path
+
+
+class MarkdownExtractor:
+    """
+    Extract structured data from markdown-formatted LLM responses.
+
+    Philosophy:
+    - LLMs write better content when focused on storytelling, not syntax
+    - Markdown is more natural than YAML for creative writing
+    - Pattern matching can extract structured data post-hoc
+    - Graceful degradation: always get something useful, even if format varies
+    """
+
+    @classmethod
+    def extract_foundation(cls, markdown_text: str) -> Dict[str, Any]:
+        """
+        Extract foundation data (metadata, characters, world) from markdown.
+
+        Expected format:
+        # Metadata
+        - Genre: ...
+        - Tone: ...
+        - Themes: ...
+
+        # Characters
+        ## Character Name
+        **Role:** ...
+        **Background:** ...
+
+        # World
+        ## Setting
+        ...
+
+        Args:
+            markdown_text: Markdown-formatted foundation text
+
+        Returns:
+            Dict with metadata, characters, world sections
+        """
+        foundation = {
+            'metadata': {},
+            'characters': [],
+            'world': {}
+        }
+
+        # Extract metadata section
+        metadata_match = re.search(
+            r'#\s*Metadata\s*\n(.*?)(?=#\s*Characters|\Z)',
+            markdown_text,
+            re.IGNORECASE | re.DOTALL
+        )
+        if metadata_match:
+            foundation['metadata'] = cls._extract_metadata(metadata_match.group(1))
+
+        # Extract characters section
+        characters_match = re.search(
+            r'#\s*Characters\s*\n(.*?)(?=#\s*World|\Z)',
+            markdown_text,
+            re.IGNORECASE | re.DOTALL
+        )
+        if characters_match:
+            foundation['characters'] = cls._extract_characters(characters_match.group(1))
+
+        # Extract world section
+        world_match = re.search(
+            r'#\s*World\s*\n(.*?)(?=#\s*Chapters|\Z)',
+            markdown_text,
+            re.IGNORECASE | re.DOTALL
+        )
+        if world_match:
+            foundation['world'] = cls._extract_world(world_match.group(1))
+
+        return foundation
+
+    @classmethod
+    def extract_chapters(cls, markdown_text: str) -> List[Dict[str, Any]]:
+        """
+        Extract chapter outlines from markdown.
+
+        Expected format:
+        # Chapter 1: Title
+        **POV:** Character name
+        **Act:** Act I/II/III
+        **Summary:** Brief summary...
+
+        ## Key Events
+        1. Event one...
+        2. Event two...
+
+        ## Character Development
+        - Character: Change...
+
+        Args:
+            markdown_text: Markdown-formatted chapter text
+
+        Returns:
+            List of chapter dicts
+        """
+        chapters = []
+
+        # Split by chapter headers (# Chapter N: or ## Chapter N:)
+        chapter_pattern = r'#{1,2}\s*Chapter\s*(\d+)[:\s]*(.*?)\n'
+        chapter_splits = re.split(chapter_pattern, markdown_text)
+
+        # Process each chapter (skip first element if empty)
+        i = 1 if chapter_splits[0].strip() == '' else 0
+        while i < len(chapter_splits) - 2:
+            chapter_num = int(chapter_splits[i])
+            chapter_title = chapter_splits[i + 1].strip()
+            chapter_content = chapter_splits[i + 2]
+
+            chapter_data = {
+                'number': chapter_num,
+                'title': chapter_title,
+                'pov': cls._extract_field(chapter_content, 'POV'),
+                'act': cls._extract_field(chapter_content, 'Act'),
+                'summary': cls._extract_field(chapter_content, 'Summary'),
+                'key_events': cls._extract_list_section(chapter_content, 'Key Events'),
+                'character_developments': cls._extract_list_section(chapter_content, 'Character Development'),
+                'relationship_beats': cls._extract_list_section(chapter_content, 'Relationships?|Relationship Beats?'),
+                'tension_points': cls._extract_list_section(chapter_content, 'Tension Points?'),
+                'sensory_details': cls._extract_list_section(chapter_content, 'Sensory Details?'),
+                'subplot_threads': cls._extract_list_section(chapter_content, 'Subplot Threads?')
+            }
+
+            chapters.append(chapter_data)
+            i += 3
+
+        return chapters
+
+    @classmethod
+    def _extract_metadata(cls, text: str) -> Dict[str, Any]:
+        """Extract metadata fields from text."""
+        metadata = {}
+
+        # Common fields to look for
+        fields = [
+            'genre', 'subgenre', 'tone', 'pacing', 'themes',
+            'story_structure', 'narrative_style', 'target_audience',
+            'target_word_count', 'chapter_count', 'setting_period',
+            'setting_location', 'content_warnings'
+        ]
+
+        for field in fields:
+            # Try various formats: "Field: value", "- Field: value", "**Field:** value"
+            escaped_field = re.escape(field.replace('_', '[ _]'))  # Allow both space and underscore
+            patterns = [
+                rf'\*\*{field.replace("_", " ").title()}\*\*:\s*(.*?)(?:\n|$)',  # **Field Name:** format
+                rf'{field}:\s*(.*?)(?:\n|$)',  # field: format
+                rf'-\s*{field}:\s*(.*?)(?:\n|$)'  # - field: format
+            ]
+
+            for pattern in patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    value = match.group(1).strip()
+                    # Clean up any leading/trailing asterisks from markdown bold
+                    value = value.strip('*').strip()
+
+                    # Handle lists (themes, content_warnings)
+                    if field in ['themes', 'content_warnings']:
+                        # Check if it's already a list format
+                        if value.startswith('['):
+                            metadata[field] = cls._parse_list_value(value)
+                        else:
+                            # Extract subsequent bullet points
+                            list_items = cls._extract_bullet_list_after(text, match.end())
+                            if list_items:
+                                metadata[field] = list_items
+                            else:
+                                metadata[field] = [value] if value else []
+                    # Handle numbers
+                    elif field in ['target_word_count', 'chapter_count']:
+                        try:
+                            metadata[field] = int(re.sub(r'[^\d]', '', value))
+                        except:
+                            metadata[field] = value
+                    else:
+                        metadata[field] = value
+                    break
+
+        return metadata
+
+    @classmethod
+    def _extract_characters(cls, text: str) -> List[Dict[str, Any]]:
+        """Extract character profiles from text."""
+        characters = []
+
+        # Split by character headers (## Name or ### Name)
+        char_pattern = r'#{2,3}\s*(.*?)\n'
+        char_splits = re.split(char_pattern, text)
+
+        i = 1 if char_splits[0].strip() == '' else 0
+        while i < len(char_splits) - 1:
+            char_name = char_splits[i].strip()
+            char_content = char_splits[i + 1]
+
+            character = {
+                'name': char_name,
+                'role': cls._extract_field(char_content, 'Role'),
+                'background': cls._extract_field(char_content, 'Background', multiline=True),
+                'motivation': cls._extract_field(char_content, 'Motivation', multiline=True),
+                'character_arc': cls._extract_field(char_content, 'Character Arc|Arc', multiline=True),
+                'personality_traits': cls._extract_list_field(char_content, 'Personality Traits?|Traits'),
+                'internal_conflict': cls._extract_field(char_content, 'Internal Conflict', multiline=True),
+                'relationships': cls._extract_relationships(char_content)
+            }
+
+            characters.append(character)
+            i += 2
+
+        return characters
+
+    @classmethod
+    def _extract_world(cls, text: str) -> Dict[str, Any]:
+        """Extract world-building information from text."""
+        world = {
+            'setting_overview': cls._extract_field(text, 'Setting Overview|Overview', multiline=True),
+            'key_locations': cls._extract_locations(text),
+            'systems_and_rules': cls._extract_systems(text),
+            'social_context': cls._extract_list_section(text, 'Social Context')
+        }
+
+        return world
+
+    @classmethod
+    def _extract_field(cls, text: str, field_name: str, multiline: bool = False) -> Optional[str]:
+        """Extract a single field value."""
+        # Handle OR in field names (e.g., "Character Arc|Arc")
+        field_options = field_name.split('|')
+
+        for field_option in field_options:
+            field_option = field_option.strip()
+            # Try various formats
+            patterns = [
+                rf'\*\*{re.escape(field_option)}\*\*:\s*(.*?)(?:\n\n|\*\*|\n##|$)',
+                rf'{re.escape(field_option)}:\s*(.*?)(?:\n\n|\*\*|\n##|$)',
+                rf'^\s*{re.escape(field_option)}:\s*(.*?)(?:\n\n|\*\*|\n##|$)'
+            ]
+
+            flags = re.IGNORECASE | re.MULTILINE
+            if multiline:
+                flags |= re.DOTALL
+
+            for pattern in patterns:
+                match = re.search(pattern, text, flags)
+                if match and match.group(1):
+                    value = match.group(1).strip()
+                    # Clean up excessive whitespace
+                    value = re.sub(r'\n\s*\n', '\n', value)
+                    return value
+
+        return None
+
+    @classmethod
+    def _extract_list_field(cls, text: str, field_name: str) -> List[str]:
+        """Extract a list field (like personality traits)."""
+        # Handle OR in field names
+        field_options = field_name.split('|')
+
+        for field_option in field_options:
+            field_option = field_option.strip()
+            # Find the field
+            pattern = rf'{re.escape(field_option)}:?\s*\n'
+            match = re.search(pattern, text, re.IGNORECASE)
+
+            if match:
+                # Extract bullet points after the field
+                return cls._extract_bullet_list_after(text, match.end())
+
+        return []
+
+    @classmethod
+    def _extract_list_section(cls, text: str, section_name: str) -> List[str]:
+        """Extract a list section (like Key Events)."""
+        # Handle OR in section names
+        section_options = section_name.split('|')
+
+        for section_option in section_options:
+            section_option = section_option.strip()
+            # Find section header
+            pattern = rf'#{2,3}\s*{re.escape(section_option)}\s*\n'
+            match = re.search(pattern, text, re.IGNORECASE)
+
+            if match:
+                # Find next section or end
+                next_section = re.search(r'#{2,3}\s*\w+', text[match.end():])
+                end_pos = match.end() + next_section.start() if next_section else len(text)
+
+                section_text = text[match.end():end_pos]
+
+                # Extract numbered or bulleted items
+                items = []
+
+                # Try numbered list first
+                numbered = re.findall(r'^\d+\.\s*(.*?)(?=\n\d+\.|$)', section_text, re.MULTILINE | re.DOTALL)
+                if numbered:
+                    items = [item.strip() for item in numbered]
+                else:
+                    # Try bullet points
+                    bullets = re.findall(r'^[-*]\s*(.*?)(?=\n[-*]|$)', section_text, re.MULTILINE | re.DOTALL)
+                    if bullets:
+                        items = [item.strip() for item in bullets]
+
+                return items
+
+        return []
+
+    @classmethod
+    def _extract_bullet_list_after(cls, text: str, start_pos: int) -> List[str]:
+        """Extract bullet points starting from a position."""
+        items = []
+        lines = text[start_pos:].split('\n')
+
+        for line in lines:
+            # Check if it's a bullet point
+            bullet_match = re.match(r'^\s*[-*]\s*(.+)', line)
+            if bullet_match:
+                items.append(bullet_match.group(1).strip().strip('"'))
+            elif items:
+                # Stop at first non-bullet line after finding bullets
+                break
+
+        return items
+
+    @classmethod
+    def _extract_relationships(cls, text: str) -> List[Dict[str, str]]:
+        """Extract character relationships."""
+        relationships = []
+
+        # Look for relationships section
+        rel_match = re.search(r'Relationships?:?\s*\n', text, re.IGNORECASE)
+        if rel_match:
+            # Extract items after
+            rel_text = text[rel_match.end():]
+
+            # Look for pattern: "- Character: dynamic" or "- With Character: dynamic"
+            rel_pattern = r'[-*]\s*(?:With\s+)?([^:]+):\s*(.*?)(?=\n[-*]|\n\n|$)'
+            matches = re.findall(rel_pattern, rel_text, re.MULTILINE | re.DOTALL)
+
+            for char_name, dynamic in matches:
+                relationships.append({
+                    'character': char_name.strip(),
+                    'dynamic': dynamic.strip()
+                })
+
+        return relationships
+
+    @classmethod
+    def _extract_locations(cls, text: str) -> List[Dict[str, str]]:
+        """Extract key locations."""
+        locations = []
+
+        # Look for Key Locations section
+        loc_match = re.search(r'Key Locations?:?\s*\n', text, re.IGNORECASE)
+        if loc_match:
+            loc_text = text[loc_match.end():]
+
+            # Look for pattern: "### Location Name" or "- **Location Name:**"
+            # Split by location headers
+            loc_pattern = r'(?:#{3}\s*|[-*]\s*\*\*)(.*?)(?:\*\*)?:\s*(.*?)(?=#{3}|[-*]\s*\*\*|\n\n|$)'
+            matches = re.findall(loc_pattern, loc_text, re.MULTILINE | re.DOTALL)
+
+            for name, description in matches:
+                locations.append({
+                    'name': name.strip(),
+                    'description': description.strip()
+                })
+
+        return locations
+
+    @classmethod
+    def _extract_systems(cls, text: str) -> List[Dict[str, str]]:
+        """Extract systems and rules."""
+        systems = []
+
+        # Look for Systems section
+        sys_match = re.search(r'Systems?(?: and Rules?)?:?\s*\n', text, re.IGNORECASE)
+        if sys_match:
+            sys_text = text[sys_match.end():]
+
+            # Similar pattern to locations
+            sys_pattern = r'(?:#{3}\s*|[-*]\s*\*\*)(.*?)(?:\*\*)?:\s*(.*?)(?=#{3}|[-*]\s*\*\*|\n\n|$)'
+            matches = re.findall(sys_pattern, sys_text, re.MULTILINE | re.DOTALL)
+
+            for name, description in matches:
+                systems.append({
+                    'system': name.strip(),
+                    'description': description.strip()
+                })
+
+        return systems
+
+    @classmethod
+    def _parse_list_value(cls, value: str) -> List[str]:
+        """Parse a bracketed list value like '[item1, item2, item3]'."""
+        # Remove brackets
+        value = value.strip('[]')
+        # Split by comma and clean
+        items = [item.strip().strip('"\'') for item in value.split(',')]
+        return [item for item in items if item]  # Filter empty strings
+
+
+class MarkdownFormatter:
+    """
+    Format structured data into markdown for human readability.
+
+    This is the inverse of MarkdownExtractor - takes structured data
+    and formats it as clean, readable markdown.
+    """
+
+    @classmethod
+    def format_foundation(cls, foundation: Dict[str, Any]) -> str:
+        """Format foundation data as markdown."""
+        sections = []
+
+        # Metadata section
+        if 'metadata' in foundation:
+            sections.append(cls._format_metadata(foundation['metadata']))
+
+        # Characters section
+        if 'characters' in foundation:
+            sections.append(cls._format_characters(foundation['characters']))
+
+        # World section
+        if 'world' in foundation:
+            sections.append(cls._format_world(foundation['world']))
+
+        return '\n\n'.join(sections)
+
+    @classmethod
+    def format_chapters(cls, chapters: List[Dict[str, Any]]) -> str:
+        """Format chapter outlines as markdown."""
+        chapter_sections = []
+
+        for chapter in chapters:
+            chapter_md = cls._format_chapter(chapter)
+            chapter_sections.append(chapter_md)
+
+        return '\n\n---\n\n'.join(chapter_sections)
+
+    @classmethod
+    def _format_metadata(cls, metadata: Dict[str, Any]) -> str:
+        """Format metadata section."""
+        lines = ['# Metadata\n']
+
+        for key, value in metadata.items():
+            # Format key nicely
+            display_key = key.replace('_', ' ').title()
+
+            if isinstance(value, list):
+                lines.append(f'**{display_key}:**')
+                for item in value:
+                    lines.append(f'  - {item}')
+            else:
+                lines.append(f'**{display_key}:** {value}')
+
+        return '\n'.join(lines)
+
+    @classmethod
+    def _format_characters(cls, characters: List[Dict[str, Any]]) -> str:
+        """Format characters section."""
+        lines = ['# Characters\n']
+
+        for char in characters:
+            lines.append(f"## {char['name']}\n")
+
+            if char.get('role'):
+                lines.append(f"**Role:** {char['role']}\n")
+
+            if char.get('background'):
+                lines.append(f"**Background:** {char['background']}\n")
+
+            if char.get('motivation'):
+                lines.append(f"**Motivation:** {char['motivation']}\n")
+
+            if char.get('character_arc'):
+                lines.append(f"**Character Arc:** {char['character_arc']}\n")
+
+            if char.get('personality_traits'):
+                lines.append('**Personality Traits:**')
+                for trait in char['personality_traits']:
+                    lines.append(f'  - {trait}')
+                lines.append('')
+
+            if char.get('internal_conflict'):
+                lines.append(f"**Internal Conflict:** {char['internal_conflict']}\n")
+
+            if char.get('relationships'):
+                lines.append('**Relationships:**')
+                for rel in char['relationships']:
+                    lines.append(f"  - {rel['character']}: {rel['dynamic']}")
+                lines.append('')
+
+        return '\n'.join(lines)
+
+    @classmethod
+    def _format_world(cls, world: Dict[str, Any]) -> str:
+        """Format world section."""
+        lines = ['# World\n']
+
+        if world.get('setting_overview'):
+            lines.append(f"**Setting Overview:** {world['setting_overview']}\n")
+
+        if world.get('key_locations'):
+            lines.append('**Key Locations:**')
+            for loc in world['key_locations']:
+                lines.append(f"  - **{loc['name']}:** {loc['description']}")
+            lines.append('')
+
+        if world.get('systems_and_rules'):
+            lines.append('**Systems and Rules:**')
+            for sys in world['systems_and_rules']:
+                lines.append(f"  - **{sys['system']}:** {sys['description']}")
+            lines.append('')
+
+        if world.get('social_context'):
+            lines.append('**Social Context:**')
+            for item in world['social_context']:
+                lines.append(f'  - {item}')
+            lines.append('')
+
+        return '\n'.join(lines)
+
+    @classmethod
+    def _format_chapter(cls, chapter: Dict[str, Any]) -> str:
+        """Format a single chapter."""
+        lines = []
+
+        # Chapter header
+        lines.append(f"# Chapter {chapter['number']}: {chapter['title']}\n")
+
+        # Basic info
+        if chapter.get('pov'):
+            lines.append(f"**POV:** {chapter['pov']}")
+        if chapter.get('act'):
+            lines.append(f"**Act:** {chapter['act']}")
+        if chapter.get('summary'):
+            lines.append(f"**Summary:** {chapter['summary']}\n")
+
+        # Key events
+        if chapter.get('key_events'):
+            lines.append('## Key Events\n')
+            for i, event in enumerate(chapter['key_events'], 1):
+                lines.append(f'{i}. {event}')
+            lines.append('')
+
+        # Character developments
+        if chapter.get('character_developments'):
+            lines.append('## Character Development\n')
+            for dev in chapter['character_developments']:
+                lines.append(f'- {dev}')
+            lines.append('')
+
+        # Relationship beats
+        if chapter.get('relationship_beats'):
+            lines.append('## Relationship Beats\n')
+            for beat in chapter['relationship_beats']:
+                lines.append(f'- {beat}')
+            lines.append('')
+
+        # Tension points
+        if chapter.get('tension_points'):
+            lines.append('## Tension Points\n')
+            for point in chapter['tension_points']:
+                lines.append(f'- {point}')
+            lines.append('')
+
+        # Sensory details
+        if chapter.get('sensory_details'):
+            lines.append('## Sensory Details\n')
+            for detail in chapter['sensory_details']:
+                lines.append(f'- {detail}')
+            lines.append('')
+
+        # Subplot threads
+        if chapter.get('subplot_threads'):
+            lines.append('## Subplot Threads\n')
+            for thread in chapter['subplot_threads']:
+                lines.append(f'- {thread}')
+            lines.append('')
+
+        return '\n'.join(lines)

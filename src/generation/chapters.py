@@ -205,21 +205,31 @@ class ChapterGenerator:
 
         response_text = result.get('content', result) if isinstance(result, dict) else result
 
-        # Use robust YAML parser with fallbacks
-        from ..utils.yaml_utils import parse_foundation_robust
+        # Use markdown extractor for foundation
+        from ..utils.markdown_extractors import MarkdownExtractor
 
         try:
-            foundation_data = parse_foundation_robust(response_text, self.project.path)
+            foundation_data = MarkdownExtractor.extract_foundation(response_text)
+
+            # Validate we got all required sections
+            if not foundation_data.get('metadata'):
+                raise ValueError("Missing metadata section in foundation")
+            if not foundation_data.get('characters'):
+                raise ValueError("Missing characters section in foundation")
+            if not foundation_data.get('world'):
+                raise ValueError("Missing world section in foundation")
+
         except Exception as e:
             # Save raw response for debugging before failing
-            debug_file = self.project.path / '.agentic' / 'debug' / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.txt'
+            debug_file = self.project.path / '.agentic' / 'debug' / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.md'
             debug_file.parent.mkdir(parents=True, exist_ok=True)
             debug_file.write_text(response_text, encoding='utf-8')
 
-            raise Exception(
-                f"Failed to parse foundation: {e}\n"
-                f"Raw response saved to: {debug_file.relative_to(self.project.path)}"
-            )
+            if logger:
+                logger.error(f"Foundation extraction failed: {e}")
+                logger.info(f"Raw response saved to: {debug_file}")
+
+            raise Exception(f"Failed to extract foundation from response: {str(e)}")
 
         # Make sure chapters section is NOT present
         if 'chapters' in foundation_data:
@@ -984,119 +994,36 @@ Regenerate the foundation addressing the issues above.
 
             response_text = result.get('content', result) if isinstance(result, dict) else result
 
-            # Strip markdown fences if present
-            response_text = response_text.strip()
-            if response_text.startswith('```yaml'):
-                response_text = response_text[7:]  # Remove ```yaml
-            elif response_text.startswith('```'):
-                response_text = response_text[3:]  # Remove ```
-            if response_text.endswith('```'):
-                response_text = response_text[:-3]  # Remove closing ```
-            response_text = response_text.strip()
-
-            # Parse the chapters YAML with fallback strategy
-            # STRATEGY: Try strict YAML first (fast path), fall back to pattern matching if needed
-            chapters_data = []
-            warnings = []  # Collect YAML issues for warning display
+            # Parse the chapters using markdown extractor
+            from ..utils.markdown_extractors import MarkdownExtractor
+            warnings = []  # Track any extraction issues
 
             try:
-                # FAST PATH: Strict YAML parsing (works for 99% of cases)
-                parsed_data = yaml.safe_load(response_text)
-
-                # Extract chapters list
-                if isinstance(parsed_data, dict) and 'chapters' in parsed_data:
-                    chapters_data = parsed_data['chapters']
-                elif isinstance(parsed_data, list):
-                    # Response might be just the list of chapters
-                    chapters_data = parsed_data
-                else:
-                    raise yaml.YAMLError(f"Response missing 'chapters' section. Got keys: {list(parsed_data.keys()) if isinstance(parsed_data, dict) else 'not a dict'}")
+                chapters_data = MarkdownExtractor.extract_chapters(response_text)
 
                 if not chapters_data:
-                    raise yaml.YAMLError("Empty chapters list in response")
+                    raise ValueError("No chapters extracted from response")
 
                 if logger:
-                    logger.debug(f"Strict YAML parsing succeeded: {len(chapters_data)} chapters")
+                    logger.debug(f"Markdown extraction succeeded: {len(chapters_data)} chapters")
 
-            except yaml.YAMLError as yaml_error:
-                # FALLBACK PATH: Pattern matching extraction
+            except Exception as extract_error:
+                # Extraction failed - save raw response and show error
                 if logger:
-                    logger.warning(f"Strict YAML parsing failed: {yaml_error}")
-                    logger.info("Falling back to pattern-based chapter extraction")
+                    logger.error(f"Markdown extraction failed: {extract_error}")
 
-                self.console.print(f"[yellow]⚠️  YAML parsing failed, using fallback extraction...[/yellow]")
+                # Save raw response for debugging
+                debug_file = self.project.path / '.agentic' / 'debug' / f'chapters_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.md'
+                debug_file.parent.mkdir(parents=True, exist_ok=True)
+                debug_file.write_text(response_text, encoding='utf-8')
 
-                # Extract chapters by pattern matching
-                extracted_chapters = self._extract_chapters_by_pattern(response_text)
+                self.console.print(f"[red]Failed to extract chapters from response[/red]")
+                self.console.print(f"[yellow]Raw response saved to: {debug_file.relative_to(self.project.path)}[/yellow]")
 
-                if not extracted_chapters:
-                    # Complete failure - no chapters extracted
-                    raise Exception(
-                        f"Failed to extract chapters from response:\n"
-                        f"  1. Strict YAML parsing failed: {yaml_error}\n"
-                        f"  2. Pattern extraction found no chapters\n"
-                        f"Response preview (first 500 chars):\n{response_text[:500]}"
-                    )
-
-                # Try to parse each extracted chapter individually
-                # Track seen chapter numbers to detect duplicates
-                seen_numbers = set()
-
-                for chapter_num, chapter_yaml_text in extracted_chapters:
-                    # Check for duplicate chapter number
-                    if chapter_num in seen_numbers:
-                        warnings.append({
-                            'chapter': chapter_num,
-                            'issue': f'Duplicate chapter number {chapter_num} detected - skipping duplicate',
-                            'raw_data': chapter_yaml_text[:200]
-                        })
-                        if logger:
-                            logger.warning(f"Chapter {chapter_num}: Duplicate number detected, skipping")
-                        continue  # Skip duplicate
-
-                    seen_numbers.add(chapter_num)
-
-                    try:
-                        # Try to parse this individual chapter
-                        chapter_data = yaml.safe_load(chapter_yaml_text)
-
-                        # Validate chapter has required 'number' field
-                        if isinstance(chapter_data, dict) and 'number' in chapter_data:
-                            chapters_data.append(chapter_data)
-
-                            if logger:
-                                logger.debug(f"Chapter {chapter_num}: YAML valid")
-                        else:
-                            # Chapter data is malformed
-                            warnings.append({
-                                'chapter': chapter_num,
-                                'issue': 'Chapter data missing required "number" field',
-                                'raw_data': chapter_yaml_text[:200]  # First 200 chars for debugging
-                            })
-                            if logger:
-                                logger.warning(f"Chapter {chapter_num}: Missing 'number' field")
-
-                    except yaml.YAMLError as chapter_yaml_error:
-                        # This specific chapter has YAML errors
-                        warnings.append({
-                            'chapter': chapter_num,
-                            'issue': f'YAML syntax error: {str(chapter_yaml_error)[:100]}',
-                            'raw_data': chapter_yaml_text[:200]  # First 200 chars for debugging
-                        })
-                        if logger:
-                            logger.warning(f"Chapter {chapter_num}: YAML error - {chapter_yaml_error}")
-
-                if logger:
-                    logger.info(f"Pattern extraction: {len(chapters_data)}/{len(extracted_chapters)} chapters valid, {len(warnings)} warnings")
-
-                if not chapters_data:
-                    # No valid chapters after extraction - total failure
-                    raise Exception(
-                        f"No valid chapters extracted:\n"
-                        f"  Pattern extraction found {len(extracted_chapters)} chapters\n"
-                        f"  All {len(extracted_chapters)} chapters had YAML errors\n"
-                        f"  First error: {warnings[0]['issue'] if warnings else 'unknown'}"
-                    )
+                raise Exception(
+                    f"Failed to extract chapters from markdown response: {extract_error}\n"
+                    f"Response preview (first 500 chars):\n{response_text[:500]}"
+                )
 
             # Save individual chapter beat files (ONLY format - no chapters.yaml)
             # Use custom output_dir if provided, otherwise use default chapter-beats/

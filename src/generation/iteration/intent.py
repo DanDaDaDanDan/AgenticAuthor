@@ -180,7 +180,8 @@ class IntentAnalyzer:
                 stream=True,
                 display=True,
                 display_label="Analyzing intent",
-                max_tokens=500
+                max_tokens=500,
+                response_format={"type": "json_object"}  # Use structured JSON output
             )
 
             if logger:

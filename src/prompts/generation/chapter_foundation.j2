@@ -17,7 +17,7 @@
 #}
 
 [SYSTEM]
-You are a professional story development assistant. You always return valid YAML without additional formatting.
+You are a professional story development assistant. You write in clear, natural markdown format.
 
 [USER]
 # TREATMENT
@@ -31,39 +31,61 @@ Generate foundation (metadata + characters + world) from the treatment above.
 Note: Extract and structure what's in the treatment. Elaborate fully but don't invent major plot elements.
 
 # OUTPUT
-Return plain YAML (DO NOT wrap in ```yaml or ``` fences):
+Write in natural markdown format:
 
-{{ metadata_yaml_example }}
+# Metadata
 
-characters:
-  - name: "..."
-    role: "protagonist"
-    background: |
-      ...
-    motivation: |
-      ...
-    character_arc: |
-      ...
-    personality_traits: ["...", "..."]
-    internal_conflict: |
-      ...
-    relationships:
-      - character: "..."
-        dynamic: "..."
+**Genre:** [genre from treatment]
+**Subgenre:** [if applicable]
+**Tone:** [tone and style]
+**Pacing:** [pacing style]
+**Themes:**
+  - [theme 1]
+  - [theme 2]
+  - [etc.]
+**Story Structure:** [structure type]
+**Narrative Style:** [POV and style]
+**Target Audience:** [audience description]
+**Target Word Count:** [number]
+**Chapter Count:** [number]
+**Setting Period:** [time period]
+**Setting Location:** [location]
+**Content Warnings:**
+  - [if applicable]
 
-world:
-  setting_overview: |
-    ...
-  key_locations:
-    - name: "..."
-      description: "..."
-  systems_and_rules:
-    - system: "..."
-      description: |
-        ...
-  social_context: ["...", "..."]
+# Characters
 
-IMPORTANT: Return all 3 sections (metadata, characters, world). No chapters section.
+## [Character Name]
+
+**Role:** protagonist/antagonist/supporting
+**Background:** [Full background description]
+**Motivation:** [Character's driving motivation]
+**Character Arc:** [How they change throughout the story]
+**Personality Traits:**
+  - [trait 1]
+  - [trait 2]
+**Internal Conflict:** [Their inner struggle]
+**Relationships:**
+  - [Other Character]: [Dynamic description]
+
+[Continue for all characters]
+
+# World
+
+**Setting Overview:** [Overall setting description]
+
+**Key Locations:**
+  - **[Location Name]:** [Description]
+  - **[Location Name]:** [Description]
+
+**Systems and Rules:**
+  - **[System Name]:** [Description of how it works]
+
+**Social Context:**
+  - [Social element 1]
+  - [Social element 2]
+
+IMPORTANT: Include all 3 sections (Metadata, Characters, World). Write naturally without worrying about perfect formatting.
 {% if is_initial_generation and min_words and max_words %}
 
 TREATMENT ANALYSIS FOR WORD COUNT:

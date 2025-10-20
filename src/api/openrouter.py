@@ -182,6 +182,7 @@ class OpenRouterClient:
         display: bool = True,
         min_response_tokens: int = 100,
         operation: Optional[str] = None,
+        response_format: Optional[Dict[str, str]] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -197,6 +198,7 @@ class OpenRouterClient:
             display: Whether to display output in console
             min_response_tokens: Minimum tokens to reserve for response
             operation: Optional operation name for debugging (e.g., "premise-generation", "chapter-3")
+            response_format: Optional response format (e.g., {"type": "json_object"} for structured JSON)
             **kwargs: Additional API parameters
 
         Returns:
@@ -260,6 +262,10 @@ class OpenRouterClient:
             "max_tokens": max_tokens,
             **kwargs
         }
+
+        # Add response format if specified (for structured output like JSON)
+        if response_format:
+            request_data["response_format"] = response_format
 
         # Log request BEFORE making the call
         from ..utils.logging import get_logger
@@ -446,6 +452,7 @@ class OpenRouterClient:
         display_mode: str = "field",  # "field", "array_first", or "full"
         min_response_tokens: int = 100,
         operation: Optional[str] = None,
+        use_structured_output: bool = True,  # Use structured JSON output by default
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -463,6 +470,7 @@ class OpenRouterClient:
                          "array_first" (show first element of array), "full" (show all)
             min_response_tokens: Minimum tokens to reserve for response
             operation: Optional operation name for debugging (e.g., "premise-generation")
+            use_structured_output: Whether to use structured JSON output (default: True)
             **kwargs: Additional API parameters
 
         Returns:
@@ -521,6 +529,10 @@ class OpenRouterClient:
             "max_tokens": max_tokens,
             **kwargs
         }
+
+        # Add structured JSON output format if enabled
+        if use_structured_output:
+            request_data["response_format"] = {"type": "json_object"}
 
         # Log request details
         from ..utils.logging import get_logger
