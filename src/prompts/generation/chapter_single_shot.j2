@@ -9,7 +9,12 @@
 #}
 
 [SYSTEM]
-You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting. CRITICAL: All YAML list items MUST be fully quoted strings. Never use unquoted text with colons in list items. Format: - "Event text here".
+You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You always return valid YAML without additional formatting.
+
+YAML RULES (STRICT):
+- All list items MUST be fully quoted strings. Format exactly: - "Text here"
+- Never include colons in unquoted list items
+- No markdown fences or commentary — YAML only
 
 [USER]
 Generate a comprehensive chapter structure for a book.
@@ -36,12 +41,17 @@ Since you're generating ALL chapters at once, you have the unique opportunity to
 - Avoid duplicating plot beats or character moments
 - Create clear causal progression from chapter to chapter
 
+ANTI-REDUNDANCY GUARDRAILS (Act II especially):
+- Do not repeat similar operation types (e.g., multiple stakeouts/raids/canvasses). If a pattern would repeat, CONSOLIDATE into a single, higher-impact chapter.
+- Vary setting and tactics — escalate stakes and method rather than replaying the same beat.
+- Each chapter should introduce at least one new piece of information OR a meaningful turn in relationships.
+
 CHAPTER STRUCTURE:
 For each chapter provide:
 - number, title (evocative, specific)
 - pov, act (Act I/Act II/Act III based on position), summary (3-4 sentences)
 - key_events: 3-5 major plot points (each will become a complete scene in prose - UNIQUE to this chapter, not repeated)
-- character_developments: 3-4 internal changes (LINEAR progression, no repeated beats)
+- character_developments: 3-4 internal changes (LINEAR progression, no repeated beats). Format each as "Name: concrete change with evidence" (e.g., "Elias: trusts Lena's intuition after failed predictive model").
 - relationship_beats: 2-3 relationship evolutions (UNIQUE dynamics)
 - tension_points: 2-3 stakes/urgency moments
 - sensory_details: 2-3 atmospheric elements
@@ -55,6 +65,11 @@ GUIDELINES FOR KEY_EVENTS - CRITICAL:
 - AVOID fragmentation: Don't break a single interaction into multiple events
 - Example of TOO GRANULAR (beat-level): "Character arrives", "Character examines body", "Character discovers clue", "Character talks to witness"
 - Example of CORRECT (scene-level): "Character examines crime scene, discovering crucial clue while interviewing witness"
+
+ACT DISTRIBUTION & PROGRESSION:
+- Act I (~25%): Establish premise, inciting incident, clear story question. No filler scenes.
+- Act II (~50%): Escalate through varied strategies (investigation, confrontation, reversal). Avoid repeating the same tactic twice; merge near-duplicate beats.
+- Act III (~25%): Execute decisive moves, climax, and resolution with consequences.
 
 GENERAL GUIDELINES:
 - Each key_event should be specific and complete (not vague or generic)
@@ -87,9 +102,9 @@ chapters:
       - "Fourth major scene/plot point (optional)"
       - "Fifth major scene/plot point (optional)"
     character_developments:
-      - "First development"
-      - "Second development"
-      - "Third development"
+      - "Name: concrete internal change with evidence"
+      - "Name: specific shift caused by a scene outcome"
+      - "Name: decision that advances arc"
     relationship_beats:
       - "First relationship change"
       - "Second relationship change"

@@ -41,6 +41,7 @@ VALIDATION CRITERIA:
 - Wrong POV character (outline specifies: {{ chapter_outline.get('pov', 'N/A') }})
 - Significantly different scene outcomes than specified
 - Missing major plot points or story beats
+- Summary-only narration for most of the chapter (tell-without-show, list-like recaps, meta descriptions such as "In this chapter" instead of dramatized scenes)
 
 YOUR TASK:
 
@@ -48,6 +49,7 @@ YOUR TASK:
 2. Verify character developments and emotional beats were addressed
 3. Verify POV character consistency
 4. Check that scene outcomes align with outline specifications
+5. Evaluate whether prose is dramatized (scenes with dialogue/action/interiority). If most paragraphs merely summarize events, mark an "insufficient_detail" issue with severity "high" and explain where dramatization is missing.
 
 Return your analysis as JSON:
 

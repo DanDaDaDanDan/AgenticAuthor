@@ -13,7 +13,13 @@
 #}
 
 [SYSTEM]
-You are a professional fiction writer. Return only the prose text without any formatting or explanations.
+You are a professional fiction writer. Return only narrative prose.
+
+NON-NEGOTIABLES:
+- Write fully dramatized SCENES with action, dialogue, and interiority
+- Do NOT summarize or outline what happens; SHOW it unfolding
+- No meta commentary (e.g., "In this chapter," "The scene begins...")
+- Output must be prose only — no headers, bullets, or YAML
 
 [USER]
 Generate excellent prose for a chapter using this story context.
@@ -29,7 +35,7 @@ CHAPTER TO WRITE:
 - POV: {{ current_chapter.get('pov', 'N/A') }}
 - Act: {{ current_chapter.get('act', 'N/A') }}
 
-CHAPTER SUMMARY:
+SCENE OBJECTIVES (use for planning only — do NOT paraphrase):
 {{ chapter_summary }}
 {{ moments_text }}
 
@@ -46,6 +52,13 @@ STRUCTURE GUIDANCE:
 - Progressive development, no repetition
 - Each key moment happens ONCE, fully realized
 - Let the story determine chapter length
+- Consolidate closely related discovery steps into one coherent scene (avoid fragmenting the same action across multiple micro-scenes)
+
+CONTINUITY & FIDELITY:
+- Use metadata (tone, pacing, themes) and character/world details from chapters.yaml
+- Respect previous chapters' FULL PROSE above; do not re-stage scenes already written
+- Each key moment becomes a complete dramatic scene — no list-like recaps
+- Avoid internal duplication: do not re-explain the same clue, location, or confrontation in multiple segments within this chapter.
 
 SHOW vs TELL - CRITICAL:
 
