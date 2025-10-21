@@ -140,36 +140,23 @@ class PremiseGenerator:
         normalized_genre = self.taxonomy_loader.normalize_genre(genre)
         taxonomy = self.taxonomy_loader.load_merged_taxonomy(normalized_genre)
 
-        # Build prompt with enforced taxonomy
-        prompt = f"""Generate a compelling fiction premise for the {genre} genre.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/premise_with_taxonomy",
+            genre=genre,
+            user_input=user_input,
+            taxonomy_selections=taxonomy_selections
+        )
 
-Build upon this concept: {user_input}
-
-REQUIRED TAXONOMY SELECTIONS (must incorporate these elements):
-{json.dumps(taxonomy_selections, indent=2)}
-
-REQUIREMENTS:
-1. 2-3 sentences that capture the core conflict
-2. Clear protagonist and stakes
-3. Unique hook that sets it apart
-4. Must naturally incorporate the specified taxonomy elements
-5. Should feel fresh and engaging
-
-Return a JSON object with this structure:
-{{
-    "premise": "The 2-3 sentence premise text",
-    "protagonist": "Brief description of main character",
-    "antagonist": "Brief description of opposing force",
-    "stakes": "What the protagonist stands to gain/lose",
-    "hook": "What makes this story unique",
-    "themes": ["theme1", "theme2", "theme3"]
-}}"""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("generation/premise_with_taxonomy", default=0.7)
 
         try:
             result = await self.client.json_completion(
                 model=self.model,
-                prompt=prompt,
-                temperature=0.7,
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
+                temperature=temperature,
                 display_label="Regenerating premise with updated taxonomy",
                 reserve_tokens=500
             )
@@ -293,34 +280,20 @@ Return a JSON object with this structure:
             json_structure += "\n"
         json_structure += "  }"
 
-        prompt = f"""Generate a compelling fiction premise for the {genre} genre.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/premise_main",
+            genre=genre,
+            guidance_context=guidance_context,
+            length_context=length_context,
+            history_context=history_context,
+            category_options=category_options,
+            json_structure=json_structure,
+            length_scope=length_scope
+        )
 
-{guidance_context}{length_context}{history_context}
-
-AVAILABLE TAXONOMY OPTIONS:
-{chr(10).join([f'{cat}: {", ".join(opts[:10])}{"..." if len(opts) > 10 else ""}'
-               for cat, opts in category_options.items()])}
-
-REQUIREMENTS:
-1. Create a 2-3 sentence premise that captures the core conflict
-2. Include clear protagonist and stakes
-3. Select appropriate values from EACH category above
-4. Ensure all selections work cohesively together
-5. You may create custom values if needed for the story
-6. Identify 3-5 unique elements that make this story distinctive
-{f'7. IMPORTANT: Ensure premise scope is appropriate for {length_scope.replace("_", " ")} length' if length_scope else ''}
-
-Return JSON with this structure:
-{{
-  "premise": "Your 2-3 sentence premise",
-  "protagonist": "Brief protagonist description",
-  "antagonist": "Brief antagonist/conflict description",
-  "stakes": "What the protagonist stands to gain/lose",
-  "hook": "What makes this unique",
-  "themes": ["theme1", "theme2", "theme3"],
-  "unique_elements": ["element1", "element2", "element3"],
-  "selections": {json_structure}
-}}"""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("generation/premise_main", default=0.9)
 
         # Generate with API
         try:
@@ -335,8 +308,9 @@ Return JSON with this structure:
 
             result = await self.client.json_completion(
                 model=model,
-                prompt=prompt,
-                temperature=0.9,  # Higher temp for creativity
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
+                temperature=temperature,
                 display_field="premise",  # Keep for label, but mode="full" shows everything
                 display_label="Generating premise",
                 display_mode="full",  # Stream entire JSON (all fields including selections/taxonomy)
@@ -394,26 +368,15 @@ Return JSON with this structure:
         taxonomy = self.taxonomy_loader.load_merged_taxonomy(normalized_genre)
         category_options = self.taxonomy_loader.get_category_options(taxonomy)
 
-        prompt = f"""Analyze this story treatment and extract appropriate taxonomy parameters.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "analysis/taxonomy_extraction",
+            treatment=treatment,
+            category_options=category_options
+        )
 
-TREATMENT:
-{treatment}
-
-AVAILABLE TAXONOMY OPTIONS:
-{chr(10).join([f'{cat}: {", ".join(opts[:10])}{"..." if len(opts) > 10 else ""}'
-               for cat, opts in category_options.items()])}
-
-TASK:
-Based on the treatment above, select the most appropriate values from each category.
-Choose values that best match the story's themes, tone, and style.
-
-Return JSON with only the selections:
-{{
-  "selections": {{
-    {chr(10).join([f'    "{cat}": ["selected values"]{"," if i < len(category_options) - 1 else ""}'
-                   for i, cat in enumerate(category_options.keys())])}
-  }}
-}}"""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("analysis/taxonomy_extraction", default=0.5)
 
         try:
             # Get model from project or use default
@@ -427,8 +390,9 @@ Return JSON with only the selections:
 
             result = await self.client.json_completion(
                 model=model,
-                prompt=prompt,
-                temperature=0.5,  # Lower temp for analysis
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
+                temperature=temperature,
                 display_field="selections",
                 display_label="Analyzing taxonomy",
                 # No max_tokens - let it use full available context
@@ -498,30 +462,16 @@ Return JSON with only the selections:
                 logger.debug(f"Loaded metadata with {len(current_metadata)} fields")
                 logger.debug(f"Metadata keys: {list(current_metadata.keys())}")
 
-        # Create iteration prompt
-        prompt = f"""Current premise:
-{current_premise}
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "iteration/premise_revision",
+            current_premise=current_premise,
+            current_metadata=current_metadata,
+            feedback=feedback
+        )
 
-Current metadata (including taxonomy selections):
-{json.dumps(current_metadata, indent=2)}
-
-User feedback: {feedback}
-
-Please revise the premise based on this feedback. Return the complete JSON structure including all existing fields:
-{{
-    "premise": "The revised 2-3 sentence premise",
-    "protagonist": "Updated protagonist description",
-    "antagonist": "Updated antagonist description",
-    "stakes": "Updated stakes",
-    "hook": "Updated unique hook",
-    "themes": ["theme1", "theme2", "theme3"],
-    "selections": {{
-        // Keep existing taxonomy selections unless feedback specifically asks to change them
-        // Include all categories from current metadata
-    }}
-}}
-
-IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback specifically requests changes to story parameters."""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("iteration/premise_revision", default=0.5)
 
         # Generate revision
         # Get model from project or use default
@@ -535,19 +485,20 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
 
         if logger:
             logger.info(f"Using model: {model}")
-            logger.debug(f"Prompt length: {len(prompt)} chars")
-            logger.debug(f"Temperature: 0.5, reserve_tokens: 1200")
+            logger.debug(f"Prompt length: {len(prompts['user'])} chars")
+            logger.debug(f"Temperature: {temperature}, reserve_tokens: 1200")
 
         try:
             if logger:
                 logger.info("Calling json_completion for premise iteration...")
 
-            print(f"[DEBUG] About to call json_completion with model={model}, temp=0.5")
+            print(f"[DEBUG] About to call json_completion with model={model}, temp={temperature}")
 
             result = await self.client.json_completion(
                 model=model,
-                prompt=prompt,
-                temperature=0.5,  # Lower temp for controlled iteration
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
+                temperature=temperature,
                 display_field="premise",
                 display_label="Revising premise",
                 # No max_tokens - let it use full available context

@@ -7,6 +7,16 @@
 #   top_p: Top-p sampling parameter
 
 # Generation prompts
+generation/premise_main:
+  temperature: 0.9
+  format: json
+  min_tokens: 800
+
+generation/premise_with_taxonomy:
+  temperature: 0.7
+  format: json
+  min_tokens: 500
+
 generation/prose_generation:
   temperature: 0.8
   format: text
@@ -61,11 +71,21 @@ analysis/genre_detection:
   format: json
   min_tokens: 100
 
+analysis/taxonomy_extraction:
+  temperature: 0.5
+  format: json
+  min_tokens: 500
+
 # Iteration prompts
 iteration/taxonomy_update:
   temperature: 0.4
   format: json
   min_tokens: 200
+
+iteration/premise_revision:
+  temperature: 0.5
+  format: json
+  min_tokens: 1200
 
 # Editing prompts
 editing/copy_edit:

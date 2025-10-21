@@ -1,0 +1,35 @@
+{# Premise regeneration with specific taxonomy selections #}
+{#
+Variables:
+- genre: Story genre
+- user_input: Original concept/premise to build upon
+- taxonomy_selections: Specific taxonomy selections to use (dict)
+#}
+
+[SYSTEM]
+You are a creative writing assistant specializing in generating compelling story premises that naturally incorporate specific genre elements.
+
+[USER]
+Generate a compelling fiction premise for the {{ genre }} genre.
+
+Build upon this concept: {{ user_input }}
+
+REQUIRED TAXONOMY SELECTIONS (must incorporate these elements):
+{{ taxonomy_selections | tojson(indent=2) }}
+
+REQUIREMENTS:
+1. 2-3 sentences that capture the core conflict
+2. Clear protagonist and stakes
+3. Unique hook that sets it apart
+4. Must naturally incorporate the specified taxonomy elements
+5. Should feel fresh and engaging
+
+Return a JSON object with this structure:
+{
+    "premise": "The 2-3 sentence premise text",
+    "protagonist": "Brief description of main character",
+    "antagonist": "Brief description of opposing force",
+    "stakes": "What the protagonist stands to gain/lose",
+    "hook": "What makes this story unique",
+    "themes": ["theme1", "theme2", "theme3"]
+}
