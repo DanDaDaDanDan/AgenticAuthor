@@ -242,6 +242,258 @@ class ChapterGenerator:
 
         return foundation_data
 
+    def _format_validation_issues(self, issues: List[Dict[str, Any]]) -> str:
+        """
+        Format validation issues for readable display in iteration prompt.
+
+        Args:
+            issues: List of validation issues from _validate_foundation_fidelity()
+                    Each issue has: type, severity, element, reasoning, recommendation
+
+        Returns:
+            Formatted string with numbered issues ready for prompt inclusion
+        """
+        if not issues:
+            return "No issues detected."
+
+        formatted = []
+
+        for i, issue in enumerate(issues, 1):
+            issue_type = issue.get('type', 'unknown')
+            element = issue.get('element', 'Unknown element')
+            reasoning = issue.get('reasoning', 'No reasoning provided')
+            recommendation = issue.get('recommendation', 'Fix this issue')
+
+            # Format type nicely (e.g., "character_contradiction" -> "Character Contradiction")
+            issue_type_formatted = issue_type.replace('_', ' ').title()
+
+            formatted.append(
+                f"Issue #{i}: {issue_type_formatted}\n"
+                f"  Element: {element}\n"
+                f"  Problem: {reasoning}\n"
+                f"  Fix: {recommendation}"
+            )
+
+        return "\n\n".join(formatted)
+
+    def _select_validation_issues(self, issues: List[Dict[str, Any]], context: str = "validation") -> List[Dict[str, Any]]:
+        """
+        Display validation issues and let user select which ones to incorporate.
+
+        Args:
+            issues: List of validation issues
+            context: Context string for display (e.g., "foundation", "chapter 3")
+
+        Returns:
+            Filtered list of selected issues (or all issues if user selects all)
+        """
+        if not issues:
+            return []
+
+        self.console.print(f"\n[yellow]Detected {len(issues)} validation issue(s) in {context}:[/yellow]\n")
+
+        # Display all issues with numbers
+        for i, issue in enumerate(issues, 1):
+            issue_type = issue.get('type', 'unknown')
+            element = issue.get('element', 'Unknown element')
+            reasoning = issue.get('reasoning', 'No reasoning provided')
+            severity = issue.get('severity', 'medium')
+
+            # Format type nicely
+            issue_type_formatted = issue_type.replace('_', ' ').title()
+
+            # Color code by severity
+            severity_color = "red" if severity == "critical" else "yellow" if severity == "high" else "dim"
+
+            self.console.print(f"[cyan]{i}.[/cyan] [{severity_color}]{issue_type_formatted}[/{severity_color}]")
+            self.console.print(f"   Element: {element}")
+            self.console.print(f"   Problem: {reasoning}")
+            self.console.print()
+
+        # Prompt for selection
+        self.console.print("[yellow]Which issues should be incorporated into iteration?[/yellow]")
+        self.console.print("[dim]Options:[/dim]")
+        self.console.print("  • Enter numbers (e.g., '1,3,5' or '1-3')")
+        self.console.print("  • Enter 'all' to include all issues")
+        self.console.print("  • Press Enter to include all issues (default)")
+        self.console.print()
+
+        try:
+            selection = input("Enter selection: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            # User cancelled - abort the entire operation
+            self.console.print(f"\n[yellow]Selection cancelled by user.[/yellow]")
+            raise KeyboardInterrupt("User cancelled issue selection")
+
+        # Default to all if empty
+        if not selection or selection.lower() == 'all':
+            self.console.print(f"[green]✓[/green] Including all {len(issues)} issues\n")
+            return issues
+
+        # Parse selection
+        selected_indices = set()
+        try:
+            parts = selection.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    # Range (e.g., "1-3")
+                    start, end = part.split('-')
+                    start_idx = int(start.strip())
+                    end_idx = int(end.strip())
+
+                    # Validate range direction
+                    if start_idx > end_idx:
+                        self.console.print(f"[yellow]⚠️  Range '{part}' is reversed. Did you mean {end_idx}-{start_idx}?[/yellow]")
+                        # Swap to make it work
+                        start_idx, end_idx = end_idx, start_idx
+
+                    for idx in range(start_idx, end_idx + 1):
+                        if 1 <= idx <= len(issues):
+                            selected_indices.add(idx)
+                else:
+                    # Single number
+                    idx = int(part)
+                    if 1 <= idx <= len(issues):
+                        selected_indices.add(idx)
+        except ValueError:
+            self.console.print(f"[red]Invalid selection format. Including all issues.[/red]\n")
+            return issues
+
+        # Filter issues
+        selected_issues = [issues[i - 1] for i in sorted(selected_indices)]
+
+        if selected_issues:
+            self.console.print(f"[green]✓[/green] Selected {len(selected_issues)} of {len(issues)} issues\n")
+        else:
+            self.console.print(f"[yellow]No valid issues selected. Including all issues.[/yellow]\n")
+            return issues
+
+        return selected_issues
+
+    async def _validate_foundation_fidelity(
+        self,
+        foundation_data: Dict[str, Any],
+        treatment_text: str
+    ) -> tuple[bool, List[Dict[str, Any]]]:
+        """
+        Validate foundation against treatment for contradictions (separate LLM call).
+
+        This is a POST-GENERATION validation that detects contradictions between foundation and treatment.
+        Uses low temperature (0.1) for consistent, strict evaluation.
+
+        Args:
+            foundation_data: Generated foundation dict with metadata, characters, world
+            treatment_text: Full treatment text (source of truth)
+
+        Returns:
+            Tuple of (is_valid: bool, issues: List[Dict])
+            Issues have: type, severity, element, reasoning, recommendation
+        """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        if logger:
+            logger.debug(f"Validating foundation fidelity against treatment")
+
+        # Serialize foundation for validator
+        foundation_yaml = yaml.dump(foundation_data, default_flow_style=False, allow_unicode=True)
+
+        # Render validation prompt from template
+        prompts = self.prompt_loader.render(
+            "validation/treatment_fidelity",
+            treatment_text=treatment_text,
+            foundation_yaml=foundation_yaml
+        )
+
+        # Make validation call with LOW temperature for consistency
+        try:
+            result = await self.client.streaming_completion(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": prompts['system']},
+                    {"role": "user", "content": prompts['user']}
+                ],
+                temperature=0.1,  # Low temperature for consistent strict evaluation
+                stream=False,  # No streaming for validation
+                display=False,  # Don't display during validation
+                reserve_tokens=200
+            )
+
+            if not result:
+                raise Exception("No response from validator")
+
+            response_text = result.get('content', result) if isinstance(result, dict) else result
+
+            # Parse JSON response
+            try:
+                # Strip markdown fences if present
+                response_text = response_text.strip()
+                if response_text.startswith('```'):
+                    # Remove fences
+                    lines = response_text.split('\n')
+                    response_text = '\n'.join(lines[1:-1] if len(lines) > 2 else lines)
+
+                validation_result = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                if logger:
+                    logger.warning(f"Failed to parse foundation validation JSON: {e}")
+                # If parsing fails, assume valid (don't block on validator errors)
+                return (True, [])
+
+            is_valid = validation_result.get('valid', True)
+            critical_issues = validation_result.get('critical_issues', [])
+            warnings = validation_result.get('warnings', [])
+
+            if logger:
+                logger.debug(f"Foundation validation result: valid={is_valid}, critical={len(critical_issues)}, warnings={len(warnings)}")
+
+            return (is_valid, critical_issues)
+
+        except Exception as e:
+            if logger:
+                logger.warning(f"Foundation validation call failed: {e}")
+
+            # Validator failed - prompt user for action
+            self.console.print(f"\n[bold yellow]{'='*70}[/bold yellow]")
+            self.console.print(f"[bold yellow]⚠️  FOUNDATION VALIDATOR FAILURE[/bold yellow]")
+            self.console.print(f"[bold yellow]{'='*70}[/bold yellow]\n")
+
+            self.console.print(f"[yellow]Problem:[/yellow]")
+            self.console.print(f"  The foundation fidelity validator encountered an error: {e}\n")
+
+            self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+            self.console.print(f"  [cyan]1.[/cyan] Retry validation")
+            self.console.print(f"  [cyan]2.[/cyan] Continue without validation [bold](NOT recommended)[/bold]")
+            self.console.print(f"  [cyan]3.[/cyan] Abort generation")
+
+            choice = input("\nEnter choice (1-3): ").strip()
+
+            if choice == "1":
+                # Retry validation
+                self.console.print(f"\n[cyan]Retrying foundation validation...[/cyan]")
+                # Recursive retry - if it fails, user will be prompted again
+                return await self._validate_foundation_fidelity(
+                    foundation_data=foundation_data,
+                    treatment_text=treatment_text
+                )
+
+            elif choice == "2":
+                # Continue without validation
+                self.console.print(f"\n[yellow]⚠️  Continuing without foundation validation...[/yellow]")
+                self.console.print(f"[yellow]Foundation may contain treatment contradictions.[/yellow]\n")
+                return (True, [])
+
+            elif choice == "3":
+                # Abort generation
+                self.console.print(f"\n[red]Generation aborted due to foundation validator failure[/red]")
+                raise Exception(f"User aborted generation due to foundation validator failure")
+
+            else:
+                # Invalid choice - treat as abort
+                self.console.print(f"\n[red]Invalid choice, aborting generation[/red]")
+                raise Exception("Invalid foundation validator failure choice")
+
     async def generate(
         self,
         chapter_count: Optional[int] = None,

@@ -1654,11 +1654,7 @@ class InteractiveSession:
         validation_loop_count = 0
         max_validation_iterations = 3
 
-        # TODO: Foundation validation disabled - method not implemented
-        # Re-enable when _validate_foundation_fidelity() is implemented in ChapterGenerator
-        skip_validation = True
-
-        while validation_loop_count < max_validation_iterations and not skip_validation:
+        while validation_loop_count < max_validation_iterations:
             self.console.print(f"[dim]Validating foundation fidelity...[/dim]")
 
             treatment_text = context.get('treatment', {}).get('text', '')

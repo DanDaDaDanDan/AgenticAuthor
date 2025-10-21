@@ -70,6 +70,12 @@ analysis/taxonomy_extraction:
   format: json
   reserve_tokens: 500
 
+# Validation prompts
+validation/treatment_fidelity:
+  temperature: 0.1
+  format: json
+  reserve_tokens: 200
+
 # Iteration prompts
 iteration/taxonomy_update:
   temperature: 0.4
