@@ -89,26 +89,30 @@ class MarkdownExtractor:
         """
         Extract chapter outlines from markdown.
 
-        Supports TWO formats:
+        Supports THREE formats:
 
-        NEW FORMAT (simple prose summary):
+        BEAT SHEET FORMAT (current):
         # Chapter 1: Title
         **Act:** Act I
+        **Beats:**
+        - Beat 1: Action → Result
+        - Beat 2: Action → Result
+        **Character Development:**
+        - Development 1
+        **Emotional Beat:** Emotional core
 
-        [200-300 word prose summary of the chapter...]
+        PROSE SUMMARY FORMAT (previous):
+        # Chapter 1: Title
+        **Act:** Act I
+        [200-300 word prose summary...]
 
-        OLD FORMAT (structured sections):
+        OLD STRUCTURED FORMAT (legacy):
         # Chapter 1: Title
         **POV:** Character name
         **Act:** Act I/II/III
         **Summary:** Brief summary...
-
         ## Key Events
         1. Event one...
-        2. Event two...
-
-        ## Character Development
-        - Character: Change...
 
         Args:
             markdown_text: Markdown-formatted chapter text
@@ -134,15 +138,26 @@ class MarkdownExtractor:
             chapter_title = chapter_splits[i + 1].strip()
             chapter_content = chapter_splits[i + 2]
 
-            # Try to extract fields from both formats
+            # Try to extract fields from all formats
             pov = cls._extract_field(chapter_content, 'POV')
             act = cls._extract_field(chapter_content, 'Act')
             summary = cls._extract_field(chapter_content, 'Summary')
 
-            # If no explicit Summary field, extract prose summary (new format)
+            # Extract beats (beat sheet format) - use list_field not list_section
+            # Beats are formatted as **Beats:** followed by bullet points, not as a section header
+            # IMPORTANT: Extract beats BEFORE prose summary, since prose summary extraction
+            # is greedy and will consume everything after Act: including beats
+            beats = cls._extract_list_field(chapter_content, 'Beats?')
+            emotional_beat = cls._extract_field(chapter_content, 'Emotional Beat')
+
+            # If no explicit Summary field and no beats, extract prose summary (prose format)
             # This is everything after Act: until next chapter or ---
-            if not summary and act:
+            # Only do this if beats don't exist, to avoid consuming beat sheet content
+            if not summary and not beats and act:
                 summary = cls._extract_prose_summary(chapter_content)
+
+            # Extract character development (both singular and plural forms)
+            character_dev = cls._extract_list_section(chapter_content, 'Character Development')
 
             chapter_data = {
                 'number': chapter_num,
@@ -150,8 +165,10 @@ class MarkdownExtractor:
                 'pov': pov,
                 'act': act,
                 'summary': summary,
+                'beats': beats,  # NEW: beat sheet format
+                'emotional_beat': emotional_beat,  # NEW: beat sheet format
                 'key_events': cls._extract_list_section(chapter_content, 'Key Events'),
-                'character_developments': cls._extract_list_section(chapter_content, 'Character Development'),
+                'character_developments': character_dev,  # Works for both singular/plural
                 'relationship_beats': cls._extract_list_section(chapter_content, 'Relationships?|Relationship Beats?'),
                 'tension_points': cls._extract_list_section(chapter_content, 'Tension Points?'),
                 'sensory_details': cls._extract_list_section(chapter_content, 'Sensory Details?'),
@@ -343,19 +360,25 @@ class MarkdownExtractor:
 
     @classmethod
     def _extract_list_field(cls, text: str, field_name: str) -> List[str]:
-        """Extract a list field (like personality traits)."""
-        # Handle OR in field names
+        """Extract a list field (like personality traits or beats)."""
+        # Handle OR in field names (remove ? for optional plurals)
+        field_name = field_name.replace('?', '')
         field_options = field_name.split('|')
 
         for field_option in field_options:
             field_option = field_option.strip()
-            # Find the field
-            pattern = rf'{re.escape(field_option)}:?\s*\n'
-            match = re.search(pattern, text, re.IGNORECASE)
+            # Try multiple patterns to handle different markdown formats
+            # **Field:** (markdown bold) or Field: (plain)
+            patterns = [
+                rf'\*\*{re.escape(field_option)}:\*\*\s*\n',  # **Beats:** (markdown bold)
+                rf'{re.escape(field_option)}:?\s*\n',  # Beats: (plain)
+            ]
 
-            if match:
-                # Extract bullet points after the field
-                return cls._extract_bullet_list_after(text, match.end())
+            for pattern in patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    # Extract bullet points after the field
+                    return cls._extract_bullet_list_after(text, match.end())
 
         return []
 
@@ -695,29 +718,48 @@ class MarkdownExtractor:
             if not chapter.get('act'):
                 warnings.append(f"Chapter {num} has no act specified")
 
-            # Summary is critical
-            summary = chapter.get('summary', '')
-            if not summary:
-                errors.append(f"Chapter {num} has no summary")
+            # Validate chapter content - THREE formats supported:
+            # 1. BEAT SHEET (current): beats array (5-7 items) + emotional_beat
+            # 2. PROSE SUMMARY (previous): summary (200-300 words)
+            # 3. OLD STRUCTURED (legacy): summary + key_events
 
-            # Key events are critical ONLY if summary is brief (old format)
-            # New format uses prose summaries (200-300 words) instead of key_events
+            summary = chapter.get('summary', '')
+            beats = chapter.get('beats', [])
             key_events = chapter.get('key_events', [])
             summary_word_count = len(summary.split()) if summary else 0
 
-            if summary_word_count < 100:
-                # Short summary - old format, requires key_events
+            # At least ONE content format must be present
+            if not summary and not beats and not key_events:
+                errors.append(f"Chapter {num} has no content. Expected either beats, summary, or key_events.")
+
+            # BEAT SHEET FORMAT validation
+            if beats:
+                logger.debug(f"Chapter {num} uses beat sheet format ({len(beats)} beats)")
+                if len(beats) < 5:
+                    warnings.append(f"Chapter {num} has only {len(beats)} beat(s). Expected 5-7 beats per chapter.")
+                elif len(beats) > 7:
+                    warnings.append(f"Chapter {num} has {len(beats)} beats. Expected 5-7 beats per chapter.")
+
+                # Emotional beat should be present with beat sheet format
+                if not chapter.get('emotional_beat'):
+                    warnings.append(f"Chapter {num} uses beat sheet format but has no emotional beat")
+
+            # PROSE SUMMARY FORMAT validation
+            elif summary_word_count >= 100:
+                logger.debug(f"Chapter {num} uses prose summary format ({summary_word_count} words)")
+                # Prose summary is self-contained, no other validation needed
+
+            # OLD STRUCTURED FORMAT validation
+            elif summary_word_count < 100:
+                # Short or no summary - old format, requires key_events
                 if not key_events:
-                    errors.append(f"Chapter {num} has no key events. Expected '## Key Events' section with numbered or bulleted list.")
+                    errors.append(f"Chapter {num} has brief/no summary and no beats. Expected '## Key Events' section with numbered or bulleted list.")
                 elif len(key_events) < 2:
                     warnings.append(f"Chapter {num} has only {len(key_events)} key event(s). Consider adding more for better prose generation.")
-            else:
-                # Long summary - new format, key_events optional
-                logger.debug(f"Chapter {num} uses prose summary format ({summary_word_count} words)")
 
-            # Character development is important but not critical (old format only)
-            if not chapter.get('character_developments') and summary_word_count < 100:
-                warnings.append(f"Chapter {num} has no character development notes")
+                # Character development is important for old format
+                if not chapter.get('character_developments'):
+                    warnings.append(f"Chapter {num} has no character development notes")
 
         # Log warnings
         for warning in warnings:

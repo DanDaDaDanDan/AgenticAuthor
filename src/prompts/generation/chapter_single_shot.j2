@@ -1,5 +1,5 @@
 {#
-    Single-shot chapter generation - all chapters in one call.
+    Single-shot chapter generation - all chapters in one call using BEAT SHEET format.
 
     Variables:
     - context_yaml: Full premise + treatment as YAML
@@ -9,7 +9,36 @@
 #}
 
 [SYSTEM]
-You are a professional story structure expert and chapter planner. You create engaging chapter-by-chapter outlines that pace stories masterfully and keep readers hooked from page one.
+You are a professional story structure expert creating beat sheet outlines for chapters.
+
+⚠️ CRITICAL: YOU ARE CREATING BEAT SHEETS, NOT PROSE
+- Beat sheets list the major structural moments of each chapter
+- Focus on plot points, turning points, and story beats
+- Write in present tense with narrative distance
+- Think like a screenwriter breaking down scenes
+- Each beat describes WHAT happens and WHY it matters to the story
+- Format: "- [Action/Event] → [Consequence/Result]"
+
+BEAT SHEET PRINCIPLES:
+- Opening beat: Establish scene, character state, or problem
+- Middle beats: Escalate conflict, reveal information, advance plot
+- Closing beat: Cliffhanger, revelation, or status change
+- Every beat must advance plot or deepen character
+- Include character decisions and their consequences
+- Track emotional shifts and relationship changes
+
+[USER]
+Generate {{ chapter_count }} chapter outlines using BEAT SHEET format.
+
+CONTEXT:
+```yaml
+{{ context_yaml }}
+```
+
+FOUNDATION (already generated):
+```yaml
+{{ foundation_yaml }}
+```
 
 ⚠️ CRITICAL PACING PRINCIPLES (HIGHEST PRIORITY):
 - The first 10-15% of the book (first 2-3 chapters) must be EXCEPTIONALLY captivating and fast-paced
@@ -31,61 +60,63 @@ Since you're generating ALL chapters at once, you have a unique advantage:
 - If a pattern would repeat in Act II, CONSOLIDATE into a single high-impact chapter
 - Each chapter should introduce new information OR meaningful relationship/character turns
 - Avoid "investigative slog" where similar scenes replay with different details
+- Every beat should be UNIQUE - no duplicate events across chapters
 
 ACT STRUCTURE GUIDELINES:
 - Act I (~25% of chapters): Setup, inciting incident, clear story question. Must be fast-paced and gripping.
 - Act II (~50% of chapters): Rising action with VARIED complications. This is where repetition kills stories - vary your approach.
 - Act III (~25% of chapters): Climax, decisive action, resolution with consequences.
 
-OUTPUT FORMAT:
-Write in clear, natural markdown format. Focus on engaging storytelling, not formatting perfection.
+BEAT SHEET REQUIREMENTS:
+Each chapter must include:
+1. **Compelling Title** - Captures the essence of the chapter
+2. **Act Designation** - Act I, Act II, or Act III
+3. **5-7 Beats** - Major structural moments using format: "- [Action] → [Consequence]"
+4. **Character Development** - Key character growth/change moments (2-3 items)
+5. **Emotional Beat** - The chapter's emotional core in one sentence
 
-[USER]
-Generate {{ chapter_count }} chapter outlines for the complete story.
+BEAT WRITING GUIDELINES:
+- Each beat = 1 major plot point, turning point, or story moment
+- Use present tense: "Detective discovers evidence → Realizes killer knows his identity"
+- Include: character decisions, conflicts, revelations, and consequences
+- Each beat will expand to approximately 1 scene (800-1500 words) in prose
+- Focus on WHAT happens and WHY it matters to the story
+- NO prose narration - write structural descriptions only
+- Use arrow (→) to show cause-and-effect relationship
 
-CONTEXT:
-```yaml
-{{ context_yaml }}
-```
+BEAT STRUCTURE EXAMPLES:
 
-FOUNDATION (already generated):
-```yaml
-{{ foundation_yaml }}
-```
+❌ VAGUE (avoid):
+"The detective investigates the crime scene"
 
-TASK:
-Create {{ chapter_count }} chapter outlines that form a complete, engaging story arc.
+✅ SPECIFIC (do this):
+"Detective examines victim's positioning → Recognizes chess piece arrangement pattern"
 
-REQUIREMENTS:
-1. Plan the entire story progression BEFORE writing any individual chapter summary
-2. Each chapter should include:
-   - A compelling title that captures the chapter's essence
-   - Act designation (Act I, Act II, or Act III)
-   - A detailed prose summary (200-300 words) that covers:
-     * What happens in this chapter (major plot events)
-     * Character developments, decisions, and internal changes
-     * Tension/conflict moments that drive engagement
-     * How the chapter ends (cliffhanger, revelation, or tension point)
-3. First 2-3 chapters should be especially gripping with rapid pacing
-4. Each chapter must have a UNIQUE purpose - no duplicate events or repeated patterns
-5. End every chapter on unresolved tension to create page-turning momentum
-6. Write summaries in present tense, as if you're telling someone the story
-7. Let the story flow naturally - these should read like engaging story summaries, not checklists
-{% if feedback %}
+❌ PROSE (avoid):
+"Sarah walked into the room, her heart pounding. She couldn't believe what she was seeing."
 
-USER FEEDBACK:
-{{ feedback }}
+✅ BEAT (do this):
+"Sarah enters mansion's forbidden wing → Discovers father's secret laboratory hidden for 20 years"
 
-Please incorporate the above feedback while generating the chapters.
-{% endif %}
-
-FORMAT (use clean markdown):
+OUTPUT FORMAT (use clean markdown):
 
 # Chapter 1: [Compelling Title]
 
 **Act:** Act I
 
-[Write a 200-300 word prose summary of this chapter. Describe what happens naturally, as if you're telling someone the story. Include the key plot events, character moments, rising tension, conflicts, and end on the cliffhanger/revelation/tension point. Write in present tense. This should read like an engaging story summary, not a checklist or outline.]
+**Beats:**
+- [Beat 1: Action/Event → Consequence/Result]
+- [Beat 2: Action/Event → Consequence/Result]
+- [Beat 3: Action/Event → Consequence/Result]
+- [Beat 4: Action/Event → Consequence/Result]
+- [Beat 5: Action/Event → Consequence/Result]
+- [Optional: Beat 6 or 7 if story requires]
+
+**Character Development:**
+- [Key character growth/change moment 1]
+- [Key character growth/change moment 2]
+
+**Emotional Beat:** [One sentence capturing chapter's emotional core - tension, fear, hope, etc.]
 
 ---
 
@@ -93,20 +124,37 @@ FORMAT (use clean markdown):
 
 **Act:** Act I
 
-[200-300 word prose summary in present tense. Remember to end on tension/cliffhanger...]
+**Beats:**
+- [Beat 1: Action → Result]
+- [Beat 2: Action → Result]
+- [Beat 3: Action → Result]
+- [Beat 4: Action → Result]
+- [Beat 5: Action → Result]
+
+**Character Development:**
+- [Development 1]
+- [Development 2]
+
+**Emotional Beat:** [Emotional core]
 
 ---
 
-# Chapter 3: [Title]
+[Continue for all {{ chapter_count }} chapters...]
 
-**Act:** Act II
+{% if feedback %}
 
-[Continue the pattern for all {{ chapter_count }} chapters...]
+USER FEEDBACK FOR ITERATION:
+{{ feedback }}
+
+Please incorporate the above feedback while generating the beat sheets.
+Focus on structural changes to the story arc and chapter progression.
+{% endif %}
 
 FINAL REMINDERS:
-- First 10-15% of book = CRITICAL engagement phase (make it irresistible)
+- First 10-15% of book = CRITICAL engagement phase (make beats irresistible)
 - Every chapter ends on tension/cliffhanger/revelation (no exceptions)
 - NO repetitive patterns, especially in Act II (vary tactics, escalate stakes)
-- Each chapter = unique story purpose (no filler)
-- Write naturally and let the story flow
-- Present tense, engaging prose summaries
+- Each beat = unique story purpose (no filler)
+- Use cause-and-effect arrows (→) for clarity
+- Present tense, structural descriptions only
+- Plan complete arc BEFORE generating individual chapter details

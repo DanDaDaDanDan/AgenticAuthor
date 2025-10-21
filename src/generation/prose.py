@@ -269,7 +269,11 @@ class ProseGenerator:
             isinstance(key_moments[0], dict)
         )
 
-        # Build chapter summary and key moments list
+        # Extract beat sheet data (current format) - backward compatible
+        beats = current_chapter.get('beats', [])
+        emotional_beat = current_chapter.get('emotional_beat', '')
+
+        # Build chapter summary (legacy prose summary format)
         chapter_summary = current_chapter.get('summary', '')
 
         # Build key moments listing (not counting them as separate scenes!)
@@ -301,8 +305,10 @@ class ProseGenerator:
             prev_summary=prev_summary,
             chapter_number=chapter_number,
             current_chapter=current_chapter,
-            chapter_summary=chapter_summary,
-            moments_text=moments_text,
+            beats=beats,  # NEW: beat sheet format
+            emotional_beat=emotional_beat,  # NEW: beat sheet format
+            chapter_summary=chapter_summary,  # LEGACY: prose summary format
+            moments_text=moments_text,  # LEGACY: key moments format
             metadata=metadata,
             narrative_style=narrative_style
         )
