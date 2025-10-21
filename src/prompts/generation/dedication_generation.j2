@@ -1,0 +1,59 @@
+{#
+    Dedication generation prompt.
+
+    Variables:
+    - title: Book title
+    - genre: Book genre
+    - themes: Book themes (comma-separated)
+    - hook: Book hook/premise
+    - template_text: Template dedication text to rewrite
+    - genre_guidance: Genre-specific writing guidance
+    - genre_example: Example dedication for this genre
+#}
+
+[SYSTEM]
+You are a literary editor crafting book dedications. Return only the dedication text, no explanations or quotes.
+
+[USER]
+You are rewriting a book dedication to match this book's tone and genre.
+
+BOOK DETAILS:
+- Title: {{ title }}
+- Genre: {{ genre }}
+- Themes: {{ themes }}
+- Hook: {{ hook }}
+
+TEMPLATE DEDICATION:
+{{ template_text }}
+
+TASK:
+Rewrite the dedication with imagery and language that matches this book's style and genre.
+
+Core sentiment to preserve:
+- Family as sources of joy and inspiration
+- Gratitude for love and connection
+- Celebration of shared happiness and warmth
+- Appreciation for inspiring creativity and passion
+
+{{ genre_guidance }}
+
+CRITICAL - POSITIVE LANGUAGE ONLY:
+- Use ONLY positive, uplifting, celebratory language
+- NO references to struggle, chaos, difficulty, darkness, loss, or hardship
+- NO metaphors involving burden, weight, fixing, or saving
+- Focus on joy, inspiration, celebration, gratitude, and love
+- Frame family as sources of JOY and INSPIRATION (not rescue or stability from chaos)
+- Use words like: joy, celebration, inspiration, wonder, light, warmth, love, gratitude
+- AVOID words like: chaos, darkness, anchor (implies drift), steady (implies instability), save, fix, struggle
+
+IMPORTANT:
+- Keep dedication to 2-4 sentences (similar length to template)
+- Use literary, evocative language
+- Make it feel specific to this book's world/tone
+- Return ONLY the dedication text, no quotes, no explanations, no meta-commentary
+- Ensure NOTHING can be interpreted negatively or as implying the author or their life is chaotic/broken/difficult
+
+Example tone for {{ genre }}:
+{{ genre_example }}
+
+Now write the dedication:

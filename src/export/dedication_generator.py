@@ -2,6 +2,7 @@
 
 from typing import Optional, Dict, Any
 from pathlib import Path
+from ..prompts import get_prompt_loader
 
 
 class DedicationGenerator:
@@ -19,6 +20,7 @@ class DedicationGenerator:
         self.client = client
         self.project = project
         self.model = model
+        self.prompt_loader = get_prompt_loader()
 
     async def generate_dedication(self) -> str:
         """
@@ -40,17 +42,29 @@ class DedicationGenerator:
         # Get book details
         book_details = self._extract_book_details()
 
-        # Build prompt
-        prompt = self._build_prompt(template_text, book_details)
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "generation/dedication_generation",
+            title=book_details['title'],
+            genre=book_details['genre'],
+            themes=book_details['themes'],
+            hook=book_details.get('hook', ''),
+            template_text=template_text,
+            genre_guidance=self._get_genre_guidance(book_details['genre']),
+            genre_example=self._get_genre_example(book_details['genre'])
+        )
+
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("generation/dedication_generation", default=0.8)
 
         # Generate with LLM
         result = await self.client.streaming_completion(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a literary editor crafting book dedications. Return only the dedication text, no explanations or quotes."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": prompts['system']},
+                {"role": "user", "content": prompts['user']}
             ],
-            temperature=0.8,
+            temperature=temperature,
             display=False  # Silent generation
         )
 
@@ -122,61 +136,6 @@ class DedicationGenerator:
             details['premise'] = ''
 
         return details
-
-    def _build_prompt(self, template_text: str, book_details: Dict[str, Any]) -> str:
-        """Build the dedication generation prompt."""
-        genre = book_details['genre']
-        themes = book_details['themes']
-        hook = book_details['hook']
-        title = book_details['title']
-
-        # Genre-specific guidance
-        genre_guidance = self._get_genre_guidance(genre)
-
-        prompt = f"""You are rewriting a book dedication to match this book's tone and genre.
-
-BOOK DETAILS:
-- Title: {title}
-- Genre: {genre}
-- Themes: {themes}
-- Hook: {hook}
-
-TEMPLATE DEDICATION:
-{template_text}
-
-TASK:
-Rewrite the dedication with imagery and language that matches this book's style and genre.
-
-Core sentiment to preserve:
-- Family as sources of joy and inspiration
-- Gratitude for love and connection
-- Celebration of shared happiness and warmth
-- Appreciation for inspiring creativity and passion
-
-{genre_guidance}
-
-CRITICAL - POSITIVE LANGUAGE ONLY:
-- Use ONLY positive, uplifting, celebratory language
-- NO references to struggle, chaos, difficulty, darkness, loss, or hardship
-- NO metaphors involving burden, weight, fixing, or saving
-- Focus on joy, inspiration, celebration, gratitude, and love
-- Frame family as sources of JOY and INSPIRATION (not rescue or stability from chaos)
-- Use words like: joy, celebration, inspiration, wonder, light, warmth, love, gratitude
-- AVOID words like: chaos, darkness, anchor (implies drift), steady (implies instability), save, fix, struggle
-
-IMPORTANT:
-- Keep dedication to 2-4 sentences (similar length to template)
-- Use literary, evocative language
-- Make it feel specific to this book's world/tone
-- Return ONLY the dedication text, no quotes, no explanations, no meta-commentary
-- Ensure NOTHING can be interpreted negatively or as implying the author or their life is chaotic/broken/difficult
-
-Example tone for {genre}:
-{self._get_genre_example(genre)}
-
-Now write the dedication:"""
-
-        return prompt
 
     def _get_genre_guidance(self, genre: str) -> str:
         """Get genre-specific writing guidance."""

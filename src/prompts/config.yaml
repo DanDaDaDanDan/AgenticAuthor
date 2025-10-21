@@ -44,6 +44,11 @@ generation/chapter_single_shot:
   format: yaml
   reserve_tokens: 8000
 
+generation/dedication_generation:
+  temperature: 0.8
+  format: text
+  reserve_tokens: 300
+
 # Validation prompts
 validation/prose_fidelity:
   temperature: 0.1
