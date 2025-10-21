@@ -170,18 +170,6 @@ class TreatmentGenerator:
                 # Cull downstream content
                 CullManager(self.project).cull_treatment()
 
-                # Save metadata
-                treatment_metadata = {
-                    'word_count': len(treatment_text.split()),
-                    'target_words': target_words,
-                    'model': self.model
-                }
-                # Ensure treatment directory exists
-                self.project.treatment_dir.mkdir(exist_ok=True)
-                metadata_file = self.project.treatment_metadata_file
-                with open(metadata_file, 'w', encoding='utf-8') as f:
-                    json.dump(treatment_metadata, f, indent=2)
-
                 # Return treatment text directly (no file read round-trip)
                 return treatment_text
 
