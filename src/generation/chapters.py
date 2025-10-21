@@ -406,6 +406,12 @@ class ChapterGenerator:
             foundation_yaml=foundation_yaml
         )
 
+        # Get configuration from config
+        config = self.prompt_loader.get_metadata("validation/treatment_fidelity")
+        temperature = config.get('temperature', 0.1)
+        reserve_tokens = config.get('reserve_tokens', 200)
+        use_structured_output = config.get('structured_output', False)
+
         # Make validation call with LOW temperature for consistency
         try:
             result = await self.client.streaming_completion(
@@ -414,10 +420,11 @@ class ChapterGenerator:
                     {"role": "system", "content": prompts['system']},
                     {"role": "user", "content": prompts['user']}
                 ],
-                temperature=0.1,  # Low temperature for consistent strict evaluation
+                temperature=temperature,
                 stream=False,  # No streaming for validation
                 display=False,  # Don't display during validation
-                reserve_tokens=200
+                reserve_tokens=reserve_tokens,
+                response_format={"type": "json_object"} if use_structured_output else None
             )
 
             if not result:

@@ -137,6 +137,12 @@ class JudgingCoordinator:
         if logger:
             logger.debug(f"Judging prompt length: {len(prompts['user'])} characters")
 
+        # Get configuration from config
+        config = self.prompt_loader.get_metadata("analysis/chapter_judging")
+        temperature = config.get('temperature', 0.1)
+        reserve_tokens = config.get('reserve_tokens', 100)
+        use_structured_output = config.get('structured_output', False)
+
         # Make judging call with LOW temperature for consistency
         self.console.print(f"\n[cyan]Judging {len(variants_data)} variants...[/cyan]")
         self.console.print(f"[dim]Using model: {self.model}[/dim]\n")
@@ -148,11 +154,11 @@ class JudgingCoordinator:
                     {"role": "system", "content": prompts['system']},
                     {"role": "user", "content": prompts['user']}
                 ],
-                temperature=0.1,  # Low temperature for consistent, reliable judgment
+                temperature=temperature,
                 stream=False,  # No streaming for judging (want complete response)
                 display=False,  # Don't display during judging
-                reserve_tokens=100,
-                response_format={"type": "json_object"}  # Use structured JSON output
+                reserve_tokens=reserve_tokens,
+                response_format={"type": "json_object"} if use_structured_output else None
             )
 
             if not result:
