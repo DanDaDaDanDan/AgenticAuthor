@@ -118,8 +118,11 @@ class UnifiedAnalyzer(BaseAnalyzer):
             chapter_outline=ctx.get('chapter_outline', '')
         )
 
-        # Get temperature from config
-        temperature = self.prompt_loader.get_temperature("analysis/unified_analysis", default=0.3)
+        # Get configuration from config
+        config = self.prompt_loader.get_metadata("analysis/unified_analysis")
+        temperature = config.get('temperature', 0.3)
+        reserve_tokens = config.get('reserve_tokens', 4000)
+        use_structured_output = config.get('structured_output', False)
 
         # Call LLM with higher token limit for comprehensive analysis
         # Make direct API call with system + user prompts
@@ -132,7 +135,8 @@ class UnifiedAnalyzer(BaseAnalyzer):
             temperature=temperature,
             stream=False,
             display=False,
-            reserve_tokens=4000
+            reserve_tokens=reserve_tokens,
+            response_format={"type": "json_object"} if use_structured_output else None
         )
 
         response = response_data.get('content', '').strip()

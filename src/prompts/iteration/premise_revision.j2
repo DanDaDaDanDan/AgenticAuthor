@@ -1,0 +1,35 @@
+{# Premise iteration based on feedback #}
+{#
+Variables:
+- current_premise: Current premise text
+- current_metadata: Current metadata including taxonomy selections (dict)
+- feedback: User feedback for iteration
+#}
+
+[SYSTEM]
+You are a creative writing assistant specializing in iterating and refining story premises based on feedback while maintaining internal consistency.
+
+[USER]
+Current premise:
+{{ current_premise }}
+
+Current metadata (including taxonomy selections):
+{{ current_metadata | tojson(indent=2) }}
+
+User feedback: {{ feedback }}
+
+Please revise the premise based on this feedback. Return the complete JSON structure including all existing fields:
+{
+    "premise": "The revised 2-3 sentence premise",
+    "protagonist": "Updated protagonist description",
+    "antagonist": "Updated antagonist description",
+    "stakes": "Updated stakes",
+    "hook": "Updated unique hook",
+    "themes": ["theme1", "theme2", "theme3"],
+    "selections": {
+        // Keep existing taxonomy selections unless feedback specifically asks to change them
+        // Include all categories from current metadata
+    }
+}
+
+IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback specifically requests changes to story parameters.

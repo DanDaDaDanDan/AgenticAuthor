@@ -5,17 +5,20 @@
 #   format: Expected output format (text/json/yaml)
 #   reserve_tokens: Tokens to reserve for response (for dynamic max_tokens calculation)
 #   top_p: Top-p sampling parameter
+#   structured_output: Use structured JSON output mode (forces valid JSON, only for format: json)
 
 # Generation prompts
 generation/premise_main:
   temperature: 0.9
   format: json
   reserve_tokens: 800
+  structured_output: true
 
 generation/premise_with_taxonomy:
   temperature: 0.7
   format: json
   reserve_tokens: 500
+  structured_output: true
 
 generation/prose_generation:
   temperature: 0.8
@@ -54,48 +57,51 @@ analysis/chapter_judging:
   temperature: 0.1
   format: json
   reserve_tokens: 100
-
-analysis/intent_check:
-  temperature: 0.2
-  format: json
-  reserve_tokens: 100
+  structured_output: true
 
 analysis/genre_detection:
   temperature: 0.3
   format: json
   reserve_tokens: 100
+  structured_output: true
 
 analysis/taxonomy_extraction:
   temperature: 0.5
   format: json
   reserve_tokens: 500
+  structured_output: true
 
 analysis/unified_analysis:
   temperature: 0.3
   format: json
   reserve_tokens: 4000
+  structured_output: true
 
 analysis/treatment_deviation:
   temperature: 0.1
   format: json
   reserve_tokens: 3000
+  structured_output: true
 
 # Validation prompts
 validation/treatment_fidelity:
   temperature: 0.1
   format: json
   reserve_tokens: 200
+  structured_output: true
 
-# Iteration prompts
+# Iteration prompts (premise iteration only - chapter/prose iteration removed)
 iteration/taxonomy_update:
   temperature: 0.4
   format: json
   reserve_tokens: 200
+  structured_output: true
 
 iteration/premise_revision:
   temperature: 0.5
   format: json
   reserve_tokens: 1200
+  structured_output: true
 
 # Editing prompts
 editing/copy_edit:
@@ -103,6 +109,7 @@ editing/copy_edit:
   format: json
   reserve_tokens: 8000
   top_p: 0.9
+  structured_output: true
 
 # KDP metadata prompts
 kdp/description:

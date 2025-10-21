@@ -123,10 +123,11 @@ class TreatmentDeviationAnalyzer(BaseAnalyzer):
             content=content
         )
 
-        # Get temperature and reserve_tokens from config
-        temperature = self.prompt_loader.get_temperature("analysis/treatment_deviation", default=0.1)
+        # Get configuration from config
         config = self.prompt_loader.get_metadata("analysis/treatment_deviation")
+        temperature = config.get('temperature', 0.1)
         reserve_tokens = config.get('reserve_tokens', 3000)
+        use_structured_output = config.get('structured_output', False)
 
         # Make direct API call with system + user prompts
         response_data = await self.client.streaming_completion(
@@ -138,7 +139,8 @@ class TreatmentDeviationAnalyzer(BaseAnalyzer):
             temperature=temperature,
             stream=False,
             display=False,
-            reserve_tokens=reserve_tokens
+            reserve_tokens=reserve_tokens,
+            response_format={"type": "json_object"} if use_structured_output else None
         )
 
         response = response_data.get('content', '').strip()
