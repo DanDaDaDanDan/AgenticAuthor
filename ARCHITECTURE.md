@@ -9,8 +9,9 @@
  - Global Plan, Local Fidelity: Plan the book’s chapter arc in a single call; write prose sequentially with prior prose as authoritative context.
  - Deterministic Interfaces: Prompts require strict YAML/JSON/Markdown shapes so the app can parse and validate reliably.
  - Traceability by Default: Every project lives under `books/<name>/` with auto‑commits to a shared repo; analysis and debug artifacts are saved to disk.
- - Quality Over Word Counts: Targets guide breadth; chapters “breathe” to serve the story.
- 
+ - Quality Over Word Counts: Targets guide breadth; chapters "breathe" to serve the story.
+ - Creative vs. Mathematical Separation: Foundation stores LLM‑generated creative content (genre, themes, characters, world); structure values (word count, chapter count) are always calculated from taxonomy via DepthCalculator, never stored in foundation.
+
  ## File Types and Rationale
  - Markdown (`.md`): Prose chapters and human‑readable documentation. Great for diffs and editors.
  - YAML (`.yaml`): Structured planning (foundation, chapter beats) with readable multi‑line content.
