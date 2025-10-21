@@ -17,10 +17,9 @@ agentic
 
 ## Documentation
 
-- **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - Complete user guide and command reference
-- **[docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)** - Developer documentation and API reference
-- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version history and project status
-- **[docs/LOD.md](docs/LOD.md)** - Level of Detail system explanation
+- [codex-overview-2.md] - High-level architecture, file hierarchy, and end-to-end flow
+- [codex-overview-2-diagrams.md] - Diagrammed overview (system, flow, artifacts)
+- [CLAUDE.md] - Contributor operating guide and workflow principles
 
 ## Features
 

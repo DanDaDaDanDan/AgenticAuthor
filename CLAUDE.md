@@ -4,12 +4,10 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Documentation Updates
 
-Update these files when making relevant changes:
-- **`docs/IMPLEMENTATION_STATUS.md`** - Feature completion, bugs, test status
-- **`docs/USER_GUIDE.md`** - User-facing features and commands
-- **`docs/DEVELOPER_GUIDE.md`** - Architecture and implementation details
-- **`docs/CHANGELOG.md`** - Version history and releases
-- **`README.md`** - Quick start only (keep minimal)
+When making relevant changes, keep these up to date:
+- **`codex-overview-2.md`** – High-level architecture and file hierarchy
+- **`codex-overview-2-diagrams.md`** – Diagrammed overview
+- **`README.md`** – Quick start and core pointers (keep minimal)
 
 ## Git Commits
 
@@ -46,7 +44,7 @@ AgenticAuthor is a Python CLI for AI-powered book generation using OpenRouter AP
 - Short story support (≤2 chapters → single story.md file)
 - Shared git repository at books/ level
 
-For detailed feature descriptions, see `docs/CHANGELOG.md` and `docs/DEVELOPER_GUIDE.md`.
+For a high-level summary and layout, see `codex-overview-2.md`.
 
 ## Core Principles
 
@@ -106,24 +104,21 @@ agentic                    # Start REPL
 /generate prose all       # Generate full prose
 ```
 
-See `docs/USER_GUIDE.md` for complete command reference.
+Use `/help` in the REPL and tab-completion for command hints.
 
 ## Repository Structure
 
 ```
 AgenticAuthor/
-├── CLAUDE.md             # This file
-├── docs/                 # All detailed documentation
-│   ├── USER_GUIDE.md    # User documentation
-│   ├── DEVELOPER_GUIDE.md # Technical details
-│   ├── CHANGELOG.md     # Features and versions
-│   └── IMPLEMENTATION_STATUS.md # Current status
-├── src/                  # Source code
-│   ├── generation/      # Core generation logic
-│   ├── cli/            # REPL and UI
-│   └── prompts/        # Jinja2 templates
-└── books/               # Generated projects
-    └── .git/           # Shared git repo
+├── CLAUDE.md                 # This file
+├── codex-overview-2.md       # High-level architecture
+├── codex-overview-2-diagrams.md # Diagrammed overview
+├── src/                      # Source code
+│   ├── generation/           # Core generation logic
+│   ├── cli/                  # REPL and UI
+│   └── prompts/              # Jinja2 templates
+└── books/                    # Generated projects
+    └── .git/                 # Shared git repo
 ```
 
 ## Key Implementation Files
@@ -134,7 +129,7 @@ AgenticAuthor/
 - **CLI:** `interactive.py` - Main REPL
 - **Prompts:** `src/prompts/` - All LLM prompt templates
 
-For implementation details, see `docs/DEVELOPER_GUIDE.md`.
+For implementation orientation, see `codex-overview-2.md`.
 
 ## Important Notes
 
@@ -146,7 +141,5 @@ For implementation details, see `docs/DEVELOPER_GUIDE.md`.
 
 ## Getting Help
 
-- User guide: `docs/USER_GUIDE.md`
-- Developer guide: `docs/DEVELOPER_GUIDE.md`
-- Changelog: `docs/CHANGELOG.md`
-- Implementation status: `docs/IMPLEMENTATION_STATUS.md`
+- Architecture: `codex-overview-2.md`
+- Diagrams: `codex-overview-2-diagrams.md`
