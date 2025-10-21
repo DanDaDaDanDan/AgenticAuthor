@@ -89,7 +89,15 @@ class MarkdownExtractor:
         """
         Extract chapter outlines from markdown.
 
-        Expected format:
+        Supports TWO formats:
+
+        NEW FORMAT (simple prose summary):
+        # Chapter 1: Title
+        **Act:** Act I
+
+        [200-300 word prose summary of the chapter...]
+
+        OLD FORMAT (structured sections):
         # Chapter 1: Title
         **POV:** Character name
         **Act:** Act I/II/III
@@ -126,12 +134,22 @@ class MarkdownExtractor:
             chapter_title = chapter_splits[i + 1].strip()
             chapter_content = chapter_splits[i + 2]
 
+            # Try to extract fields from both formats
+            pov = cls._extract_field(chapter_content, 'POV')
+            act = cls._extract_field(chapter_content, 'Act')
+            summary = cls._extract_field(chapter_content, 'Summary')
+
+            # If no explicit Summary field, extract prose summary (new format)
+            # This is everything after Act: until next chapter or ---
+            if not summary and act:
+                summary = cls._extract_prose_summary(chapter_content)
+
             chapter_data = {
                 'number': chapter_num,
                 'title': chapter_title,
-                'pov': cls._extract_field(chapter_content, 'POV'),
-                'act': cls._extract_field(chapter_content, 'Act'),
-                'summary': cls._extract_field(chapter_content, 'Summary'),
+                'pov': pov,
+                'act': act,
+                'summary': summary,
                 'key_events': cls._extract_list_section(chapter_content, 'Key Events'),
                 'character_developments': cls._extract_list_section(chapter_content, 'Character Development'),
                 'relationship_beats': cls._extract_list_section(chapter_content, 'Relationships?|Relationship Beats?'),
@@ -255,6 +273,40 @@ class MarkdownExtractor:
         }
 
         return world
+
+    @classmethod
+    def _extract_prose_summary(cls, text: str) -> Optional[str]:
+        """
+        Extract prose summary from new format (everything after Act: until separator or end).
+
+        Args:
+            text: Chapter content text
+
+        Returns:
+            Prose summary or None
+        """
+        # Find the Act field
+        act_match = re.search(r'\*\*Act:\*\*\s*[^\n]+\n', text, re.IGNORECASE)
+        if not act_match:
+            return None
+
+        # Extract everything after Act until separator (---) or end
+        start_pos = act_match.end()
+
+        # Look for separator or end
+        separator_match = re.search(r'\n---\n|^---$', text[start_pos:], re.MULTILINE)
+        if separator_match:
+            end_pos = start_pos + separator_match.start()
+        else:
+            end_pos = len(text)
+
+        # Extract and clean
+        summary = text[start_pos:end_pos].strip()
+
+        # Remove any section headers that might have been included
+        summary = re.sub(r'##\s+.*?\n', '', summary)
+
+        return summary if summary else None
 
     @classmethod
     def _extract_field(cls, text: str, field_name: str, multiline: bool = False) -> Optional[str]:
@@ -641,22 +693,36 @@ class MarkdownExtractor:
             # Critical fields
             if not chapter.get('title'):
                 errors.append(f"Chapter {num} has no title")
+
+            # POV is optional (new format doesn't require it)
             if not chapter.get('pov'):
-                errors.append(f"Chapter {num} has no POV specified")
+                logger.debug(f"Chapter {num} has no POV specified (optional in new format)")
+
             if not chapter.get('act'):
                 warnings.append(f"Chapter {num} has no act specified")
-            if not chapter.get('summary'):
-                warnings.append(f"Chapter {num} has no summary")
 
-            # Key events are critical for prose generation
+            # Summary is critical
+            summary = chapter.get('summary', '')
+            if not summary:
+                errors.append(f"Chapter {num} has no summary")
+
+            # Key events are critical ONLY if summary is brief (old format)
+            # New format uses prose summaries (200-300 words) instead of key_events
             key_events = chapter.get('key_events', [])
-            if not key_events:
-                errors.append(f"Chapter {num} has no key events. Expected '## Key Events' section with numbered or bulleted list.")
-            elif len(key_events) < 2:
-                warnings.append(f"Chapter {num} has only {len(key_events)} key event(s). Consider adding more for better prose generation.")
+            summary_word_count = len(summary.split()) if summary else 0
 
-            # Character development is important but not critical
-            if not chapter.get('character_developments'):
+            if summary_word_count < 100:
+                # Short summary - old format, requires key_events
+                if not key_events:
+                    errors.append(f"Chapter {num} has no key events. Expected '## Key Events' section with numbered or bulleted list.")
+                elif len(key_events) < 2:
+                    warnings.append(f"Chapter {num} has only {len(key_events)} key event(s). Consider adding more for better prose generation.")
+            else:
+                # Long summary - new format, key_events optional
+                logger.debug(f"Chapter {num} uses prose summary format ({summary_word_count} words)")
+
+            # Character development is important but not critical (old format only)
+            if not chapter.get('character_developments') and summary_word_count < 100:
                 warnings.append(f"Chapter {num} has no character development notes")
 
         # Log warnings

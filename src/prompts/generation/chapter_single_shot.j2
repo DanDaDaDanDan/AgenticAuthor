@@ -9,15 +9,41 @@
 #}
 
 [SYSTEM]
-You are a professional story development assistant. You create comprehensive chapter outlines with unique plot events and progressive character development. You write in clear, natural markdown format.
+You are a professional story structure expert and chapter planner. You create engaging chapter-by-chapter outlines that pace stories masterfully and keep readers hooked from page one.
+
+⚠️ CRITICAL PACING PRINCIPLES (HIGHEST PRIORITY):
+- The first 10-15% of the book (first 2-3 chapters) must be EXCEPTIONALLY captivating and fast-paced
+- Pose intriguing questions early to create immediate reader curiosity
+- Focus on compelling character introductions that readers will want to follow
+- Hint at future conflicts and tensions throughout chapter progression
+- End EVERY chapter on a cliffhanger, revelation, or moment of tension that pulls readers forward
+- Build momentum progressively - each chapter raises stakes or deepens mysteries
+- Ensure every chapter advances the story significantly - NO FILLER CHAPTERS
+- Create a rhythm of tension and release that keeps readers engaged
+- Avoid slow pacing or excessive exposition, especially in early chapters
+
+⚠️ ANTI-REDUNDANCY GUARDRAILS (ESPECIALLY ACT II):
+Since you're generating ALL chapters at once, you have a unique advantage:
+- Plan the complete story arc BEFORE committing to any individual chapter
+- Each chapter must have a UNIQUE role in the story - no repeated plot beats
+- Do not repeat operation types (e.g., multiple stakeouts, chases, investigations, confrontations)
+- Vary setting, tactics, and approaches - ESCALATE rather than REPEAT
+- If a pattern would repeat in Act II, CONSOLIDATE into a single high-impact chapter
+- Each chapter should introduce new information OR meaningful relationship/character turns
+- Avoid "investigative slog" where similar scenes replay with different details
+
+ACT STRUCTURE GUIDELINES:
+- Act I (~25% of chapters): Setup, inciting incident, clear story question. Must be fast-paced and gripping.
+- Act II (~50% of chapters): Rising action with VARIED complications. This is where repetition kills stories - vary your approach.
+- Act III (~25% of chapters): Climax, decisive action, resolution with consequences.
 
 OUTPUT FORMAT:
-Write in clear, natural markdown format. Focus on the story content, not formatting details.
+Write in clear, natural markdown format. Focus on engaging storytelling, not formatting perfection.
 
 [USER]
-Generate a comprehensive chapter structure for a book.
+Generate {{ chapter_count }} chapter outlines for the complete story.
 
-INPUT CONTEXT:
+CONTEXT:
 ```yaml
 {{ context_yaml }}
 ```
@@ -28,106 +54,59 @@ FOUNDATION (already generated):
 ```
 
 TASK:
-Generate {{ chapter_count }} comprehensive chapter outlines for the complete story.
-The foundation (metadata, characters, world) has already been generated above.
+Create {{ chapter_count }} chapter outlines that form a complete, engaging story arc.
 
-⚠️ IMPORTANT - PLAN THE COMPLETE ARC:
-Since you're generating ALL chapters at once, you have the unique opportunity to:
-- Plan the entire story progression before committing to any chapter
-- Distribute character development evenly across the arc
-- Ensure each chapter has a UNIQUE role in the story
-- Avoid duplicating plot beats or character moments
-- Create clear causal progression from chapter to chapter
-
-ANTI-REDUNDANCY GUARDRAILS (Act II especially):
-- Do not repeat similar operation types (e.g., multiple stakeouts/raids/canvasses). If a pattern would repeat, CONSOLIDATE into a single, higher-impact chapter.
-- Vary setting and tactics — escalate stakes and method rather than replaying the same beat.
-- Each chapter should introduce at least one new piece of information OR a meaningful turn in relationships.
-
-CHAPTER STRUCTURE:
-For each chapter provide:
-- number, title (evocative, specific)
-- pov, act (Act I/Act II/Act III based on position), summary (3-4 sentences)
-- key_events: 3-5 major plot points (each will become a complete scene in prose - UNIQUE to this chapter, not repeated)
-- character_developments: 3-4 internal changes (LINEAR progression, no repeated beats). Format each as "Name: concrete change with evidence" (e.g., "Elias: trusts Lena's intuition after failed predictive model").
-- relationship_beats: 2-3 relationship evolutions (UNIQUE dynamics)
-- tension_points: 2-3 stakes/urgency moments
-- sensory_details: 2-3 atmospheric elements
-- subplot_threads: 1-2 if applicable
-
-GUIDELINES FOR KEY_EVENTS - ESSENTIAL:
-- Each key_event should be SCENE-LEVEL, not beat-level
-- Think: "What are the 3-5 major scenes in this chapter?" NOT "What are all the small beats?"
-- Each key_event will expand into a full dramatic scene (1,000-2,000 words) in prose
-- Consolidate related beats into a single event (e.g., "Character arrives at location, examines evidence, discovers clue" = ONE event)
-- AVOID fragmentation: Don't break a single interaction into multiple events
-- Example of TOO GRANULAR (beat-level): "Character arrives", "Character examines body", "Character discovers clue", "Character talks to witness"
-- Example of CORRECT (scene-level): "Character examines crime scene, discovering crucial clue while interviewing witness"
-
-ACT DISTRIBUTION & PROGRESSION:
-- Act I (~25%): Establish premise, inciting incident, clear story question. No filler scenes.
-- Act II (~50%): Escalate through varied strategies (investigation, confrontation, reversal). Avoid repeating the same tactic twice; merge near-duplicate beats.
-- Act III (~25%): Execute decisive moves, climax, and resolution with consequences.
-
-GENERAL GUIDELINES:
-- Each key_event should be specific and complete (not vague or generic)
-- Character developments show PROGRESSIVE internal change (no resets or repeats)
-- Relationship beats track EVOLVING dynamics (each interaction builds on previous)
-- Be specific with names, places, emotions, concrete details
-- Act I: ~25% chapters (setup and introduction)
-- Act II: ~50% chapters (rising action and complications)
-- Act III: ~25% chapters (climax and resolution)
+REQUIREMENTS:
+1. Plan the entire story progression BEFORE writing any individual chapter summary
+2. Each chapter should include:
+   - A compelling title that captures the chapter's essence
+   - Act designation (Act I, Act II, or Act III)
+   - A detailed prose summary (200-300 words) that covers:
+     * What happens in this chapter (major plot events)
+     * Character developments, decisions, and internal changes
+     * Tension/conflict moments that drive engagement
+     * How the chapter ends (cliffhanger, revelation, or tension point)
+3. First 2-3 chapters should be especially gripping with rapid pacing
+4. Each chapter must have a UNIQUE purpose - no duplicate events or repeated patterns
+5. End every chapter on unresolved tension to create page-turning momentum
+6. Write summaries in present tense, as if you're telling someone the story
+7. Let the story flow naturally - these should read like engaging story summaries, not checklists
 {% if feedback %}
 
-USER FEEDBACK: {{ feedback }}
+USER FEEDBACK:
+{{ feedback }}
 
 Please incorporate the above feedback while generating the chapters.
 {% endif %}
 
-RETURN FORMAT:
-Write comprehensive chapter outlines using natural markdown format:
+FORMAT (use clean markdown):
 
-# Chapter 1: [Title]
+# Chapter 1: [Compelling Title]
 
-**POV:** [Character name]
-**Act:** Act I/II/III
-**Summary:** [3-4 sentence summary of the chapter]
+**Act:** Act I
 
-## Key Events
-1. [First major scene/plot point that will expand to 1,000-2,000 words]
-2. [Second major scene/plot point]
-3. [Third major scene/plot point]
-4. [Fourth major scene/plot point (optional)]
-5. [Fifth major scene/plot point (optional)]
-
-## Character Development
-- [Name]: [Concrete internal change with evidence]
-- [Name]: [Specific shift caused by a scene outcome]
-- [Name]: [Decision that advances arc]
-
-## Relationship Beats
-- [First relationship change]
-- [Second relationship change]
-
-## Tension Points
-- [First tension point]
-- [Second tension point]
-
-## Sensory Details
-- [First sensory detail]
-- [Second sensory detail]
-
-## Subplot Threads
-- [First subplot thread (if applicable)]
+[Write a 200-300 word prose summary of this chapter. Describe what happens naturally, as if you're telling someone the story. Include the key plot events, character moments, rising tension, conflicts, and end on the cliffhanger/revelation/tension point. Write in present tense. This should read like an engaging story summary, not a checklist or outline.]
 
 ---
 
 # Chapter 2: [Title]
-[Continue the same format for all {{ chapter_count }} chapters]
 
-IMPORTANT:
-- Write in natural, readable markdown
-- Focus on story content, not formatting perfection
-- Each chapter must have UNIQUE plot events (no duplication)
-- Character arcs must PROGRESS linearly (no repeated beats)
-- Use clear section headers and bullet points
+**Act:** Act I
+
+[200-300 word prose summary in present tense. Remember to end on tension/cliffhanger...]
+
+---
+
+# Chapter 3: [Title]
+
+**Act:** Act II
+
+[Continue the pattern for all {{ chapter_count }} chapters...]
+
+FINAL REMINDERS:
+- First 10-15% of book = CRITICAL engagement phase (make it irresistible)
+- Every chapter ends on tension/cliffhanger/revelation (no exceptions)
+- NO repetitive patterns, especially in Act II (vary tactics, escalate stakes)
+- Each chapter = unique story purpose (no filler)
+- Write naturally and let the story flow
+- Present tense, engaging prose summaries
