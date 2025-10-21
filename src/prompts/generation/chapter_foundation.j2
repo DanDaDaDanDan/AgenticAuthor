@@ -46,12 +46,12 @@ Write in natural markdown format:
 **Story Structure:** [structure type]
 **Narrative Style:** [POV and style]
 **Target Audience:** [audience description]
-**Target Word Count:** [number]
-**Chapter Count:** [number]
 **Setting Period:** [time period]
 **Setting Location:** [location]
 **Content Warnings:**
   - [if applicable]
+
+NOTE: Target word count ({{ "{:,}".format(total_words) }} words) and chapter count ({{ chapter_count }} chapters) are calculated mathematically based on length scope and genre. These will be injected automatically - do NOT include them in your metadata.
 
 # Characters
 
@@ -86,82 +86,12 @@ Write in natural markdown format:
   - [Social element 2]
 
 IMPORTANT: Include all 3 sections (Metadata, Characters, World). Write naturally without worrying about perfect formatting.
-{% if is_initial_generation and min_words and max_words %}
-
-TREATMENT ANALYSIS FOR WORD COUNT:
-
-Before setting target_word_count, analyze the treatment to determine the story's natural scope.
-
-Consider these factors from the treatment:
-1. STORY COMPLEXITY: How many major plot threads are outlined?
-2. CHARACTER COUNT: How many characters have significant roles?
-3. WORLD-BUILDING NEEDS: How much setting/system explanation is required?
-4. SUBPLOT DENSITY: How many parallel storylines are present?
-5. NATURAL PACING: Does the story suggest fast-paced action (fewer words) or deliberate literary exploration (more)?
-6. TIMELINE: Do events span days/weeks (shorter) or months/years (longer)?
-
-CONSTRAINTS:
-- Genre: {{ genre or 'general' }}
-- Length scope: {{ length_scope }} ({{ "{:,}".format(min_words) }}-{{ "{:,}".format(max_words) }} words)
-- Genre baseline: {{ "{:,}".format(genre_baseline) }} words (reference only - DO NOT default to this)
-
-⚠️ KEY INSTRUCTION: Set target_word_count based on the treatment's ACTUAL COMPLEXITY within the {{ length_scope }} range ({{ "{:,}".format(min_words) }}-{{ "{:,}".format(max_words) }}).
-
-Examples of organic word count selection:
-- Tight thriller with single plot thread, 2-3 main characters, fast pacing → {{ "{:,}".format((min_words * 1.2)|int) }} words
-- Complex mystery with multiple suspects, intricate plotting, moderate pacing → {{ "{:,}".format(((min_words + max_words) / 2)|int) }} words
-- Epic with extensive world-building, large cast, multiple subplots → {{ "{:,}".format((max_words * 0.9)|int) }} words
-
-Your choice should reflect the treatment's inherent scope, not just match the genre default.
-{% endif %}
 {% if feedback %}
 
-USER FEEDBACK:
+USER FEEDBACK FOR ITERATION:
 {{ feedback }}
 
-⚠️ IMPORTANT: Analyze the feedback's structural intent before setting target_word_count and chapter_count.
+Apply this feedback to the metadata, characters, and world sections. Focus on creative/narrative changes.
 
-Current baseline: {{ "{:,}".format(total_words) }} words, {{ chapter_count }} chapters
-
-STEP 1: Identify the feedback's overall intent by looking for these indicators:
-
-CONSOLIDATION INDICATORS (→ REDUCE both word count and chapter count):
-  Keywords: "consolidate", "combine", "merge", "tighten", "condense", "streamline"
-  Problems: "padded", "repetitive", "redundant", "dragging", "slow", "bloated"
-  Actions: "remove", "cut", "trim", "reduce", "eliminate"
-
-  If feedback contains these → REDUCE by 15-25%
-  Example: {{ "{:,}".format(total_words) }} words → {{ "{:,}".format((total_words * 0.75)|int) }}-{{ "{:,}".format((total_words * 0.85)|int) }} words
-           {{ chapter_count }} chapters → {{ (chapter_count * 0.75)|int }}-{{ (chapter_count * 0.85)|int }} chapters
-
-EXPANSION INDICATORS (→ INCREASE both word count and chapter count):
-  Keywords: "expand", "develop", "add more", "deepen", "flesh out", "elaborate"
-  Problems: "rushed", "underdeveloped", "needs more", "too brief", "shallow"
-  Actions: "add", "extend", "grow", "enrich"
-
-  If feedback contains these → INCREASE by 15-25%
-  Example: {{ "{:,}".format(total_words) }} words → {{ "{:,}".format((total_words * 1.15)|int) }}-{{ "{:,}".format((total_words * 1.25)|int) }} words
-           {{ chapter_count }} chapters → {{ (chapter_count * 1.15)|int }}-{{ (chapter_count * 1.25)|int }} chapters
-
-MIXED/REFINEMENT (→ minimal or no adjustment):
-  Feedback addresses specific scenes/moments without overall length concerns
-  Both consolidation and expansion requested in different areas
-  Focus on content changes rather than structural changes
-
-  If mixed signals → Adjust by less than 10% or keep current
-  Example: {{ "{:,}".format(total_words) }} words → {{ "{:,}".format((total_words * 0.95)|int) }}-{{ "{:,}".format(total_words) }} words
-           {{ chapter_count }} chapters → {{ [chapter_count - 2, 1]|max }}-{{ chapter_count }} chapters
-
-STEP 2: Set your target_word_count and chapter_count based on your analysis above.
-
-Your values should reflect the feedback's structural intent, not just specific edits.
-If feedback clearly indicates consolidation (e.g., mentions "padded", "repetitive", "combine chapters"), you SHOULD reduce both metrics proportionally.
-
-⚠️ MUST AVOID DUPLICATE EVENTS IN ITERATION:
-When the feedback mentions duplicate or repetitive content:
-- This means previous chapter generation created redundant scenes/events
-- Your job is to consolidate the structure to PREVENT duplication
-- Review the existing chapters carefully and eliminate duplicate plot beats
-- Each chapter should cover UNIQUE story events and character moments
-- Do NOT create separate chapters for events that should be combined into one
+NOTE: Structure changes (word count, chapter count) will be handled automatically based on feedback analysis. You should focus on the creative content.
 {% endif %}
