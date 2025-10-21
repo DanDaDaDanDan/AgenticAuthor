@@ -5,7 +5,7 @@ This file provides guidance to Claude Code when working with this repository.
 ## Documentation Updates
 
 When making relevant changes, keep these up to date:
-- **`codex-overview-2.md`** – High-level architecture and file hierarchy
+- **`ARCHITECTURE.md`** – High-level architecture and file hierarchy. Keep this updated with key architectural decisions and changes (brief ADR-style notes are fine).
 - **`codex-overview-2-diagrams.md`** – Diagrammed overview
 - **`README.md`** – Quick start and core pointers (keep minimal)
 
@@ -44,7 +44,7 @@ AgenticAuthor is a Python CLI for AI-powered book generation using OpenRouter AP
 - Short story support (≤2 chapters → single story.md file)
 - Shared git repository at books/ level
 
-For a high-level summary and layout, see `codex-overview-2.md`.
+For a high-level summary and layout, see `ARCHITECTURE.md`.
 
 ## Core Principles
 
@@ -111,7 +111,7 @@ Use `/help` in the REPL and tab-completion for command hints.
 ```
 AgenticAuthor/
 ├── CLAUDE.md                 # This file
-├── codex-overview-2.md       # High-level architecture
+├── ARCHITECTURE.md           # High-level architecture (keep decisions updated)
 ├── codex-overview-2-diagrams.md # Diagrammed overview
 ├── src/                      # Source code
 │   ├── generation/           # Core generation logic
@@ -129,7 +129,7 @@ AgenticAuthor/
 - **CLI:** `interactive.py` - Main REPL
 - **Prompts:** `src/prompts/` - All LLM prompt templates
 
-For implementation orientation, see `codex-overview-2.md`.
+For implementation orientation, see `ARCHITECTURE.md`.
 
 ## Important Notes
 
@@ -141,5 +141,5 @@ For implementation orientation, see `codex-overview-2.md`.
 
 ## Getting Help
 
-- Architecture: `codex-overview-2.md`
+- Architecture: `ARCHITECTURE.md`
 - Diagrams: `codex-overview-2-diagrams.md`
