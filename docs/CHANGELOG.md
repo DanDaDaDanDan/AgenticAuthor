@@ -29,6 +29,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **File**: src/prompts/analysis/chapter_judging.j2
 
 ### Fixed / Discovered
+- **Codebase Cleanup: 3 Issues Fixed** 🔧 (v0.3.3+, 2025-10-20)
+  - **Issue 1 - min_tokens → reserve_tokens**: ✅ FIXED
+    - Renamed in config.yaml (19 instances)
+    - Renamed get_min_tokens() → get_reserve_tokens() method
+    - Updated all comments and docstrings
+    - Consistent naming across codebase
+  - **Issue 2 - Stale bytecode**: ✅ FIXED
+    - Deleted all __pycache__ directories
+    - Removed stale diff.pyc and scale.pyc (source files deleted)
+    - Clean rebuild environment
+  - **Issue 3 - CRITICAL overuse in prompts**: ✅ FIXED (HIGH PRIORITY)
+    - **Problem**: CRITICAL used for both Severity.CRITICAL (actual severity) and prompt emphasis (headers)
+    - **Context shift**: LLM confused when we said "only flag CRITICAL deviations"
+    - **Solution**: Replaced 12 prompt emphasis uses with ⚠️ IMPORTANT/ESSENTIAL/KEY
+    - **Preserved**: CRITICAL only for Severity.CRITICAL enum
+    - **Files**: 8 prompt files + 2 inline templates
+    - **Benefit**: Clear severity signal, no ambiguity for LLM
+  - **Documentation**: Created docs/CODEBASE_ISSUES_ANALYSIS.md with full analysis
+
 - **Codebase Investigation Findings** 🔍 (v0.3.3+, 2025-10-20)
   - **project.yaml**: Confirmed actively used for metadata storage (genre, model, counts)
   - **.agentic folders**: Intentional per-project state directories (gitignored)
