@@ -73,6 +73,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Rationale**: Simplified project.yaml to only essential fields that are actively used
   - **Glue Fraction**: Confirmed already removed in commit b382311 (Oct 19, 2025)
 
+### Removed
+- **Complete Iteration and Analysis System Removal** 🗑️ (v0.3.3+, 2025-10-21)
+  - **Rationale**: Iteration system will be reimplemented differently - removing all traces for clean slate
+  - **Directories Removed** (2,713 lines deleted):
+    - src/generation/iteration/ (IterationCoordinator, IntentAnalyzer)
+    - src/generation/analysis/ (AnalysisCoordinator, Severity enum, all analyzers)
+    - src/prompts/iteration/ (iteration prompts)
+    - src/prompts/analysis/ (analysis prompts including chapter_judging.j2)
+    - src/prompts/validation/ (prose_fidelity.j2, treatment_fidelity.j2)
+  - **CLI Commands Removed**:
+    - /iterate command (iterate_content method)
+    - /analyze command (analyze_story + _display_analysis_results methods)
+  - **Fields Removed**:
+    - ProjectMetadata.iteration_target
+    - InteractiveSession.iteration_target
+    - InteractiveSession.iteration_chapters
+  - **Imports Removed**:
+    - IterationCoordinator, AnalysisCoordinator
+    - Severity enum, AnalysisResult, Issue, Strength classes
+  - **Impact**: Simplifies codebase significantly - will reimplement iteration with different approach later
+  - **Note**: Severity levels completely removed from codebase (no longer needed)
+  - **Commit**: 4774470
+
+- **Inlined Prompts Documentation** 📝 (v0.3.3+, 2025-10-21)
+  - Created docs/INLINED_PROMPTS_TODO.md documenting remaining inline prompts for future migration:
+    - dedication_generator.py (system + user prompts)
+    - kdp_metadata.py (3 inline prompts)
+    - premise.py (batch generation prompt)
+  - Lower priority - can migrate later
+
 ### Added
 - **Quality-First Prose Generation Architecture** ✨ (v0.3.2+, Completed 2025-10-19)
   - **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content
