@@ -40,6 +40,10 @@ books/
 test_project_tmp/
 config.yaml
 
+# Node (incidental tooling)
+node_modules/
+package-lock.json
+
 # Development/Debug files
 test_basictui*.py
 *_tui.py
