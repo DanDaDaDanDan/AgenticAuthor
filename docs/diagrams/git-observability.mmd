@@ -1,7 +1,0 @@
-flowchart LR
-  Books[books/] -->|shared repo| Git[(.git)]
-  Project[models/project.py] --> Books
-  GitMgr[storage/git_manager.py] --> Git
-  Logger[utils/session_logger.py] --> Logs[logs/]
-  Analyzer[analysis/*] --> Reports[books/<name>/analysis/]
-
