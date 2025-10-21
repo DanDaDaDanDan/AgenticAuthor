@@ -43,6 +43,11 @@ config.yaml
 # Node (incidental tooling)
 node_modules/
 package-lock.json
+.npmrc
+pnpm-lock.yaml
+yarn.lock
+npm-shrinkwrap.json
+.pnpm-store/
 
 # Development/Debug files
 test_basictui*.py
