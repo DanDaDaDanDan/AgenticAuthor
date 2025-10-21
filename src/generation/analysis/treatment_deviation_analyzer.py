@@ -21,7 +21,7 @@ Your task is to identify:
 3. **DUPLICATION**: Same events/character arcs repeated across multiple chapters
 4. **MISALIGNMENT**: Events happening in different order than treatment suggests
 
-CRITICAL FOCUS ON DUPLICATION:
+⚠️ IMPORTANT FOCUS ON DUPLICATION:
 - Same character development beat repeated (e.g., "learns to trust" in Ch 1, 4, 7, 9)
 - Same plot event covered multiple times (e.g., "alliance formed" in Ch 6 AND Ch 10)
 - Redundant scenes/chapters covering identical story beats

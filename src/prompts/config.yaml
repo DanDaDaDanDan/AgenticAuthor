@@ -3,109 +3,109 @@
 # Fields:
 #   temperature: LLM sampling temperature (0.0-1.0)
 #   format: Expected output format (text/json/yaml)
-#   min_tokens: Minimum response tokens to reserve
+#   reserve_tokens: Tokens to reserve for response (for dynamic max_tokens calculation)
 #   top_p: Top-p sampling parameter
 
 # Generation prompts
 generation/premise_main:
   temperature: 0.9
   format: json
-  min_tokens: 800
+  reserve_tokens: 800
 
 generation/premise_with_taxonomy:
   temperature: 0.7
   format: json
-  min_tokens: 500
+  reserve_tokens: 500
 
 generation/prose_generation:
   temperature: 0.8
   format: text
-  min_tokens: 5000
+  reserve_tokens: 5000
   top_p: 0.9
 
 generation/prose_iteration:
   temperature: 0.8
   format: text
-  min_tokens: 5000
+  reserve_tokens: 5000
   top_p: 0.9
 
 generation/treatment_generation:
   temperature: 0.7
   format: yaml
-  min_tokens: 2500
+  reserve_tokens: 2500
 
 generation/chapter_foundation:
   temperature: 0.6
   format: yaml
-  min_tokens: 2000
+  reserve_tokens: 2000
 
 generation/chapter_single_shot:
   temperature: 0.7
   format: yaml
-  min_tokens: 8000
+  reserve_tokens: 8000
 
 # Validation prompts
 validation/prose_fidelity:
   temperature: 0.1
   format: json
-  min_tokens: 200
+  reserve_tokens: 200
 
 validation/treatment_fidelity:
   temperature: 0.1
   format: json
-  min_tokens: 200
+  reserve_tokens: 200
 
 # Analysis prompts
 analysis/chapter_judging:
   temperature: 0.1
   format: json
-  min_tokens: 100
+  reserve_tokens: 100
 
 analysis/intent_check:
   temperature: 0.2
   format: json
-  min_tokens: 100
+  reserve_tokens: 100
 
 analysis/genre_detection:
   temperature: 0.3
   format: json
-  min_tokens: 100
+  reserve_tokens: 100
 
 analysis/taxonomy_extraction:
   temperature: 0.5
   format: json
-  min_tokens: 500
+  reserve_tokens: 500
 
 # Iteration prompts
 iteration/taxonomy_update:
   temperature: 0.4
   format: json
-  min_tokens: 200
+  reserve_tokens: 200
 
 iteration/premise_revision:
   temperature: 0.5
   format: json
-  min_tokens: 1200
+  reserve_tokens: 1200
 
 # Editing prompts
 editing/copy_edit:
   temperature: 0.3
   format: json
-  min_tokens: 8000
+  reserve_tokens: 8000
   top_p: 0.9
 
 # KDP metadata prompts
 kdp/description:
   temperature: 0.7
   format: text
-  min_tokens: 200
+  reserve_tokens: 200
 
 kdp/keywords:
   temperature: 0.7
   format: text
-  min_tokens: 150
+  reserve_tokens: 150
 
 kdp/author_bio:
   temperature: 0.7
   format: text
-  min_tokens: 300
+  reserve_tokens: 300

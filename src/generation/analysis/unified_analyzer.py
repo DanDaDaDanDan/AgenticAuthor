@@ -32,7 +32,7 @@ Chapter Outline:
 
 Rate the quality and provide constructive criticism. Focus on what matters most to making this better.
 
-CRITICAL: Check for duplicate plot elements:
+⚠️ IMPORTANT: Check for duplicate plot elements:
 - Duplicate events across different chapters (e.g., "alliance formed" in Ch 6 AND Ch 10)
 - Repeated character moments or developments
 - Redundant scenes covering the same story beats

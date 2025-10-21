@@ -147,7 +147,7 @@ class PromptLoader:
             prompt_name: Name of prompt (without .j2 extension)
 
         Returns:
-            Dict with metadata (temperature, format, min_tokens, etc.)
+            Dict with metadata (temperature, format, reserve_tokens, etc.)
         """
         # Remove .j2 extension if present
         key = prompt_name.replace('.j2', '')
@@ -182,19 +182,19 @@ class PromptLoader:
         metadata = self.get_metadata(prompt_name)
         return metadata.get('format', default)
 
-    def get_min_tokens(self, prompt_name: str, default: Optional[int] = None) -> Optional[int]:
+    def get_reserve_tokens(self, prompt_name: str, default: Optional[int] = None) -> Optional[int]:
         """
-        Get minimum response tokens for a prompt.
+        Get reserve tokens for a prompt (used for dynamic max_tokens calculation).
 
         Args:
             prompt_name: Name of prompt
-            default: Default min_tokens if not configured
+            default: Default reserve_tokens if not configured
 
         Returns:
-            Min tokens value or None
+            Reserve tokens value or None
         """
         metadata = self.get_metadata(prompt_name)
-        return metadata.get('min_tokens', default)
+        return metadata.get('reserve_tokens', default)
 
 
 # Global loader instance (singleton pattern)
