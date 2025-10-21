@@ -1,0 +1,7 @@
+Error 400: SyntaxError: Parse error on line 20:
+...d  subgraph books/<name>    C1[premis
+---------------------^
+Expecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'GRAPH', 'DIR', 'subgraph', 'SQS', 'end', 'AMP', 'COLON', 'START_LINK', 'STYLE', 'LINKSTYLE', 'CLASSDEF', 'CLASS', 'CLICK', 'DOWN', 'UP', 'NUM', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'TAGSTART'
+Error: Syntax error in graph
+    at Worker.convert (file:///usr/local/kroki/src/worker.js:44:15)
+    at async file:///usr/local/kroki/src/index.js:31:28
