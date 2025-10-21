@@ -185,7 +185,7 @@ Return a JSON object with this structure:
                 prompt=prompt,
                 temperature=0.7,
                 display_label="Regenerating premise with updated taxonomy",
-                min_response_tokens=500
+                reserve_tokens=500
             )
 
             if result and isinstance(result, dict):
@@ -360,7 +360,7 @@ Return JSON with this structure:
                 display_label="Generating premise",
                 display_mode="full",  # Stream entire JSON (all fields including selections/taxonomy)
                 # No max_tokens - let it use full available context
-                min_response_tokens=800  # Premises need substantial space
+                reserve_tokens=800  # Premises need substantial space
             )
 
             # Save to project
@@ -451,7 +451,7 @@ Return JSON with only the selections:
                 display_field="selections",
                 display_label="Analyzing taxonomy",
                 # No max_tokens - let it use full available context
-                min_response_tokens=500  # Taxonomy analysis needs moderate space
+                reserve_tokens=500  # Taxonomy analysis needs moderate space
             )
 
             # Save metadata
@@ -555,7 +555,7 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
         if logger:
             logger.info(f"Using model: {model}")
             logger.debug(f"Prompt length: {len(prompt)} chars")
-            logger.debug(f"Temperature: 0.5, min_response_tokens: 1200")
+            logger.debug(f"Temperature: 0.5, reserve_tokens: 1200")
 
         try:
             if logger:
@@ -570,7 +570,7 @@ IMPORTANT: Preserve the existing "selections" taxonomy data unless the feedback 
                 display_field="premise",
                 display_label="Revising premise",
                 # No max_tokens - let it use full available context
-                min_response_tokens=1200  # Premises + full taxonomy selections need substantial space
+                reserve_tokens=1200  # Premises + full taxonomy selections need substantial space
             )
 
             print(f"[DEBUG] json_completion RETURNED - result type: {type(result)}")
@@ -715,7 +715,7 @@ Generate exactly {count} distinct premises. Each must be substantially different
                 display_field="premise",  # Stream the "premise" field from first array element
                 display_label=f"Generating {count} premise options",
                 display_mode="array_first",  # Show first element as it streams
-                min_response_tokens=500 * count  # Estimate ~500 tokens per premise
+                reserve_tokens=500 * count  # Estimate ~500 tokens per premise
             )
 
             if not result or 'premises' not in result:

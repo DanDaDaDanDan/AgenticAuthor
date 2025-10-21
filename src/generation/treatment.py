@@ -129,7 +129,7 @@ class TreatmentGenerator:
                 temperature=0.7,  # Balanced for coherent narrative
                 display=True,  # Show streaming progress
                 display_label="Generating treatment",
-                min_response_tokens=int(target_words * 1.3)
+                reserve_tokens=int(target_words * 1.3)
             )
 
             if result:

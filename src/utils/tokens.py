@@ -103,7 +103,7 @@ class TokenEstimator:
         self,
         context_window: int,
         prompt_tokens: int,
-        min_response_tokens: int = 100,
+        reserve_tokens: int = 100,
         max_response_tokens: Optional[int] = None,
         buffer_percentage: float = 0.05
     ) -> int:
@@ -113,7 +113,7 @@ class TokenEstimator:
         Args:
             context_window: Total context window size for the model
             prompt_tokens: Estimated tokens in the prompt
-            min_response_tokens: Minimum tokens to reserve for response
+            reserve_tokens: Minimum tokens to reserve for response
             max_response_tokens: Maximum tokens to allow for response (optional)
             buffer_percentage: Percentage of context to reserve as buffer (default 5%)
 
@@ -126,10 +126,10 @@ class TokenEstimator:
         # Calculate available tokens
         available_tokens = context_window - prompt_tokens - buffer_tokens
 
-        # Ensure we have at least min_response_tokens
-        if available_tokens < min_response_tokens:
+        # Ensure we have at least reserve_tokens
+        if available_tokens < reserve_tokens:
             # If we don't have enough space, use minimum but log warning
-            return min_response_tokens
+            return reserve_tokens
 
         # Apply max_response_tokens cap if specified
         if max_response_tokens:
@@ -155,7 +155,7 @@ def estimate_messages_tokens(messages: List[Dict[str, str]]) -> int:
 def calculate_max_tokens(
     context_window: int,
     prompt_tokens: int,
-    min_response_tokens: int = 100,
+    reserve_tokens: int = 100,
     max_response_tokens: Optional[int] = None,
     buffer_percentage: float = 0.05
 ) -> int:
@@ -163,7 +163,7 @@ def calculate_max_tokens(
     return token_estimator.calculate_max_tokens(
         context_window,
         prompt_tokens,
-        min_response_tokens,
+        reserve_tokens,
         max_response_tokens,
         buffer_percentage
     )

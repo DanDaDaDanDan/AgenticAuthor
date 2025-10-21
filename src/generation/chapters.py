@@ -197,7 +197,7 @@ class ChapterGenerator:
             stream=True,
             display=True,
             display_label="Generating foundation",
-            min_response_tokens=2000
+            reserve_tokens=2000
         )
 
         if not result:
@@ -417,7 +417,7 @@ class ChapterGenerator:
                 temperature=0.1,  # Low temperature for consistent strict evaluation
                 stream=False,  # No streaming for validation
                 display=False,  # Don't display during validation
-                min_response_tokens=200
+                reserve_tokens=200
             )
 
             if not result:
@@ -986,7 +986,7 @@ Regenerate the foundation addressing the issues above.
                 temperature=temperature,  # Use parameter for temperature variation
                 display=True,
                 display_label=f"Generating all {chapter_count} chapters",
-                min_response_tokens=estimated_response_tokens
+                reserve_tokens=estimated_response_tokens
             )
 
             if not result:

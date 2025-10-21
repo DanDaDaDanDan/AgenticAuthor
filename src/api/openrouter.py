@@ -180,7 +180,7 @@ class OpenRouterClient:
         on_token: Optional[Callable[[str, int], None]] = None,
         stream: bool = True,
         display: bool = True,
-        min_response_tokens: int = 100,
+        reserve_tokens: int = 100,
         operation: Optional[str] = None,
         response_format: Optional[Dict[str, str]] = None,
         **kwargs
@@ -196,7 +196,7 @@ class OpenRouterClient:
             on_token: Optional callback for each token
             stream: Whether to stream the response
             display: Whether to display output in console
-            min_response_tokens: Minimum tokens to reserve for response
+            reserve_tokens: Minimum tokens to reserve for response
             operation: Optional operation name for debugging (e.g., "premise-generation", "chapter-3")
             response_format: Optional response format (e.g., {"type": "json_object"} for structured JSON)
             **kwargs: Additional API parameters
@@ -236,7 +236,7 @@ class OpenRouterClient:
             max_tokens = calculate_max_tokens(
                 context_window=model_obj.context_length,
                 prompt_tokens=prompt_tokens,
-                min_response_tokens=min_response_tokens,
+                reserve_tokens=reserve_tokens,
                 max_response_tokens=max_output_tokens,  # Cap at model's output limit
                 buffer_percentage=0.05  # 5% buffer for safety
             )
@@ -402,7 +402,7 @@ class OpenRouterClient:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         display: bool = True,
-        min_response_tokens: int = 100,
+        reserve_tokens: int = 100,
         operation: Optional[str] = None,
         **kwargs
     ) -> str:
@@ -416,7 +416,7 @@ class OpenRouterClient:
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate (auto-calculated if None)
             display: Whether to display output in console
-            min_response_tokens: Minimum tokens to reserve for response
+            reserve_tokens: Minimum tokens to reserve for response
             operation: Optional operation name for debugging
             **kwargs: Additional API parameters
 
@@ -450,7 +450,7 @@ class OpenRouterClient:
         display_field: Optional[str] = None,
         display_label: Optional[str] = None,
         display_mode: str = "field",  # "field", "array_first", or "full"
-        min_response_tokens: int = 100,
+        reserve_tokens: int = 100,
         operation: Optional[str] = None,
         use_structured_output: bool = True,  # Use structured JSON output by default
         **kwargs
@@ -468,7 +468,7 @@ class OpenRouterClient:
             display_label: Optional label for what's being generated
             display_mode: Display mode - "field" (extract field from object),
                          "array_first" (show first element of array), "full" (show all)
-            min_response_tokens: Minimum tokens to reserve for response
+            reserve_tokens: Minimum tokens to reserve for response
             operation: Optional operation name for debugging (e.g., "premise-generation")
             use_structured_output: Whether to use structured JSON output (default: True)
             **kwargs: Additional API parameters
@@ -501,13 +501,13 @@ class OpenRouterClient:
 
                 # For JSON, we often need more space for structured output
                 # So we use a higher min_response_tokens default
-                effective_min_response = max(min_response_tokens, 500)
+                effective_min_response = max(reserve_tokens, 500)
 
                 # Calculate optimal max_tokens
                 max_tokens = calculate_max_tokens(
                     context_window=model_obj.context_length,
                     prompt_tokens=prompt_tokens,
-                    min_response_tokens=effective_min_response,
+                    reserve_tokens=effective_min_response,
                     max_response_tokens=model_obj.get_max_output_tokens(),  # Respect model's output limit
                     buffer_percentage=0.05  # 5% buffer
                 )
@@ -517,7 +517,7 @@ class OpenRouterClient:
                 max_tokens = calculate_max_tokens(
                     context_window=8192,
                     prompt_tokens=prompt_tokens,
-                    min_response_tokens=max(min_response_tokens, 500),
+                    reserve_tokens=max(reserve_tokens, 500),
                     buffer_percentage=0.05
                 )
 

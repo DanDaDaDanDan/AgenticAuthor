@@ -531,7 +531,7 @@ class ProseGenerator:
                 top_p=top_p,
                 display=True,
                 display_label=f"Generating Chapter {chapter_number} prose",
-                min_response_tokens=estimated_response_tokens
+                reserve_tokens=estimated_response_tokens
             )
 
             if not result:
@@ -653,7 +653,7 @@ class ProseGenerator:
                         top_p=0.9,  # Focused sampling for quality
                         display=True,
                         display_label=f"Iterating Chapter {chapter_number} prose",
-                        min_response_tokens=5000  # Generous default for quality prose
+                        reserve_tokens=5000  # Generous default for quality prose
                     )
 
                     if not result:

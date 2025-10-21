@@ -151,7 +151,7 @@ class JudgingCoordinator:
                 temperature=0.1,  # Low temperature for consistent, reliable judgment
                 stream=False,  # No streaming for judging (want complete response)
                 display=False,  # Don't display during judging
-                min_response_tokens=100,
+                reserve_tokens=100,
                 response_format={"type": "json_object"}  # Use structured JSON output
             )
 

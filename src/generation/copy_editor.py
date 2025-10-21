@@ -239,7 +239,7 @@ class CopyEditor:
             display_field="edited_chapter",  # Stream the edited chapter text
             display_label=f"Copy editing chapter {chapter_num}",
             display_mode="field",  # Extract and display just the edited_chapter field
-            min_response_tokens=8000  # Full chapter + detailed changes
+            reserve_tokens=8000  # Full chapter + detailed changes
         )
 
         return result

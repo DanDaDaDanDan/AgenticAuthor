@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Renamed min_response_tokens to reserve_tokens** 🔧 (v0.3.3+, Completed 2025-10-20)
+  - **Reason**: Clarified naming - this is an internal parameter for reserving tokens, not an API parameter
+  - **Impact**: No functional changes, purely for code clarity
+  - **Files Updated**:
+    - src/api/openrouter.py
+    - src/utils/tokens.py
+    - All generation modules (chapters.py, prose.py, treatment.py, premise.py)
+    - Analysis modules (base.py)
+    - copy_editor.py, judging.py
+  - **Documentation**: Added docs/HARDCODED_PROMPTS_TO_MIGRATE.md listing remaining prompts to migrate
+
 ### Added
 - **Quality-First Prose Generation Architecture** ✨ (v0.3.2+, Completed 2025-10-19)
   - **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content

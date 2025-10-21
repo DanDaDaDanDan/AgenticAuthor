@@ -156,7 +156,7 @@ class BaseAnalyzer:
         self,
         prompt: str,
         temperature: float = 0.3,
-        min_response_tokens: int = 1000
+        reserve_tokens: int = 1000
     ) -> str:
         """
         Call LLM with prompt.
@@ -164,7 +164,7 @@ class BaseAnalyzer:
         Args:
             prompt: Prompt to send
             temperature: Sampling temperature
-            min_response_tokens: Minimum tokens to reserve for response (dynamic calculation)
+            reserve_tokens: Minimum tokens to reserve for response (dynamic calculation)
 
         Returns:
             LLM response content
@@ -180,7 +180,7 @@ class BaseAnalyzer:
             temperature=temperature,
             stream=False,
             display=False,
-            min_response_tokens=min_response_tokens  # Dynamic calculation based on model capacity
+            reserve_tokens=reserve_tokens  # Dynamic calculation based on model capacity
         )
 
         return response.get('content', '').strip()
