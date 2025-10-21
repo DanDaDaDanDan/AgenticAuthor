@@ -441,7 +441,14 @@ class ChapterGenerator:
                     lines = response_text.split('\n')
                     response_text = '\n'.join(lines[1:-1] if len(lines) > 2 else lines)
 
-                validation_result = json.loads(response_text)
+                # Try strict parsing first, then non-strict if control characters present
+                try:
+                    validation_result = json.loads(response_text)
+                except json.JSONDecodeError as strict_error:
+                    if 'control character' in str(strict_error).lower():
+                        validation_result = json.loads(response_text, strict=False)
+                    else:
+                        raise
             except json.JSONDecodeError as e:
                 if logger:
                     logger.warning(f"Failed to parse foundation validation JSON: {e}")

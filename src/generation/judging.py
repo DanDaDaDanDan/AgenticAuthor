@@ -184,7 +184,18 @@ class JudgingCoordinator:
                 if response_text.startswith('json'):
                     response_text = response_text[4:].strip()
 
-                judging_result = json.loads(response_text)
+                # Try strict parsing first
+                try:
+                    judging_result = json.loads(response_text)
+                except json.JSONDecodeError as strict_error:
+                    # If strict parsing fails due to control characters, try non-strict
+                    if 'control character' in str(strict_error).lower():
+                        if logger:
+                            logger.warning(f"JSON contains control characters, using non-strict parsing")
+                        judging_result = json.loads(response_text, strict=False)
+                    else:
+                        # Other JSON error - re-raise
+                        raise
 
             except json.JSONDecodeError as e:
                 if logger:

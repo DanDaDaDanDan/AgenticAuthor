@@ -195,14 +195,29 @@ class BaseAnalyzer:
 
         # Try to parse JSON
         try:
-            return json.loads(content)
+            # Try strict parsing first
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError as strict_error:
+                # If strict parsing fails due to control characters, try non-strict
+                if 'control character' in str(strict_error).lower():
+                    return json.loads(content, strict=False)
+                else:
+                    # Other JSON error - re-raise
+                    raise
         except json.JSONDecodeError as e:
             # Try to find JSON object in text
             start = content.find('{')
             end = content.rfind('}')
             if start != -1 and end != -1:
                 try:
-                    return json.loads(content[start:end+1])
+                    # Try strict first, then non-strict
+                    try:
+                        return json.loads(content[start:end+1])
+                    except json.JSONDecodeError as nested_error:
+                        if 'control character' in str(nested_error).lower():
+                            return json.loads(content[start:end+1], strict=False)
+                        raise
                 except:
                     pass
             raise ValueError(f"Failed to parse JSON from response: {str(e)}\nContent: {content[:500]}")
