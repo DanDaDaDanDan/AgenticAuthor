@@ -1,0 +1,10 @@
+flowchart LR
+  Prem[Premise (JSON)] --> Treat[Treatment (YAML prose)]
+  Treat --> Found[Foundation (YAML: metadata/characters/world)]
+  Found --> Beats[Chapter Beats (YAML per chapter)]
+  Beats --> Prose[Chapter Prose (Markdown per chapter)]
+  Prose --> Export[RTF/MD Exports]
+
+  Beats -.-> Analysis[Analysis Reports (MD)]
+  Prose -.-> Analysis
+

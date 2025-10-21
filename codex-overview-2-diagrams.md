@@ -3,6 +3,7 @@
 This document visualizes the core architecture, runtime flow, file hierarchy, and data hand-offs. It is self-contained and aligns with the current source tree and on-disk layout.
 
 ## System Context
+[Rendered: svg](docs/diagrams/svg/system-context.svg) · [png](docs/diagrams/png/system-context.png)
 ```mermaid
 flowchart LR
   subgraph CLI & UX
@@ -64,6 +65,7 @@ ASCII fallback:
 - Storage (Project/Git) + Utils (tokens/YAML/logger) support each step
 
 ## Runtime Flow (New Book → Export)
+[Rendered: svg](docs/diagrams/svg/runtime-flow.svg) · [png](docs/diagrams/png/runtime-flow.png)
 ```mermaid
 sequenceDiagram
   participant U as User
@@ -112,6 +114,7 @@ sequenceDiagram
 ```
 
 ## File Hierarchy (key areas)
+[Rendered: svg](docs/diagrams/svg/file-hierarchy.svg) · [png](docs/diagrams/png/file-hierarchy.png)
 ```mermaid
 flowchart TD
   A[repo/] --> B[src/]
@@ -149,6 +152,7 @@ Notes
 - Variants + judging live under `chapter-beats-variants/` and record decisions.
 
 ## Data Artifacts & Formats
+[Rendered: svg](docs/diagrams/svg/data-artifacts.svg) · [png](docs/diagrams/png/data-artifacts.png)
 ```mermaid
 flowchart LR
   Prem[Premise (JSON)] --> Treat[Treatment (YAML prose)]
@@ -162,6 +166,7 @@ flowchart LR
 ```
 
 ## Prompt Contracts & Validation
+[Rendered: svg](docs/diagrams/svg/prompt-contracts.svg) · [png](docs/diagrams/png/prompt-contracts.png)
 ```mermaid
 flowchart LR
   Loader[prompts/__init__.py\nPromptLoader] --> SysUser[[SYSTEM/USER split]]
@@ -176,6 +181,7 @@ Principles
 - Robust YAML parsing falls back gracefully with explicit warnings and debug saves.
 
 ## Git & Observability
+[Rendered: svg](docs/diagrams/svg/git-observability.svg) · [png](docs/diagrams/png/git-observability.png)
 ```mermaid
 flowchart LR
   Books[books/] -->|shared repo| Git[(.git)]

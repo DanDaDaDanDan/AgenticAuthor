@@ -1,0 +1,7 @@
+flowchart LR
+  Loader[prompts/__init__.py\\nPromptLoader] --> SysUser[[SYSTEM/USER split]]
+  SysUser --> GenPrompts[generation/*.j2]
+  GenPrompts --> Strict[Strict YAML/JSON rules]
+  Strict --> Parsers[utils/yaml_utils.py]
+  ProseVal[validation/prose_fidelity.j2] --> SurgIter[prose_iteration.j2]
+

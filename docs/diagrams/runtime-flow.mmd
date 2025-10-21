@@ -1,0 +1,45 @@
+sequenceDiagram
+  participant U as User
+  participant CLI as agentic / REPL
+  participant Gen as Generation Pipeline
+  participant P as Prompts
+  participant API as OpenRouterClient
+  participant FS as Project Files (books/<name>)
+
+  U->>CLI: /new <name>
+  CLI->>FS: Create project structure + init shared git (books/)
+  U->>CLI: /model (select)
+  U->>CLI: /generate premise
+  CLI->>Gen: premise.py (with taxonomy)
+  Gen->>P: render premise template
+  P->>API: completion (YAML/text)
+  API-->>Gen: premise result
+  Gen->>FS: premise_metadata.json
+
+  U->>CLI: /generate treatment
+  CLI->>Gen: treatment.py
+  Gen->>P: treatment_generation.j2
+  P->>API: completion (YAML with prose)
+  API-->>Gen: treatment
+  Gen->>FS: treatment.md + metadata
+
+  U->>CLI: /generate chapters
+  CLI->>Gen: chapters.py (foundation + single-shot)
+  Gen->>P: chapter_foundation.j2, chapter_single_shot.j2
+  P->>API: completion (YAML)
+  API-->>Gen: foundation + chapter-XX outlines
+  Gen->>FS: chapter-beats/foundation.yaml + chapter-XX.yaml
+
+  U->>CLI: /generate prose all
+  CLI->>Gen: prose.py (sequential)
+  Gen->>FS: load prior prose for context
+  Gen->>P: prose_generation.j2
+  P->>API: streaming completion (prose)
+  API-->>Gen: narrative prose
+  Gen->>FS: chapters/chapter-XX.md
+
+  U->>CLI: /export rtf
+  CLI->>FS: read artifacts
+  CLI->>Export: md/rtf exporters
+  Export->>FS: RTF/MD outputs
+
