@@ -11,13 +11,13 @@ This document lists all hardcoded LLM prompts found in the codebase that should 
    - Config: Added to `config.yaml`
    - Status: COMPLETE
 
-2. **premise.py** - 2 of 6 prompts migrated
+2. **premise.py** - All 6 prompts migrated ✅
    - ✅ Genre detection → `src/prompts/analysis/genre_detection.j2`
    - ✅ Taxonomy iteration → `src/prompts/iteration/taxonomy_update.j2`
-   - ❌ Regenerate with taxonomy (lines 158-180)
-   - ❌ Main premise generation (lines 315-342)
-   - ❌ Taxonomy-only analysis (lines 416-435)
-   - ❌ Premise iteration (lines 521-543)
+   - ✅ Regenerate with taxonomy → `src/prompts/generation/premise_with_taxonomy.j2`
+   - ✅ Main premise generation → `src/prompts/generation/premise_main.j2`
+   - ✅ Taxonomy-only analysis → `src/prompts/analysis/taxonomy_extraction.j2`
+   - ✅ Premise iteration → `src/prompts/iteration/premise_revision.j2`
 
 ### ❌ Remaining to Migrate
 
@@ -25,11 +25,13 @@ This document lists all hardcoded LLM prompts found in the codebase that should 
 
 Found **5 files** with significant hardcoded prompts that should be migrated to the template system:
 
-1. **copy_editor.py** - Full copy editing prompt (512 lines)
-2. **kdp_metadata.py** - Multiple KDP-related prompts (3 separate prompts)
-3. **premise.py** - Multiple premise generation prompts (6 separate prompts)
-4. **iteration/intent_analyzer.py** - Intent checking prompts (2 prompts)
-5. **iteration/diff_generator.py** - Diff generation prompt (1 prompt)
+1. **copy_editor.py** - Full copy editing prompt (512 lines) ✅ COMPLETE
+2. **kdp_metadata.py** - Multiple KDP-related prompts (3 separate prompts) ❌ TODO
+3. **premise.py** - Multiple premise generation prompts (6 separate prompts) ✅ COMPLETE
+4. **iteration/intent_analyzer.py** - Intent checking prompts (2 prompts) ❌ TODO
+5. **iteration/diff_generator.py** - Diff generation prompt (1 prompt) ❌ TODO
+
+**Progress: 8 of 13 prompts migrated (61.5%)**
 
 ## Detailed Listings
 

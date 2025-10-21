@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - copy_editor.py, judging.py
   - **Documentation**: Added docs/HARDCODED_PROMPTS_TO_MIGRATE.md listing remaining prompts to migrate
 
+- **Enhanced Chapter Judge Criteria** 🎯 (v0.3.3+, Completed 2025-10-20)
+  - **Added**: Specific criteria for detecting repetitive beats and duplication
+  - **Judge now penalizes**:
+    - Repetitive beats (e.g., multiple "character discovers evidence" scenes)
+    - Duplication of events (e.g., multiple confrontations with same purpose)
+    - Recycled plot points across chapters
+    - Similar emotional beats repeated without progression
+  - **File**: src/prompts/analysis/chapter_judging.j2
+
 ### Added
 - **Quality-First Prose Generation Architecture** ✨ (v0.3.2+, Completed 2025-10-19)
   - **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content
@@ -55,6 +64,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Validation loops check `auto_fix` and skip user prompts when True
     - Automatically selects ALL issues without prompting
   - **Files Modified**: src/cli/interactive.py, src/generation/prose.py, src/generation/chapters.py
+
+- **Migrated Premise Prompts to Templates** 📝 (v0.3.3+, Completed 2025-10-20)
+  - **Migrated 6 premise prompts** from hardcoded strings to Jinja2 templates:
+    - premise_with_taxonomy.j2 - Regenerate premise with specific taxonomy
+    - premise_main.j2 - Main premise generation
+    - taxonomy_extraction.j2 - Extract taxonomy from treatment
+    - premise_revision.j2 - Iterate premise with feedback
+    - genre_detection.j2 (already done)
+    - taxonomy_update.j2 (already done)
+  - **Files**: All templates in src/prompts/, premise.py updated
+  - **Progress**: 8 of 13 total prompts migrated (61.5%)
+  - **Remaining**: KDP metadata (3), intent analyzer (2), diff generator (1)
 
 - **LLM Prompt Template System** 📝 (v0.3.2+, Completed 2025-10-19)
   - **Problem**: All LLM prompts were hardcoded inline in Python files (500+ lines of f-strings), making them difficult to read, modify, and version
