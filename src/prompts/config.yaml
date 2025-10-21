@@ -49,17 +49,6 @@ generation/dedication_generation:
   format: text
   reserve_tokens: 300
 
-# Validation prompts
-validation/prose_fidelity:
-  temperature: 0.1
-  format: json
-  reserve_tokens: 200
-
-validation/treatment_fidelity:
-  temperature: 0.1
-  format: json
-  reserve_tokens: 200
-
 # Analysis prompts
 analysis/chapter_judging:
   temperature: 0.1

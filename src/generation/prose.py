@@ -181,8 +181,7 @@ class ProseGenerator:
     async def generate_chapter_sequential(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited",
-        auto_fix: bool = False
+        narrative_style: str = "third person limited"
     ) -> str:
         """
         Generate full prose for a chapter using ONLY chapters.yaml (self-contained).
@@ -190,7 +189,6 @@ class ProseGenerator:
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
-            auto_fix: If True, automatically regenerate with all validation issues (no prompts)
 
         Returns:
             Chapter prose text
@@ -362,8 +360,7 @@ class ProseGenerator:
     async def generate_chapter(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited",
-        auto_fix: bool = False
+        narrative_style: str = "third person limited"
     ) -> str:
         """
         Generate full prose for a chapter with complete story context.
@@ -371,23 +368,20 @@ class ProseGenerator:
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
-            auto_fix: If True, automatically regenerate with all validation issues (no prompts)
 
         Returns:
             Chapter prose text
         """
         return await self.generate_chapter_sequential(
             chapter_number=chapter_number,
-            narrative_style=narrative_style,
-            auto_fix=auto_fix
+            narrative_style=narrative_style
         )
 
     async def generate_all_chapters(
         self,
         narrative_style: str = "third person limited",
         start_chapter: int = 1,
-        end_chapter: Optional[int] = None,
-        auto_fix: bool = False
+        end_chapter: Optional[int] = None
     ) -> Dict[int, str]:
         """
         Generate prose for all chapters sequentially with full context.
@@ -396,7 +390,6 @@ class ProseGenerator:
             narrative_style: Narrative voice/style
             start_chapter: First chapter to generate
             end_chapter: Last chapter (None for all)
-            auto_fix: If True, automatically regenerate with all validation issues (no prompts)
 
         Returns:
             Dict mapping chapter numbers to prose
@@ -438,8 +431,7 @@ class ProseGenerator:
 
                     prose = await self.generate_chapter(
                         chapter_number=chapter_num,
-                        narrative_style=narrative_style,
-                        auto_fix=auto_fix
+                        narrative_style=narrative_style
                     )
                     results[chapter_num] = prose
                     success = True

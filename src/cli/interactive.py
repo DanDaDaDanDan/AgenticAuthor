@@ -1810,19 +1810,16 @@ Regenerate the foundation addressing the issues above.
             self.console.print("[yellow]No chapter outlines found. Generate chapters first with /generate chapters[/yellow]")
             return
 
-        # Parse options: chapter number or "all" or --auto
+        # Parse options: chapter number or "all"
         if not options:
-            self.console.print("[yellow]Usage: /generate prose <chapter_number|all> [--auto][/yellow]")
+            self.console.print("[yellow]Usage: /generate prose <chapter_number|all>[/yellow]")
             self.console.print("[dim]  Examples:[/dim]")
             self.console.print("[dim]    /generate prose 1       - Generate chapter 1 with full context[/dim]")
             self.console.print("[dim]    /generate prose all     - Generate all chapters sequentially[/dim]")
-            self.console.print("[dim]    /generate prose 1 --auto  - Auto-fix validation issues[/dim]")
             return
 
-        # Parse flags
+        # Parse target
         parts = options.split()
-        auto_fix = '--auto' in parts
-        parts = [p for p in parts if p != '--auto']
 
         if not parts:
             self.console.print("[yellow]Must specify chapter number or 'all'[/yellow]")
@@ -1834,13 +1831,10 @@ Regenerate the foundation addressing the issues above.
 
         if target.lower() == "all":
             # Generate all chapters sequentially
-            mode_label = "Generating all chapters sequentially with full context"
-            if auto_fix:
-                mode_label += " (auto-fix enabled)"
-            self.console.print(f"[cyan]{mode_label}...[/cyan]")
+            self.console.print("[cyan]Generating all chapters sequentially with full context...[/cyan]")
 
             try:
-                results = await generator.generate_all_chapters(auto_fix=auto_fix)
+                results = await generator.generate_all_chapters()
 
                 if results:
                     # Git commit
@@ -1866,17 +1860,14 @@ Regenerate the foundation addressing the issues above.
                 self.console.rule(style="dim")
 
                 # Generate prose
-                mode_label = f"Generating prose for chapter {chapter_num}"
-                if auto_fix:
-                    mode_label += " (auto-fix)"
-                self.console.print(f"[cyan]{mode_label}...[/cyan]")
+                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
                 self.console.print(f"[dim]Mode: Sequential (Full Context)[/dim]")
                 self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
                 self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
                 self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
                 self.console.print()
 
-                result = await generator.generate_chapter(chapter_number=chapter_num, auto_fix=auto_fix)
+                result = await generator.generate_chapter(chapter_number=chapter_num)
                 commit_suffix = "(sequential)"
 
                 if result:
