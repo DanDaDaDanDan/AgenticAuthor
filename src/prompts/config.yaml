@@ -75,6 +75,11 @@ analysis/unified_analysis:
   format: json
   reserve_tokens: 4000
 
+analysis/treatment_deviation:
+  temperature: 0.1
+  format: json
+  reserve_tokens: 3000
+
 # Validation prompts
 validation/treatment_fidelity:
   temperature: 0.1

@@ -2,8 +2,10 @@
 
 from typing import Dict, Any, Optional, List
 from .base import BaseAnalyzer, AnalysisResult, Issue, Strength, Severity
+from ...prompts import get_prompt_loader
 
-TREATMENT_DEVIATION_PROMPT = """You are a story editor checking how well chapters follow the treatment.
+# Legacy inline prompt - kept for reference but replaced by template
+OLD_TREATMENT_DEVIATION_PROMPT = """You are a story editor checking how well chapters follow the treatment.
 
 TREATMENT (SOURCE OF TRUTH):
 ```
@@ -79,6 +81,11 @@ Respond with ONLY valid JSON:
 class TreatmentDeviationAnalyzer(BaseAnalyzer):
     """Analyzes how well chapters follow the treatment."""
 
+    def __init__(self, client, model: str):
+        """Initialize analyzer with prompt loader."""
+        super().__init__(client, model)
+        self.prompt_loader = get_prompt_loader()
+
     async def analyze(
         self,
         content: str,
@@ -109,22 +116,32 @@ class TreatmentDeviationAnalyzer(BaseAnalyzer):
                 notes=["Treatment text required for deviation analysis"]
             )
 
-        # Create prompt
-        prompt = self._create_analysis_prompt(
-            TREATMENT_DEVIATION_PROMPT,
-            content,
-            content_type,
-            ctx,
-            max_content_words=10000  # Need full chapters and treatment
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "analysis/treatment_deviation",
+            treatment=ctx.get('treatment', ''),
+            content=content
         )
 
-        # Call LLM
-        # FIXED: Changed min_response_tokens to reserve_tokens
-        response = await self._call_llm(
-            prompt,
-            temperature=0.1,  # Low temp for accurate comparison
-            reserve_tokens=3000
+        # Get temperature and reserve_tokens from config
+        temperature = self.prompt_loader.get_temperature("analysis/treatment_deviation", default=0.1)
+        config = self.prompt_loader.get_metadata("analysis/treatment_deviation")
+        reserve_tokens = config.get('reserve_tokens', 3000)
+
+        # Make direct API call with system + user prompts
+        response_data = await self.client.streaming_completion(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": prompts['system']},
+                {"role": "user", "content": prompts['user']}
+            ],
+            temperature=temperature,
+            stream=False,
+            display=False,
+            reserve_tokens=reserve_tokens
         )
+
+        response = response_data.get('content', '').strip()
 
         # Parse response
         try:
