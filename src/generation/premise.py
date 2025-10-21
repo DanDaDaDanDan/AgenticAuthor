@@ -9,6 +9,7 @@ from jinja2 import Template
 from ..api import OpenRouterClient
 from ..models import Project
 from .taxonomies import TaxonomyLoader, PremiseHistory
+from ..prompts import get_prompt_loader
 
 
 DEFAULT_PREMISE_TEMPLATE = """Generate a compelling fiction premise for the {{ genre }} genre.
@@ -57,6 +58,7 @@ class PremiseGenerator:
         self.project = project
         self.taxonomy_loader = TaxonomyLoader()
         self.model = model
+        self.prompt_loader = get_prompt_loader()
 
     async def iterate_taxonomy(
         self,
@@ -82,40 +84,24 @@ class PremiseGenerator:
         full_taxonomy = self.taxonomy_loader.load_merged_taxonomy(genre)
         category_options = self.taxonomy_loader.get_category_options(full_taxonomy)
 
-        prompt = f"""You are updating taxonomy selections for a story premise based on user feedback.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "iteration/taxonomy_update",
+            current_premise=current_premise,
+            current_taxonomy=current_taxonomy,
+            category_options=category_options,
+            feedback=feedback
+        )
 
-CURRENT PREMISE:
-"{current_premise}"
-
-CURRENT TAXONOMY SELECTIONS:
-{json.dumps(current_taxonomy, indent=2)}
-
-AVAILABLE OPTIONS BY CATEGORY:
-{json.dumps(category_options, indent=2)}
-
-USER FEEDBACK:
-"{feedback}"
-
-Based on the feedback, update the taxonomy selections. Keep unchanged categories as-is.
-
-Return a JSON object with:
-{{
-    "updated_taxonomy": {{
-        "category_name": ["selected", "values"],
-        ...
-    }},
-    "changes_made": ["description of what changed"],
-    "regenerate_premise": true/false,
-    "reasoning": "why these changes were made"
-}}
-
-Set regenerate_premise to true if the changes are significant enough to warrant regenerating the premise."""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("iteration/taxonomy_update", default=0.4)
 
         try:
             result = await self.client.json_completion(
                 model=self.model,
-                prompt=prompt,
-                temperature=0.4,
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
+                temperature=temperature,
                 display_label="Analyzing taxonomy changes"
             )
 
@@ -212,27 +198,22 @@ Return a JSON object with this structure:
         """
         available_genres = list(self.taxonomy_loader.GENRES.keys())
 
-        prompt = f"""Analyze this story concept and determine the most appropriate genre.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "analysis/genre_detection",
+            concept=concept,
+            available_genres=', '.join(available_genres)
+        )
 
-CONCEPT: "{concept}"
-
-AVAILABLE GENRES:
-{', '.join(available_genres)}
-
-Return ONLY a JSON object with this structure:
-{{
-    "genre": "detected_genre_name",
-    "confidence": 0.95,
-    "reasoning": "Brief explanation of why this genre fits"
-}}
-
-Choose the single best-fitting genre from the available list. If the concept could fit multiple genres, pick the primary one."""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("analysis/genre_detection", default=0.3)
 
         try:
             result = await self.client.json_completion(
                 model=self.model,
-                prompt=prompt,
-                temperature=0.3,  # Low temperature for consistent detection
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
+                temperature=temperature,
                 display_label="Detecting genre"
             )
 

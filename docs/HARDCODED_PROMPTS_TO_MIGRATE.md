@@ -2,6 +2,25 @@
 
 This document lists all hardcoded LLM prompts found in the codebase that should be migrated to Jinja2 templates in `src/prompts/`.
 
+## Migration Status (2025-10-20)
+
+### ✅ Completed Migrations
+
+1. **copy_editor.py** - Professional copy editing prompt
+   - Template: `src/prompts/editing/copy_edit.j2`
+   - Config: Added to `config.yaml`
+   - Status: COMPLETE
+
+2. **premise.py** - 2 of 6 prompts migrated
+   - ✅ Genre detection → `src/prompts/analysis/genre_detection.j2`
+   - ✅ Taxonomy iteration → `src/prompts/iteration/taxonomy_update.j2`
+   - ❌ Regenerate with taxonomy (lines 158-180)
+   - ❌ Main premise generation (lines 315-342)
+   - ❌ Taxonomy-only analysis (lines 416-435)
+   - ❌ Premise iteration (lines 521-543)
+
+### ❌ Remaining to Migrate
+
 ## Summary
 
 Found **5 files** with significant hardcoded prompts that should be migrated to the template system:

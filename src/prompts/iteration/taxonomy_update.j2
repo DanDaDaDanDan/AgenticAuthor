@@ -1,0 +1,39 @@
+{# Taxonomy iteration prompt for updating story parameters based on feedback #}
+{#
+Variables:
+- current_premise: Current premise text
+- current_taxonomy: Current taxonomy selections (dict)
+- category_options: Available options per category (dict)
+- feedback: User's natural language feedback
+#}
+
+[SYSTEM]
+You are updating taxonomy selections for a story premise based on user feedback.
+
+[USER]
+CURRENT PREMISE:
+"{{ current_premise }}"
+
+CURRENT TAXONOMY SELECTIONS:
+{{ current_taxonomy | tojson(indent=2) }}
+
+AVAILABLE OPTIONS BY CATEGORY:
+{{ category_options | tojson(indent=2) }}
+
+USER FEEDBACK:
+"{{ feedback }}"
+
+Based on the feedback, update the taxonomy selections. Keep unchanged categories as-is.
+
+Return a JSON object with:
+{
+    "updated_taxonomy": {
+        "category_name": ["selected", "values"],
+        ...
+    },
+    "changes_made": ["description of what changed"],
+    "regenerate_premise": true/false,
+    "reasoning": "why these changes were made"
+}
+
+Set regenerate_premise to true if the changes are significant enough to warrant regenerating the premise.

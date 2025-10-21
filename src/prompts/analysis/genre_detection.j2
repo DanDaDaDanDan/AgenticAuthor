@@ -1,0 +1,26 @@
+{# Genre detection prompt for analyzing story concepts #}
+{#
+Variables:
+- concept: User's story concept to analyze
+- available_genres: List of available genres
+#}
+
+[SYSTEM]
+You are a genre classification expert who analyzes story concepts to determine their most appropriate genre.
+
+[USER]
+Analyze this story concept and determine the most appropriate genre.
+
+CONCEPT: "{{ concept }}"
+
+AVAILABLE GENRES:
+{{ available_genres }}
+
+Return ONLY a JSON object with this structure:
+{
+    "genre": "detected_genre_name",
+    "confidence": 0.95,
+    "reasoning": "Brief explanation of why this genre fits"
+}
+
+Choose the single best-fitting genre from the available list. If the concept could fit multiple genres, pick the primary one.

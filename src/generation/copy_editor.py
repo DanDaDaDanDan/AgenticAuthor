@@ -11,6 +11,7 @@ from rich.panel import Panel
 
 from ..api import OpenRouterClient
 from ..models import Project
+from ..prompts import get_prompt_loader
 
 
 console = Console()
@@ -41,6 +42,7 @@ class CopyEditor:
         self.project = project
         self.model = model
         self.edited_chapters = {}  # Store edited prose as we process
+        self.prompt_loader = get_prompt_loader()
 
     async def copy_edit_all_chapters(self, show_preview: bool = True, auto_apply: bool = False) -> Dict[str, Any]:
         """
@@ -228,39 +230,7 @@ class CopyEditor:
         Returns:
             Result dict with edited_chapter, changes_made, statistics, etc.
         """
-        # Build comprehensive prompt
-        prompt = self._build_copy_edit_prompt(chapter_num, chapter_text, context)
-
-        # Call LLM with streaming enabled to show edited text as it's generated
-        result = await self.client.json_completion(
-            model=self.model,
-            prompt=prompt,
-            temperature=0.3,  # Low temp for precision and consistency
-            display_field="edited_chapter",  # Stream the edited chapter text
-            display_label=f"Copy editing chapter {chapter_num}",
-            display_mode="field",  # Extract and display just the edited_chapter field
-            reserve_tokens=8000  # Full chapter + detailed changes
-        )
-
-        return result
-
-    def _build_copy_edit_prompt(
-        self,
-        chapter_num: int,
-        chapter_text: str,
-        context: Dict[str, Any]
-    ) -> str:
-        """
-        Build comprehensive copy editing prompt with full context.
-
-        Args:
-            chapter_num: Chapter number being edited
-            chapter_text: Current chapter prose
-            context: Full context dict
-
-        Returns:
-            Complete prompt string
-        """
+        # Build comprehensive prompts using template
         # Format edited chapters (already perfect)
         edited_chapters_text = ""
         if context['edited_chapters']:
@@ -287,228 +257,38 @@ class CopyEditor:
                 current_chapter_text = ch['text']
                 break
 
-        # Extract character info from chapters.yaml for easy reference
-        characters_info = ""
-        chapters_yaml = context['chapters_yaml']
-        if chapters_yaml and 'characters' in chapters_yaml:
-            chars = chapters_yaml['characters']
-            char_list = []
-            for char in chars:
-                name = char.get('name', 'Unknown')
-                role = char.get('role', '')
-                char_list.append(f"- {name} ({role})")
-            characters_info = "\n".join(char_list)
-
         # Serialize chapters.yaml for context
         import yaml
-        chapters_yaml_str = yaml.dump(chapters_yaml, sort_keys=False, allow_unicode=True)
+        chapters_yaml_str = yaml.dump(context['chapters_yaml'], sort_keys=False, allow_unicode=True)
 
-        return f"""You are a professional copy editor performing a final editing pass on a novel.
+        # Render prompts from template
+        prompts = self.prompt_loader.render(
+            "editing/copy_edit",
+            chapter_num=chapter_num,
+            total_chapters=context['total_chapters'],
+            chapters_yaml_str=chapters_yaml_str,
+            edited_chapters_text=edited_chapters_text,
+            remaining_chapters_text=remaining_chapters_text,
+            current_chapter_text=current_chapter_text,
+            original_word_count=len(chapter_text.split())
+        )
 
-This is CHAPTER {chapter_num} of {context['total_chapters']}.
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("editing/copy_edit", default=0.3)
 
-═══════════════════════════════════════════════════════════════
-COPY EDITING SCOPE - CRITICAL GUIDELINES
-═══════════════════════════════════════════════════════════════
+        # Call LLM with streaming enabled to show edited text as it's generated
+        result = await self.client.json_completion(
+            model=self.model,
+            prompt=prompts['user'],
+            system_prompt=prompts['system'],
+            temperature=temperature,
+            display_field="edited_chapter",  # Stream the edited chapter text
+            display_label=f"Copy editing chapter {chapter_num}",
+            display_mode="field",  # Extract and display just the edited_chapter field
+            reserve_tokens=8000  # Full chapter + detailed changes
+        )
 
-✓ YOU MUST FIX:
-  • Grammar errors (subject-verb agreement, tense consistency, etc.)
-  • Spelling mistakes and typos
-  • Punctuation errors (commas, semicolons, dialogue formatting)
-  • Inconsistent character details across chapters
-    - Names, physical descriptions, ages
-    - Pronoun consistency (especially with unisex names!)
-    - Character voice and speech patterns
-  • Timeline contradictions with other chapters
-  • Unclear or ambiguous sentences that confuse readers
-  • Inconsistent terminology or proper nouns
-  • Dialogue formatting issues
-  • Awkward or confusing sentence structures
-  • Factual continuity errors with other chapters
-
-✗ YOU MUST NOT CHANGE:
-  • Plot events or story structure
-  • Character personalities, motivations, or arcs
-  • Dialogue CONTENT (only fix formatting/grammar)
-  • Author's narrative voice or stylistic choices
-  • Scene order, pacing, or dramatic beats
-  • Creative choices that aren't actual errors
-
-═══════════════════════════════════════════════════════════════
-CRITICAL: PRONOUN CONSISTENCY
-═══════════════════════════════════════════════════════════════
-
-Pay special attention to character pronouns:
-- If a character has a unisex name (Alex, Jordan, Sam, etc.), verify pronouns match other chapters
-- Check for accidental pronoun switches within a chapter
-- Ensure "they" is used consistently if character is non-binary
-- Flag any ambiguous pronoun usage that could confuse readers
-
-Example issues to catch:
-❌ "Alex walked in. She looked around. He sat down." (inconsistent)
-✓ "Alex walked in. He looked around. He sat down." (consistent)
-
-❌ "Sam and Jordan talked. She agreed with him." (ambiguous - who is she/him?)
-✓ "Sam and Jordan talked. Sam agreed with Jordan." (clear)
-
-═══════════════════════════════════════════════════════════════
-STORY STRUCTURE (chapters.yaml - self-contained reference)
-═══════════════════════════════════════════════════════════════
-
-```yaml
-{chapters_yaml_str}
-```
-
-This contains:
-- metadata: genre, tone, themes, pacing, narrative style
-- characters: full profiles, backgrounds, motivations, arcs, relationships
-- world: setting, locations, systems, atmosphere
-- chapters: detailed outlines for all chapters
-
-Use this for:
-- Character consistency (names, descriptions, pronouns, relationships)
-- World-building details
-- Timeline and plot progression
-- Thematic consistency
-
-═══════════════════════════════════════════════════════════════
-EDITED CHAPTERS (perfect versions for consistency reference)
-═══════════════════════════════════════════════════════════════
-
-{edited_chapters_text if edited_chapters_text else "No chapters edited yet - this is the first chapter."}
-
-═══════════════════════════════════════════════════════════════
-REMAINING CHAPTERS (original versions for forward reference)
-═══════════════════════════════════════════════════════════════
-
-{remaining_chapters_text if remaining_chapters_text else "No remaining chapters - this is the last chapter."}
-
-═══════════════════════════════════════════════════════════════
-CURRENT CHAPTER PROSE TO EDIT (Chapter {chapter_num})
-═══════════════════════════════════════════════════════════════
-
-{current_chapter_text}
-
-═══════════════════════════════════════════════════════════════
-EDITING PROCESS
-═══════════════════════════════════════════════════════════════
-
-1. Read current chapter carefully
-2. Cross-reference with previous edited chapters for:
-   - Character consistency (names, descriptions, pronouns)
-   - Timeline continuity
-   - Terminology consistency
-   - Character voice patterns
-3. Fix all mechanical errors (grammar, spelling, punctuation)
-4. Clarify confusing or ambiguous sentences
-5. Ensure dialogue formatting is correct and consistent
-6. Verify pronoun usage is consistent and unambiguous
-7. Maintain the author's voice throughout
-
-EDITING EXAMPLES:
-
-GOOD EDITS (these are appropriate):
-Before: "Sarah walked in the room, her eyes scanning the crowed."
-After: "Sarah walked into the room, her eyes scanning the crowd."
-Why: Fixed preposition and spelling error
-
-Before: He said "I don't know."
-After: He said, "I don't know."
-Why: Added comma before dialogue (standard formatting)
-
-Before: "Alex grabbed his coat. She ran out the door."
-After: "Alex grabbed his coat. He ran out the door."
-Why: Fixed pronoun inconsistency (Alex is male based on previous chapters)
-
-Before: "The detective examined the clues. They were confusing."
-After: "The detective examined the clues. The evidence was confusing."
-Why: Clarified ambiguous "they" - could mean detective or clues
-
-BAD EDITS (don't do these):
-Before: "Sarah walked into the room."
-After: "Sarah strode confidently into the spacious room."
-Why WRONG: Added details and changed author's voice
-
-Before: "He was angry."
-After: "He was furious."
-Why WRONG: Changed emotional intensity without author's intent
-
-Before: "It was raining."
-After: "It was a dark and stormy night."
-Why WRONG: Embellished beyond fixing an error
-
-═══════════════════════════════════════════════════════════════
-REQUIRED OUTPUT FORMAT
-═══════════════════════════════════════════════════════════════
-
-Return JSON with this exact structure:
-
-{{
-  "edited_chapter": "Complete edited chapter text with all fixes applied. Include the full chapter prose.",
-
-  "changes_made": [
-    "List every category of change made, with counts",
-    "Example: Fixed 7 spelling errors",
-    "Example: Corrected 12 dialogue punctuation errors",
-    "Example: Fixed pronoun inconsistency in paragraph 5 (changed 'she' to 'he' to match chapter 2)",
-    "Example: Clarified ambiguous 'they' in paragraph 8",
-    "Example: Changed 'grey' to 'gray' (3 instances) for consistency with previous chapters"
-  ],
-
-  "continuity_fixes": [
-    "List any continuity errors found and fixed",
-    "Example: Chapter 2 established Alex uses he/him pronouns - fixed 2 instances of 'she' in this chapter",
-    "Example: Previous chapter showed character with injured left leg - fixed reference to 'right leg' in paragraph 10",
-    "Example: Character's eye color was blue in chapter 3 - fixed 'green eyes' reference in paragraph 15"
-  ],
-
-  "pronoun_consistency": {{
-    "issues_found": 0,
-    "issues_fixed": [
-      "Specific pronoun fixes made",
-      "Example: Alex - fixed she→he in paragraph 5",
-      "Example: Sam - clarified ambiguous 'they' in paragraph 12"
-    ],
-    "potential_concerns": [
-      "Any remaining pronoun usage that might be ambiguous",
-      "Example: 'Jordan and Sam talked. They agreed.' - 'they' could mean both or just one"
-    ]
-  }},
-
-  "statistics": {{
-    "original_word_count": {len(chapter_text.split())},
-    "edited_word_count": 0,
-    "word_count_change_percent": 0.0,
-    "total_errors_fixed": 0,
-    "mechanical_errors": 0,
-    "continuity_errors": 0,
-    "clarity_improvements": 0
-  }},
-
-  "character_tracking": {{
-    "characters_in_this_chapter": ["list all characters who appear"],
-    "new_character_details": [
-      "Any new details about characters revealed this chapter",
-      "Example: Alex's last name revealed as Chen",
-      "Example: Sarah's age mentioned as 28"
-    ]
-  }},
-
-  "review_flags": [
-    "Flag anything that needs human review",
-    "Example: Possible plot inconsistency with chapter 2 - please verify timeline",
-    "Example: Character pronoun unclear - is Morgan male or female?",
-    "Example: Large clarification in paragraph 12 - please verify maintains author's intent"
-  ]
-}}
-
-REMEMBER:
-- This is copy editing the PROSE ONLY, NOT creative rewriting
-- You are NOT editing premise_metadata.json, treatment.md, or chapters.yaml - those are read-only reference
-- Preserve the author's voice and creative choices
-- Fix errors and ensure consistency
-- When in doubt about a creative choice vs an error, flag it for review
-- Pay special attention to pronoun consistency across all chapters"""
+        return result
 
     def _verify_edit_quality(self, original: str, result: Dict[str, Any]) -> List[str]:
         """
