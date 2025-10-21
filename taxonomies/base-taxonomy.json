@@ -221,7 +221,7 @@
           "variations": ["single narrator", "multiple first-person", "unreliable narrator"]
         },
         "third_limited": {
-          "name": "Third Person Limited",
+          "name": "Third Person Limited (Single POV)",
           "description": "He/she with one character's thoughts",
           "characteristics": ["focused", "some distance", "one consciousness"],
           "variations": ["close third", "distant third", "free indirect"]
