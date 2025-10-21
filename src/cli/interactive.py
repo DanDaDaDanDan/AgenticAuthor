@@ -23,8 +23,6 @@ from .command_completer import SlashCommandCompleter, create_command_description
 from .auto_suggest import SlashCommandAutoSuggest
 from ..generation import PremiseGenerator, TreatmentGenerator, ChapterGenerator, ProseGenerator
 from ..generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
-from ..generation.iteration import IterationCoordinator
-from ..generation.analysis import AnalysisCoordinator
 from ..utils.logging import setup_logging, get_logger
 
 
@@ -45,8 +43,6 @@ class InteractiveSession:
         self.project: Optional[Project] = None
         self.git: Optional[GitManager] = None
         self.running = False
-        self.iteration_target: Optional[str] = None  # Track what to iterate on
-        self.iteration_chapters: Optional[list] = None  # Track which chapters to iterate (None = all)
 
         # Use provided logger or setup basic logging
         self.session_logger = logger
@@ -70,9 +66,7 @@ class InteractiveSession:
             'models': self.list_models,
             'generate': self.generate_content,
             'finalize': self.finalize_content,
-            'iterate': self.iterate_content,
             'cull': self.cull_content,
-            'analyze': self.analyze_story,
             'metadata': self.manage_metadata,
             'export': self.export_story,
             'copyedit': self.copyedit_story,
@@ -2347,120 +2341,6 @@ Regenerate the foundation addressing the issues above.
 
         return sorted(list(chapters))
 
-    async def iterate_content(self, args: str):
-        """Set iteration target for natural language feedback."""
-        if not args:
-            # Show current target or clear it
-            if self.iteration_target:
-                chapters_info = ""
-                if self.iteration_chapters:
-                    chapters_str = ','.join(str(c) for c in self.iteration_chapters)
-                    chapters_info = f" (chapters: {chapters_str})"
-
-                self._print(f"[dim]Current iteration target:[/dim] [cyan]{self.iteration_target}{chapters_info}[/cyan]")
-                self._print("[dim]Type /iterate to clear target[/dim]")
-                self.iteration_target = None
-                self.iteration_chapters = None
-
-                # Clear from project metadata
-                if self.project and self.project.metadata:
-                    self.project.metadata.iteration_target = None
-                    self.project.save_metadata()
-            else:
-                self._print("[yellow]Usage: /iterate <target> [chapter-spec][/yellow]")
-                self._print("[dim]Set what to iterate on (premise, treatment, chapters, prose)[/dim]")
-                self._print("[dim]Then just type your feedback naturally[/dim]")
-                self._print()
-                self._print("[dim]Examples:[/dim]")
-                self._print("  [bold]/iterate treatment[/bold]")
-                self._print("  [dim]Add more action scenes[/dim]")
-                self._print()
-                self._print("  [bold]/iterate chapters[/bold]  [dim]# All chapters[/dim]")
-                self._print("  [bold]/iterate chapters 3-10[/bold]  [dim]# Only chapters 3-10[/dim]")
-                self._print("  [dim]Make them more tense[/dim]")
-                self._print()
-                self._print("  [bold]/iterate prose 1,2[/bold]  [dim]# Only prose for chapters 1 and 2[/dim]")
-                self._print("  [dim]Add more dialogue[/dim]")
-            return
-
-        # Parse target and optional chapter specification
-        parts = args.strip().split(maxsplit=1)
-        target = parts[0].lower()
-        chapter_spec = parts[1] if len(parts) > 1 else None
-
-        valid_targets = ['premise', 'treatment', 'chapters', 'prose', 'taxonomy']
-
-        if target not in valid_targets:
-            self._print(f"[red]Invalid target:[/red] {target}")
-            self._print(f"[dim]Valid targets: {', '.join(valid_targets)}[/dim]")
-            return
-
-        # Parse chapter specification if provided
-        chapters = None
-        if chapter_spec:
-            # Only chapters and prose support chapter specifications
-            if target not in ['chapters', 'prose']:
-                self._print(f"[red]Error:[/red] Chapter specifications are only supported for 'chapters' and 'prose' targets")
-                self._print(f"[dim]Usage: /iterate {target} (without chapter specification)[/dim]")
-                return
-
-            try:
-                chapters = self._parse_chapter_spec(chapter_spec)
-                if not chapters:
-                    self._print(f"[red]Error:[/red] No valid chapters specified")
-                    return
-
-                # Validate that chapters exist in project (for prose target)
-                if target == 'prose' and self.project:
-                    existing_chapters = self.project.list_chapters()
-                    if existing_chapters:
-                        max_chapter = len(existing_chapters)
-                        invalid_chapters = [c for c in chapters if c > max_chapter]
-                        if invalid_chapters:
-                            self._print(f"[red]Error:[/red] Project only has {max_chapter} chapters, but you specified: {', '.join(map(str, invalid_chapters))}")
-                            self._print(f"[dim]Valid chapter range: 1-{max_chapter}[/dim]")
-                            return
-            except ValueError as e:
-                self._print(f"[red]Error parsing chapter specification:[/red] {e}")
-                return
-
-        self.iteration_target = target
-        self.iteration_chapters = chapters
-
-        # Save to project metadata (target only, not chapters - that's session-specific)
-        if self.project and self.project.metadata:
-            self.project.metadata.iteration_target = target
-            self.project.save_metadata()
-
-        # Display confirmation
-        if chapters:
-            chapters_str = ','.join(str(c) for c in chapters)
-            self._print(f"[green]✓[/green] Iteration target set to: [cyan]{target}[/cyan] (chapters: {chapters_str})")
-        else:
-            self._print(f"[green]✓[/green] Iteration target set to: [cyan]{target}[/cyan] (all)")
-
-        self._print("[dim]Now type your feedback naturally (no / needed)[/dim]")
-        self._print()
-        self._print("[dim]Examples:[/dim]")
-        if target == 'premise':
-            self._print("  Add more unique elements")
-            self._print("  Make it more genre-specific")
-        elif target == 'treatment':
-            self._print("  Add more conflict in act 2")
-            self._print("  Develop the antagonist's motivation")
-        elif target == 'chapters':
-            if chapters:
-                self._print(f"  Make them more tense (will update chapters {chapters_str})")
-            else:
-                self._print("  Make chapter 3 more tense")
-                self._print("  Add a subplot about the protagonist's past")
-        elif target == 'prose':
-            if chapters:
-                self._print(f"  Add more dialogue (will update chapters {chapters_str})")
-            else:
-                self._print("  Add more dialogue to chapter 5")
-                self._print("  Enhance sensory details in the opening")
-
     async def _generate_marketing(self, options: str = ""):
         """Generate KDP marketing metadata (description, keywords, categories, etc.)."""
         from ..generation.kdp_metadata import KDPMetadataGenerator
@@ -2623,139 +2503,6 @@ Regenerate the foundation addressing the issues above.
             self._print(f"[red]✗ Error:[/red] {str(e)}")
             if self.session_logger:
                 self.session_logger.log_error(e, "Cull failed")
-
-    async def analyze_story(self, args: str):
-        """Run story analysis."""
-        if not self.project:
-            self.console.print("[yellow]⚠  No project loaded[/yellow]")
-            return
-
-        if not self.client:
-            self.console.print("[yellow]⚠  API client not initialized[/yellow]")
-            return
-
-        # Parse args: premise / treatment / chapters / chapter N / prose / prose N / all
-        parts = args.strip().split() if args else []
-
-        if not parts:
-            content_type = "all"
-            target_id = None
-        elif parts[0] in ['premise', 'treatment', 'chapters']:
-            content_type = parts[0]
-            target_id = None
-        elif parts[0] == 'chapter' and len(parts) > 1:
-            content_type = 'chapter'
-            target_id = parts[1]
-        elif parts[0] == 'prose' and len(parts) > 1:
-            content_type = 'prose'
-            target_id = parts[1]
-        elif parts[0] == 'prose':
-            # Default to analyzing all prose chapters
-            content_type = 'prose'
-            target_id = "1"  # Start with chapter 1
-        else:
-            self.console.print("[red]Invalid analysis target[/red]")
-            self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all]")
-            return
-
-        try:
-            # Initialize coordinator
-            coordinator = AnalysisCoordinator(
-                client=self.client,
-                project=self.project,
-                model=self.settings.active_model
-            )
-
-            # Show progress
-            content_desc = content_type
-            if target_id:
-                content_desc += f" {target_id}"
-
-            self.console.print(f"\n[bold cyan]📊 Analyzing {content_desc}...[/bold cyan]")
-            self.console.print(f"   ⏳ Reading and evaluating...\n")
-
-            # Ensure git repo exists
-            self._ensure_git_repo()
-
-            # Run analysis
-            result = await coordinator.analyze(content_type, target_id)
-
-            # Display results
-            self._display_analysis_results(result)
-
-            # Git commit
-            if result.get('success', True):
-                content_desc = result.get('content_type', content_type)
-                if result.get('target_id'):
-                    content_desc += f" {result['target_id']}"
-                self._commit(f"Analyze {content_desc}")
-
-        except Exception as e:
-            self.console.print(f"\n[red]✗ Analysis failed:[/red] {str(e)}")
-            if self.session_logger:
-                self.session_logger.log_error(e, "Analysis failed")
-
-    def _display_analysis_results(self, result: Dict[str, Any]):
-        """Display analysis results in simplified format."""
-        self.console.print()
-        self.console.rule(style="cyan")
-
-        # Header
-        content_desc = result['content_type'].title()
-        if result.get('target_id'):
-            content_desc += f" {result['target_id']}"
-
-        self.console.print(f"\n[bold]📊 Analysis: {content_desc}[/bold]\n")
-
-        # Grade and summary (extract from summary field which contains grade + justification + assessment)
-        summary_parts = result.get('summary', '').split('\n')
-        if len(summary_parts) >= 3:
-            grade = summary_parts[0]
-            justification = summary_parts[1]
-            assessment = '\n'.join(summary_parts[3:])  # Skip empty line at index 2
-
-            self.console.print(f"[bold green]Grade:[/bold green] {grade}")
-            self.console.print(f"[dim]{justification}[/dim]\n")
-            self.console.print(f"{assessment}\n")
-        else:
-            # Fallback if format is different
-            self.console.print(f"{result.get('summary', 'No assessment available')}\n")
-
-        # Feedback (stored in issues, but display as simple bullet points)
-        dimension_results = result.get('dimension_results', [])
-        if dimension_results:
-            # Get issues from first dimension result (unified analysis has single dimension)
-            issues = dimension_results[0].get('issues', [])
-            if issues:
-                self.console.print("[bold]📝 Feedback:[/bold]")
-                for issue in issues:
-                    # Issue description contains the full feedback point
-                    self.console.print(f"  • {issue['description']}")
-                self.console.print()
-
-        # Strengths
-        if dimension_results:
-            strengths = dimension_results[0].get('strengths', [])
-            if strengths:
-                self.console.print("[bold green]✓ Strengths:[/bold green]")
-                for strength in strengths:
-                    self.console.print(f"  • {strength['description']}")
-                self.console.print()
-
-        # Next steps (stored in notes)
-        if dimension_results:
-            notes = dimension_results[0].get('notes', [])
-            if notes:
-                for note in notes:
-                    if note.startswith('Next steps:'):
-                        next_steps = note.replace('Next steps: ', '')
-                        self.console.print(f"[bold cyan]🎯 Next Steps:[/bold cyan]")
-                        self.console.print(f"  {next_steps}\n")
-
-        # Report saved
-        self.console.rule(style="cyan")
-        self.console.print(f"\n[green]Full report saved:[/green] {result['report_path']}")
-        self.console.print()
 
     async def manage_metadata(self, args: str):
         """

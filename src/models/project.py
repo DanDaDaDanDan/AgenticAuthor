@@ -17,7 +17,6 @@ class ProjectMetadata(BaseModel):
     model: Optional[str] = Field(None, description="Primary model used")
     story_type: Optional[str] = Field(None, description="Story type: short_form or long_form")
     status: str = Field("draft", description="Project status")
-    iteration_target: Optional[str] = Field(None, description="Current iteration target (premise/treatment/chapters/prose)")
 
     def update_timestamp(self):
         """Update the last modified timestamp."""
