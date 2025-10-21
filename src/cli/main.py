@@ -109,9 +109,12 @@ def new(
             project_dir,
             name=name,
             genre=genre,
-            author=author,
             model=settings.active_model
         )
+
+        # Set book metadata author if provided (different from project metadata)
+        if author:
+            project.set_book_metadata('author', author)
 
         # Initialize shared git at books/ level if needed
         from ..storage import GitManager
@@ -159,7 +162,6 @@ def list():
                             'name': project.name,
                             'genre': project.metadata.genre or "—",
                             'status': project.metadata.status,
-                            'words': project.metadata.word_count,
                             'updated': str(project.metadata.updated_at)[:10]
                         })
                 except Exception:
@@ -176,7 +178,6 @@ def list():
         table.add_column("Name", style="cyan")
         table.add_column("Genre")
         table.add_column("Status")
-        table.add_column("Words", justify="right")
         table.add_column("Updated")
 
         for p in sorted(projects, key=lambda x: x['updated'], reverse=True):
@@ -184,7 +185,6 @@ def list():
                 p['name'],
                 p['genre'],
                 p['status'],
-                f"{p['words']:,}" if p['words'] > 0 else "—",
                 p['updated']
             )
 

@@ -56,6 +56,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Created docs/PROJECT_YAML_USAGE.md**: Complete reference of what reads project.yaml and which fields
   - **Created docs/INLINE_JINJA2_TEMPLATES_EXPLAINED.md**: Explains inline vs externalized templates
 
+- **ProjectMetadata Cleanup: Removed Unused Fields** 🧹 (v0.3.3+, 2025-10-21)
+  - **Removed from ProjectMetadata** (src/models/project.py):
+    - `word_count` - Removed tracking and display (calculated on-demand if needed)
+    - `chapter_count` - Removed tracking and display
+    - `author` - Unused (book_metadata.author used instead)
+    - `taxonomy` - Written but never read
+    - `tags` - Never read or written
+    - `custom_data` - Never read or written
+  - **Files Updated**:
+    - src/models/project.py: Removed 6 fields from ProjectMetadata class (8 fields remaining)
+    - src/models/project.py: Removed _update_word_count() method
+    - src/models/project.py: Removed word_count/chapter_count assignments in save_chapter(), save_story(), save_chapter_outlines()
+    - src/cli/main.py: Removed word_count from project list display, author now sets book_metadata
+    - src/cli/interactive.py: Removed word_count/chapter_count from status display and project selection
+  - **Rationale**: Simplified project.yaml to only essential fields that are actively used
+  - **Glue Fraction**: Confirmed already removed in commit b382311 (Oct 19, 2025)
+
 ### Added
 - **Quality-First Prose Generation Architecture** ✨ (v0.3.2+, Completed 2025-10-19)
   - **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content

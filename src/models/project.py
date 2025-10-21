@@ -13,17 +13,11 @@ class ProjectMetadata(BaseModel):
     name: str = Field(description="Project name")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    author: Optional[str] = Field(None, description="Author name")
     genre: Optional[str] = Field(None, description="Story genre")
-    taxonomy: Optional[str] = Field(None, description="Taxonomy file used")
     model: Optional[str] = Field(None, description="Primary model used")
-    word_count: int = Field(0, description="Total word count")
-    chapter_count: int = Field(0, description="Number of chapters")
     story_type: Optional[str] = Field(None, description="Story type: short_form or long_form")
     status: str = Field("draft", description="Project status")
-    tags: List[str] = Field(default_factory=list, description="Project tags")
     iteration_target: Optional[str] = Field(None, description="Current iteration target (premise/treatment/chapters/prose)")
-    custom_data: Dict[str, Any] = Field(default_factory=dict, description="Custom metadata")
 
     def update_timestamp(self):
         """Update the last modified timestamp."""
@@ -459,7 +453,6 @@ class Project:
             yaml.dump(outlines, f, default_flow_style=False, sort_keys=False)
         if self.metadata:
             self.metadata.update_timestamp()
-            self.metadata.chapter_count = len(outlines.get('chapters', []))
             self.save_metadata()
 
     def get_chapters_yaml(self) -> Optional[Dict[str, Any]]:
@@ -533,9 +526,8 @@ class Project:
         chapter_file = self.chapters_dir / f"chapter-{chapter_num:02d}.md"
         chapter_file.write_text(content, encoding='utf-8')
 
-        # Update word count
+        # Update timestamp
         if self.metadata:
-            self._update_word_count()
             self.metadata.update_timestamp()
             self.save_metadata()
 
@@ -565,9 +557,8 @@ class Project:
         """
         self.story_file.write_text(content, encoding='utf-8')
 
-        # Update word count and timestamp
+        # Update timestamp
         if self.metadata:
-            self.metadata.word_count = len(content.split())
             self.metadata.update_timestamp()
             self.save_metadata()
 
@@ -706,17 +697,6 @@ class Project:
 
         analysis_file = self.analysis_dir / f"{analysis_type}.md"
         analysis_file.write_text(content, encoding='utf-8')
-
-    def _update_word_count(self):
-        """Update the total word count from all chapters."""
-        total_words = 0
-        for chapter_file in self.list_chapters():
-            content = chapter_file.read_text(encoding='utf-8')
-            # Simple word count (can be improved)
-            total_words += len(content.split())
-
-        if self.metadata:
-            self.metadata.word_count = total_words
 
     @classmethod
     def create(

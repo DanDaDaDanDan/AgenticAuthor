@@ -887,8 +887,6 @@ class InteractiveSession:
                     if project.metadata:
                         if project.metadata.genre:
                             info_parts.append(f"[dim]{project.metadata.genre}[/dim]")
-                        if project.metadata.word_count:
-                            info_parts.append(f"[dim]{project.metadata.word_count:,} words[/dim]")
                         if project.metadata.updated_at:
                             days_ago = (datetime.now(timezone.utc) - project.metadata.updated_at).days
                             if days_ago == 0:
@@ -1012,10 +1010,6 @@ class InteractiveSession:
 
             # Show current model
             table.add_row("Model", self.project.metadata.model or self.settings.active_model or "Not set")
-
-            table.add_row("Words", str(self.project.metadata.word_count))
-            if not is_short_form:
-                table.add_row("Chapters", str(self.project.metadata.chapter_count))
             table.add_row("Status", self.project.metadata.status)
 
         # Check what exists
