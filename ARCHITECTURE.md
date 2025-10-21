@@ -115,10 +115,10 @@
  ## Project Layout on Disk (`books/<project>/`)
  - project.yaml — Project metadata (name, model, counts, timestamps).
  - premise/ — `premise_metadata.json`, premise candidates.
- - treatment/ — `treatment.md`, `treatment_metadata.json`.
- - chapter‑beats/ — `foundation.yaml` plus per‑chapter YAML (`chapter‑NN.yaml`).
+ - treatment/ — `treatment.md`.
+ - chapter‑beats/ — `foundation.yaml` plus per‑chapter outline beats as YAML (`chapter‑NN.yaml`).
  - chapter‑beats‑variants/ — Variant runs (per‑variant chapter YAML) and decisions.
- - chapters/ — Prose chapters as Markdown (`chapter‑NN.md`).
+ - chapters/ — Final prose chapters as Markdown (`chapter‑NN.md`) plus combined outline (`chapters.md`).
  - analysis/ — Editorial analysis reports as Markdown.
  - exports/ — Publishing artifacts (frontmatter, RTF/MD exports).
  
