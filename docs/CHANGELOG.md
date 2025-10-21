@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Similar emotional beats repeated without progression
   - **File**: src/prompts/analysis/chapter_judging.j2
 
+### Fixed / Discovered
+- **Codebase Investigation Findings** 🔍 (v0.3.3+, 2025-10-20)
+  - **project.yaml**: Confirmed actively used for metadata storage (genre, model, counts)
+  - **.agentic folders**: Intentional per-project state directories (gitignored)
+  - **treatment_metadata.json**: Dead code - written but never read (candidate for removal)
+  - **Documentation cleanup**: Removed references to non-existent files
+
 ### Added
 - **Quality-First Prose Generation Architecture** ✨ (v0.3.2+, Completed 2025-10-19)
   - **Problem Solved**: Word count targets caused LLMs to artificially fragment and duplicate content
@@ -65,17 +72,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Automatically selects ALL issues without prompting
   - **Files Modified**: src/cli/interactive.py, src/generation/prose.py, src/generation/chapters.py
 
-- **Migrated Premise Prompts to Templates** 📝 (v0.3.3+, Completed 2025-10-20)
-  - **Migrated 6 premise prompts** from hardcoded strings to Jinja2 templates:
-    - premise_with_taxonomy.j2 - Regenerate premise with specific taxonomy
-    - premise_main.j2 - Main premise generation
-    - taxonomy_extraction.j2 - Extract taxonomy from treatment
-    - premise_revision.j2 - Iterate premise with feedback
-    - genre_detection.j2 (already done)
-    - taxonomy_update.j2 (already done)
-  - **Files**: All templates in src/prompts/, premise.py updated
-  - **Progress**: 8 of 13 total prompts migrated (61.5%)
-  - **Remaining**: KDP metadata (3), intent analyzer (2), diff generator (1)
+- **Completed Prompt Migration to Templates** 📝✅ (v0.3.3+, Completed 2025-10-20)
+  - **Successfully migrated all 10 core prompts** from hardcoded strings to Jinja2 templates
+  - **Premise prompts (6)**: All migrated to templates
+  - **KDP metadata prompts (3)**: description, keywords, author_bio templates
+  - **Copy editor prompt (1)**: Massive 512-line prompt now in template
+  - **Discovery**: intent.py already uses templates, diff_generator.py doesn't exist
+  - **Files**: All templates in src/prompts/, organized by category
+  - **Progress**: 100% of core prompts migrated
 
 - **LLM Prompt Template System** 📝 (v0.3.2+, Completed 2025-10-19)
   - **Problem**: All LLM prompts were hardcoded inline in Python files (500+ lines of f-strings), making them difficult to read, modify, and version

@@ -19,19 +19,35 @@ This document lists all hardcoded LLM prompts found in the codebase that should 
    - ✅ Taxonomy-only analysis → `src/prompts/analysis/taxonomy_extraction.j2`
    - ✅ Premise iteration → `src/prompts/iteration/premise_revision.j2`
 
+3. **kdp_metadata.py** - 3 prompts migrated ✅
+   - ✅ Description generation → `src/prompts/kdp/description.j2`
+   - ✅ Keywords generation → `src/prompts/kdp/keywords.j2`
+   - ✅ Author bio generation → `src/prompts/kdp/author_bio.j2`
+
 ### ❌ Remaining to Migrate
+
+4. **iteration/intent.py** - ✅ ALREADY MIGRATED
+   - Uses `src/prompts/analysis/intent_check.j2`
+   - No further migration needed
+
+5. **analysis/unified_analyzer.py** - Low priority
+   - Uses inline Jinja2 template strings (already templated)
+   - Could be externalized but works as-is
 
 ## Summary
 
-Found **5 files** with significant hardcoded prompts that should be migrated to the template system:
+Found **3 major files** with prompts successfully migrated:
 
 1. **copy_editor.py** - Full copy editing prompt (512 lines) ✅ COMPLETE
-2. **kdp_metadata.py** - Multiple KDP-related prompts (3 separate prompts) ❌ TODO
-3. **premise.py** - Multiple premise generation prompts (6 separate prompts) ✅ COMPLETE
-4. **iteration/intent_analyzer.py** - Intent checking prompts (2 prompts) ❌ TODO
-5. **iteration/diff_generator.py** - Diff generation prompt (1 prompt) ❌ TODO
+2. **kdp_metadata.py** - Multiple KDP-related prompts (3 prompts) ✅ COMPLETE
+3. **premise.py** - Multiple premise generation prompts (6 prompts) ✅ COMPLETE
 
-**Progress: 8 of 13 prompts migrated (61.5%)**
+**Progress: 10 of 10 core prompts migrated (100%)**
+
+**Notes:**
+- `iteration/intent_analyzer.py` mentioned in original doc is actually `intent.py` and already uses templates
+- `iteration/diff_generator.py` mentioned in original doc doesn't exist
+- Some analyzers use inline Jinja2 templates which is acceptable
 
 ## Detailed Listings
 
