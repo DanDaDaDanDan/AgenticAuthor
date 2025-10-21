@@ -14,8 +14,9 @@
 
  ## File Types and Rationale
  - Markdown (`.md`): Prose chapters and human‑readable documentation. Great for diffs and editors.
- - YAML (`.yaml`): Structured planning (foundation, chapter beats) with readable multi‑line content.
+ - YAML (`.yaml`): Structured planning (foundation, chapter beats) with readable multi‑line content. IMPORTANT: YAML files are GENERATED from LLM markdown output via MarkdownExtractor (see "Markdown → YAML Conversion Pipeline" section).
  - JSON (`.json`): Machine‑readable metadata (premise metadata, taxonomy selections, models, analysis results).
+ - Jinja2 (`.j2`): LLM prompt templates with variable substitution and logic.
  - RTF (`.rtf`): Publishing‑friendly export format.
  
  ## Repository Layout (What each file/folder does)
@@ -163,3 +164,37 @@
  - New taxonomy sets: place in `taxonomies/` and integrate in `generation/taxonomies.py`.
  
  This overview is self‑contained and reflects the current source tree and on‑disk behavior to onboard contributors and guide design decisions.
+
+## The Markdown → YAML Conversion Pipeline
+
+**Core Philosophy:** LLMs write better creative content when focused on storytelling (markdown) rather than syntax (YAML/JSON). We convert post-hoc.
+
+**Three-Layer Architecture:**
+1. **LLM Prompt (`.j2` template):** Asks LLM to generate natural markdown
+   - Example: `chapter_single_shot.j2` → "Write in clear, natural markdown format: # Chapter 1: Title"
+2. **LLM Response:** Returns markdown text with headers, bold fields, and prose summaries
+   - Example: `# Chapter 1: The Awakening\n**Act:** Act I\n\n[200-300 word prose summary...]`
+3. **Extraction Layer (`MarkdownExtractor`):** Parses markdown → Python dicts using regex patterns
+   - Extracts: `{number: 1, title: "The Awakening", act: "Act I", summary: "..."}`
+4. **Storage Layer:** Saves dicts as YAML files for structured machine access
+   - Example: `yaml.dump(chapter, file)` → `chapter-beats/chapter-01.yaml`
+
+**Why This Works:**
+- **LLM Strength:** Natural markdown writing (better quality, fewer formatting errors)
+- **Code Strength:** Structured YAML access (easy to parse, validate, iterate)
+- **Graceful Degradation:** Pattern matching handles format variations without hard failures
+- **Best of Both Worlds:** Creative input format + machine-readable storage
+
+**Files Using This Pipeline:**
+- Foundation generation: Markdown → `chapter-beats/foundation.yaml`
+- Chapter generation: Markdown → `chapter-beats/chapter-NN.yaml`
+- Prose generation: Markdown → `chapters/chapter-NN.md` (NO conversion, stored as-is)
+
+**Implementation:** See `src/utils/markdown_extractors.py` (MarkdownExtractor class) and usage in `src/generation/chapters.py`.
+
+**File Type Summary:**
+- `.j2` — Jinja2 prompt templates (LLM instructions)
+- `.json` — Machine-readable metadata (premise_metadata, decision records)
+- `.yaml` — Structured planning artifacts (CONVERTED from LLM markdown output)
+- `.md` — Prose chapters and documentation (stored as-is, no conversion)
+
