@@ -32,8 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Codebase Investigation Findings** 🔍 (v0.3.3+, 2025-10-20)
   - **project.yaml**: Confirmed actively used for metadata storage (genre, model, counts)
   - **.agentic folders**: Intentional per-project state directories (gitignored)
-  - **treatment_metadata.json**: Dead code - written but never read (candidate for removal)
+  - **treatment_metadata.json**: ✅ **REMOVED** - Was dead code (written but never read)
   - **Documentation cleanup**: Removed references to non-existent files
+  - **Created docs/PROJECT_YAML_USAGE.md**: Complete reference of what reads project.yaml and which fields
+  - **Created docs/INLINE_JINJA2_TEMPLATES_EXPLAINED.md**: Explains inline vs externalized templates
 
 ### Added
 - **Quality-First Prose Generation Architecture** ✨ (v0.3.2+, Completed 2025-10-19)
