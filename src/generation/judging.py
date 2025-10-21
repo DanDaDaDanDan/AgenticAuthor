@@ -167,7 +167,8 @@ class JudgingCoordinator:
             response_text = result.get('content', result) if isinstance(result, dict) else result
 
             if logger:
-                logger.debug(f"Judging response: {response_text[:500]}...")
+                logger.debug(f"Judging response length: {len(response_text)} characters")
+                logger.debug(f"Judging response preview: {response_text[:500]}...")
 
             # Parse JSON response
             try:
@@ -201,6 +202,18 @@ class JudgingCoordinator:
                 if logger:
                     logger.error(f"Failed to parse judging JSON: {e}")
                     logger.error(f"Response text: {response_text}")
+
+                # Check for truncated response (unterminated string)
+                error_str = str(e).lower()
+                if 'unterminated string' in error_str or 'unterminated' in error_str:
+                    raise Exception(
+                        f"Judging response was truncated (incomplete JSON). "
+                        f"The LLM hit the token limit mid-response. "
+                        f"Error: {e}\n"
+                        f"Response length: {len(response_text)} characters\n"
+                        f"This should not happen with reserve_tokens={reserve_tokens}. "
+                        f"Consider increasing reserve_tokens in src/prompts/config.yaml"
+                    )
 
                 raise Exception(f"Failed to parse judging response as JSON: {e}")
 
