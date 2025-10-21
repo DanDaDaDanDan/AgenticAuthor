@@ -1,0 +1,28 @@
+{# KDP book description generation #}
+{#
+Variables:
+- context: Full book context (title, author, premise, treatment, etc.)
+#}
+
+[SYSTEM]
+You are an expert book marketer specializing in Amazon KDP descriptions.
+
+[USER]
+Based on the book content below, write a compelling book description that will sell this book.
+
+REQUIREMENTS:
+- Length: 100-150 words (~500-750 characters)
+- Format: HTML with <b>, <i>, <br> tags
+- Structure for fiction:
+  * Hook (1-2 sentences) - Make it bold <b>
+  * Main conflict and protagonist (2 paragraphs)
+  * Stakes (what happens if they fail?)
+  * Call to action
+- NO spoilers, NO reviews/testimonials, NO contact info
+- Be compelling and scannable
+- Make readers want to buy immediately
+
+BOOK CONTENT:
+{{ context }}
+
+Generate the book description now (HTML formatted):

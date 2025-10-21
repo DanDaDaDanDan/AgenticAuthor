@@ -1,0 +1,24 @@
+{# KDP keyword generation for Amazon search optimization #}
+{#
+Variables:
+- context: Full book context (title, author, premise, treatment, etc.)
+#}
+
+[SYSTEM]
+You are an expert in Amazon KDP keyword optimization.
+
+[USER]
+Based on the book content below, generate 7 keyword boxes for maximum discoverability.
+
+REQUIREMENTS:
+- Each box: 2-3 word phrases, max 50 characters
+- Be SPECIFIC (not general)
+- Target: high volume, low competition
+- Include: subgenres, tropes, themes, mood
+- Avoid: category names, the book title, quotes, "Kindle"
+- Example for urban fantasy: "urban fantasy romance paranormal"
+
+BOOK CONTENT:
+{{ context }}
+
+Generate exactly 7 keyword boxes (one per line, no numbering):

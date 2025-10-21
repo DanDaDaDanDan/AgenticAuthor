@@ -93,3 +93,19 @@ editing/copy_edit:
   format: json
   min_tokens: 8000
   top_p: 0.9
+
+# KDP metadata prompts
+kdp/description:
+  temperature: 0.7
+  format: text
+  min_tokens: 200
+
+kdp/keywords:
+  temperature: 0.7
+  format: text
+  min_tokens: 150
+
+kdp/author_bio:
+  temperature: 0.7
+  format: text
+  min_tokens: 300

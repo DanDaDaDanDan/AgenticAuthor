@@ -3,6 +3,8 @@
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
+from ..prompts import get_prompt_loader
+
 
 class KDPMetadataGenerator:
     """Generate Amazon KDP metadata from book content."""
@@ -19,6 +21,7 @@ class KDPMetadataGenerator:
         self.client = client
         self.project = project
         self.model = model
+        self.prompt_loader = get_prompt_loader()
 
     async def generate_all_metadata(self) -> Dict[str, Any]:
         """
@@ -54,31 +57,20 @@ class KDPMetadataGenerator:
         """
         context = self._build_context()
 
-        prompt = f"""You are an expert book marketer specializing in Amazon KDP descriptions.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "kdp/description",
+            context=context
+        )
 
-Based on the book content below, write a compelling book description that will sell this book.
-
-REQUIREMENTS:
-- Length: 100-150 words (~500-750 characters)
-- Format: HTML with <b>, <i>, <br> tags
-- Structure for fiction:
-  * Hook (1-2 sentences) - Make it bold <b>
-  * Main conflict and protagonist (2 paragraphs)
-  * Stakes (what happens if they fail?)
-  * Call to action
-- NO spoilers, NO reviews/testimonials, NO contact info
-- Be compelling and scannable
-- Make readers want to buy immediately
-
-BOOK CONTENT:
-{context}
-
-Generate the book description now (HTML formatted):"""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("kdp/description", default=0.7)
 
         response = await self.client.completion(
             model=self.model,
-            prompt=prompt,
-            temperature=0.7,
+            prompt=prompts['user'],
+            system_prompt=prompts['system'],
+            temperature=temperature,
             display=False
         )
 
@@ -93,27 +85,20 @@ Generate the book description now (HTML formatted):"""
         """
         context = self._build_context()
 
-        prompt = f"""You are an expert in Amazon KDP keyword optimization.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "kdp/keywords",
+            context=context
+        )
 
-Based on the book content below, generate 7 keyword boxes for maximum discoverability.
-
-REQUIREMENTS:
-- Each box: 2-3 word phrases, max 50 characters
-- Be SPECIFIC (not general)
-- Target: high volume, low competition
-- Include: subgenres, tropes, themes, mood
-- Avoid: category names, the book title, quotes, "Kindle"
-- Example for urban fantasy: "urban fantasy romance paranormal"
-
-BOOK CONTENT:
-{context}
-
-Generate exactly 7 keyword boxes (one per line, no numbering):"""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("kdp/keywords", default=0.7)
 
         response = await self.client.completion(
             model=self.model,
-            prompt=prompt,
-            temperature=0.7,
+            prompt=prompts['user'],
+            system_prompt=prompts['system'],
+            temperature=temperature,
             display=False
         )
 
@@ -197,27 +182,22 @@ REASON: [one sentence]"""
         if author_info:
             additional_info = f"\n\nADDITIONAL AUTHOR INFO:\n{author_info}"
 
-        prompt = f"""You are an expert at writing author bios for Amazon KDP.
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "kdp/author_bio",
+            author_name=author_name,
+            context=context,
+            additional_info=additional_info
+        )
 
-Write a compelling author bio for {author_name} based on the book content.
-
-REQUIREMENTS:
-- Length: 100-200 words
-- Third person ("They write...")
-- Include: writing style/themes, what this author explores
-- Optional: brief personal detail, location, interests
-- End with: "Visit [website] for more"
-- Tone: professional but personable
-
-BOOK CONTENT (to understand their style/themes):
-{context}{additional_info}
-
-Generate the author bio now:"""
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("kdp/author_bio", default=0.7)
 
         response = await self.client.completion(
             model=self.model,
-            prompt=prompt,
-            temperature=0.7,
+            prompt=prompts['user'],
+            system_prompt=prompts['system'],
+            temperature=temperature,
             display=False
         )
 
