@@ -77,7 +77,9 @@ class DepthCalculator:
         Returns:
             Recommended word count target
         """
-        base = cls.FORM_DEFAULTS.get(length_scope, cls.FORM_DEFAULTS['novel'])
+        # Normalize length_scope to match dictionary keys (lowercase with underscores)
+        normalized_scope = length_scope.lower().replace(' ', '_') if length_scope else 'novel'
+        base = cls.FORM_DEFAULTS.get(normalized_scope, cls.FORM_DEFAULTS['novel'])
 
         if genre:
             genre_lower = genre.lower().replace('_', '-')
