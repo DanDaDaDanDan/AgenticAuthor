@@ -301,22 +301,8 @@ class ChapterGenerator:
 
             # Infer genre from taxonomy selections if not explicitly set
             if not genre:
-                if 'fantasy_subgenre' in taxonomy_data:
-                    genre = 'fantasy'
-                elif 'mystery_subgenre' in taxonomy_data:
-                    genre = 'mystery'
-                elif 'romance_subgenre' in taxonomy_data:
-                    genre = 'romance'
-                elif 'scifi_subgenre' in taxonomy_data:
-                    genre = 'science-fiction'
-                elif 'horror_subgenre' in taxonomy_data:
-                    genre = 'horror'
-                elif 'literary_style' in taxonomy_data:
-                    genre = 'literary-fiction'
-                elif 'historical_period' in taxonomy_data:
-                    genre = 'historical-fiction'
-                else:
-                    genre = 'general'
+                from .taxonomies import TaxonomyLoader
+                genre = TaxonomyLoader.infer_genre_from_selections(taxonomy_data)
 
             # Extract pacing (handle list format from taxonomy)
             pacing_value = taxonomy_data.get('pacing', 'moderate')

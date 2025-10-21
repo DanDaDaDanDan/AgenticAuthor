@@ -93,24 +93,8 @@ class DedicationGenerator:
 
                 # Infer genre from subgenre selections
                 if not genre:
-                    if 'fantasy_subgenre' in selections:
-                        genre = 'fantasy'
-                    elif 'mystery_subgenre' in selections:
-                        genre = 'mystery'
-                    elif 'romance_subgenre' in selections:
-                        genre = 'romance'
-                    elif 'scifi_subgenre' in selections:
-                        genre = 'science-fiction'
-                    elif 'horror_subgenre' in selections:
-                        genre = 'horror'
-                    elif 'literary_style' in selections:
-                        genre = 'literary-fiction'
-                    elif 'historical_period' in selections:
-                        genre = 'historical-fiction'
-                    elif 'thriller_subgenre' in selections:
-                        genre = 'thriller'
-                    else:
-                        genre = 'general fiction'
+                    from ..generation.taxonomies import TaxonomyLoader
+                    genre = TaxonomyLoader.infer_genre_from_selections(selections)
 
                 details['genre'] = genre
 

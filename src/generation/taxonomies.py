@@ -188,6 +188,44 @@ class TaxonomyLoader:
 
         return display_names
 
+    @staticmethod
+    def infer_genre_from_selections(selections: Dict[str, Any]) -> str:
+        """
+        Infer genre from taxonomy selections.
+
+        This is the SINGLE SOURCE OF TRUTH for genre inference.
+        All code that needs to infer genre from subgenre selections should use this method.
+
+        Args:
+            selections: Taxonomy selections dict (from premise_metadata.json['selections'])
+
+        Returns:
+            Inferred genre name, or 'general' if cannot be determined
+        """
+        if not selections:
+            return 'general'
+
+        # Check for genre-specific subgenre selections
+        # Order matters - check more specific genres first
+        if 'fantasy_subgenre' in selections:
+            return 'fantasy'
+        elif 'mystery_subgenre' in selections:
+            return 'mystery'
+        elif 'romance_subgenre' in selections:
+            return 'romance'
+        elif 'scifi_subgenre' in selections:
+            return 'science-fiction'
+        elif 'horror_subgenre' in selections:
+            return 'horror'
+        elif 'thriller_subgenre' in selections:
+            return 'thriller'
+        elif 'literary_style' in selections:
+            return 'literary-fiction'
+        elif 'historical_period' in selections:
+            return 'historical-fiction'
+        else:
+            return 'general'
+
 
 class PremiseAnalyzer:
     """Analyzes user input to determine premise type and treatment."""

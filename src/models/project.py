@@ -601,23 +601,8 @@ class Project:
 
                     # Infer genre from taxonomy selections if not explicitly set
                     if not genre:
-                        # Check for genre-specific subgenre selections
-                        if 'fantasy_subgenre' in selections:
-                            genre = 'fantasy'
-                        elif 'mystery_subgenre' in selections:
-                            genre = 'mystery'
-                        elif 'romance_subgenre' in selections:
-                            genre = 'romance'
-                        elif 'scifi_subgenre' in selections:
-                            genre = 'science-fiction'
-                        elif 'horror_subgenre' in selections:
-                            genre = 'horror'
-                        elif 'literary_style' in selections:
-                            genre = 'literary-fiction'
-                        elif 'historical_period' in selections:
-                            genre = 'historical-fiction'
-                        else:
-                            genre = 'general'
+                        from ..generation.taxonomies import TaxonomyLoader
+                        genre = TaxonomyLoader.infer_genre_from_selections(selections)
 
                     if length_scope:
                         # Use DepthCalculator to get intelligent default
