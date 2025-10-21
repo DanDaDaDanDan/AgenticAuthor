@@ -225,6 +225,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Delete generated content (prose/chapters/treatment/premise/debug)',
             'usage': '/cull <target>'
         },
+        'analyze': {
+            'description': 'Analyze story quality (premise/treatment/chapters/prose)',
+            'usage': '/analyze <premise|treatment|chapters|prose> [chapter-number]'
+        },
         'metadata': {
             'description': 'View or set book metadata (title, author, copyright, etc.)',
             'usage': '/metadata [key] [value]'

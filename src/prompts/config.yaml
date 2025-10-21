@@ -70,6 +70,11 @@ analysis/taxonomy_extraction:
   format: json
   reserve_tokens: 500
 
+analysis/unified_analysis:
+  temperature: 0.3
+  format: json
+  reserve_tokens: 4000
+
 # Validation prompts
 validation/treatment_fidelity:
   temperature: 0.1

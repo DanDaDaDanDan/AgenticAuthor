@@ -2,9 +2,11 @@
 
 from typing import Dict, Any, Optional
 from .base import BaseAnalyzer, AnalysisResult, Issue, Strength, Severity, PathToAPlus, Recommendation
+from ...prompts import get_prompt_loader
 
 
-UNIFIED_ANALYSIS_PROMPT = """You are an expert story editor. Read this {{ content_type }} and provide honest feedback.
+# Legacy inline prompt - kept for reference but replaced by template
+OLD_UNIFIED_ANALYSIS_PROMPT = """You are an expert story editor. Read this {{ content_type }} and provide honest feedback.
 
 Content to Analyze:
 ```
@@ -63,6 +65,11 @@ Be honest, specific, and constructive. Focus on impact, not minutiae.
 class UnifiedAnalyzer(BaseAnalyzer):
     """Single unified analyzer covering all story dimensions."""
 
+    def __init__(self, client, model: str):
+        """Initialize analyzer with prompt loader."""
+        super().__init__(client, model)
+        self.prompt_loader = get_prompt_loader()
+
     def _grade_to_score(self, grade_str: str) -> float:
         """Convert letter grade to numeric score (0-10)."""
         grade_map = {
@@ -100,22 +107,35 @@ class UnifiedAnalyzer(BaseAnalyzer):
         # Build context
         ctx = context or {}
 
-        # Create prompt
-        prompt = self._create_analysis_prompt(
-            UNIFIED_ANALYSIS_PROMPT,
-            content,
-            content_type,
-            ctx,
-            max_content_words=8000  # More generous for unified analysis
+        # Render prompt from template
+        prompts = self.prompt_loader.render(
+            "analysis/unified_analysis",
+            content=content,
+            content_type=content_type,
+            premise=ctx.get('premise', ''),
+            genre=ctx.get('genre', ''),
+            treatment=ctx.get('treatment', ''),
+            chapter_outline=ctx.get('chapter_outline', '')
         )
 
+        # Get temperature from config
+        temperature = self.prompt_loader.get_temperature("analysis/unified_analysis", default=0.3)
+
         # Call LLM with higher token limit for comprehensive analysis
-        # FIXED: Changed min_response_tokens to reserve_tokens
-        response = await self._call_llm(
-            prompt,
-            temperature=0.3,
+        # Make direct API call with system + user prompts
+        response_data = await self.client.streaming_completion(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": prompts['system']},
+                {"role": "user", "content": prompts['user']}
+            ],
+            temperature=temperature,
+            stream=False,
+            display=False,
             reserve_tokens=4000
         )
+
+        response = response_data.get('content', '').strip()
 
         # Parse response
         try:

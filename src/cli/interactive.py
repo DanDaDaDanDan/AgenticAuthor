@@ -23,6 +23,7 @@ from .command_completer import SlashCommandCompleter, create_command_description
 from .auto_suggest import SlashCommandAutoSuggest
 from ..generation import PremiseGenerator, TreatmentGenerator, ChapterGenerator, ProseGenerator
 from ..generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
+from ..generation.analysis import AnalysisCoordinator
 from ..utils.logging import setup_logging, get_logger
 
 
@@ -67,6 +68,7 @@ class InteractiveSession:
             'generate': self.generate_content,
             'finalize': self.finalize_content,
             'cull': self.cull_content,
+            'analyze': self.analyze_story,
             'metadata': self.manage_metadata,
             'export': self.export_story,
             'copyedit': self.copyedit_story,
@@ -2377,6 +2379,139 @@ Regenerate the foundation addressing the issues above.
 
         # Commit the export
         self._commit(f"Export to Markdown: {result_path.name}")
+
+    async def analyze_story(self, args: str):
+        """Run story analysis."""
+        if not self.project:
+            self.console.print("[yellow]⚠  No project loaded[/yellow]")
+            return
+
+        if not self.client:
+            self.console.print("[yellow]⚠  API client not initialized[/yellow]")
+            return
+
+        # Parse args: premise / treatment / chapters / chapter N / prose / prose N / all
+        parts = args.strip().split() if args else []
+
+        if not parts:
+            content_type = "all"
+            target_id = None
+        elif parts[0] in ['premise', 'treatment', 'chapters']:
+            content_type = parts[0]
+            target_id = None
+        elif parts[0] == 'chapter' and len(parts) > 1:
+            content_type = 'chapter'
+            target_id = parts[1]
+        elif parts[0] == 'prose' and len(parts) > 1:
+            content_type = 'prose'
+            target_id = parts[1]
+        elif parts[0] == 'prose':
+            # Default to analyzing all prose chapters
+            content_type = 'prose'
+            target_id = "1"  # Start with chapter 1
+        else:
+            self.console.print("[red]Invalid analysis target[/red]")
+            self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all]")
+            return
+
+        try:
+            # Initialize coordinator
+            coordinator = AnalysisCoordinator(
+                client=self.client,
+                project=self.project,
+                model=self.settings.active_model
+            )
+
+            # Show progress
+            content_desc = content_type
+            if target_id:
+                content_desc += f" {target_id}"
+
+            self.console.print(f"\n[bold cyan]📊 Analyzing {content_desc}...[/bold cyan]")
+            self.console.print(f"   ⏳ Reading and evaluating...\n")
+
+            # Ensure git repo exists
+            self._ensure_git_repo()
+
+            # Run analysis
+            result = await coordinator.analyze(content_type, target_id)
+
+            # Display results
+            self._display_analysis_results(result)
+
+            # Git commit
+            if result.get('success', True):
+                content_desc = result.get('content_type', content_type)
+                if result.get('target_id'):
+                    content_desc += f" {result['target_id']}"
+                self._commit(f"Analyze {content_desc}")
+
+        except Exception as e:
+            self.console.print(f"\n[red]✗ Analysis failed:[/red] {str(e)}")
+            if self.session_logger:
+                self.session_logger.log_error(e, "Analysis failed")
+
+    def _display_analysis_results(self, result: Dict[str, Any]):
+        """Display analysis results in simplified format."""
+        self.console.print()
+        self.console.rule(style="cyan")
+
+        # Header
+        content_desc = result['content_type'].title()
+        if result.get('target_id'):
+            content_desc += f" {result['target_id']}"
+
+        self.console.print(f"\n[bold]📊 Analysis: {content_desc}[/bold]\n")
+
+        # Grade and summary (extract from summary field which contains grade + justification + assessment)
+        summary_parts = result.get('summary', '').split('\n')
+        if len(summary_parts) >= 3:
+            grade = summary_parts[0]
+            justification = summary_parts[1]
+            assessment = '\n'.join(summary_parts[3:])  # Skip empty line at index 2
+
+            self.console.print(f"[bold green]Grade:[/bold green] {grade}")
+            self.console.print(f"[dim]{justification}[/dim]\n")
+            self.console.print(f"{assessment}\n")
+        else:
+            # Fallback if format is different
+            self.console.print(f"{result.get('summary', 'No assessment available')}\n")
+
+        # Feedback (stored in issues, but display as simple bullet points)
+        dimension_results = result.get('dimension_results', [])
+        if dimension_results:
+            # Get issues from first dimension result (unified analysis has single dimension)
+            issues = dimension_results[0].get('issues', [])
+            if issues:
+                self.console.print("[bold]📝 Feedback:[/bold]")
+                for issue in issues:
+                    # Issue description contains the full feedback point
+                    self.console.print(f"  • {issue['description']}")
+                self.console.print()
+
+        # Strengths
+        if dimension_results:
+            strengths = dimension_results[0].get('strengths', [])
+            if strengths:
+                self.console.print("[bold green]✓ Strengths:[/bold green]")
+                for strength in strengths:
+                    self.console.print(f"  • {strength['description']}")
+                self.console.print()
+
+        # Next steps (stored in notes)
+        if dimension_results:
+            notes = dimension_results[0].get('notes', [])
+            if notes:
+                for note in notes:
+                    if note.startswith('Next steps:'):
+                        next_steps = note.replace('Next steps: ', '')
+                        self.console.print(f"[bold cyan]🎯 Next Steps:[/bold cyan]")
+                        self.console.print(f"  {next_steps}\n")
+
+        # Report saved
+        self.console.rule(style="cyan")
+        self.console.print(f"\n[green]Full report saved:[/green] {result['report_path']}")
+        self.console.print()
 
     async def copyedit_story(self, args: str):
         """
