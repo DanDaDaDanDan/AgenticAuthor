@@ -172,11 +172,11 @@ class MarkdownExtractor:
         metadata = {}
 
         # Common fields to look for
+        # Note: target_word_count and chapter_count are calculated values, not LLM-generated
         fields = [
             'genre', 'subgenre', 'tone', 'pacing', 'themes',
             'story_structure', 'narrative_style', 'target_audience',
-            'target_word_count', 'chapter_count', 'setting_period',
-            'setting_location', 'content_warnings'
+            'setting_period', 'setting_location', 'content_warnings'
         ]
 
         for field in fields:
@@ -218,15 +218,8 @@ class MarkdownExtractor:
                                 metadata[field] = [clean_value] + list_items if clean_value else list_items
                             else:
                                 metadata[field] = [clean_value] if clean_value else []
-                    # Handle numbers
-                    elif field in ['target_word_count', 'chapter_count']:
-                        try:
-                            metadata[field] = cls._parse_numeric_value(value)
-                        except (ValueError, TypeError) as e:
-                            # Log the parsing issue but keep the original string
-                            logger.debug(f"Could not parse numeric value for {field}: {value} - {e}")
-                            metadata[field] = value
                     else:
+                        # All other fields stored as-is
                         metadata[field] = value
                     break
 
@@ -619,7 +612,8 @@ class MarkdownExtractor:
             errors.append("No metadata section found. Expected '# Metadata' section.")
         else:
             # Critical fields that should always be present
-            critical_fields = ['genre', 'target_word_count', 'chapter_count']
+            # Note: target_word_count and chapter_count are calculated values, not stored in foundation
+            critical_fields = ['genre']
             for field in critical_fields:
                 if not metadata.get(field):
                     errors.append(f"Critical metadata field '{field}' is missing or null")
