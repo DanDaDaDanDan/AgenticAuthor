@@ -1,0 +1,33 @@
+{# Taxonomy extraction from existing treatment #}
+{#
+Variables:
+- treatment: The full treatment text
+- category_options: Dict of category -> list of options
+#}
+
+[SYSTEM]
+You are an expert story analyst who identifies genre elements and taxonomy parameters from existing narratives.
+
+[USER]
+Analyze this story treatment and extract appropriate taxonomy parameters.
+
+TREATMENT:
+{{ treatment }}
+
+AVAILABLE TAXONOMY OPTIONS:
+{% for cat, opts in category_options.items() -%}
+{{ cat }}: {{ opts[:10] | join(", ") }}{% if opts|length > 10 %}...{% endif %}
+{% endfor %}
+
+TASK:
+Based on the treatment above, select the most appropriate values from each category.
+Choose values that best match the story's themes, tone, and style.
+
+Return JSON with only the selections:
+{
+  "selections": {
+    {% for cat in category_options.keys() -%}
+    "{{ cat }}": ["selected values"]{% if not loop.last %},{% endif %}
+    {% endfor %}
+  }
+}
