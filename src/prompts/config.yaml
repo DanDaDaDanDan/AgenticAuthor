@@ -1,0 +1,75 @@
+# Prompt metadata configuration
+# Each key corresponds to a template file path (without .j2 extension)
+# Fields:
+#   temperature: LLM sampling temperature (0.0-1.0)
+#   format: Expected output format (text/json/yaml)
+#   min_tokens: Minimum response tokens to reserve
+#   top_p: Top-p sampling parameter
+
+# Generation prompts
+generation/prose_generation:
+  temperature: 0.8
+  format: text
+  min_tokens: 5000
+  top_p: 0.9
+
+generation/prose_iteration:
+  temperature: 0.8
+  format: text
+  min_tokens: 5000
+  top_p: 0.9
+
+generation/treatment_generation:
+  temperature: 0.7
+  format: yaml
+  min_tokens: 2500
+
+generation/chapter_foundation:
+  temperature: 0.6
+  format: yaml
+  min_tokens: 2000
+
+generation/chapter_single_shot:
+  temperature: 0.7
+  format: yaml
+  min_tokens: 8000
+
+# Validation prompts
+validation/prose_fidelity:
+  temperature: 0.1
+  format: json
+  min_tokens: 200
+
+validation/treatment_fidelity:
+  temperature: 0.1
+  format: json
+  min_tokens: 200
+
+# Analysis prompts
+analysis/chapter_judging:
+  temperature: 0.1
+  format: json
+  min_tokens: 100
+
+analysis/intent_check:
+  temperature: 0.2
+  format: json
+  min_tokens: 100
+
+analysis/genre_detection:
+  temperature: 0.3
+  format: json
+  min_tokens: 100
+
+# Iteration prompts
+iteration/taxonomy_update:
+  temperature: 0.4
+  format: json
+  min_tokens: 200
+
+# Editing prompts
+editing/copy_edit:
+  temperature: 0.3
+  format: json
+  min_tokens: 8000
+  top_p: 0.9
