@@ -1094,6 +1094,12 @@ class InteractiveSession:
                 variants_data=variants_data
             )
 
+            # Update combined context (premise + taxonomy + foundation + beats)
+            try:
+                self.project.write_combined_markdown(include_prose=False)
+            except Exception:
+                pass
+
             # Success - commit changes
             self._commit(f"Finalize chapters: selected Variant {winner}")
 
@@ -1387,6 +1393,12 @@ class InteractiveSession:
             # Save selected premise with metadata
             self.project.save_premise_metadata(selected_premise)
 
+            # Update combined context (premise + taxonomy)
+            try:
+                self.project.write_combined_markdown(include_prose=False)
+            except Exception:
+                pass
+
             # Display selected premise
             self.console.print(f"\n[green]✓ Premise #{selected_num} selected[/green]\n")
             self.console.print(selected_premise['premise'])
@@ -1542,6 +1554,12 @@ class InteractiveSession:
             self.console.rule(style="dim")  # Divider after content
             self.console.print(f"[green]✓  Treatment generated: {word_count} words[/green]")
             self.console.print("[dim]Saved to treatment.md[/dim]")
+
+            # Update combined context (premise + taxonomy + treatment)
+            try:
+                self.project.write_combined_markdown(include_prose=False)
+            except Exception:
+                pass
 
             # Git commit
             self._commit(f"{commit_prefix}: {word_count} words")

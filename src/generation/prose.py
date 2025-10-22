@@ -366,6 +366,12 @@ class ProseGenerator:
 
             chapter_file.write_text(full_prose, encoding='utf-8')
 
+            # Update combined context to include latest prose
+            try:
+                self.project.write_combined_markdown(include_prose=True)
+            except Exception:
+                pass
+
             word_count = len(prose_text.split())
             print(f"\n✅ Chapter {chapter_number} generated successfully")
             print(f"   Word count: {word_count:,}")

@@ -964,6 +964,91 @@ class Project:
         self.exports_dir.mkdir(exist_ok=True)
         self.dedication_file.write_text(content, encoding='utf-8')
 
+    # --- Combined Context ---
+    def write_combined_markdown(self, include_prose: bool = False) -> Path:
+        """Write combined.md aggregating current project context.
+
+        Sections (if available): Premise, Taxonomy, Treatment, Foundation,
+        Chapter Outlines, and optional Prose.
+
+        Returns:
+            Path to written combined.md
+        """
+        lines: list[str] = []
+        lines.append(f"# Combined Context — {self.name}")
+        lines.append("")
+
+        # Premise
+        premise = self.get_premise()
+        if premise:
+            lines.append("## Premise")
+            lines.append("")
+            lines.append(premise.strip())
+            lines.append("")
+
+        # Taxonomy selections
+        selections = self.get_taxonomy() or {}
+        if selections:
+            try:
+                import yaml as _yaml
+                taxo_yaml = _yaml.dump({'selections': selections}, sort_keys=False, allow_unicode=True)
+            except Exception:
+                taxo_yaml = str(selections)
+            lines.append("## Taxonomy Selections")
+            lines.append("")
+            lines.append("```yaml")
+            lines.append(taxo_yaml.strip())
+            lines.append("```")
+            lines.append("")
+
+        # Treatment
+        treatment = self.get_treatment()
+        if treatment:
+            lines.append("## Treatment")
+            lines.append("")
+            lines.append(treatment.strip())
+            lines.append("")
+
+        # Foundation (use raw markdown if present)
+        foundation_md_path = self.chapter_beats_dir / "foundation.md"
+        if foundation_md_path.exists():
+            lines.append("## Foundation")
+            lines.append("")
+            try:
+                lines.append(foundation_md_path.read_text(encoding='utf-8').strip())
+            except Exception:
+                pass
+            lines.append("")
+
+        # Chapter Outlines (beat sheets)
+        chapter_md_files = sorted(self.chapter_beats_dir.glob("chapter-*.md"))
+        if chapter_md_files:
+            lines.append("## Chapter Outlines")
+            lines.append("")
+            for ch_path in chapter_md_files:
+                try:
+                    lines.append(f"---\n\n{ch_path.read_text(encoding='utf-8').strip()}\n")
+                except Exception:
+                    continue
+            lines.append("")
+
+        # Prose (optional)
+        if include_prose and self.chapters_dir.exists():
+            prose_files = sorted(self.chapters_dir.glob("chapter-*.md"))
+            if prose_files:
+                lines.append("## Prose (Generated Chapters)")
+                lines.append("")
+                for pf in prose_files:
+                    try:
+                        lines.append(f"---\n\n{pf.read_text(encoding='utf-8').strip()}\n")
+                    except Exception:
+                        continue
+                lines.append("")
+
+        combined_path = self.path / "combined.md"
+        combined_path.write_text("\n".join(lines).strip() + "\n", encoding='utf-8')
+        return combined_path
+
     def init_default_frontmatter(self):
         """Initialize frontmatter with default template if not exists."""
         if not self.frontmatter_file.exists():
