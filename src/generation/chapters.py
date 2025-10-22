@@ -111,7 +111,7 @@ class ChapterGenerator:
         genre_baseline: Optional[int] = None,
         length_scope: Optional[str] = None,
         genre: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> str:
         """
         Generate ONLY the foundation (metadata + characters + world), no chapters.
 
@@ -131,7 +131,7 @@ class ChapterGenerator:
             genre: Genre name for context
 
         Returns:
-            Dict with metadata, characters, world sections
+            Raw markdown string (not dict) - will be saved as-is for debugging
         """
         from ..utils.logging import get_logger
         logger = get_logger()
