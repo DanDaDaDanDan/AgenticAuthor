@@ -451,6 +451,27 @@ VARIANT {variant_num}{temp_label}
         # Ensure chapter-beats/ directory exists
         beats_dir.mkdir(exist_ok=True)
 
+        # Clean up old files before copying winner (prevent stale files)
+        self.console.print("[dim]Cleaning up existing finalized chapters...[/dim]")
+
+        if logger:
+            logger.debug(f"Cleaning up old files in {beats_dir}")
+
+        # Delete old foundation files (both .md and .yaml for backward compatibility)
+        for foundation_ext in ['.md', '.yaml']:
+            old_foundation = beats_dir / f'foundation{foundation_ext}'
+            if old_foundation.exists():
+                old_foundation.unlink()
+                if logger:
+                    logger.debug(f"Deleted old foundation: {old_foundation.name}")
+
+        # Delete old chapter files (both .md and .yaml formats)
+        old_chapters = list(beats_dir.glob('chapter-*.md')) + list(beats_dir.glob('chapter-*.yaml'))
+        for old_chapter in old_chapters:
+            old_chapter.unlink()
+            if logger:
+                logger.debug(f"Deleted old chapter: {old_chapter.name}")
+
         # Copy foundation (shared by all variants) - markdown format
         foundation_src = self.variants_dir / 'foundation.md'
         foundation_dst = beats_dir / 'foundation.md'
