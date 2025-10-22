@@ -16,38 +16,31 @@ You are an expert story editor with deep understanding of narrative craft. You p
 [USER]
 You are an expert story editor. Read this {{ content_type }} and provide honest feedback.
 
-{{ content }}
-
 {% if premise %}
-
----
-
-# PREMISE CONTEXT
+════════════════════════════════════════════════════════════════════════════════
+PREMISE
+════════════════════════════════════════════════════════════════════════════════
 
 {{ premise }}
+
 {% endif %}
-
-{% if genre and content_type != 'chapters' %}
-
-**Genre:** {{ genre }}
-{% endif %}
-
 {% if treatment %}
-
----
-
-# TREATMENT CONTEXT
+════════════════════════════════════════════════════════════════════════════════
+TREATMENT
+════════════════════════════════════════════════════════════════════════════════
 
 {{ treatment }}
-{% endif %}
 
+{% endif %}
+{{ content }}
 {% if chapter_outline %}
 
----
-
-# CHAPTER OUTLINE CONTEXT
+════════════════════════════════════════════════════════════════════════════════
+CHAPTER OUTLINE CONTEXT
+════════════════════════════════════════════════════════════════════════════════
 
 {{ chapter_outline }}
+
 {% endif %}
 
 Rate the quality and provide constructive criticism. Focus on what matters most to making this better.

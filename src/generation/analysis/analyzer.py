@@ -129,18 +129,25 @@ class AnalysisCoordinator:
                 context['taxonomy'] = taxonomy
 
         elif content_type == 'chapters':
-            # Analyze chapter outlines - try new self-contained format first
-            chapters_yaml = self.project.get_chapters_yaml()
-            if chapters_yaml:
-                # New self-contained format with metadata, characters, world, chapters
-                content = self._chapters_yaml_to_text(chapters_yaml)
-                # No treatment needed - chapters.yaml is self-contained
+            # Analyze chapter outlines - load from markdown files directly
+            foundation_file = self.project.chapter_beats_dir / 'foundation.md'
+            chapter_files = sorted(self.project.chapter_beats_dir.glob('chapter-*.md'))
+
+            if foundation_file.exists() and chapter_files:
+                # NEW markdown-based format: Load foundation + individual chapter markdown files
+                content = self._build_chapters_analysis_content(foundation_file, chapter_files)
+                # No additional context needed - everything is in the content
             else:
-                # Legacy format fallback
-                chapters = self.project.get_chapters()
-                if chapters:
-                    content = self._chapters_to_text(chapters)
-                    context['treatment'] = self.project.get_treatment()
+                # LEGACY fallback: Try chapters.yaml
+                chapters_yaml = self.project.get_chapters_yaml()
+                if chapters_yaml:
+                    content = self._chapters_yaml_to_text(chapters_yaml)
+                else:
+                    # OLDER legacy: Try old chapters list
+                    chapters = self.project.get_chapters()
+                    if chapters:
+                        content = self._chapters_to_text(chapters)
+                        context['treatment'] = self.project.get_treatment()
 
         elif content_type == 'chapter':
             # Analyze specific chapter outline - load markdown directly
@@ -176,6 +183,51 @@ class AnalysisCoordinator:
                         context['chapter_outline'] = chapter_outline_file.read_text(encoding='utf-8')
 
         return content, context
+
+    def _build_chapters_analysis_content(self, foundation_file: Path, chapter_files: List[Path]) -> str:
+        """
+        Build chapters analysis content from markdown files with clear box structure.
+
+        This mirrors the variant judging prompt structure for consistency.
+
+        Args:
+            foundation_file: Path to foundation.md
+            chapter_files: List of paths to chapter-NN.md files
+
+        Returns:
+            Formatted markdown string with boxes
+        """
+        from ..utils.markdown_extractors import MarkdownExtractor
+
+        sections = []
+
+        # Load foundation markdown
+        foundation_md = foundation_file.read_text(encoding='utf-8')
+
+        # Add foundation section with box
+        sections.append(f"""════════════════════════════════════════════════════════════════════════════════
+FOUNDATION
+════════════════════════════════════════════════════════════════════════════════
+
+{foundation_md}""")
+
+        # Load all chapter markdown files
+        chapter_texts = []
+        for chapter_file in chapter_files:
+            chapter_text = chapter_file.read_text(encoding='utf-8')
+            chapter_texts.append(chapter_text)
+
+        # Join chapters with blank lines (markdown headers provide structure)
+        chapters_markdown = "\n\n".join(chapter_texts)
+
+        # Add chapters section with box
+        sections.append(f"""════════════════════════════════════════════════════════════════════════════════
+CHAPTER OUTLINES
+════════════════════════════════════════════════════════════════════════════════
+
+{chapters_markdown}""")
+
+        return "\n\n".join(sections)
 
     def _chapters_to_text(self, chapters: List[Dict[str, Any]]) -> str:
         """Convert chapters list to readable text (legacy format)."""
