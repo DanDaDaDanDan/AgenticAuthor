@@ -3,8 +3,11 @@
 
     Variables:
     - context_markdown: Full premise + treatment as markdown
-    - foundation_markdown: Foundation (metadata + characters + world) as markdown
-    - chapter_count: Number of chapters to generate
+    - foundation_markdown: Foundation (metadata + characters + world) as markdown (context-only)
+    - chapter_count: Baseline chapter count (may be 0/None when auto_plan)
+    - total_words: Target total words (guidance only)
+    - act_weights: [0.25, 0.50, 0.25] target distribution across acts
+    - auto_plan: If true, you choose the chapter count
     - feedback: Optional user feedback for iteration
 #}
 
@@ -28,7 +31,11 @@ BEAT SHEET PRINCIPLES:
 - Track emotional shifts and relationship changes
 
 [USER]
+{% if auto_plan %}
+Decide and generate the minimal chapter count that properly tells this story without duplication and with strong pacing. Use act distribution weights {{ act_weights }} as targets. Target total words: ~{{ total_words }} (guidance only).
+{% else %}
 Generate {{ chapter_count }} chapter outlines using BEAT SHEET format.
+{% endif %}
 
 <<<PREMISE + TREATMENT (CONTEXT) START>>>
 {{ context_markdown }}
@@ -104,9 +111,15 @@ BEAT STRUCTURE EXAMPLES:
 
 STRUCTURAL LANDMARKS (place explicitly):
 - Inciting Incident in Chapter 1–2
+{% if auto_plan %}
+- Midpoint at ~50% of the chosen chapter count (unmistakable reversal or commitment)
+- "All Is Lost" at ~80% of the chosen chapter count
+- Climax in the final chapter
+{% else %}
 - Midpoint in Chapter ~{{ (chapter_count * 0.5)|int }} (unmistakable reversal or commitment)
 - "All Is Lost" in Chapter ~{{ (chapter_count * 0.8)|int }}
 - Climax in Chapter ~{{ (chapter_count * 0.9)|int }}–{{ chapter_count }}
+{% endif %}
 
 LOCATION & VARIETY CONSTRAINTS:
 - Avoid reusing the same location or tactic in adjacent chapters; if reusing, state what escalates (new obstacle, higher stakes).

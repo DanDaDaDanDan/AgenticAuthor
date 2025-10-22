@@ -785,7 +785,9 @@ class ChapterGenerator:
         pacing: str,
         feedback: Optional[str] = None,
         temperature: float = 0.7,
-        output_dir: Optional[Path] = None
+        output_dir: Optional[Path] = None,
+        auto_plan: bool = False,
+        act_weights: Optional[list] = None
     ) -> Dict[str, Any]:
         """
         Generate all chapters in a single LLM call using OLD PROVEN FORMAT.
@@ -821,14 +823,16 @@ class ChapterGenerator:
                 logger.debug(f"Using default word count for {genre} novel: {total_words}")
 
         if chapter_count is None:
-            # Calculate chapter count from word count using structure calculator
+            # Calculate baseline chapter count for estimates only (auto-plan may override)
             structure = self._calculate_structure(total_words, pacing, length_scope=None)
             chapter_count = structure['chapter_count']
             if logger:
-                logger.debug(f"Calculated chapter count: {chapter_count}")
+                logger.debug(f"Calculated baseline chapter count: {chapter_count}")
 
-        self.console.print(f"\n[cyan]Generating all {chapter_count} chapters in single call...[/cyan]")
-        self.console.print(f"[dim]Target: {total_words:,} words across {chapter_count} chapters[/dim]")
+        count_label = f"auto" if auto_plan else f"{chapter_count}"
+        self.console.print(f"\n[cyan]Generating chapters in single call (count: {count_label})...[/cyan]")
+        if total_words:
+            self.console.print(f"[dim]Target: {total_words:,} words (final chapter count chosen {'by LLM' if auto_plan else 'from baseline'})[/dim]")
         self.console.print(f"[dim]Using classic key_events format (proven quality)[/dim]\n")
 
         # Load context as markdown (premise + treatment)
@@ -841,12 +845,19 @@ class ChapterGenerator:
         from ..utils.markdown_extractors import MarkdownFormatter
         foundation_markdown = MarkdownFormatter.format_foundation(foundation)
 
+        # Default act weights if not provided
+        if not act_weights:
+            act_weights = [0.25, 0.50, 0.25]
+
         # Render chapters generation prompt from template
         prompts = self.prompt_loader.render(
             "generation/chapter_single_shot",
             context_markdown=context_markdown,
             foundation_markdown=foundation_markdown,
             chapter_count=chapter_count,
+            total_words=total_words or 0,
+            act_weights=act_weights,
+            auto_plan=auto_plan,
             feedback=feedback or ""
         )
 
@@ -871,7 +882,7 @@ class ChapterGenerator:
                 ],
                 temperature=temperature,  # Use parameter for temperature variation
                 display=True,
-                display_label=f"Generating all {chapter_count} chapters",
+                display_label=f"Generating all {'auto' if auto_plan else chapter_count} chapters",
                 reserve_tokens=estimated_response_tokens
             )
 

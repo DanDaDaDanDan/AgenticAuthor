@@ -76,10 +76,12 @@ class VariantManager:
         context: Dict[str, Any],
         foundation: Dict[str, Any],
         total_words: int,
-        chapter_count: int,
+        chapter_count: Optional[int],
         genre: str,
         pacing: str,
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
+        auto_plan: bool = False,
+        act_weights: Optional[list] = None
     ) -> Tuple[int, Dict[str, Any]]:
         """
         Generate a single variant using ChapterGenerator.
@@ -121,7 +123,9 @@ class VariantManager:
                 pacing=pacing,
                 feedback=feedback,
                 temperature=temperature,  # VARIANT-SPECIFIC
-                output_dir=variant_dir    # VARIANT-SPECIFIC
+                output_dir=variant_dir,   # VARIANT-SPECIFIC
+                auto_plan=auto_plan,
+                act_weights=act_weights
             )
 
             if logger:
@@ -139,10 +143,12 @@ class VariantManager:
         context: Dict[str, Any],
         foundation: Dict[str, Any],
         total_words: int,
-        chapter_count: int,
+        chapter_count: Optional[int],
         genre: str,
         pacing: str,
-        feedback: Optional[str] = None
+        feedback: Optional[str] = None,
+        auto_plan: bool = False,
+        act_weights: Optional[list] = None
     ) -> List[Tuple[int, Dict[str, Any]]]:
         """
         Generate 4 variants in parallel with different temperatures.
@@ -169,7 +175,7 @@ class VariantManager:
 
         if logger:
             logger.info(f"=== VARIANT GENERATION START ===")
-            logger.info(f"Target: {chapter_count} chapters, {total_words:,} words")
+            logger.info(f"Target: {'auto chapters' if auto_plan else f'{chapter_count} chapters'}, {total_words:,} words")
             logger.info(f"Variants: {len(VARIANT_CONFIGS)} parallel generations")
 
         # Ensure variants directory exists
@@ -214,7 +220,9 @@ class VariantManager:
                 chapter_count=chapter_count,
                 genre=genre,
                 pacing=pacing,
-                feedback=feedback
+                feedback=feedback,
+                auto_plan=auto_plan,
+                act_weights=act_weights
             )
             tasks.append(task)
 

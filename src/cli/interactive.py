@@ -1563,14 +1563,17 @@ class InteractiveSession:
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
             return
 
-        # Parse options (chapter count or word count)
+        # Parse options (chapter count or word count) and flags
         chapter_count = None
         total_words = None  # Let generator calculate smart default
+        auto_plan = False
 
         if options:
             parts = options.split()
             for part in parts:
-                if part.isdigit():
+                if part in ("--auto", "-a"):
+                    auto_plan = True
+                elif part.isdigit():
                     num = int(part)
                     if num < 50:  # Assume it's chapter count
                         chapter_count = num
@@ -1626,10 +1629,12 @@ class InteractiveSession:
             from ..generation.depth_calculator import DepthCalculator
             total_words = DepthCalculator.get_default_word_count(length_scope or 'novel', genre or 'general')
 
+        # Baseline structure for defaults (also used for act weights)
+        from ..generation.depth_calculator import DepthCalculator
+        structure = DepthCalculator.calculate_structure(total_words, pacing, length_scope)
+        baseline_count = structure['chapter_count']
         if chapter_count is None:
-            from ..generation.depth_calculator import DepthCalculator
-            structure = DepthCalculator.calculate_structure(total_words, pacing, length_scope)
-            chapter_count = structure['chapter_count']
+            chapter_count = baseline_count
 
         # Generate foundation (ONCE for all variants)
         self.console.print(f"[cyan][1/2] Generating foundation (metadata + characters + world)...[/cyan]\n")
@@ -1783,13 +1788,25 @@ Regenerate the foundation addressing the issues above.
         variant_manager = VariantManager(generator, self.project)
 
         try:
+            # Compute act weights from baseline_count for guidance (Act I/II/III)
+            # Use 25/50/25 if baseline is too small
+            if baseline_count and baseline_count >= 4:
+                act1 = max(1, int(baseline_count * 0.25))
+                act3 = max(1, int(baseline_count * 0.25))
+                act2 = max(1, baseline_count - act1 - act3)
+                act_weights = [round(act1 / baseline_count, 2), round(act2 / baseline_count, 2), round(act3 / baseline_count, 2)]
+            else:
+                act_weights = [0.25, 0.50, 0.25]
+
             successful_variants = await variant_manager.generate_variants(
                 context=context,
                 foundation=foundation,
                 total_words=total_words,
-                chapter_count=chapter_count,
+                chapter_count=None if auto_plan else chapter_count,
                 genre=genre or 'general',
-                pacing=pacing
+                pacing=pacing,
+                auto_plan=auto_plan,
+                act_weights=act_weights
             )
 
             if successful_variants:
