@@ -1078,14 +1078,13 @@ class InteractiveSession:
         for variant_num in sorted(variants_data.keys()):
             chapters = variants_data[variant_num]
             chapter_count = len(chapters)
-            total_words = sum(ch.get('word_count_target', 0) for ch in chapters)
 
             # Get variant config label
             from ..generation.variants import VARIANT_CONFIGS
             config = next((c for c in VARIANT_CONFIGS if c['variant'] == variant_num), None)
             label = config['label'] if config else f"Temperature {config['temperature']}" if config else ""
 
-            self.console.print(f"  • Variant {variant_num} ({label}): {chapter_count} chapters, {total_words:,} words")
+            self.console.print(f"  • Variant {variant_num} ({label}): {chapter_count} chapters")
 
         self.console.print()
 

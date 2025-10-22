@@ -962,6 +962,13 @@ class ChapterGenerator:
 
             beats_dir.mkdir(parents=True, exist_ok=True)
 
+            # Clean up old chapter files before saving new ones
+            # This prevents stale files from previous generations
+            for old_chapter in beats_dir.glob('chapter-*.md'):
+                old_chapter.unlink()
+                if logger:
+                    logger.debug(f"Removed old chapter file: {old_chapter.name}")
+
             # Save each chapter as raw markdown
             for i, chapter in enumerate(chapters_data):
                 chapter_num = chapter.get('number', 0)
