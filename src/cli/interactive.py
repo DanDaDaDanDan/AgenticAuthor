@@ -1095,9 +1095,9 @@ class InteractiveSession:
                 variants_data=variants_data
             )
 
-            # Update combined context (premise + taxonomy + foundation + beats)
+            # Update chapter-beats combined (premise + taxonomy + treatment + foundation + beats)
             try:
-                self.project.write_combined_markdown(include_prose=False)
+                self.project.write_combined_markdown(target='chapter-beats', include_prose=False)
             except Exception:
                 pass
 
@@ -1394,11 +1394,7 @@ class InteractiveSession:
             # Save selected premise with metadata
             self.project.save_premise_metadata(selected_premise)
 
-            # Update combined context (premise + taxonomy)
-            try:
-                self.project.write_combined_markdown(include_prose=False)
-            except Exception:
-                pass
+            # No combined.md at premise stage (combined is folder-specific)
 
             # Display selected premise
             self.console.print(f"\n[green]✓ Premise #{selected_num} selected[/green]\n")
@@ -1556,9 +1552,9 @@ class InteractiveSession:
             self.console.print(f"[green]✓  Treatment generated: {word_count} words[/green]")
             self.console.print("[dim]Saved to treatment.md[/dim]")
 
-            # Update combined context (premise + taxonomy + treatment)
+            # Write treatment folder combined
             try:
-                self.project.write_combined_markdown(include_prose=False)
+                self.project.write_combined_markdown(target='treatment', include_prose=False)
             except Exception:
                 pass
 

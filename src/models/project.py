@@ -965,17 +965,18 @@ class Project:
         self.dedication_file.write_text(content, encoding='utf-8')
 
     # --- Combined Context ---
-    def write_combined_markdown(self, include_prose: bool = False) -> Path:
-        """Write combined.md aggregating current project context.
+    def write_combined_markdown(self, target: str, include_prose: bool = False) -> Path:
+        """Write a combined.md for a specific folder target.
 
-        Sections (if available): Premise, Taxonomy, Treatment, Foundation,
-        Chapter Outlines, and optional Prose.
+        Args:
+            target: One of: 'treatment', 'chapter-beats', 'chapters'
+            include_prose: When target='chapters', include chapter prose
 
         Returns:
-            Path to written combined.md
+            Path written
         """
         lines: list[str] = []
-        lines.append(f"# Combined Context — {self.name}")
+        lines.append(f"# Combined Context — {self.name} — {target}")
         lines.append("")
 
         # Premise
@@ -1045,7 +1046,18 @@ class Project:
                         continue
                 lines.append("")
 
-        combined_path = self.path / "combined.md"
+        # Determine output folder by target
+        if target == 'treatment':
+            out_dir = self.treatment_dir
+        elif target == 'chapter-beats':
+            out_dir = self.chapter_beats_dir
+        elif target == 'chapters':
+            out_dir = self.chapters_dir
+        else:
+            raise ValueError(f"Unknown combined target: {target}")
+
+        out_dir.mkdir(exist_ok=True)
+        combined_path = out_dir / "combined.md"
         combined_path.write_text("\n".join(lines).strip() + "\n", encoding='utf-8')
         return combined_path
 

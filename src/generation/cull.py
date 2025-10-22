@@ -61,16 +61,17 @@ class CullManager:
             logger.debug(f"Directory exists: {beats_dir.exists()}")
 
         if beats_dir.exists():
-            # Explicitly delete foundation.yaml first
-            foundation_file = beats_dir / "foundation.yaml"
-            if foundation_file.exists():
-                if logger:
-                    logger.debug(f"Deleting foundation: {foundation_file}")
-                foundation_file.unlink()
-                deleted_files.append(str(foundation_file.relative_to(self.project.path)))
+            # Delete foundation (both .md and .yaml for backward compatibility)
+            for foundation_ext in ['.md', '.yaml']:
+                foundation_file = beats_dir / f"foundation{foundation_ext}"
+                if foundation_file.exists():
+                    if logger:
+                        logger.debug(f"Deleting foundation: {foundation_file}")
+                    foundation_file.unlink()
+                    deleted_files.append(str(foundation_file.relative_to(self.project.path)))
 
-            # Delete all chapter-NN.yaml files
-            chapter_files = sorted(beats_dir.glob("chapter-*.yaml"))
+            # Delete all chapter files (both .md and .yaml formats)
+            chapter_files = list(beats_dir.glob("chapter-*.md")) + list(beats_dir.glob("chapter-*.yaml"))
             if logger:
                 logger.debug(f"Found {len(chapter_files)} chapter files")
 
@@ -80,13 +81,13 @@ class CullManager:
                 chapter_file.unlink()
                 deleted_files.append(str(chapter_file.relative_to(self.project.path)))
 
-            # Delete any other .yaml files (catch-all)
-            other_yaml = [f for f in beats_dir.glob("*.yaml") if f.exists()]
-            for yaml_file in other_yaml:
+            # Delete any other files (catch-all for both formats)
+            other_files = [f for f in beats_dir.glob("*") if f.is_file()]
+            for file in other_files:
                 if logger:
-                    logger.debug(f"Deleting other yaml: {yaml_file}")
-                yaml_file.unlink()
-                deleted_files.append(str(yaml_file.relative_to(self.project.path)))
+                    logger.debug(f"Deleting other file: {file}")
+                file.unlink()
+                deleted_files.append(str(file.relative_to(self.project.path)))
 
             # Try to remove directory if empty
             try:
@@ -108,12 +109,13 @@ class CullManager:
             # Delete all variant-N/ subdirectories
             for variant_dir in variants_dir.glob('variant-*'):
                 if variant_dir.is_dir():
-                    # Delete all chapter files in this variant
-                    for chapter_file in variant_dir.glob('*.yaml'):
-                        if logger:
-                            logger.debug(f"Deleting variant file: {chapter_file}")
-                        chapter_file.unlink()
-                        deleted_files.append(str(chapter_file.relative_to(self.project.path)))
+                    # Delete all files in this variant (both .md and .yaml)
+                    for variant_file in variant_dir.iterdir():
+                        if variant_file.is_file():
+                            if logger:
+                                logger.debug(f"Deleting variant file: {variant_file}")
+                            variant_file.unlink()
+                            deleted_files.append(str(variant_file.relative_to(self.project.path)))
 
                     # Remove variant directory
                     try:
@@ -124,13 +126,14 @@ class CullManager:
                         if logger:
                             logger.debug(f"Could not remove variant directory: {e}")
 
-            # Delete shared foundation.yaml
-            foundation_file = variants_dir / 'foundation.yaml'
-            if foundation_file.exists():
-                if logger:
-                    logger.debug(f"Deleting variants foundation: {foundation_file}")
-                foundation_file.unlink()
-                deleted_files.append(str(foundation_file.relative_to(self.project.path)))
+            # Delete shared foundation (both .md and .yaml for backward compatibility)
+            for foundation_ext in ['.md', '.yaml']:
+                foundation_file = variants_dir / f'foundation{foundation_ext}'
+                if foundation_file.exists():
+                    if logger:
+                        logger.debug(f"Deleting variants foundation: {foundation_file}")
+                    foundation_file.unlink()
+                    deleted_files.append(str(foundation_file.relative_to(self.project.path)))
 
             # Delete decision.json if present
             decision_file = variants_dir / 'decision.json'
@@ -139,6 +142,14 @@ class CullManager:
                     logger.debug(f"Deleting decision file: {decision_file}")
                 decision_file.unlink()
                 deleted_files.append(str(decision_file.relative_to(self.project.path)))
+
+            # Delete combined.md if present
+            combined_file = variants_dir / 'combined.md'
+            if combined_file.exists():
+                if logger:
+                    logger.debug(f"Deleting combined file: {combined_file}")
+                combined_file.unlink()
+                deleted_files.append(str(combined_file.relative_to(self.project.path)))
 
             # Try to remove variants directory
             try:

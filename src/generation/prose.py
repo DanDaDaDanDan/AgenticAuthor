@@ -368,7 +368,7 @@ class ProseGenerator:
 
             # Update combined context to include latest prose
             try:
-                self.project.write_combined_markdown(include_prose=True)
+                self.project.write_combined_markdown(target='chapters', include_prose=True)
             except Exception:
                 pass
 
