@@ -30,13 +30,13 @@ BEAT SHEET PRINCIPLES:
 [USER]
 Generate {{ chapter_count }} chapter outlines using BEAT SHEET format.
 
-CONTEXT:
+<<<PREMISE + TREATMENT (CONTEXT) START>>>
 {{ context_markdown }}
+<<<PREMISE + TREATMENT (CONTEXT) END>>>
 
----
-
-FOUNDATION (already generated):
+<<<FOUNDATION (CONTEXT ONLY) START>>>
 {{ foundation_markdown }}
+<<<FOUNDATION (CONTEXT ONLY) END>>>
 
 ---
 
@@ -71,9 +71,13 @@ BEAT SHEET REQUIREMENTS:
 Each chapter must include:
 1. **Compelling Title** - Captures the essence of the chapter
 2. **Act Designation** - Act I, Act II, or Act III
-3. **5-7 Beats** - Major structural moments using format: "- [Action] → [Consequence]"
-4. **Character Development** - Key character growth/change moments (2-3 items)
-5. **Emotional Beat** - The chapter's emotional core in one sentence
+3. **POV** - Whose perspective the chapter follows (keep consistent within a chapter)
+4. **Primary Operation Type** - investigation | confrontation | negotiation | pursuit | deception | recovery | revelation | reversal (pick one)
+5. **5-7 Key Events (Beats)** - Major structural moments using format: "- [Action] → [Consequence]"
+6. **Character Development** - Key growth/change moments (2-3 items) written as "Name: change with evidence"
+7. **Emotional Beat** - One sentence capturing the chapter's emotional core
+8. **New Information** - One sentence stating what concrete, non-duplicate information the reader learns in this chapter
+9. **Hook Type** - question | reversal | deadline | forced-choice | loss | betrayal | ambush (how the chapter ends)
 
 BEAT WRITING GUIDELINES:
 - Each beat = 1 major plot point, turning point, or story moment
@@ -98,13 +102,25 @@ BEAT STRUCTURE EXAMPLES:
 ✅ BEAT (do this):
 "Sarah enters mansion's forbidden wing → Discovers father's secret laboratory hidden for 20 years"
 
+STRUCTURAL LANDMARKS (place explicitly):
+- Inciting Incident in Chapter 1–2
+- Midpoint in Chapter ~{{ (chapter_count * 0.5)|int }} (unmistakable reversal or commitment)
+- "All Is Lost" in Chapter ~{{ (chapter_count * 0.8)|int }}
+- Climax in Chapter ~{{ (chapter_count * 0.9)|int }}–{{ chapter_count }}
+
+LOCATION & VARIETY CONSTRAINTS:
+- Avoid reusing the same location or tactic in adjacent chapters; if reusing, state what escalates (new obstacle, higher stakes).
+- Ensure each chapter advances either knowledge (solved clue), stakes, or relationship state.
+
 OUTPUT FORMAT (use clean markdown):
 
 # Chapter 1: [Compelling Title]
 
 **Act:** Act I
+**POV:** [Name]
+**Primary Operation Type:** [investigation|confrontation|...]
 
-**Beats:**
+**Key Events (Beats):**
 - [Beat 1: Action/Event → Consequence/Result]
 - [Beat 2: Action/Event → Consequence/Result]
 - [Beat 3: Action/Event → Consequence/Result]
@@ -113,18 +129,22 @@ OUTPUT FORMAT (use clean markdown):
 - [Optional: Beat 6 or 7 if story requires]
 
 **Character Development:**
-- [Key character growth/change moment 1]
-- [Key character growth/change moment 2]
+- [Name: concrete change with evidence]
+- [Name: concrete change with evidence]
 
-**Emotional Beat:** [One sentence capturing chapter's emotional core - tension, fear, hope, etc.]
+**Emotional Beat:** [One sentence capturing chapter's emotional core]
+**New Information:** [One sentence]
+**Hook Type:** [question|reversal|deadline|forced-choice|loss|betrayal|ambush]
 
 ---
 
 # Chapter 2: [Title]
 
 **Act:** Act I
+**POV:** [Name]
+**Primary Operation Type:** [investigation|confrontation|...]
 
-**Beats:**
+**Key Events (Beats):**
 - [Beat 1: Action → Result]
 - [Beat 2: Action → Result]
 - [Beat 3: Action → Result]
@@ -132,10 +152,12 @@ OUTPUT FORMAT (use clean markdown):
 - [Beat 5: Action → Result]
 
 **Character Development:**
-- [Development 1]
-- [Development 2]
+- [Name: change]
+- [Name: change]
 
 **Emotional Beat:** [Emotional core]
+**New Information:** [One sentence]
+**Hook Type:** [type]
 
 ---
 
