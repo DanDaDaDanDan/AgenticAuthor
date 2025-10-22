@@ -178,10 +178,20 @@ class ChapterGenerator:
             for elem in unique_elements:
                 metadata_yaml_example += f'\n    - "{elem}"'
 
+        # Prepare taxonomy as markdown (constraints/preferences)
+        import yaml as _yaml
+        taxonomy_markdown = ""
+        try:
+            if taxonomy_data:
+                taxonomy_markdown = _yaml.dump({'selections': taxonomy_data}, sort_keys=False, allow_unicode=True)
+        except Exception:
+            taxonomy_markdown = str(taxonomy_data)
+
         # Render foundation prompt from template
         prompts = self.prompt_loader.render(
             "generation/chapter_foundation",
             context_markdown=context_markdown,
+            taxonomy_markdown=taxonomy_markdown,
             unique_context=unique_context,
             metadata_yaml_example=metadata_yaml_example,
             total_words=total_words,
@@ -845,6 +855,16 @@ class ChapterGenerator:
         from ..utils.markdown_extractors import MarkdownFormatter
         foundation_markdown = MarkdownFormatter.format_foundation(foundation)
 
+        # Load taxonomy selections and format as markdown
+        taxonomy_data = self.project.get_taxonomy() or {}
+        import yaml as _yaml
+        taxonomy_markdown = ""
+        try:
+            if taxonomy_data:
+                taxonomy_markdown = _yaml.dump({'selections': taxonomy_data}, sort_keys=False, allow_unicode=True)
+        except Exception:
+            taxonomy_markdown = str(taxonomy_data)
+
         # Default act weights if not provided
         if not act_weights:
             act_weights = [0.25, 0.50, 0.25]
@@ -854,6 +874,7 @@ class ChapterGenerator:
             "generation/chapter_single_shot",
             context_markdown=context_markdown,
             foundation_markdown=foundation_markdown,
+            taxonomy_markdown=taxonomy_markdown,
             chapter_count=chapter_count,
             total_words=total_words or 0,
             act_weights=act_weights,

@@ -4,6 +4,7 @@
     Variables:
     - context_markdown: Full premise + treatment as markdown
     - foundation_markdown: Foundation (metadata + characters + world) as markdown (context-only)
+    - taxonomy_markdown: Taxonomy selections (constraints/preferences) as markdown
     - chapter_count: Baseline chapter count (may be 0/None when auto_plan)
     - total_words: Target total words (guidance only)
     - act_weights: [0.25, 0.50, 0.25] target distribution across acts
@@ -44,6 +45,12 @@ Generate {{ chapter_count }} chapter outlines using BEAT SHEET format.
 <<<FOUNDATION (CONTEXT ONLY) START>>>
 {{ foundation_markdown }}
 <<<FOUNDATION (CONTEXT ONLY) END>>>
+
+{% if taxonomy_markdown %}
+<<<TAXONOMY (CONSTRAINTS) START>>>
+{{ taxonomy_markdown }}
+<<<TAXONOMY (CONSTRAINTS) END>>>
+{% endif %}
 
 ---
 

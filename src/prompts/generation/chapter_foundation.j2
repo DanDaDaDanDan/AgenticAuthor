@@ -3,6 +3,7 @@
 
     Variables:
     - context_markdown: Full premise + treatment as markdown
+    - taxonomy_markdown: Taxonomy selections (constraints/preferences) as markdown
     - unique_context: Original concept and unique elements text
     - metadata_yaml_example: Pre-formatted metadata YAML example
     - total_words: Target total word count
@@ -22,6 +23,15 @@ You are a professional story development assistant. You write in clear, natural 
 [USER]
 # TREATMENT
 {{ context_markdown }}
+
+{% if taxonomy_markdown %}
+---
+
+# TAXONOMY (CONSTRAINTS)
+{{ taxonomy_markdown }}
+
+Use these selections as constraints and defaults (genre, tone, pacing, length scope, etc.). Do not contradict them.
+{% endif %}
 
 {{ unique_context }}
 # YOUR TASK
