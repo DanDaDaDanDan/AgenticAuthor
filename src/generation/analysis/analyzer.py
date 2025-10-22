@@ -204,8 +204,6 @@ class AnalysisCoordinator:
         Returns:
             Formatted markdown string with boxes
         """
-        from ..utils.markdown_extractors import MarkdownExtractor
-
         sections = []
 
         # Load foundation markdown
