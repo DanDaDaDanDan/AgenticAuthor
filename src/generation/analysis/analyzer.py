@@ -136,12 +136,19 @@ class AnalysisCoordinator:
             if foundation_file.exists() and chapter_files:
                 # NEW markdown-based format: Load foundation + individual chapter markdown files
                 content = self._build_chapters_analysis_content(foundation_file, chapter_files)
-                # No additional context needed - everything is in the content
+                # Add treatment for deviation analysis
+                treatment = self.project.get_treatment()
+                if treatment:
+                    context['treatment'] = treatment
             else:
                 # LEGACY fallback: Try chapters.yaml
                 chapters_yaml = self.project.get_chapters_yaml()
                 if chapters_yaml:
                     content = self._chapters_yaml_to_text(chapters_yaml)
+                    # Add treatment for deviation analysis
+                    treatment = self.project.get_treatment()
+                    if treatment:
+                        context['treatment'] = treatment
                 else:
                     # OLDER legacy: Try old chapters list
                     chapters = self.project.get_chapters()
