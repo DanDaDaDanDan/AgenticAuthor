@@ -21,6 +21,63 @@ class MarkdownExtractor:
     """
 
     @classmethod
+    def split_foundation_and_chapters(cls, markdown_text: str) -> Dict[str, Any]:
+        """
+        Split combined markdown into foundation and individual chapter sections.
+
+        Args:
+            markdown_text: Combined markdown with foundation + all chapters
+
+        Returns:
+            Dict with 'foundation' (str) and 'chapters' (list of str) keys
+        """
+        # Find first chapter header
+        chapter_pattern = r'#{1,2}\s*Chapter\s*\d+'
+        first_chapter_match = re.search(chapter_pattern, markdown_text, re.IGNORECASE)
+
+        if not first_chapter_match:
+            # No chapters found - entire text is foundation
+            return {
+                'foundation': markdown_text.strip(),
+                'chapters': []
+            }
+
+        # Split foundation and chapters content
+        foundation_text = markdown_text[:first_chapter_match.start()].strip()
+        chapters_text = markdown_text[first_chapter_match.start():]
+
+        # Split chapters by chapter headers
+        chapter_splits = re.split(chapter_pattern, chapters_text, flags=re.IGNORECASE)
+
+        # Process chapter sections
+        chapter_sections = []
+        # chapter_splits[0] is empty (before first split)
+        # Odd indices (1, 3, 5...) are chapter numbers from regex groups
+        # Even indices (2, 4, 6...) are chapter content
+
+        # Actually, re.split with a pattern doesn't work like that
+        # Let me use finditer to get chapter positions
+
+        chapter_matches = list(re.finditer(chapter_pattern, chapters_text, re.IGNORECASE))
+
+        for i, match in enumerate(chapter_matches):
+            start_pos = match.start()
+            # End position is start of next chapter or end of text
+            end_pos = chapter_matches[i + 1].start() if i + 1 < len(chapter_matches) else len(chapters_text)
+
+            chapter_section = chapters_text[start_pos:end_pos].strip()
+
+            # Remove trailing separator if present
+            chapter_section = re.sub(r'\n---\s*$', '', chapter_section).strip()
+
+            chapter_sections.append(chapter_section)
+
+        return {
+            'foundation': foundation_text,
+            'chapters': chapter_sections
+        }
+
+    @classmethod
     def extract_foundation(cls, markdown_text: str) -> Dict[str, Any]:
         """
         Extract foundation data (metadata, characters, world) from markdown.

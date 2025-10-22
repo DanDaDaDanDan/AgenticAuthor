@@ -357,19 +357,49 @@ class Project:
         Returns:
             Dict with metadata, characters, world sections, or None if not found
         """
-        foundation_file = self.chapter_beats_dir / "foundation.yaml"
-        if foundation_file.exists():
-            with open(foundation_file, 'r', encoding='utf-8') as f:
+        # Try markdown format first (new format - stores raw LLM output for debugging)
+        foundation_md = self.chapter_beats_dir / "foundation.md"
+        if foundation_md.exists():
+            from ..utils.markdown_extractors import MarkdownExtractor
+            with open(foundation_md, 'r', encoding='utf-8') as f:
+                markdown_text = f.read()
+                return MarkdownExtractor.extract_foundation(markdown_text)
+
+        # Fallback to YAML format (legacy - for backward compatibility)
+        foundation_yaml = self.chapter_beats_dir / "foundation.yaml"
+        if foundation_yaml.exists():
+            with open(foundation_yaml, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f)
+
         return None
+
+    def save_foundation_markdown(self, markdown_text: str):
+        """
+        Save foundation as raw markdown (NEW FORMAT - stores LLM output directly).
+
+        Args:
+            markdown_text: Raw markdown text from LLM
+        """
+        self.chapter_beats_dir.mkdir(exist_ok=True)
+        foundation_file = self.chapter_beats_dir / "foundation.md"
+        with open(foundation_file, 'w', encoding='utf-8') as f:
+            f.write(markdown_text)
 
     def save_foundation(self, data: Dict[str, Any]):
         """
-        Save foundation (metadata + characters + world) to new format.
+        Save foundation as YAML (DEPRECATED - for backward compatibility only).
+
+        NEW CODE SHOULD USE save_foundation_markdown() instead.
 
         Args:
             data: Dict with metadata, characters, world sections
         """
+        import warnings
+        warnings.warn(
+            "save_foundation(dict) is deprecated. Use save_foundation_markdown(markdown_text) instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.chapter_beats_dir.mkdir(exist_ok=True)
         foundation_file = self.chapter_beats_dir / "foundation.yaml"
         with open(foundation_file, 'w', encoding='utf-8') as f:
@@ -385,20 +415,53 @@ class Project:
         Returns:
             Chapter dict, or None if not found
         """
-        chapter_file = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.yaml"
-        if chapter_file.exists():
-            with open(chapter_file, 'r', encoding='utf-8') as f:
+        # Try markdown format first (new format - stores raw LLM output for debugging)
+        chapter_md = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.md"
+        if chapter_md.exists():
+            from ..utils.markdown_extractors import MarkdownExtractor
+            with open(chapter_md, 'r', encoding='utf-8') as f:
+                markdown_text = f.read()
+                chapters = MarkdownExtractor.extract_chapters(markdown_text)
+                # Should only be one chapter in the file
+                return chapters[0] if chapters else None
+
+        # Fallback to YAML format (legacy - for backward compatibility)
+        chapter_yaml = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.yaml"
+        if chapter_yaml.exists():
+            with open(chapter_yaml, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f)
+
         return None
+
+    def save_chapter_beat_markdown(self, chapter_num: int, markdown_text: str):
+        """
+        Save chapter beat as raw markdown (NEW FORMAT - stores LLM output directly).
+
+        Args:
+            chapter_num: Chapter number (1-based)
+            markdown_text: Raw markdown text from LLM
+        """
+        self.chapter_beats_dir.mkdir(exist_ok=True)
+        chapter_file = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.md"
+        with open(chapter_file, 'w', encoding='utf-8') as f:
+            f.write(markdown_text)
 
     def save_chapter_beat(self, chapter_num: int, data: Dict[str, Any]):
         """
-        Save individual chapter outline to new format.
+        Save chapter beat as YAML (DEPRECATED - for backward compatibility only).
+
+        NEW CODE SHOULD USE save_chapter_beat_markdown() instead.
 
         Args:
             chapter_num: Chapter number (1-based)
             data: Chapter dict with outline data
         """
+        import warnings
+        warnings.warn(
+            "save_chapter_beat(dict) is deprecated. Use save_chapter_beat_markdown(markdown_text) instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.chapter_beats_dir.mkdir(exist_ok=True)
         chapter_file = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.yaml"
         with open(chapter_file, 'w', encoding='utf-8') as f:
@@ -409,15 +472,31 @@ class Project:
         List all chapter beat files in new format.
 
         Returns:
-            Sorted list of chapter-NN.yaml file paths
+            Sorted list of chapter-NN.md or chapter-NN.yaml file paths
         """
         if not self.chapter_beats_dir.exists():
             return []
-        return sorted(self.chapter_beats_dir.glob("chapter-*.yaml"))
+
+        # Collect both .md and .yaml files
+        md_files = set(self.chapter_beats_dir.glob("chapter-*.md"))
+        yaml_files = set(self.chapter_beats_dir.glob("chapter-*.yaml"))
+
+        # Prefer .md over .yaml (remove .yaml if .md exists for same chapter)
+        all_files = set()
+        for md_file in md_files:
+            all_files.add(md_file)
+            # Remove corresponding .yaml if exists
+            yaml_counterpart = md_file.with_suffix('.yaml')
+            yaml_files.discard(yaml_counterpart)
+
+        # Add remaining .yaml files (those without .md counterparts)
+        all_files.update(yaml_files)
+
+        return sorted(all_files)
 
     def get_chapters(self) -> Optional[List[Dict[str, Any]]]:
         """
-        Load chapters list from chapter-beats/*.yaml files.
+        Load chapters list from chapter-beats/*.md or *.yaml files.
 
         Returns:
             List of chapter dicts sorted by number, or None if not found
@@ -425,12 +504,23 @@ class Project:
         if not self.chapter_beats_dir.exists():
             return None
 
+        from ..utils.markdown_extractors import MarkdownExtractor
+
         chapters = []
         for chapter_file in self.list_chapter_beats():
-            with open(chapter_file, 'r', encoding='utf-8') as f:
-                chapter_data = yaml.safe_load(f)
-                if chapter_data:
-                    chapters.append(chapter_data)
+            if chapter_file.suffix == '.md':
+                # Parse markdown
+                with open(chapter_file, 'r', encoding='utf-8') as f:
+                    markdown_text = f.read()
+                    extracted = MarkdownExtractor.extract_chapters(markdown_text)
+                    if extracted:
+                        chapters.extend(extracted)
+            elif chapter_file.suffix == '.yaml':
+                # Load YAML directly
+                with open(chapter_file, 'r', encoding='utf-8') as f:
+                    chapter_data = yaml.safe_load(f)
+                    if chapter_data:
+                        chapters.append(chapter_data)
 
         if chapters:
             # Sort by chapter number
