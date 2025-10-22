@@ -168,7 +168,7 @@ class LODContextBuilder:
         context_level: str
     ) -> str:
         """
-        Build markdown context for LLM prompts by loading raw markdown files.
+        Build markdown context for LLM prompts by loading content as markdown.
 
         This is the NEW preferred method for passing context to LLMs.
         Returns raw markdown with clear section fences instead of YAML.
@@ -182,22 +182,22 @@ class LODContextBuilder:
 
         Examples:
             - Generating chapters: context_level='treatment'
-              Returns: premise.md + treatment.md with fences
+              Returns: premise + treatment with section headers
         """
         sections = []
 
         # Include premise if needed
+        # NOTE: Premise is stored in premise_metadata.json, not premise.md
         if context_level in ['premise', 'treatment']:
-            premise_file = project.premise_dir / 'premise.md'
-            if premise_file.exists():
-                premise_text = premise_file.read_text(encoding='utf-8')
+            premise_text = project.get_premise()
+            if premise_text:
                 sections.append("## PREMISE\n\n" + premise_text)
 
         # Include treatment if needed
+        # NOTE: Treatment is stored in treatment/treatment.md
         if context_level == 'treatment':
-            treatment_file = project.treatment_dir / 'treatment.md'
-            if treatment_file.exists():
-                treatment_text = treatment_file.read_text(encoding='utf-8')
+            treatment_text = project.get_treatment()
+            if treatment_text:
                 sections.append("## TREATMENT\n\n" + treatment_text)
 
         return "\n\n---\n\n".join(sections)
