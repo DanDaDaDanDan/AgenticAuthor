@@ -175,7 +175,10 @@ class VariantManager:
 
         if logger:
             logger.info(f"=== VARIANT GENERATION START ===")
-            logger.info(f"Target: {'auto chapters' if auto_plan else f'{chapter_count} chapters'}, {total_words:,} words")
+            if auto_plan:
+                logger.info("Target: auto chapters (LLM decides count)")
+            else:
+                logger.info(f"Target: {chapter_count} chapters, {total_words:,} words")
             logger.info(f"Variants: {len(VARIANT_CONFIGS)} parallel generations")
 
         # Ensure variants directory exists

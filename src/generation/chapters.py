@@ -831,8 +831,8 @@ class ChapterGenerator:
 
         count_label = f"auto" if auto_plan else f"{chapter_count}"
         self.console.print(f"\n[cyan]Generating chapters in single call (count: {count_label})...[/cyan]")
-        if total_words:
-            self.console.print(f"[dim]Target: {total_words:,} words (final chapter count chosen {'by LLM' if auto_plan else 'from baseline'})[/dim]")
+        if total_words and not auto_plan:
+            self.console.print(f"[dim]Target: {total_words:,} words (chapter count from baseline)")
         self.console.print(f"[dim]Using classic key_events format (proven quality)[/dim]\n")
 
         # Load context as markdown (premise + treatment)
