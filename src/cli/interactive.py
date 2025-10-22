@@ -1652,6 +1652,10 @@ class InteractiveSession:
 
         self.console.print(f"[green]✓ Foundation complete[/green]\n")
 
+        # Parse markdown to dict for validation and variant generation
+        from ..utils.markdown_extractors import MarkdownExtractor
+        foundation = MarkdownExtractor.extract_foundation(foundation)
+
         # Validate foundation fidelity before generating variants
         validation_loop_count = 0
         max_validation_iterations = 3
@@ -1744,6 +1748,9 @@ Regenerate the foundation addressing the issues above.
                     )
 
                     self.console.print(f"[green]✓ Foundation regenerated[/green]\n")
+
+                    # Parse markdown to dict for next validation iteration
+                    foundation = MarkdownExtractor.extract_foundation(foundation)
 
                     # Increment loop counter and continue validation
                     validation_loop_count += 1
