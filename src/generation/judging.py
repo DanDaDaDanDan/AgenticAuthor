@@ -303,33 +303,39 @@ class JudgingCoordinator:
         Generate a combined chapters.md file with all chapter outlines in readable format.
 
         Args:
-            beats_dir: Directory containing chapter-*.yaml files
-            foundation_path: Path to foundation.yaml file
+            beats_dir: Directory containing chapter-*.md files
+            foundation_path: Path to foundation.md file
         """
         from ..utils.logging import get_logger
+        from ..utils.markdown_extractors import MarkdownExtractor
+
         logger = get_logger()
 
         if logger:
             logger.debug("Generating combined chapters.md from chapter beats")
 
-        # Read foundation
+        # Read foundation from markdown
         try:
             with open(foundation_path, 'r', encoding='utf-8') as f:
-                foundation = yaml.safe_load(f)
+                markdown_text = f.read()
+            foundation = MarkdownExtractor.extract_foundation(markdown_text)
         except Exception as e:
             if logger:
                 logger.warning(f"Failed to load foundation for chapters.md: {e}")
             foundation = {}
 
-        # Read all chapter files
-        chapter_files = sorted(beats_dir.glob('chapter-*.yaml'))
+        # Read all chapter files from markdown
+        chapter_files = sorted(beats_dir.glob('chapter-*.md'))
         chapters_data = []
 
         for chapter_file in chapter_files:
             try:
                 with open(chapter_file, 'r', encoding='utf-8') as f:
-                    chapter_data = yaml.safe_load(f)
-                    chapters_data.append(chapter_data)
+                    markdown_text = f.read()
+                # Parse individual chapter markdown
+                chapter_dicts = MarkdownExtractor.extract_chapters(markdown_text)
+                if chapter_dicts:
+                    chapters_data.append(chapter_dicts[0])  # Each file has one chapter
             except Exception as e:
                 if logger:
                     logger.warning(f"Failed to load {chapter_file.name}: {e}")
@@ -437,9 +443,9 @@ class JudgingCoordinator:
         # Ensure chapter-beats/ directory exists
         beats_dir.mkdir(exist_ok=True)
 
-        # Copy foundation (shared by all variants)
-        foundation_src = self.variants_dir / 'foundation.yaml'
-        foundation_dst = beats_dir / 'foundation.yaml'
+        # Copy foundation (shared by all variants) - markdown format
+        foundation_src = self.variants_dir / 'foundation.md'
+        foundation_dst = beats_dir / 'foundation.md'
 
         if foundation_src.exists():
             shutil.copy2(foundation_src, foundation_dst)
@@ -450,8 +456,8 @@ class JudgingCoordinator:
             if logger:
                 logger.warning(f"Foundation not found at {foundation_src}")
 
-        # Copy all chapter files from winner variant
-        chapter_files = sorted(variant_dir.glob('chapter-*.yaml'))
+        # Copy all chapter files from winner variant - markdown format
+        chapter_files = sorted(variant_dir.glob('chapter-*.md'))
 
         if logger:
             logger.debug(f"Copying {len(chapter_files)} chapter files from variant {winner_variant_num}")

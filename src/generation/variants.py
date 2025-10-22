@@ -65,9 +65,9 @@ class VariantManager:
         Get path to shared foundation file.
 
         Returns:
-            Path to chapter-beats-variants/foundation.yaml
+            Path to chapter-beats-variants/foundation.md
         """
-        return self.variants_dir / 'foundation.yaml'
+        return self.variants_dir / 'foundation.md'
 
     async def _generate_single_variant(
         self,
@@ -175,12 +175,13 @@ class VariantManager:
         # Ensure variants directory exists
         self.variants_dir.mkdir(exist_ok=True)
 
-        # Save shared foundation
+        # Save shared foundation as markdown (NEW FORMAT)
+        # Convert dict back to markdown using MarkdownFormatter
+        from ..utils.markdown_extractors import MarkdownFormatter
+        foundation_markdown = MarkdownFormatter.format_foundation(foundation)
+
         foundation_path = self._get_foundation_path()
-        foundation_path.write_text(
-            yaml.dump(foundation, sort_keys=False, allow_unicode=True),
-            encoding='utf-8'
-        )
+        foundation_path.write_text(foundation_markdown, encoding='utf-8')
 
         if logger:
             logger.debug(f"Saved shared foundation to: {foundation_path}")
@@ -316,12 +317,19 @@ class VariantManager:
         if not variant_dir.exists():
             return None
 
+        # Load from markdown files (NEW FORMAT)
+        from ..utils.markdown_extractors import MarkdownExtractor
+
         chapters = []
-        for chapter_file in sorted(variant_dir.glob('chapter-*.yaml')):
+        for chapter_file in sorted(variant_dir.glob('chapter-*.md')):
             with open(chapter_file, 'r', encoding='utf-8') as f:
-                chapter_data = yaml.safe_load(f)
-                if chapter_data:
-                    chapters.append(chapter_data)
+                markdown_text = f.read()
+
+            # Parse individual chapter markdown to dict
+            chapter_dicts = MarkdownExtractor.extract_chapters(markdown_text)
+            if chapter_dicts:
+                # Each file contains one chapter, but extract_chapters returns a list
+                chapters.append(chapter_dicts[0])
 
         if chapters:
             return sorted(chapters, key=lambda x: x.get('number', 0))
@@ -354,7 +362,12 @@ class VariantManager:
         foundation_path = self._get_foundation_path()
 
         if foundation_path.exists():
+            # Load from markdown file (NEW FORMAT)
+            from ..utils.markdown_extractors import MarkdownExtractor
+
             with open(foundation_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
+                markdown_text = f.read()
+
+            return MarkdownExtractor.extract_foundation(markdown_text)
 
         return None

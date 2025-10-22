@@ -78,6 +78,42 @@ class MarkdownExtractor:
         }
 
     @classmethod
+    def split_chapters_only(cls, markdown_text: str) -> List[str]:
+        """
+        Split chapters-only markdown into individual chapter sections.
+
+        Use this when the markdown contains ONLY chapters (no foundation).
+        For combined foundation + chapters, use split_foundation_and_chapters() instead.
+
+        Args:
+            markdown_text: Markdown with only chapters (no foundation section)
+
+        Returns:
+            List of chapter markdown strings (one per chapter)
+        """
+        chapter_pattern = r'#{1,2}\s*Chapter\s*\d+'
+        chapter_matches = list(re.finditer(chapter_pattern, markdown_text, re.IGNORECASE))
+
+        if not chapter_matches:
+            # No chapters found - return empty list
+            return []
+
+        chapter_sections = []
+        for i, match in enumerate(chapter_matches):
+            start_pos = match.start()
+            # End position is start of next chapter or end of text
+            end_pos = chapter_matches[i + 1].start() if i + 1 < len(chapter_matches) else len(markdown_text)
+
+            chapter_section = markdown_text[start_pos:end_pos].strip()
+
+            # Remove trailing separator if present
+            chapter_section = re.sub(r'\n---\s*$', '', chapter_section).strip()
+
+            chapter_sections.append(chapter_section)
+
+        return chapter_sections
+
+    @classmethod
     def extract_foundation(cls, markdown_text: str) -> Dict[str, Any]:
         """
         Extract foundation data (metadata, characters, world) from markdown.

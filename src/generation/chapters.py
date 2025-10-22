@@ -25,11 +25,11 @@ class ChapterGenerator:
     This prevents event duplication by giving the LLM a complete view of
     the entire story structure before generating any individual chapter.
 
-    File Structure:
-    - chapter-beats/foundation.yaml     (metadata + characters + world)
-    - chapter-beats/chapter-01.yaml     (chapter 1 outline)
-    - chapter-beats/chapter-02.yaml     (chapter 2 outline)
-    - chapter-beats/chapter-NN.yaml     (chapter N outline)
+    File Structure (NEW MARKDOWN FORMAT):
+    - chapter-beats/foundation.md       (metadata + characters + world - RAW MARKDOWN)
+    - chapter-beats/chapter-01.md       (chapter 1 outline - RAW MARKDOWN)
+    - chapter-beats/chapter-02.md       (chapter 2 outline - RAW MARKDOWN)
+    - chapter-beats/chapter-NN.md       (chapter N outline - RAW MARKDOWN)
 
     Benefits:
     - Global arc planning prevents duplicate events
@@ -37,6 +37,7 @@ class ChapterGenerator:
     - Each chapter has unique plot role
     - Simple key_events format (proven quality from historical testing)
     - LLM plans complete story before generating details
+    - Raw markdown storage for better debugging (see exactly what LLM generated)
 
     TOKEN REQUIREMENTS PER GENERATION:
     ==================================
@@ -49,10 +50,18 @@ class ChapterGenerator:
       - Example: 15 chapters = ~12,000 tokens output
       - Single call with complete context
 
+    STORAGE ARCHITECTURE:
+    ====================
+    - STORAGE: Raw markdown files (.md) - human-readable, lossless
+    - RUNTIME: Parse on-the-fly using MarkdownExtractor - code gets structured dicts
+    - DEBUGGING: Can see exact LLM output without YAML conversion artifacts
+
     BACKWARD COMPATIBILITY:
     =======================
-    Old format (chapters.yaml) supported for READING legacy projects only.
-    New generations write ONLY to chapter-beats/ directory (never chapters.yaml).
+    Old formats supported for READING:
+    - chapters.yaml (legacy unified file)
+    - chapter-beats/*.yaml (legacy individual files)
+    New generations write ONLY markdown (.md files).
     """
 
     def __init__(self, client: OpenRouterClient, project: Project, model: str):
@@ -205,10 +214,11 @@ class ChapterGenerator:
 
         response_text = result.get('content', result) if isinstance(result, dict) else result
 
-        # Use markdown extractor for foundation
+        # Validate that response contains required sections (parse to check, but don't store dict)
         from ..utils.markdown_extractors import MarkdownExtractor
 
         try:
+            # Parse markdown to validate structure (temporary - for validation only)
             foundation_data = MarkdownExtractor.extract_foundation(response_text)
 
             # Validate we got all required sections
@@ -219,6 +229,9 @@ class ChapterGenerator:
             if not foundation_data.get('world'):
                 raise ValueError("Missing world section in foundation")
 
+            if logger:
+                logger.debug(f"Foundation markdown validated successfully")
+
         except Exception as e:
             # Save raw response for debugging before failing
             debug_file = self.project.path / '.agentic' / 'debug' / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.md'
@@ -226,28 +239,17 @@ class ChapterGenerator:
             debug_file.write_text(response_text, encoding='utf-8')
 
             if logger:
-                logger.error(f"Foundation extraction failed: {e}")
+                logger.error(f"Foundation validation failed: {e}")
                 logger.info(f"Raw response saved to: {debug_file}")
 
-            raise Exception(f"Failed to extract foundation from response: {str(e)}")
-
-        # Make sure chapters section is NOT present
-        if 'chapters' in foundation_data:
-            if logger:
-                logger.warning("Foundation included chapters section - removing it")
-            del foundation_data['chapters']
-
-        # Remove any structure fields that LLM might have included
-        # (target_word_count and chapter_count are calculated mathematically, not creative decisions)
-        if 'metadata' in foundation_data:
-            foundation_data['metadata'].pop('target_word_count', None)
-            foundation_data['metadata'].pop('chapter_count', None)
+            raise Exception(f"Failed to validate foundation from response: {str(e)}")
 
         if logger:
-            logger.debug(f"Foundation generated successfully (creative content only)")
+            logger.debug(f"Foundation generated successfully")
             logger.debug(f"Structure will be calculated: {total_words} words, {chapter_count} chapters")
 
-        return foundation_data
+        # Return RAW MARKDOWN (not dict) - will be saved as-is for debugging
+        return response_text
 
     def _format_validation_issues(self, issues: List[Dict[str, Any]]) -> str:
         """
@@ -680,9 +682,13 @@ class ChapterGenerator:
                     genre=genre
                 )
 
-                # Save foundation immediately
-                self.project.save_foundation(foundation)
+                # Save foundation as raw markdown (NEW FORMAT)
+                self.project.save_foundation_markdown(foundation)
                 self.console.print(f"[green]✓[/green] Foundation complete")
+
+                # Parse markdown to dict for use in chapter generation
+                from ..utils.markdown_extractors import MarkdownExtractor
+                foundation = MarkdownExtractor.extract_foundation(foundation)
 
 
             # Generate all chapters with single-shot method
@@ -866,11 +872,12 @@ class ChapterGenerator:
 
             response_text = result.get('content', result) if isinstance(result, dict) else result
 
-            # Parse the chapters using markdown extractor
+            # Parse the chapters using markdown extractor (for validation and metadata)
             from ..utils.markdown_extractors import MarkdownExtractor
             warnings = []  # Track any extraction issues
 
             try:
+                # Validate structure by parsing to dicts
                 chapters_data = MarkdownExtractor.extract_chapters(response_text)
 
                 if not chapters_data:
@@ -878,6 +885,15 @@ class ChapterGenerator:
 
                 if logger:
                     logger.debug(f"Markdown extraction succeeded: {len(chapters_data)} chapters")
+
+                # Extract individual chapter markdown sections (raw text)
+                chapter_markdown_sections = MarkdownExtractor.split_chapters_only(response_text)
+
+                if len(chapter_markdown_sections) != len(chapters_data):
+                    raise ValueError(
+                        f"Mismatch between parsed chapters ({len(chapters_data)}) "
+                        f"and markdown sections ({len(chapter_markdown_sections)})"
+                    )
 
             except Exception as extract_error:
                 # Extraction failed - save raw response and show error
@@ -897,7 +913,7 @@ class ChapterGenerator:
                     f"Response preview (first 500 chars):\n{response_text[:500]}"
                 )
 
-            # Save individual chapter beat files (ONLY format - no chapters.yaml)
+            # Save individual chapter beat files as markdown (NEW FORMAT)
             # Use custom output_dir if provided, otherwise use default chapter-beats/
             if output_dir is None:
                 beats_dir = self.project.chapter_beats_dir
@@ -906,27 +922,16 @@ class ChapterGenerator:
 
             beats_dir.mkdir(parents=True, exist_ok=True)
 
-            # Save foundation if not already saved
-            # IMPORTANT: Skip foundation save for variant directories (variant-N/)
-            # VariantManager saves foundation once to parent chapter-beats-variants/
-            is_variant_dir = 'variant-' in str(beats_dir)
-            foundation_path = beats_dir / 'foundation.yaml'
-
-            if not is_variant_dir and not foundation_path.exists():
-                foundation_path.write_text(
-                    yaml.dump(foundation, sort_keys=False, allow_unicode=True),
-                    encoding='utf-8'
-                )
-
-            # Save each chapter as individual file
-            for chapter in chapters_data:
+            # Save each chapter as raw markdown
+            for i, chapter in enumerate(chapters_data):
                 chapter_num = chapter.get('number', 0)
                 if chapter_num:
-                    chapter_path = beats_dir / f'chapter-{chapter_num:02d}.yaml'
-                    chapter_path.write_text(
-                        yaml.dump(chapter, sort_keys=False, allow_unicode=True),
-                        encoding='utf-8'
-                    )
+                    # Get the corresponding markdown section
+                    chapter_markdown = chapter_markdown_sections[i]
+
+                    # Save directly to beats_dir (supports both default and custom paths)
+                    chapter_path = beats_dir / f'chapter-{chapter_num:02d}.md'
+                    chapter_path.write_text(chapter_markdown, encoding='utf-8')
 
             if logger:
                 logger.debug(f"Saved {len(chapters_data)} chapters to individual beat files")
