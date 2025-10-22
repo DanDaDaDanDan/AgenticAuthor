@@ -3,6 +3,7 @@
 
     Variables:
     - chapters_markdown: Full chapters.yaml content as markdown (metadata, characters, world, chapters)
+    - taxonomy_markdown: Taxonomy selections (constraints/preferences) as markdown (optional)
     - prev_summary: Context from previous chapters (full prose)
     - chapter_number: Current chapter number
     - current_chapter: Current chapter dict from chapters.yaml
@@ -26,10 +27,19 @@ NON-NEGOTIABLES:
 [USER]
 Generate excellent prose for a chapter using this story context.
 
-STORY CONTEXT:
+<<<STORY CONTEXT (FOUNDATION + OUTLINES) START>>>
 {{ chapters_markdown }}
+<<<STORY CONTEXT (FOUNDATION + OUTLINES) END>>>
 
+{% if taxonomy_markdown %}
+<<<TAXONOMY (CONSTRAINTS) START>>>
+{{ taxonomy_markdown }}
+<<<TAXONOMY (CONSTRAINTS) END>>>
+{% endif %}
+
+<<<PREVIOUS PROSE (AUTHORITATIVE) START>>>
 {{ prev_summary }}
+<<<PREVIOUS PROSE (AUTHORITATIVE) END>>>
 
 CHAPTER TO WRITE:
 - Chapter {{ chapter_number }}: "{{ current_chapter['title'] }}"
@@ -78,6 +88,8 @@ CONTINUITY & FIDELITY:
 - Respect previous chapters' FULL PROSE above; do not re-stage scenes already written
 - Each key moment becomes a complete dramatic scene — no list-like recaps
 - Avoid internal duplication: do not re-explain the same clue, location, or confrontation in multiple segments within this chapter.
+- If a beat requires referencing earlier revelations, allude briefly and move forward; do not re-summarize past chapters.
+- Maintain temporal and spatial continuity (time of day, weather, wounds, relationship state, open threads).
 
 SHOW vs TELL - ESSENTIAL:
 

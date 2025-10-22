@@ -299,10 +299,21 @@ class ProseGenerator:
                     else:
                         moments_text += f"- {event}\n"
 
+        # Prepare taxonomy constraints (optional)
+        taxonomy_data = self.project.get_taxonomy() or {}
+        import yaml as _yaml
+        taxonomy_markdown = ""
+        try:
+            if taxonomy_data:
+                taxonomy_markdown = _yaml.dump({'selections': taxonomy_data}, sort_keys=False, allow_unicode=True)
+        except Exception:
+            taxonomy_markdown = str(taxonomy_data)
+
         # Render prompt from template
         prompts = self.prompt_loader.render(
             "generation/prose_generation",
             chapters_markdown=chapters_markdown,
+            taxonomy_markdown=taxonomy_markdown,
             prev_summary=prev_summary,
             chapter_number=chapter_number,
             current_chapter=current_chapter,
