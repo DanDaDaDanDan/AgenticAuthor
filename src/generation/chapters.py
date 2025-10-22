@@ -405,14 +405,15 @@ class ChapterGenerator:
         if logger:
             logger.debug(f"Validating foundation fidelity against treatment")
 
-        # Serialize foundation for validator
-        foundation_yaml = yaml.dump(foundation_data, default_flow_style=False, allow_unicode=True)
+        # Convert foundation to markdown for validator
+        from ..utils.markdown_extractors import MarkdownFormatter
+        foundation_markdown = MarkdownFormatter.format_foundation(foundation_data)
 
         # Render validation prompt from template
         prompts = self.prompt_loader.render(
             "validation/treatment_fidelity",
             treatment_text=treatment_text,
-            foundation_yaml=foundation_yaml
+            foundation_markdown=foundation_markdown
         )
 
         # Get configuration from config
@@ -827,17 +828,21 @@ class ChapterGenerator:
         self.console.print(f"[dim]Target: {total_words:,} words across {chapter_count} chapters[/dim]")
         self.console.print(f"[dim]Using classic key_events format (proven quality)[/dim]\n")
 
-        # Serialize context to YAML
-        context_yaml = self.context_builder.to_yaml_string(context)
+        # Load context as markdown (premise + treatment)
+        context_markdown = self.context_builder.build_markdown_context(
+            project=self.project,
+            context_level='treatment'
+        )
 
-        # Serialize foundation to YAML for inclusion in prompt
-        foundation_yaml = yaml.dump(foundation, sort_keys=False, allow_unicode=True)
+        # Convert foundation dict to markdown for prompt
+        from ..utils.markdown_extractors import MarkdownFormatter
+        foundation_markdown = MarkdownFormatter.format_foundation(foundation)
 
         # Render chapters generation prompt from template
         prompts = self.prompt_loader.render(
             "generation/chapter_single_shot",
-            context_yaml=context_yaml,
-            foundation_yaml=foundation_yaml,
+            context_markdown=context_markdown,
+            foundation_markdown=foundation_markdown,
             chapter_count=chapter_count,
             feedback=feedback or ""
         )

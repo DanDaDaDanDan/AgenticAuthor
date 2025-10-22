@@ -2,8 +2,8 @@
     Single-shot chapter generation - all chapters in one call using BEAT SHEET format.
 
     Variables:
-    - context_yaml: Full premise + treatment as YAML
-    - foundation_yaml: Foundation (metadata + characters + world) as YAML
+    - context_markdown: Full premise + treatment as markdown
+    - foundation_markdown: Foundation (metadata + characters + world) as markdown
     - chapter_count: Number of chapters to generate
     - feedback: Optional user feedback for iteration
 #}
@@ -31,14 +31,14 @@ BEAT SHEET PRINCIPLES:
 Generate {{ chapter_count }} chapter outlines using BEAT SHEET format.
 
 CONTEXT:
-```yaml
-{{ context_yaml }}
-```
+{{ context_markdown }}
+
+---
 
 FOUNDATION (already generated):
-```yaml
-{{ foundation_yaml }}
-```
+{{ foundation_markdown }}
+
+---
 
 ⚠️ CRITICAL PACING PRINCIPLES (HIGHEST PRIORITY):
 - The first 10-15% of the book (first 2-3 chapters) must be EXCEPTIONALLY captivating and fast-paced

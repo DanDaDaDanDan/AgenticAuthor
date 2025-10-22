@@ -63,31 +63,32 @@ class JudgingCoordinator:
             Dict with 'system' and 'user' prompts
         """
         from .variants import VARIANT_CONFIGS
+        from ..utils.markdown_extractors import MarkdownFormatter
 
-        # Serialize foundation
-        foundation_yaml = yaml.dump(foundation, sort_keys=False, allow_unicode=True)
+        # Convert foundation dict back to markdown
+        foundation_markdown = MarkdownFormatter.format_foundation(foundation)
 
-        # Build variants sections
+        # Build variants sections by loading markdown files
         variants_sections = ""
         for variant_num in sorted(variants_data.keys()):
-            chapters = variants_data[variant_num]
-
             # Find config for this variant
             config = next((c for c in VARIANT_CONFIGS if c['variant'] == variant_num), None)
             temp_label = ""
             if config:
                 temp_label = f" - Temperature: {config['temperature']} ({config['label']})"
 
-            variant_yaml = yaml.dump(
-                {'chapters': chapters},
-                sort_keys=False,
-                allow_unicode=True
-            )
+            # Load chapter markdown files for this variant
+            variant_dir = self.variants_dir / f'variant-{variant_num}'
+            chapter_files = sorted(variant_dir.glob('chapter-*.md'))
+
+            chapters_markdown = ""
+            for chapter_file in chapter_files:
+                chapter_text = chapter_file.read_text(encoding='utf-8')
+                chapters_markdown += chapter_text + "\n\n---\n\n"
 
             variants_sections += f"""VARIANT {variant_num}{temp_label}:
-```yaml
-{variant_yaml}
-```
+
+{chapters_markdown}
 
 """
 
@@ -98,7 +99,7 @@ class JudgingCoordinator:
         prompts = self.prompt_loader.render(
             "analysis/chapter_judging",
             variants_count=len(variants_data),
-            foundation_yaml=foundation_yaml,
+            foundation_markdown=foundation_markdown,
             variants_sections=variants_sections,
             variant_numbers=variant_numbers
         )

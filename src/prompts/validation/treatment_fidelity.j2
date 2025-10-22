@@ -3,7 +3,7 @@
 
     Variables:
     - treatment_text: Full treatment text (source of truth)
-    - foundation_yaml: Generated foundation in YAML format
+    - foundation_markdown: Generated foundation in markdown format
 #}
 
 [SYSTEM]
@@ -18,9 +18,7 @@ TREATMENT (SOURCE OF TRUTH):
 ```
 
 GENERATED FOUNDATION:
-```yaml
-{{ foundation_yaml }}
-```
+{{ foundation_markdown }}
 
 TASK:
 Analyze the foundation for contradictions with the treatment.

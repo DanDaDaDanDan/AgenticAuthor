@@ -3,8 +3,8 @@
 
     Variables:
     - variants_count: Number of variants to judge
-    - foundation_yaml: Foundation YAML (metadata, characters, world)
-    - variants_sections: Pre-formatted YAML sections for each variant
+    - foundation_markdown: Foundation markdown (metadata, characters, world)
+    - variants_sections: Pre-formatted markdown sections for each variant
     - variant_numbers: Comma-separated list of variant numbers
 #}
 
@@ -17,9 +17,10 @@ You are judging {{ variants_count }} different chapter outline variants for the 
 All variants share the same foundation (metadata, characters, world) but differ in their chapter-by-chapter execution.
 
 FOUNDATION (shared by all variants):
-```yaml
-{{ foundation_yaml }}
-```
+
+{{ foundation_markdown }}
+
+---
 
 {{ variants_sections }}
 

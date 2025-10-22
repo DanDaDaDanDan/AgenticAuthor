@@ -162,6 +162,46 @@ class LODContextBuilder:
             return int(match.group(1))
         return 0
 
+    def build_markdown_context(
+        self,
+        project: Project,
+        context_level: str
+    ) -> str:
+        """
+        Build markdown context for LLM prompts by loading raw markdown files.
+
+        This is the NEW preferred method for passing context to LLMs.
+        Returns raw markdown with clear section fences instead of YAML.
+
+        Args:
+            project: Current project
+            context_level: What level to include ('premise' | 'treatment')
+
+        Returns:
+            Markdown string with fenced sections
+
+        Examples:
+            - Generating chapters: context_level='treatment'
+              Returns: premise.md + treatment.md with fences
+        """
+        sections = []
+
+        # Include premise if needed
+        if context_level in ['premise', 'treatment']:
+            premise_file = project.premise_dir / 'premise.md'
+            if premise_file.exists():
+                premise_text = premise_file.read_text(encoding='utf-8')
+                sections.append("## PREMISE\n\n" + premise_text)
+
+        # Include treatment if needed
+        if context_level == 'treatment':
+            treatment_file = project.treatment_dir / 'treatment.md'
+            if treatment_file.exists():
+                treatment_text = treatment_file.read_text(encoding='utf-8')
+                sections.append("## TREATMENT\n\n" + treatment_text)
+
+        return "\n\n---\n\n".join(sections)
+
     def to_yaml_string(self, context: Dict[str, Any]) -> str:
-        """Serialize context to YAML string for LLM."""
+        """Serialize context to YAML string for LLM (DEPRECATED - use build_markdown_context instead)."""
         return yaml.dump(context, default_flow_style=False, sort_keys=False, allow_unicode=True)

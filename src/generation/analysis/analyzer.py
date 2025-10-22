@@ -143,18 +143,18 @@ class AnalysisCoordinator:
                     context['treatment'] = self.project.get_treatment()
 
         elif content_type == 'chapter':
-            # Analyze specific chapter outline
+            # Analyze specific chapter outline - load markdown directly
             chapter_num = int(target_id) if target_id else 1
-            chapters = self.project.get_chapters()
-            if chapters:
-                chapter = next(
-                    (c for c in chapters if c.get('number') == chapter_num),
-                    None
-                )
-                if chapter:
-                    content = yaml.dump(chapter, default_flow_style=False)
-                    context['treatment'] = self.project.get_treatment()
-                    context['all_chapters'] = self._chapters_to_text(chapters)
+            chapter_file = self.project.chapter_beats_dir / f'chapter-{chapter_num:02d}.md'
+            if chapter_file.exists():
+                content = chapter_file.read_text(encoding='utf-8')
+                context['treatment'] = self.project.get_treatment()
+                # Load all chapters for context
+                all_chapters_md = []
+                for ch_file in sorted(self.project.chapter_beats_dir.glob('chapter-*.md')):
+                    all_chapters_md.append(ch_file.read_text(encoding='utf-8'))
+                if all_chapters_md:
+                    context['all_chapters'] = '\n\n---\n\n'.join(all_chapters_md)
 
         elif content_type == 'prose':
             # Analyze prose (short story or chapter)
@@ -170,17 +170,10 @@ class AnalysisCoordinator:
                     content = chapter_file.read_text(encoding='utf-8')
                     context['treatment'] = self.project.get_treatment()
 
-                    # Get chapter outline for context
-                    chapters = self.project.get_chapters()
-                    if chapters:
-                        chapter = next(
-                            (c for c in chapters if c.get('number') == chapter_num),
-                            None
-                        )
-                        if chapter:
-                            context['chapter_outline'] = yaml.dump(
-                                chapter, default_flow_style=False
-                            )
+                    # Get chapter outline for context - load markdown directly
+                    chapter_outline_file = self.project.chapter_beats_dir / f'chapter-{chapter_num:02d}.md'
+                    if chapter_outline_file.exists():
+                        context['chapter_outline'] = chapter_outline_file.read_text(encoding='utf-8')
 
         return content, context
 
