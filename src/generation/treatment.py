@@ -159,8 +159,8 @@ class TreatmentGenerator:
                 # Save treatment directly (no YAML parsing needed)
                 self.project.save_treatment(treatment_text)
 
-                # Cull downstream content
-                CullManager(self.project).cull_treatment()
+                # Cull downstream content (chapters and prose, not treatment!)
+                CullManager(self.project).cull_chapters()
 
                 # Return treatment text directly
                 return treatment_text
