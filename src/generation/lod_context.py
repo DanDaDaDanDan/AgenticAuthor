@@ -1,27 +1,32 @@
 """LOD context building for unified LLM prompts.
 
 This module builds input context for LLM generation by assembling content
-from multiple files into unified YAML structures.
+from multiple files.
+
+MARKDOWN-FIRST ARCHITECTURE
+============================
+All LLM prompts use native markdown format (NOT YAML):
+- build_markdown_context() - PRIMARY method for LLM prompts
+- build_context() - Returns dicts for extracting metadata (NOT for LLM prompts)
 
 KEY CONCEPT: context_level Parameter
 ======================================
-The build_context() method takes a context_level parameter that indicates
+The build_markdown_context() method takes a context_level parameter that indicates
 "what level of content to include as INPUT", NOT what you're generating.
 
 Examples:
     - Generating treatment? Use context_level='premise' (premise as input)
     - Generating chapters? Use context_level='treatment' (premise+treatment as input)
-    - Iterating chapters? Use context_level='chapters' (include chapters too)
 
 This is intentional: you provide existing content as context, then ask the
-LLM to generate the NEXT level or iterate the CURRENT level.
+LLM to generate the NEXT level.
 
 Format Design
 =============
 The system uses efficient, purpose-specific formats:
 
-- Treatment: Returns ONLY treatment (uses premise as input context)
-- Chapters: Returns ONLY self-contained chapters.yaml (uses premise+treatment as input)
+- Treatment: Returns ONLY treatment text (uses premise as markdown input context)
+- Chapters: Returns ONLY chapter outlines as markdown (uses premise+treatment as input)
 - Prose: Returns ONLY prose text (uses chapters.yaml as input)
 
 Self-Contained Chapters Format
@@ -37,7 +42,6 @@ This allows prose generation to work without accessing premise or treatment.
 
 import json
 import re
-import yaml
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -45,7 +49,11 @@ from ..models import Project
 
 
 class LODContextBuilder:
-    """Build unified YAML context from multi-file storage for LLM consumption."""
+    """Build unified context from multi-file storage for LLM consumption.
+
+    PRIMARY USE: build_markdown_context() for LLM prompts (returns markdown strings)
+    SECONDARY USE: build_context() for metadata extraction (returns dicts)
+    """
 
     def build_context(
         self,
@@ -201,7 +209,3 @@ class LODContextBuilder:
                 sections.append("## TREATMENT\n\n" + treatment_text)
 
         return "\n\n---\n\n".join(sections)
-
-    def to_yaml_string(self, context: Dict[str, Any]) -> str:
-        """Serialize context to YAML string for LLM (DEPRECATED - use build_markdown_context instead)."""
-        return yaml.dump(context, default_flow_style=False, sort_keys=False, allow_unicode=True)

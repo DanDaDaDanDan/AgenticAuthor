@@ -1637,10 +1637,13 @@ class InteractiveSession:
         original_concept = premise_metadata.get('original_concept', '')
         unique_elements = premise_metadata.get('unique_elements', [])
 
-        context_yaml = context_builder.to_yaml_string(context)
+        context_markdown = context_builder.build_markdown_context(
+            project=self.project,
+            context_level='treatment'
+        )
 
         foundation = await generator._generate_foundation(
-            context_yaml=context_yaml,
+            context_markdown=context_markdown,
             taxonomy_data=taxonomy_data,
             total_words=total_words,
             chapter_count=chapter_count,
