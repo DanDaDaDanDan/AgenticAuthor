@@ -2,21 +2,20 @@
     Treatment generation prompt.
 
     Variables:
-    - context_yaml: Full premise content as YAML
+    - context_markdown: Full premise content as markdown
     - unique_context: Original concept and unique elements text
     - target_words: Target word count for treatment
 #}
 
 [SYSTEM]
-You are a professional story development assistant. You always return valid YAML without additional formatting.
+You are a professional story development assistant. You return narrative prose in markdown format.
 
 [USER]
 Here is the current book content for context:
 
-```yaml
-{{ context_yaml }}
-```
+{{ context_markdown }}
 {{ unique_context }}
+
 Generate a detailed treatment (LOD2) based on the premise above.
 
 Target: {{ target_words }} words
@@ -37,17 +36,6 @@ Include:
 
 Format as flowing narrative prose, not bullet points.
 
-⚠️ FORMAT REQUIREMENT: Return ONLY the treatment as YAML:
-```yaml
-treatment:
-  text: |
-    ### Your Treatment Title
-
-    Your treatment narrative here (Act I, Act II, Act III)...
-
-    Target ~{{ target_words }} words of flowing prose.
-```
-
-Do NOT include premise, chapters, or prose sections.
-Do NOT wrap in additional markdown code fences.
-Return ONLY the treatment section.
+Return ONLY the treatment text as markdown (no YAML, no code fences).
+Start with a title heading (### Your Treatment Title) followed by the treatment narrative.
+Target ~{{ target_words }} words of flowing prose.

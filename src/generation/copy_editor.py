@@ -257,16 +257,16 @@ class CopyEditor:
                 current_chapter_text = ch['text']
                 break
 
-        # Serialize chapters.yaml for context
-        import yaml
-        chapters_yaml_str = yaml.dump(context['chapters_yaml'], sort_keys=False, allow_unicode=True)
+        # Serialize chapters.yaml to markdown for context
+        from ..utils.markdown_extractors import MarkdownFormatter
+        chapters_markdown = MarkdownFormatter.format_chapters_yaml(context['chapters_yaml'])
 
         # Render prompts from template
         prompts = self.prompt_loader.render(
             "editing/copy_edit",
             chapter_num=chapter_num,
             total_chapters=context['total_chapters'],
-            chapters_yaml_str=chapters_yaml_str,
+            chapters_markdown=chapters_markdown,
             edited_chapters_text=edited_chapters_text,
             remaining_chapters_text=remaining_chapters_text,
             current_chapter_text=current_chapter_text,

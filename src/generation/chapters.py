@@ -98,7 +98,7 @@ class ChapterGenerator:
 
     async def _generate_foundation(
         self,
-        context_yaml: str,
+        context_markdown: str,
         taxonomy_data: Dict[str, Any],
         total_words: int,
         chapter_count: int,
@@ -116,7 +116,7 @@ class ChapterGenerator:
         Generate ONLY the foundation (metadata + characters + world), no chapters.
 
         Args:
-            context_yaml: Full premise + treatment as YAML
+            context_markdown: Full premise + treatment as markdown
             taxonomy_data: Taxonomy selections
             total_words: Target total word count
             chapter_count: Number of chapters (for metadata)
@@ -181,7 +181,7 @@ class ChapterGenerator:
         # Render foundation prompt from template
         prompts = self.prompt_loader.render(
             "generation/chapter_foundation",
-            context_yaml=context_yaml,
+            context_markdown=context_markdown,
             unique_context=unique_context,
             metadata_yaml_example=metadata_yaml_example,
             total_words=total_words,
@@ -623,8 +623,11 @@ class ChapterGenerator:
             if logger:
                 logger.debug(f"Structure: {chapter_count} chapters, {total_words:,} words total")
 
-            # Serialize context to YAML for prompts
-            context_yaml = self.context_builder.to_yaml_string(context)
+            # Serialize context to markdown for prompts
+            context_markdown = self.context_builder.build_markdown_context(
+                project=self.project,
+                context_level='treatment'
+            )
 
             # Extract original concept and unique elements from premise metadata
             original_concept = premise_metadata.get('original_concept', '')
@@ -673,7 +676,7 @@ class ChapterGenerator:
                     self.console.print(f"\n[cyan][1/2] Generating foundation (metadata + characters + world)...[/cyan]")
 
                 foundation = await self._generate_foundation(
-                    context_yaml=context_yaml,
+                    context_markdown=context_markdown,
                     taxonomy_data=taxonomy_data,
                     total_words=total_words,
                     chapter_count=chapter_count,

@@ -894,6 +894,41 @@ class MarkdownFormatter:
         return '\n\n'.join(sections)
 
     @classmethod
+    def format_chapters_yaml(cls, chapters_yaml: Dict[str, Any]) -> str:
+        """
+        Format complete chapters.yaml structure as markdown.
+
+        This formats the FULL structure: metadata + characters + world + chapters.
+        Use this for passing chapters.yaml to LLMs as context.
+
+        Args:
+            chapters_yaml: Dict with metadata, characters, world, chapters keys
+
+        Returns:
+            Markdown-formatted string
+        """
+        sections = []
+
+        # Metadata section
+        if 'metadata' in chapters_yaml:
+            sections.append(cls._format_metadata(chapters_yaml['metadata']))
+
+        # Characters section
+        if 'characters' in chapters_yaml:
+            sections.append(cls._format_characters(chapters_yaml['characters']))
+
+        # World section
+        if 'world' in chapters_yaml:
+            sections.append(cls._format_world(chapters_yaml['world']))
+
+        # Chapters section
+        if 'chapters' in chapters_yaml:
+            sections.append('# Chapters\n')
+            sections.append(cls.format_chapters(chapters_yaml['chapters']))
+
+        return '\n\n'.join(sections)
+
+    @classmethod
     def format_chapters(cls, chapters: List[Dict[str, Any]]) -> str:
         """Format chapter outlines as markdown."""
         chapter_sections = []

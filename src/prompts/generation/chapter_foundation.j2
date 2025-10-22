@@ -2,7 +2,7 @@
     Chapter foundation generation prompt (metadata + characters + world).
 
     Variables:
-    - context_yaml: Full premise + treatment as YAML
+    - context_markdown: Full premise + treatment as markdown
     - unique_context: Original concept and unique elements text
     - metadata_yaml_example: Pre-formatted metadata YAML example
     - total_words: Target total word count
@@ -21,9 +21,8 @@ You are a professional story development assistant. You write in clear, natural 
 
 [USER]
 # TREATMENT
-```yaml
-{{ context_yaml }}
-```
+{{ context_markdown }}
+
 {{ unique_context }}
 # YOUR TASK
 Generate foundation (metadata + characters + world) from the treatment above.

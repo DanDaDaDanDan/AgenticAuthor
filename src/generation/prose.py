@@ -256,8 +256,9 @@ class ProseGenerator:
             ]
         }
 
-        # Serialize modified context to YAML for prompt
-        chapters_yaml = yaml.dump(modified_chapters_data, sort_keys=False)
+        # Serialize modified context to markdown for prompt
+        from ..utils.markdown_extractors import MarkdownFormatter
+        chapters_markdown = MarkdownFormatter.format_chapters_yaml(modified_chapters_data)
 
         # Build prose generation prompt - QUALITY-FIRST approach
         # Support both structured scenes (new) and simple key_events (old) formats
@@ -301,7 +302,7 @@ class ProseGenerator:
         # Render prompt from template
         prompts = self.prompt_loader.render(
             "generation/prose_generation",
-            chapters_yaml=chapters_yaml,
+            chapters_markdown=chapters_markdown,
             prev_summary=prev_summary,
             chapter_number=chapter_number,
             current_chapter=current_chapter,

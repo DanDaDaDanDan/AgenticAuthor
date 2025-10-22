@@ -3,7 +3,7 @@
 Variables:
 - chapter_num: Current chapter number being edited
 - total_chapters: Total number of chapters in the book
-- chapters_yaml_str: Serialized chapters.yaml for reference
+- chapters_markdown: chapters.yaml content as markdown for reference
 - edited_chapters_text: Text of previously edited chapters
 - remaining_chapters_text: Text of remaining original chapters
 - current_chapter_text: The current chapter prose to edit
@@ -64,9 +64,7 @@ Example issues to catch:
 STORY STRUCTURE (chapters.yaml - self-contained reference)
 ═══════════════════════════════════════════════════════════════
 
-```yaml
-{{ chapters_yaml_str }}
-```
+{{ chapters_markdown }}
 
 This contains:
 - metadata: genre, tone, themes, pacing, narrative style

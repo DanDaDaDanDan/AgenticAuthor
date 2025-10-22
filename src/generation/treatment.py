@@ -88,8 +88,11 @@ class TreatmentGenerator:
         if 'premise' not in context:
             raise Exception("No premise found. Generate premise first with /generate premise")
 
-        # Create unified prompt with YAML context
-        context_yaml = self.context_builder.to_yaml_string(context)
+        # Create unified prompt with markdown context
+        context_markdown = self.context_builder.build_markdown_context(
+            project=self.project,
+            context_level='premise'
+        )
 
         # Extract premise metadata for template if needed
         premise_metadata = context['premise'].get('metadata', {})
@@ -112,7 +115,7 @@ class TreatmentGenerator:
         # Render treatment prompt from template
         prompts = self.prompt_loader.render(
             "generation/treatment_generation",
-            context_yaml=context_yaml,
+            context_markdown=context_markdown,
             unique_context=unique_context,
             target_words=target_words
         )
@@ -133,44 +136,33 @@ class TreatmentGenerator:
             )
 
             if result:
-                # Extract content from response
-                response_text = result.get('content', result) if isinstance(result, dict) else result
+                # Extract content from response (plain markdown text)
+                treatment_text = result.get('content', result) if isinstance(result, dict) else result
 
-                # Strip markdown fences if present
-                response_text = response_text.strip()
-                if response_text.startswith('```yaml'):
-                    response_text = response_text[7:]  # Remove ```yaml
-                elif response_text.startswith('```'):
-                    response_text = response_text[3:]  # Remove ```
-                if response_text.endswith('```'):
-                    response_text = response_text[:-3]  # Remove closing ```
-                response_text = response_text.strip()
+                # Strip markdown code fences if present (in case LLM ignored instructions)
+                treatment_text = treatment_text.strip()
+                if treatment_text.startswith('```markdown') or treatment_text.startswith('```md'):
+                    # Remove opening fence with language
+                    treatment_text = '\n'.join(treatment_text.split('\n')[1:])
+                elif treatment_text.startswith('```'):
+                    # Remove opening fence
+                    treatment_text = treatment_text[3:]
+                if treatment_text.endswith('```'):
+                    # Remove closing fence
+                    treatment_text = treatment_text[:-3]
+                treatment_text = treatment_text.strip()
 
-                # Parse YAML
-                try:
-                    data = yaml.safe_load(response_text)
-                except yaml.YAMLError as e:
-                    raise ValueError(f"Failed to parse treatment response as YAML: {e}")
+                # Validate we got some content
+                if not treatment_text or len(treatment_text.split()) < 100:
+                    raise ValueError(f"Treatment text too short ({len(treatment_text.split())} words). Expected ~{target_words} words.")
 
-                if not isinstance(data, dict):
-                    raise ValueError(f"Expected YAML dict, got {type(data)}")
-
-                # Validate structure
-                if 'treatment' not in data:
-                    raise ValueError("Response missing 'treatment' section")
-                if not isinstance(data['treatment'], dict) or 'text' not in data['treatment']:
-                    raise ValueError("Treatment section must have 'text' field")
-
-                # Extract treatment text
-                treatment_text = data['treatment']['text']
-
-                # Save treatment
+                # Save treatment directly (no YAML parsing needed)
                 self.project.save_treatment(treatment_text)
 
                 # Cull downstream content
                 CullManager(self.project).cull_treatment()
 
-                # Return treatment text directly (no file read round-trip)
+                # Return treatment text directly
                 return treatment_text
 
             return None

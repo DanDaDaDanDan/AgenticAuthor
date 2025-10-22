@@ -2,7 +2,7 @@
     Prose generation prompt for chapters.
 
     Variables:
-    - chapters_yaml: Full chapters.yaml content (metadata, characters, world, chapters)
+    - chapters_markdown: Full chapters.yaml content as markdown (metadata, characters, world, chapters)
     - prev_summary: Context from previous chapters (full prose)
     - chapter_number: Current chapter number
     - current_chapter: Current chapter dict from chapters.yaml
@@ -26,10 +26,9 @@ NON-NEGOTIABLES:
 [USER]
 Generate excellent prose for a chapter using this story context.
 
-STORY CONTEXT (chapters.yaml):
-```yaml
-{{ chapters_yaml }}
-```
+STORY CONTEXT:
+{{ chapters_markdown }}
+
 {{ prev_summary }}
 
 CHAPTER TO WRITE:
