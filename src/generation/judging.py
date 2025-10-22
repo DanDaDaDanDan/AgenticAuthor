@@ -81,10 +81,14 @@ class JudgingCoordinator:
             variant_dir = self.variants_dir / f'variant-{variant_num}'
             chapter_files = sorted(variant_dir.glob('chapter-*.md'))
 
-            chapters_markdown = ""
+            # Collect all chapter texts
+            chapter_texts = []
             for chapter_file in chapter_files:
                 chapter_text = chapter_file.read_text(encoding='utf-8')
-                chapters_markdown += chapter_text + "\n\n---\n\n"
+                chapter_texts.append(chapter_text)
+
+            # Join chapters with separators (no trailing separator)
+            chapters_markdown = "\n\n---\n\n".join(chapter_texts)
 
             variants_sections += f"""VARIANT {variant_num}{temp_label}:
 

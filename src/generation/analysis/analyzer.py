@@ -190,91 +190,97 @@ class AnalysisCoordinator:
         """Convert self-contained chapters.yaml to markdown (new format)."""
         sections = []
 
-        # METADATA SECTION
+        # BUILD ENTIRE FOUNDATION AS SINGLE SECTION
+        foundation_lines = []
+
+        # Metadata subsection
         metadata = chapters_yaml.get('metadata', {})
         if metadata:
-            md_lines = ["# FOUNDATION\n", "## Metadata\n"]
-            md_lines.append(f"**Genre:** {metadata.get('genre', 'N/A')}")
-            md_lines.append(f"**Subgenre:** {metadata.get('subgenre', 'N/A')}")
-            md_lines.append(f"**Tone:** {metadata.get('tone', 'N/A')}")
-            md_lines.append(f"**Pacing:** {metadata.get('pacing', 'N/A')}")
+            foundation_lines.append("# FOUNDATION\n")
+            foundation_lines.append("## Metadata\n")
+            foundation_lines.append(f"**Genre:** {metadata.get('genre', 'N/A')}")
+            foundation_lines.append(f"**Subgenre:** {metadata.get('subgenre', 'N/A')}")
+            foundation_lines.append(f"**Tone:** {metadata.get('tone', 'N/A')}")
+            foundation_lines.append(f"**Pacing:** {metadata.get('pacing', 'N/A')}")
             themes = metadata.get('themes', [])
             if themes:
-                md_lines.append(f"**Themes:** {', '.join(themes)}")
-            md_lines.append(f"**Narrative Style:** {metadata.get('narrative_style', 'N/A')}")
+                foundation_lines.append(f"**Themes:** {', '.join(themes)}")
+            foundation_lines.append(f"**Narrative Style:** {metadata.get('narrative_style', 'N/A')}")
             # Format word count with commas
             target_wc = metadata.get('target_word_count', 'N/A')
             if isinstance(target_wc, int):
-                md_lines.append(f"**Target Word Count:** {target_wc:,}")
+                foundation_lines.append(f"**Target Word Count:** {target_wc:,}")
             else:
-                md_lines.append(f"**Target Word Count:** {target_wc}")
-            md_lines.append(f"**Setting:** {metadata.get('setting_location', 'N/A')} ({metadata.get('setting_period', 'N/A')})")
-            sections.append("\n".join(md_lines))
+                foundation_lines.append(f"**Target Word Count:** {target_wc}")
+            foundation_lines.append(f"**Setting:** {metadata.get('setting_location', 'N/A')} ({metadata.get('setting_period', 'N/A')})")
+            foundation_lines.append("")  # Blank line after metadata
 
-        # CHARACTERS SECTION
+        # Characters subsection
         characters = chapters_yaml.get('characters', [])
         if characters:
-            char_lines = ["## Characters\n"]
+            foundation_lines.append("## Characters\n")
             for char in characters:
-                char_lines.append(f"### {char.get('name', 'Unknown')} ({char.get('role', 'N/A')})\n")
+                foundation_lines.append(f"### {char.get('name', 'Unknown')} ({char.get('role', 'N/A')})\n")
                 if char.get('age'):
-                    char_lines.append(f"**Age:** {char.get('age')}")
-                char_lines.append(f"**Background:** {char.get('background', 'N/A')}")
-                char_lines.append(f"**Motivation:** {char.get('motivation', 'N/A')}")
-                char_lines.append(f"**Character Arc:** {char.get('character_arc', 'N/A')}")
-                char_lines.append(f"**Internal Conflict:** {char.get('internal_conflict', 'N/A')}\n")
-            sections.append("\n".join(char_lines))
+                    foundation_lines.append(f"**Age:** {char.get('age')}")
+                foundation_lines.append(f"**Background:** {char.get('background', 'N/A')}")
+                foundation_lines.append(f"**Motivation:** {char.get('motivation', 'N/A')}")
+                foundation_lines.append(f"**Character Arc:** {char.get('character_arc', 'N/A')}")
+                foundation_lines.append(f"**Internal Conflict:** {char.get('internal_conflict', 'N/A')}\n")
+            foundation_lines.append("")  # Blank line after characters
 
-        # WORLD SECTION
+        # World subsection
         world = chapters_yaml.get('world', {})
         if world:
-            world_lines = ["## World\n"]
-            world_lines.append(f"**Setting Overview:** {world.get('setting_overview', 'N/A')}\n")
+            foundation_lines.append("## World\n")
+            foundation_lines.append(f"**Setting Overview:** {world.get('setting_overview', 'N/A')}\n")
 
             key_locations = world.get('key_locations', [])
             if key_locations:
-                world_lines.append("**Key Locations:**")
+                foundation_lines.append("**Key Locations:**")
                 for loc in key_locations:
-                    world_lines.append(f"- **{loc.get('name', 'Unknown')}:** {loc.get('description', 'N/A')}")
-                world_lines.append("")
+                    foundation_lines.append(f"- **{loc.get('name', 'Unknown')}:** {loc.get('description', 'N/A')}")
+                foundation_lines.append("")
 
             systems = world.get('systems_and_rules', [])
             if systems:
-                world_lines.append("**Systems and Rules:**")
+                foundation_lines.append("**Systems and Rules:**")
                 # Handle both list format (new) and dict format (legacy)
                 if isinstance(systems, list):
                     for system in systems:
                         if isinstance(system, dict):
                             system_name = system.get('system', 'Unknown')
                             system_desc = system.get('description', 'N/A')
-                            world_lines.append(f"- **{system_name}:** {system_desc}")
+                            foundation_lines.append(f"- **{system_name}:** {system_desc}")
                         else:
-                            world_lines.append(f"- {system}")
+                            foundation_lines.append(f"- {system}")
                 else:
                     # Legacy dict format
                     for key, value in systems.items():
-                        world_lines.append(f"- **{key}:** {value}")
-                world_lines.append("")
+                        foundation_lines.append(f"- **{key}:** {value}")
+                foundation_lines.append("")
 
             social_context = world.get('social_context', [])
             if social_context:
-                world_lines.append("**Social Context:**")
+                foundation_lines.append("**Social Context:**")
                 # Handle both list format (new) and dict format (legacy)
                 if isinstance(social_context, list):
                     for context in social_context:
                         if isinstance(context, dict):
                             # If it's a dict, format it
                             for key, value in context.items():
-                                world_lines.append(f"- {key}: {value}")
+                                foundation_lines.append(f"- {key}: {value}")
                         else:
                             # If it's a string, just add it
-                            world_lines.append(f"- {context}")
+                            foundation_lines.append(f"- {context}")
                 else:
                     # Legacy dict format
                     for key, value in social_context.items():
-                        world_lines.append(f"- {key}: {value}")
+                        foundation_lines.append(f"- {key}: {value}")
 
-            sections.append("\n".join(world_lines))
+        # Add complete foundation as single section
+        if foundation_lines:
+            sections.append("\n".join(foundation_lines))
 
         # CHAPTERS SECTION
         chapters = chapters_yaml.get('chapters', [])
@@ -313,7 +319,7 @@ class AnalysisCoordinator:
 
             sections.append("\n".join(chapter_lines))
 
-        # Join all sections with clear separator
+        # Join sections with clear separator (only one --- between FOUNDATION and CHAPTERS)
         return "\n\n---\n\n".join(sections)
 
     def _build_combined_result_dict(
