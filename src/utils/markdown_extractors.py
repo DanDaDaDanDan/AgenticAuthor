@@ -215,21 +215,36 @@ class MarkdownExtractor:
         """
         chapters = []
 
-        # Split by chapter headers (# Chapter N: or ## Chapter N:)
-        chapter_pattern = r'#{1,2}\s*Chapter\s*(\d+)[:\s]*(.*?)\n'
-        chapter_splits = re.split(chapter_pattern, markdown_text)
+        # Phase 1: Split into chapter sections using robust method
+        # This handles preambles, extra whitespace, and variations naturally
+        chapter_sections = cls.split_chapters_only(markdown_text)
 
-        # Process each chapter (skip first element if empty)
-        i = 1 if chapter_splits[0].strip() == '' else 0
-        while i < len(chapter_splits) - 2:
+        if not chapter_sections:
+            # Validation will provide helpful error message
+            cls._validate_chapters([], markdown_text)
+            return []
+
+        # Phase 2: Parse each chapter section independently
+        for chapter_section in chapter_sections:
+            # Extract chapter number and title from header
+            header_pattern = r'#{1,2}\s*Chapter\s*(\d+)[:\s]*(.*?)(?:\n|$)'
+            header_match = re.search(header_pattern, chapter_section, re.IGNORECASE)
+
+            if not header_match:
+                # Malformed section - skip with warning
+                logger.warning(f"Skipping malformed chapter section: {chapter_section[:100]}...")
+                continue
+
             try:
-                chapter_num = int(chapter_splits[i])
+                chapter_num = int(header_match.group(1))
             except (ValueError, TypeError):
-                # If we can't parse the chapter number, the format is wrong
-                # Validate will handle the error message
-                break
-            chapter_title = chapter_splits[i + 1].strip()
-            chapter_content = chapter_splits[i + 2]
+                logger.warning(f"Could not parse chapter number from: {header_match.group(1)}")
+                continue
+
+            chapter_title = header_match.group(2).strip()
+
+            # Content is everything after the header line
+            chapter_content = chapter_section[header_match.end():]
 
             # Try to extract fields from all formats
             pov = cls._extract_field(chapter_content, 'POV')
@@ -240,7 +255,13 @@ class MarkdownExtractor:
             # Beats are formatted as **Beats:** followed by bullet points, not as a section header
             # IMPORTANT: Extract beats BEFORE prose summary, since prose summary extraction
             # is greedy and will consume everything after Act: including beats
+            #
+            # ALSO handle "**Key Events (Beats):**" format which is a hybrid
             beats = cls._extract_list_field(chapter_content, 'Beats?')
+            if not beats:
+                # Try "Key Events (Beats)" format - re.escape in _extract_list_field will escape parens
+                beats = cls._extract_list_field(chapter_content, 'Key Events (Beats)')
+
             emotional_beat = cls._extract_field(chapter_content, 'Emotional Beat')
 
             # If no explicit Summary field and no beats, extract prose summary (prose format)
@@ -269,7 +290,6 @@ class MarkdownExtractor:
             }
 
             chapters.append(chapter_data)
-            i += 3
 
         # Validate extraction
         cls._validate_chapters(chapters, markdown_text)
