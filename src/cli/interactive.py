@@ -2490,42 +2490,73 @@ Regenerate the foundation addressing the issues above.
 
         self.console.print(f"\n[bold]📊 Analysis: {content_desc}[/bold]\n")
 
-        # Grade and summary (extract from summary field which contains grade + justification + assessment)
-        summary_parts = result.get('summary', '').split('\n')
-        if len(summary_parts) >= 3:
-            grade = summary_parts[0]
-            justification = summary_parts[1]
-            assessment = '\n'.join(summary_parts[3:])  # Skip empty line at index 2
+        # Overall grade & score (use aggregated fields if present)
+        overall_grade = result.get('overall_grade')
+        overall_score = result.get('overall_score')
+        if overall_grade or overall_score is not None:
+            if overall_grade:
+                self.console.print(f"[bold green]Grade:[/bold green] {overall_grade}")
+            if overall_score is not None:
+                self.console.print(f"[bold green]Score:[/bold green] {overall_score:.1f}/10\n")
 
-            self.console.print(f"[bold green]Grade:[/bold green] {grade}")
-            self.console.print(f"[dim]{justification}[/dim]\n")
-            self.console.print(f"{assessment}\n")
-        else:
-            # Fallback if format is different
-            self.console.print(f"{result.get('summary', 'No assessment available')}\n")
+        # Summary (unified analyzer packs grade + justification + assessment)
+        summary = result.get('summary')
+        if summary:
+            summary_parts = summary.split('\n')
+            if len(summary_parts) >= 3:
+                # Show justification + assessment (skip duplicating grade)
+                justification = summary_parts[1]
+                assessment = '\n'.join(summary_parts[3:])  # Skip empty line at index 2
+                if justification:
+                    self.console.print(f"[dim]{justification}[/dim]\n")
+                if assessment:
+                    self.console.print(f"{assessment}\n")
+            else:
+                self.console.print(f"{summary}\n")
 
-        # Feedback (stored in issues, but display as simple bullet points)
+        # Priority issues (top of stack if provided)
+        priority = result.get('priority_issues', [])
+        if priority:
+            self.console.print("[bold]⚠️ Priority Issues:[/bold]")
+            for issue in priority:
+                sev = issue.get('severity', 'MEDIUM')
+                loc = issue.get('location', 'General')
+                desc = issue.get('description', '')
+                sugg = issue.get('suggestion', '')
+                self.console.print(f"  • [{sev}] {loc}: {desc}")
+                if sugg:
+                    self.console.print(f"    ↳ Suggestion: {sugg}")
+            self.console.print()
+
+        # Feedback by dimension (show all dimensions if present)
         dimension_results = result.get('dimension_results', [])
-        if dimension_results:
-            # Get issues from first dimension result (unified analysis has single dimension)
-            issues = dimension_results[0].get('issues', [])
+        for dim in dimension_results:
+            dim_name = dim.get('dimension', 'Analysis')
+            # Issues
+            issues = dim.get('issues', [])
             if issues:
-                self.console.print("[bold]📝 Feedback:[/bold]")
+                self.console.print(f"[bold]📝 Feedback — {dim_name}:[/bold]")
                 for issue in issues:
-                    # Issue description contains the full feedback point
-                    self.console.print(f"  • {issue['description']}")
+                    sev = issue.get('severity', 'MEDIUM')
+                    loc = issue.get('location', 'General')
+                    desc = issue.get('description', '')
+                    sugg = issue.get('suggestion', '')
+                    self.console.print(f"  • [{sev}] {loc}: {desc}")
+                    if sugg:
+                        self.console.print(f"    ↳ Suggestion: {sugg}")
                 self.console.print()
 
-        # Strengths
-        if dimension_results:
-            strengths = dimension_results[0].get('strengths', [])
+            # Strengths
+            strengths = dim.get('strengths', [])
             if strengths:
-                self.console.print("[bold green]✓ Strengths:[/bold green]")
+                self.console.print(f"[bold green]✓ Strengths — {dim_name}:[/bold green]")
                 for strength in strengths:
-                    self.console.print(f"  • {strength['description']}")
+                    desc = strength.get('description', '')
+                    loc = strength.get('location')
+                    self.console.print(f"  • {desc}{f' ({loc})' if loc else ''}")
                 self.console.print()
 
-        # Next steps (stored in notes)
+        # Next steps (from notes of first dimension)
         if dimension_results:
             notes = dimension_results[0].get('notes', [])
             if notes:
@@ -2534,6 +2565,14 @@ Regenerate the foundation addressing the issues above.
                         next_steps = note.replace('Next steps: ', '')
                         self.console.print(f"[bold cyan]🎯 Next Steps:[/bold cyan]")
                         self.console.print(f"  {next_steps}\n")
+
+        # Severity breakdown (aggregated)
+        if 'total_issues' in result:
+            total = result.get('total_issues', 0)
+            crit = result.get('critical_issues', 0)
+            high = result.get('high_issues', 0)
+            if total:
+                self.console.print(f"[dim]Issues: total={total}, critical={crit}, high={high}[/dim]\n")
 
         # Report saved
         self.console.rule(style="cyan")
