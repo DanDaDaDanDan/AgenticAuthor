@@ -306,119 +306,6 @@ VARIANT {variant_num}{temp_label}
         if logger:
             logger.info(f"Saved judging decision to: {self.decisions_file}")
 
-    def _generate_combined_chapters_md(self, beats_dir: Path, foundation_path: Path):
-        """
-        Generate a combined chapters.md file with all chapter outlines in readable format.
-
-        Args:
-            beats_dir: Directory containing chapter-*.md files
-            foundation_path: Path to foundation.md file
-        """
-        from ..utils.logging import get_logger
-        from ..utils.markdown_extractors import MarkdownExtractor
-
-        logger = get_logger()
-
-        if logger:
-            logger.debug("Generating combined chapters.md from chapter beats")
-
-        # Read foundation from markdown
-        try:
-            with open(foundation_path, 'r', encoding='utf-8') as f:
-                markdown_text = f.read()
-            foundation = MarkdownExtractor.extract_foundation(markdown_text)
-        except Exception as e:
-            if logger:
-                logger.warning(f"Failed to load foundation for chapters.md: {e}")
-            foundation = {}
-
-        # Read all chapter files from markdown
-        chapter_files = sorted(beats_dir.glob('chapter-*.md'))
-        chapters_data = []
-
-        for chapter_file in chapter_files:
-            try:
-                with open(chapter_file, 'r', encoding='utf-8') as f:
-                    markdown_text = f.read()
-                # Parse individual chapter markdown
-                chapter_dicts = MarkdownExtractor.extract_chapters(markdown_text)
-                if chapter_dicts:
-                    chapters_data.append(chapter_dicts[0])  # Each file has one chapter
-            except Exception as e:
-                if logger:
-                    logger.warning(f"Failed to load {chapter_file.name}: {e}")
-
-        if not chapters_data:
-            if logger:
-                logger.warning("No chapter data found for chapters.md generation")
-            return
-
-        # Build combined markdown
-        lines = []
-        lines.append("# Chapter Outlines\n")
-        lines.append(f"*Generated from {len(chapters_data)} chapter beats*\n")
-        lines.append("---\n")
-
-        # Add foundation summary
-        if foundation:
-            metadata = foundation.get('metadata', {})
-            if metadata:
-                lines.append("## Story Metadata\n")
-                for key, value in metadata.items():
-                    if isinstance(value, list):
-                        lines.append(f"**{key.replace('_', ' ').title()}:**")
-                        for item in value:
-                            lines.append(f"  - {item}")
-                        lines.append("")
-                    else:
-                        lines.append(f"**{key.replace('_', ' ').title()}:** {value}\n")
-                lines.append("---\n")
-
-        # Add each chapter
-        for chapter in chapters_data:
-            chapter_num = chapter.get('number', '?')
-            title = chapter.get('title', 'Untitled')
-            summary = chapter.get('summary', '')
-            key_events = chapter.get('key_events', [])
-            character_development = chapter.get('character_development', [])
-            emotional_beats = chapter.get('emotional_beats', [])
-
-            lines.append(f"## Chapter {chapter_num}: {title}\n")
-
-            if summary:
-                lines.append(f"**Summary:** {summary}\n")
-
-            if key_events:
-                lines.append("**Key Events:**")
-                for event in key_events:
-                    lines.append(f"  - {event}")
-                lines.append("")
-
-            if character_development:
-                lines.append("**Character Development:**")
-                for dev in character_development:
-                    lines.append(f"  - {dev}")
-                lines.append("")
-
-            if emotional_beats:
-                lines.append("**Emotional Beats:**")
-                for beat in emotional_beats:
-                    lines.append(f"  - {beat}")
-                lines.append("")
-
-            lines.append("---\n")
-
-        # Write to chapters/ directory
-        chapters_dir = self.project.path / 'chapters'
-        chapters_dir.mkdir(exist_ok=True)
-
-        output_file = chapters_dir / 'chapters.md'
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(lines))
-
-        if logger:
-            logger.info(f"Generated combined chapters.md: {output_file}")
-
     def finalize_winner(
         self,
         winner_variant_num: int,
@@ -505,11 +392,8 @@ VARIANT {variant_num}{temp_label}
             variants_evaluated=variants_evaluated
         )
 
-        # Generate combined chapters.md file in chapters/ directory
-        self._generate_combined_chapters_md(beats_dir, foundation_src if foundation_src.exists() else foundation_dst)
-
         self.console.print(f"[green]✓ Finalized Variant {winner_variant_num} to chapter-beats/[/green]")
-        self.console.print(f"[dim]Copied {len(chapter_files)} chapter files + foundation + chapters.md[/dim]\n")
+        self.console.print(f"[dim]Copied {len(chapter_files)} chapter files + foundation[/dim]\n")
 
         if logger:
             logger.info(f"=== FINALIZATION COMPLETE ===")
