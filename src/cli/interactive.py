@@ -2678,27 +2678,55 @@ Regenerate the foundation addressing the issues above.
             self.logger.exception("Copy editing error")
 
     async def _generate_combined(self, options: str = ""):
-        """Backfill combined.md files for current project context.
+        """Backfill folder-level combined.md for current context.
 
         Usage:
-            /generate combined [variants] [prose]
+            /generate combined [treatment|beats|chapters] [variants] [prose]
 
-        - Writes books/<project>/combined.md (premise, taxonomy, treatment, foundation, beats, optional prose)
+        - Writes treatment/combined.md (premise, taxonomy, treatment)
+        - Writes chapter-beats/combined.md (premise, taxonomy, treatment, foundation, beats)
+        - Writes chapters/combined.md (premise, taxonomy, treatment, foundation, beats, prose when 'prose')
         - If 'variants' is passed and chapter-beats-variants/ exists, writes chapter-beats-variants/combined.md
+        If no specific target is passed, auto-detects the most advanced stage available.
         """
         if not self.project:
             self.console.print("[yellow]No project loaded. Use /new or /open first.[/yellow]")
             return
 
-        include_variants = 'variants' in options.split()
-        include_prose = 'prose' in options.split()
+        tokens = set(options.split()) if options else set()
+        include_variants = 'variants' in tokens
+        include_prose = 'prose' in tokens
 
-        # Main combined.md
+        # Determine target
+        target = None
+        if 'treatment' in tokens:
+            target = 'treatment'
+        elif 'beats' in tokens:
+            target = 'chapter-beats'
+        elif 'chapters' in tokens:
+            target = 'chapters'
+        else:
+            # Auto-detect most advanced stage
+            if self.project.chapters_dir.exists() and list(self.project.chapters_dir.glob('chapter-*.md')):
+                target = 'chapters'
+            elif self.project.chapter_beats_dir.exists() and (
+                (self.project.chapter_beats_dir / 'foundation.md').exists() or
+                list(self.project.chapter_beats_dir.glob('chapter-*.md'))
+            ):
+                target = 'chapter-beats'
+            elif self.project.treatment_file.exists():
+                target = 'treatment'
+
+        if not target:
+            self.console.print("[yellow]Nothing to backfill yet (no treatment/beats/chapters found).[/yellow]")
+            return
+
+        # Write combined per detected/selected target
         try:
-            main_combined = self.project.write_combined_markdown(include_prose=include_prose)
-            self.console.print(f"[green]✓[/green] Combined written: {main_combined}")
+            dest = self.project.write_combined_markdown(target=target, include_prose=(include_prose and target=='chapters'))
+            self.console.print(f"[green]✓[/green] Combined written: {dest}")
         except Exception as e:
-            self.console.print(f"[yellow]Failed to write main combined.md: {e}[/yellow]")
+            self.console.print(f"[yellow]Failed to write {target}/combined.md: {e}[/yellow]")
 
         # Variants combined.md
         if include_variants:
@@ -2713,7 +2741,7 @@ Regenerate the foundation addressing the issues above.
                 self.console.print(f"[yellow]Failed to write variants combined.md: {e}[/yellow]")
 
         # Commit
-        self._commit("Write combined context files")
+        self._commit(f"Write combined context file: {target}")
 
     def git_command(self, args: str):
         """Run git command on shared repository."""
