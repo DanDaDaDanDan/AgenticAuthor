@@ -10,19 +10,30 @@
 You are a story editor checking how well chapters follow the treatment. You always return valid JSON without additional formatting.
 
 [USER]
-# TREATMENT (SOURCE OF TRUTH)
-
+<<<TREATMENT START>>>
 {{ treatment }}
+<<<TREATMENT END>>>
 
----
+{% if foundation %}
+<<<FOUNDATION (CONTEXT ONLY) START>>>
+{{ foundation }}
+<<<FOUNDATION (CONTEXT ONLY) END>>>
+{% endif %}
 
-# CHAPTER OUTLINES TO ANALYZE
+{% if chapters_index %}
+<<<CHAPTER INDEX START>>>
+{{ chapters_index }}
+<<<CHAPTER INDEX END>>>
+{% endif %}
 
+<<<CHAPTER OUTLINES (SOURCE TO ANALYZE) START>>>
 {{ content }}
+<<<CHAPTER OUTLINES (SOURCE TO ANALYZE) END>>>
 
----
-
-Your task is to identify:
+Your task:
+1) Build a quick mental map from the CHAPTER INDEX (numbers, titles, acts).
+2) Compare CHAPTER OUTLINES to the TREATMENT, using FOUNDATION only as background if present.
+3) Identify and explain the following:
 1. **MISSING ELEMENTS**: Plot points from treatment not covered in chapters
 2. **ADDED ELEMENTS**: New plot points/characters not in treatment
 3. **DUPLICATION**: Same events/character arcs repeated across multiple chapters
@@ -34,7 +45,7 @@ Your task is to identify:
 - Redundant scenes/chapters covering identical story beats
 - Character arcs reset or repeated instead of progressing
 
-Respond with ONLY valid JSON:
+Respond with ONLY valid JSON structured as follows:
 {
   "fidelity_score": 0-10,
   "deviations": [

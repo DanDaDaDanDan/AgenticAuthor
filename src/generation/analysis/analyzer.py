@@ -135,7 +135,9 @@ class AnalysisCoordinator:
 
             if foundation_file.exists() and chapter_files:
                 # NEW markdown-based format: Load foundation + individual chapter markdown files
-                content = self._build_chapters_analysis_content(foundation_file, chapter_files)
+                foundation_md, chapters_md = self._build_chapters_analysis_sections(foundation_file, chapter_files)
+                context['foundation'] = foundation_md
+                content = chapters_md
                 # Add treatment for deviation analysis
                 treatment = self.project.get_treatment()
                 if treatment:
@@ -144,7 +146,11 @@ class AnalysisCoordinator:
                 # LEGACY fallback: Try chapters.yaml
                 chapters_yaml = self.project.get_chapters_yaml()
                 if chapters_yaml:
-                    content = self._chapters_yaml_to_text(chapters_yaml)
+                    # Split into clear sections and provide a compact index
+                    foundation_text, chapters_text = self._split_foundation_and_chapters_text(chapters_yaml)
+                    context['foundation'] = foundation_text
+                    context['chapters_index'] = self._format_chapters_index(chapters_yaml)
+                    content = chapters_text
                     # Add treatment for deviation analysis
                     treatment = self.project.get_treatment()
                     if treatment:
@@ -233,6 +239,15 @@ CHAPTER OUTLINES
 {chapters_markdown}""")
 
         return "\n\n".join(sections)
+
+    def _build_chapters_analysis_sections(self, foundation_file: Path, chapter_files: List[Path]) -> tuple[str, str]:
+        """Return foundation markdown and concatenated chapter markdown separately."""
+        foundation_md = foundation_file.read_text(encoding='utf-8')
+        chapter_texts = []
+        for chapter_file in chapter_files:
+            chapter_texts.append(chapter_file.read_text(encoding='utf-8'))
+        chapters_markdown = "\n\n".join(chapter_texts)
+        return foundation_md, chapters_markdown
 
     def _chapters_to_text(self, chapters: List[Dict[str, Any]]) -> str:
         """Convert chapters list to readable text (legacy format)."""
@@ -663,3 +678,59 @@ CHAPTER OUTLINES
         lines.append(f"*Analysis completed at {aggregated['timestamp']}*")
 
         return "\n".join(lines)
+
+    def _format_chapters_index(self, chapters_yaml: Dict[str, Any]) -> str:
+        """Build compact table of chapter number, title, and act."""
+        lines = ["CHAPTER INDEX:"]
+        for ch in chapters_yaml.get('chapters', []):
+            lines.append(f"- {ch.get('number','?')}: {ch.get('title','Untitled')} — {ch.get('act','N/A')}")
+        return "\n".join(lines)
+
+    def _split_foundation_and_chapters_text(self, chapters_yaml: Dict[str, Any]) -> tuple[str, str]:
+        """Split chapters.yaml into FOUNDATION (context) and CHAPTERS (to analyze) text blocks."""
+        foundation_lines: list[str] = []
+        chapters_lines: list[str] = []
+
+        # FOUNDATION (concise)
+        metadata = chapters_yaml.get('metadata', {})
+        if metadata:
+            foundation_lines.append("# FOUNDATION\n")
+            foundation_lines.append("## Metadata\n")
+            foundation_lines.append(f"**Genre:** {metadata.get('genre', 'N/A')}")
+            foundation_lines.append(f"**Tone:** {metadata.get('tone', 'N/A')}")
+            foundation_lines.append(f"**Pacing:** {metadata.get('pacing', 'N/A')}")
+            themes = metadata.get('themes', [])
+            if themes:
+                foundation_lines.append(f"**Themes:** {', '.join(themes)}")
+            foundation_lines.append("")
+
+        characters = chapters_yaml.get('characters', [])
+        if characters:
+            foundation_lines.append("## Characters\n")
+            for char in characters[:6]:
+                foundation_lines.append(f"- {char.get('name','Unknown')} ({char.get('role','N/A')}): {char.get('motivation','N/A')}")
+            foundation_lines.append("")
+
+        world = chapters_yaml.get('world', {})
+        if world and world.get('setting_overview'):
+            foundation_lines.append("## World\n")
+            foundation_lines.append(f"**Setting Overview:** {world.get('setting_overview')}")
+            foundation_lines.append("")
+
+        # CHAPTERS (concise)
+        for ch in chapters_yaml.get('chapters', []):
+            chapters_lines.append(f"# Chapter {ch.get('number','?')}: {ch.get('title','Untitled')}")
+            chapters_lines.append(f"**Act:** {ch.get('act','N/A')}")
+            # summary first 2 sentences
+            summary = (ch.get('summary','') or '').split('.')
+            trimmed = '. '.join(s.strip() for s in summary[:2] if s.strip())
+            if trimmed:
+                chapters_lines.append(f"**Summary:** {trimmed}.")
+            events = ch.get('key_events', [])
+            if events:
+                chapters_lines.append("**Key Events:**")
+                for ev in events[:5]:
+                    chapters_lines.append(f"- {ev}")
+            chapters_lines.append("")
+
+        return "\n".join(foundation_lines).strip(), "\n".join(chapters_lines).strip()

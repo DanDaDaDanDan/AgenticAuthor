@@ -58,7 +58,9 @@ class UnifiedAnalyzer(BaseAnalyzer):
             premise=ctx.get('premise', ''),
             genre=ctx.get('genre', ''),
             treatment=ctx.get('treatment', ''),
-            chapter_outline=ctx.get('chapter_outline', '')
+            chapter_outline=ctx.get('chapter_outline', ''),
+            foundation=ctx.get('foundation', ''),
+            chapters_index=ctx.get('chapters_index', '')
         )
 
         # Get configuration from config

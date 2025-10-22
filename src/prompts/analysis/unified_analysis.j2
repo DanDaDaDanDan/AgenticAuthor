@@ -17,22 +17,28 @@ You are an expert story editor with deep understanding of narrative craft. You p
 You are an expert story editor. Read this {{ content_type }} and provide honest feedback.
 
 {% if premise %}
-════════════════════════════════════════════════════════════════════════════════
-PREMISE
-════════════════════════════════════════════════════════════════════════════════
-
+<<<PREMISE START>>>
 {{ premise }}
-
+<<<PREMISE END>>>
 {% endif %}
 {% if treatment %}
-════════════════════════════════════════════════════════════════════════════════
-TREATMENT
-════════════════════════════════════════════════════════════════════════════════
-
+<<<TREATMENT START>>>
 {{ treatment }}
-
+<<<TREATMENT END>>>
 {% endif %}
+{% if chapters_index %}
+<<<CHAPTER INDEX START>>>
+{{ chapters_index }}
+<<<CHAPTER INDEX END>>>
+{% endif %}
+{% if foundation %}
+<<<FOUNDATION (CONTEXT) START>>>
+{{ foundation }}
+<<<FOUNDATION (CONTEXT) END>>>
+{% endif %}
+<<<CONTENT START>>>
 {{ content }}
+<<<CONTENT END>>>
 {% if chapter_outline %}
 
 ════════════════════════════════════════════════════════════════════════════════

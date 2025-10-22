@@ -47,7 +47,9 @@ class TreatmentDeviationAnalyzer(BaseAnalyzer):
         prompts = self.prompt_loader.render(
             "analysis/treatment_deviation",
             treatment=ctx.get('treatment', ''),
-            content=content
+            content=content,
+            foundation=ctx.get('foundation', ''),
+            chapters_index=ctx.get('chapters_index', '')
         )
 
         # Get configuration from config
