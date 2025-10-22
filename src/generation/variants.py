@@ -69,6 +69,51 @@ class VariantManager:
         """
         return self.variants_dir / 'foundation.md'
 
+    def write_variants_combined_markdown(self) -> Path:
+        """Write chapter-beats-variants/combined.md with foundation and all variants.
+
+        Returns:
+            Path to combined.md in variants directory
+        """
+        self.variants_dir.mkdir(exist_ok=True)
+        lines: list[str] = []
+        lines.append("# Combined Variants Context")
+        lines.append("")
+
+        # Foundation (markdown if available)
+        foundation_path = self._get_foundation_path()
+        if foundation_path.exists():
+            lines.append("## Foundation")
+            lines.append("")
+            try:
+                lines.append(foundation_path.read_text(encoding='utf-8').strip())
+            except Exception:
+                pass
+            lines.append("")
+
+        # Variants sections
+        from .variants import VARIANT_CONFIGS as _VCONF
+        for cfg in _VCONF:
+            vnum = cfg['variant']
+            vdir = self._get_variant_dir(vnum)
+            if not vdir.exists():
+                continue
+            chapter_files = sorted(vdir.glob('chapter-*.md'))
+            if not chapter_files:
+                continue
+            lines.append(f"## Variant {vnum} — Temperature {cfg['temperature']} ({cfg['label']})")
+            lines.append("")
+            for ch in chapter_files:
+                try:
+                    lines.append(f"---\n\n{ch.read_text(encoding='utf-8').strip()}\n")
+                except Exception:
+                    continue
+            lines.append("")
+
+        combined_path = self.variants_dir / 'combined.md'
+        combined_path.write_text("\n".join(lines).strip() + "\n", encoding='utf-8')
+        return combined_path
+
     async def _generate_single_variant(
         self,
         variant_num: int,

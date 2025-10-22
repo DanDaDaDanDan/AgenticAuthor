@@ -945,7 +945,7 @@ class InteractiveSession:
         # Parse generation type
         parts = args.strip().split(None, 1)
         if not parts:
-            self.console.print("[yellow]Usage: /generate <premise|premises|treatment|chapters|prose|marketing> [options][/yellow]")
+            self.console.print("[yellow]Usage: /generate <premise|premises|treatment|chapters|prose|marketing|combined> [options][/yellow]")
             return
 
         gen_type = parts[0].lower()
@@ -978,9 +978,11 @@ class InteractiveSession:
                     await self._generate_prose(options)
             elif gen_type == "marketing":
                 await self._generate_marketing(options)
+            elif gen_type == "combined":
+                await self._generate_combined(options)
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
-                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing[/dim]")
+                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, combined[/dim]")
         except Exception as e:
             self.console.print(f"[red]Generation failed: {e}[/red]")
 
@@ -1832,6 +1834,12 @@ Regenerate the foundation addressing the issues above.
                 self.console.rule(style="dim")
                 self.console.print(f"[green]✓  Generated {len(successful_variants)} variants[/green]")
                 self.console.print(f"[dim]Variants saved to chapter-beats-variants/ directory[/dim]")
+                # Write combined variants context file
+                try:
+                    combined_variants = variant_manager.write_variants_combined_markdown()
+                    self.console.print(f"[dim]Combined variants: {combined_variants}[/dim]")
+                except Exception:
+                    pass
                 self.console.print(f"\n[yellow]→ Next step: /finalize chapters (judge variants and select winner)[/yellow]")
 
                 # Git commit
@@ -2668,11 +2676,49 @@ Regenerate the foundation addressing the issues above.
             self.console.print(f"Backup: {Path(result['backup_dir']).relative_to(self.project.path)}")
 
             # Commit the changes
-            self._commit(f"Copy editing pass complete ({result['chapters_edited']} chapters)")
+        self._commit(f"Copy editing pass complete ({result['chapters_edited']} chapters)")
 
         except Exception as e:
             self.console.print(f"[red]Copy editing failed: {str(e)}[/red]")
             self.logger.exception("Copy editing error")
+
+    async def _generate_combined(self, options: str = ""):
+        """Backfill combined.md files for current project context.
+
+        Usage:
+            /generate combined [variants] [prose]
+
+        - Writes books/<project>/combined.md (premise, taxonomy, treatment, foundation, beats, optional prose)
+        - If 'variants' is passed and chapter-beats-variants/ exists, writes chapter-beats-variants/combined.md
+        """
+        if not self.project:
+            self.console.print("[yellow]No project loaded. Use /new or /open first.[/yellow]")
+            return
+
+        include_variants = 'variants' in options.split()
+        include_prose = 'prose' in options.split()
+
+        # Main combined.md
+        try:
+            main_combined = self.project.write_combined_markdown(include_prose=include_prose)
+            self.console.print(f"[green]✓[/green] Combined written: {main_combined}")
+        except Exception as e:
+            self.console.print(f"[yellow]Failed to write main combined.md: {e}[/yellow]")
+
+        # Variants combined.md
+        if include_variants:
+            try:
+                from ..generation.variants import VariantManager
+                from ..generation.chapters import ChapterGenerator
+                generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
+                variant_manager = VariantManager(generator, self.project)
+                v_combined = variant_manager.write_variants_combined_markdown()
+                self.console.print(f"[green]✓[/green] Variants combined: {v_combined}")
+            except Exception as e:
+                self.console.print(f"[yellow]Failed to write variants combined.md: {e}[/yellow]")
+
+        # Commit
+        self._commit("Write combined context files")
 
     def git_command(self, args: str):
         """Run git command on shared repository."""
