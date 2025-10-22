@@ -87,14 +87,15 @@ class JudgingCoordinator:
                 chapter_text = chapter_file.read_text(encoding='utf-8')
                 chapter_texts.append(chapter_text)
 
-            # Join chapters with separators (no trailing separator)
-            chapters_markdown = "\n\n---\n\n".join(chapter_texts)
+            # Join chapters with blank lines (markdown headers provide structure)
+            chapters_markdown = "\n\n".join(chapter_texts)
 
-            variants_sections += f"""VARIANT {variant_num}{temp_label}:
+            # Add variant with clear visual box
+            variants_sections += f"""════════════════════════════════════════════════════════════════════════════════
+VARIANT {variant_num}{temp_label}
+════════════════════════════════════════════════════════════════════════════════
 
 {chapters_markdown}
-
----
 
 """
 
