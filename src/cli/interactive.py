@@ -1180,6 +1180,13 @@ class InteractiveSession:
                     if not genre:
                         return  # User cancelled
 
+        # Clean up downstream content before generation
+        from ..generation.cull import CullManager
+        culler = CullManager(self.project)
+
+        self.console.print("[dim]Cleaning up existing premise, treatment, chapters, and prose...[/dim]")
+        culler.cull_premise()  # Deletes premise/, treatment/, chapter-beats/, chapter-beats-variants/, and chapters/
+
         # Analyze the input to see if it's already a treatment
         analysis = PremiseAnalyzer.analyze(concept)
 
@@ -1528,6 +1535,13 @@ class InteractiveSession:
             self.console.print("[yellow]No premise found. Generating premise first...[/yellow]")
             await self._generate_premise()
 
+        # Clean up downstream content before generation
+        from ..generation.cull import CullManager
+        culler = CullManager(self.project)
+
+        self.console.print("[dim]Cleaning up existing treatment, chapters, and prose...[/dim]")
+        culler.cull_treatment()  # Deletes treatment/, chapter-beats/, chapter-beats-variants/, and chapters/
+
         # Parse word count if provided
         target_words = 2500
         if options:
@@ -1577,6 +1591,13 @@ class InteractiveSession:
         if not self.project.get_treatment():
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
             return
+
+        # Clean up downstream content before generation
+        from ..generation.cull import CullManager
+        culler = CullManager(self.project)
+
+        self.console.print("[dim]Cleaning up existing chapters and prose...[/dim]")
+        culler.cull_chapters()  # Deletes chapter-beats/, chapter-beats-variants/, and chapters/ (prose)
 
         # Parse options (chapter count or word count) and flags
         chapter_count = None
@@ -1880,6 +1901,13 @@ Regenerate the foundation addressing the issues above.
         generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
 
         if target.lower() == "all":
+            # Clean up existing prose before generating all chapters
+            from ..generation.cull import CullManager
+            culler = CullManager(self.project)
+
+            self.console.print("[dim]Cleaning up existing prose...[/dim]")
+            culler.cull_prose()  # Delete all chapter prose files
+
             # Generate all chapters sequentially
             self.console.print("[cyan]Generating all chapters sequentially with full context...[/cyan]")
 
@@ -1903,6 +1931,12 @@ Regenerate the foundation addressing the issues above.
             # Generate single chapter
             try:
                 chapter_num = int(target)
+
+                # Clean up existing prose file for this chapter if it exists
+                chapter_prose_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                if chapter_prose_file.exists():
+                    self.console.print(f"[dim]Removing existing chapter {chapter_num} prose...[/dim]")
+                    chapter_prose_file.unlink()
 
                 # Show token analysis first
                 token_calc = await generator.calculate_prose_context_tokens(chapter_num)
