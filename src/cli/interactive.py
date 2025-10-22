@@ -2514,22 +2514,24 @@ Regenerate the foundation addressing the issues above.
             else:
                 self.console.print(f"{summary}\n")
 
-        # Priority issues (top of stack if provided)
-        priority = result.get('priority_issues', [])
-        if priority:
-            self.console.print("[bold]⚠️ Priority Issues:[/bold]")
-            for issue in priority:
-                sev = issue.get('severity', 'MEDIUM')
-                loc = issue.get('location', 'General')
-                desc = issue.get('description', '')
-                sugg = issue.get('suggestion', '')
-                self.console.print(f"  • [{sev}] {loc}: {desc}")
-                if sugg:
-                    self.console.print(f"    ↳ Suggestion: {sugg}")
-            self.console.print()
-
         # Feedback by dimension (show all dimensions if present)
         dimension_results = result.get('dimension_results', [])
+
+        # Build a set of already-present issues to avoid duplicating "priority" content
+        def _issue_key(d: dict) -> tuple:
+            return (
+                d.get('category', ''),
+                d.get('severity', ''),
+                d.get('location', ''),
+                d.get('description', ''),
+                d.get('suggestion', ''),
+            )
+
+        seen_issue_keys = set()
+        for dim_scan in dimension_results:
+            for iss in dim_scan.get('issues', []):
+                seen_issue_keys.add(_issue_key(iss))
+
         for dim in dimension_results:
             dim_name = dim.get('dimension', 'Analysis')
             # Issues
@@ -2545,6 +2547,25 @@ Regenerate the foundation addressing the issues above.
                     if sugg:
                         self.console.print(f"    ↳ Suggestion: {sugg}")
                 self.console.print()
+
+        # Priority issues (only if truly unique vs dimension issues)
+        priority = result.get('priority_issues', [])
+        unique_priority = []
+        for p in priority:
+            if _issue_key(p) not in seen_issue_keys:
+                unique_priority.append(p)
+
+        if unique_priority:
+            self.console.print("[bold]⚠️ Priority Issues:[/bold]")
+            for issue in unique_priority:
+                sev = issue.get('severity', 'MEDIUM')
+                loc = issue.get('location', 'General')
+                desc = issue.get('description', '')
+                sugg = issue.get('suggestion', '')
+                self.console.print(f"  • [{sev}] {loc}: {desc}")
+                if sugg:
+                    self.console.print(f"    ↳ Suggestion: {sugg}")
+            self.console.print()
 
             # Strengths
             strengths = dim.get('strengths', [])
