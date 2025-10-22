@@ -16,27 +16,37 @@ You are an expert story editor with deep understanding of narrative craft. You p
 [USER]
 You are an expert story editor. Read this {{ content_type }} and provide honest feedback.
 
-Content to Analyze:
-```
 {{ content }}
-```
 
 {% if premise %}
-Premise Context:
+
+---
+
+# PREMISE CONTEXT
+
 {{ premise }}
 {% endif %}
 
-{% if genre %}
-Genre: {{ genre }}
+{% if genre and content_type != 'chapters' %}
+
+**Genre:** {{ genre }}
 {% endif %}
 
 {% if treatment %}
-Treatment Context:
+
+---
+
+# TREATMENT CONTEXT
+
 {{ treatment }}
 {% endif %}
 
 {% if chapter_outline %}
-Chapter Outline:
+
+---
+
+# CHAPTER OUTLINE CONTEXT
+
 {{ chapter_outline }}
 {% endif %}
 

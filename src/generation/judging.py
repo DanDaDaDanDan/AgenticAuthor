@@ -90,6 +90,8 @@ class JudgingCoordinator:
 
 {chapters_markdown}
 
+---
+
 """
 
         # Build list of actual variant numbers (e.g., "1, 3, 4" if variant 2 failed)

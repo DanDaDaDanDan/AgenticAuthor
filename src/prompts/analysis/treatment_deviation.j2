@@ -10,15 +10,17 @@
 You are a story editor checking how well chapters follow the treatment. You always return valid JSON without additional formatting.
 
 [USER]
-TREATMENT (SOURCE OF TRUTH):
-```
-{{ treatment }}
-```
+# TREATMENT (SOURCE OF TRUTH)
 
-CHAPTER OUTLINES TO ANALYZE:
-```
+{{ treatment }}
+
+---
+
+# CHAPTER OUTLINES TO ANALYZE
+
 {{ content }}
-```
+
+---
 
 Your task is to identify:
 1. **MISSING ELEMENTS**: Plot points from treatment not covered in chapters

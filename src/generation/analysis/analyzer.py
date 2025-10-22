@@ -187,120 +187,134 @@ class AnalysisCoordinator:
         return "\n".join(lines)
 
     def _chapters_yaml_to_text(self, chapters_yaml: Dict[str, Any]) -> str:
-        """Convert self-contained chapters.yaml to readable text (new format)."""
-        lines = []
+        """Convert self-contained chapters.yaml to markdown (new format)."""
+        sections = []
 
         # METADATA SECTION
         metadata = chapters_yaml.get('metadata', {})
         if metadata:
-            lines.append("=== STORY METADATA ===")
-            lines.append(f"Genre: {metadata.get('genre', 'N/A')}")
-            lines.append(f"Subgenre: {metadata.get('subgenre', 'N/A')}")
-            lines.append(f"Tone: {metadata.get('tone', 'N/A')}")
-            lines.append(f"Pacing: {metadata.get('pacing', 'N/A')}")
+            md_lines = ["# FOUNDATION\n", "## Metadata\n"]
+            md_lines.append(f"**Genre:** {metadata.get('genre', 'N/A')}")
+            md_lines.append(f"**Subgenre:** {metadata.get('subgenre', 'N/A')}")
+            md_lines.append(f"**Tone:** {metadata.get('tone', 'N/A')}")
+            md_lines.append(f"**Pacing:** {metadata.get('pacing', 'N/A')}")
             themes = metadata.get('themes', [])
             if themes:
-                lines.append(f"Themes: {', '.join(themes)}")
-            lines.append(f"Narrative Style: {metadata.get('narrative_style', 'N/A')}")
-            lines.append(f"Target Word Count: {metadata.get('target_word_count', 'N/A')}")
-            lines.append(f"Setting: {metadata.get('setting_location', 'N/A')} ({metadata.get('setting_period', 'N/A')})")
-            lines.append("")
+                md_lines.append(f"**Themes:** {', '.join(themes)}")
+            md_lines.append(f"**Narrative Style:** {metadata.get('narrative_style', 'N/A')}")
+            # Format word count with commas
+            target_wc = metadata.get('target_word_count', 'N/A')
+            if isinstance(target_wc, int):
+                md_lines.append(f"**Target Word Count:** {target_wc:,}")
+            else:
+                md_lines.append(f"**Target Word Count:** {target_wc}")
+            md_lines.append(f"**Setting:** {metadata.get('setting_location', 'N/A')} ({metadata.get('setting_period', 'N/A')})")
+            sections.append("\n".join(md_lines))
 
         # CHARACTERS SECTION
         characters = chapters_yaml.get('characters', [])
         if characters:
-            lines.append("=== CHARACTERS ===")
+            char_lines = ["## Characters\n"]
             for char in characters:
-                lines.append(f"\n{char.get('name', 'Unknown')} ({char.get('role', 'N/A')})")
+                char_lines.append(f"### {char.get('name', 'Unknown')} ({char.get('role', 'N/A')})\n")
                 if char.get('age'):
-                    lines.append(f"Age: {char.get('age')}")
-                lines.append(f"Background: {char.get('background', 'N/A')}")
-                lines.append(f"Motivation: {char.get('motivation', 'N/A')}")
-                lines.append(f"Character Arc: {char.get('character_arc', 'N/A')}")
-                lines.append(f"Internal Conflict: {char.get('internal_conflict', 'N/A')}")
-            lines.append("")
+                    char_lines.append(f"**Age:** {char.get('age')}")
+                char_lines.append(f"**Background:** {char.get('background', 'N/A')}")
+                char_lines.append(f"**Motivation:** {char.get('motivation', 'N/A')}")
+                char_lines.append(f"**Character Arc:** {char.get('character_arc', 'N/A')}")
+                char_lines.append(f"**Internal Conflict:** {char.get('internal_conflict', 'N/A')}\n")
+            sections.append("\n".join(char_lines))
 
         # WORLD SECTION
         world = chapters_yaml.get('world', {})
         if world:
-            lines.append("=== WORLD-BUILDING ===")
-            lines.append(f"Setting Overview: {world.get('setting_overview', 'N/A')}")
+            world_lines = ["## World\n"]
+            world_lines.append(f"**Setting Overview:** {world.get('setting_overview', 'N/A')}\n")
 
             key_locations = world.get('key_locations', [])
             if key_locations:
-                lines.append("\nKey Locations:")
+                world_lines.append("**Key Locations:**")
                 for loc in key_locations:
-                    lines.append(f"  - {loc.get('name', 'Unknown')}: {loc.get('description', 'N/A')}")
+                    world_lines.append(f"- **{loc.get('name', 'Unknown')}:** {loc.get('description', 'N/A')}")
+                world_lines.append("")
 
             systems = world.get('systems_and_rules', [])
             if systems:
-                lines.append("\nSystems and Rules:")
+                world_lines.append("**Systems and Rules:**")
                 # Handle both list format (new) and dict format (legacy)
                 if isinstance(systems, list):
                     for system in systems:
                         if isinstance(system, dict):
                             system_name = system.get('system', 'Unknown')
                             system_desc = system.get('description', 'N/A')
-                            lines.append(f"  - {system_name}: {system_desc}")
+                            world_lines.append(f"- **{system_name}:** {system_desc}")
                         else:
-                            lines.append(f"  - {system}")
+                            world_lines.append(f"- {system}")
                 else:
                     # Legacy dict format
                     for key, value in systems.items():
-                        lines.append(f"  - {key}: {value}")
+                        world_lines.append(f"- **{key}:** {value}")
+                world_lines.append("")
 
             social_context = world.get('social_context', [])
             if social_context:
-                lines.append("\nSocial Context:")
+                world_lines.append("**Social Context:**")
                 # Handle both list format (new) and dict format (legacy)
                 if isinstance(social_context, list):
                     for context in social_context:
                         if isinstance(context, dict):
                             # If it's a dict, format it
                             for key, value in context.items():
-                                lines.append(f"  - {key}: {value}")
+                                world_lines.append(f"- {key}: {value}")
                         else:
                             # If it's a string, just add it
-                            lines.append(f"  - {context}")
+                            world_lines.append(f"- {context}")
                 else:
                     # Legacy dict format
                     for key, value in social_context.items():
-                        lines.append(f"  - {key}: {value}")
-            lines.append("")
+                        world_lines.append(f"- {key}: {value}")
+
+            sections.append("\n".join(world_lines))
 
         # CHAPTERS SECTION
         chapters = chapters_yaml.get('chapters', [])
         if chapters:
-            lines.append("=== CHAPTER OUTLINES ===")
+            chapter_lines = ["# CHAPTER OUTLINES\n"]
             for ch in chapters:
-                lines.append(f"\nChapter {ch.get('number', '?')}: {ch.get('title', 'Untitled')}")
-                lines.append(f"POV: {ch.get('pov', 'N/A')}")
-                lines.append(f"Act: {ch.get('act', 'N/A')}")
-                lines.append(f"Summary: {ch.get('summary', 'N/A')}")
+                chapter_lines.append(f"## Chapter {ch.get('number', '?')}: {ch.get('title', 'Untitled')}\n")
+                chapter_lines.append(f"**POV:** {ch.get('pov', 'N/A')}")
+                chapter_lines.append(f"**Act:** {ch.get('act', 'N/A')}")
+                chapter_lines.append(f"**Summary:** {ch.get('summary', 'N/A')}\n")
 
                 # Support both scenes (new) and key_events (old) formats
                 scenes = ch.get('scenes', ch.get('key_events', []))
                 if scenes:
+                    chapter_lines.append(f"**Scenes ({len(scenes)} total):**")
                     # Check if structured scenes or simple list
                     if isinstance(scenes, list) and len(scenes) > 0 and isinstance(scenes[0], dict):
-                        lines.append(f"Scenes ({len(scenes)} total):")
                         # Include scene details for duplicate detection
                         for i, scene in enumerate(scenes, 1):
                             scene_title = scene.get('scene', 'Untitled')
                             location = scene.get('location', 'N/A')
                             pov_goal = scene.get('pov_goal', 'N/A')
-                            lines.append(f"  {i}. {scene_title} @ {location}")
-                            lines.append(f"     Goal: {pov_goal}")
+                            chapter_lines.append(f"{i}. **{scene_title}** @ {location}")
+                            chapter_lines.append(f"   *Goal:* {pov_goal}")
                     else:
-                        lines.append(f"Scenes ({len(scenes)} total):")
                         for i, scene in enumerate(scenes, 1):
-                            lines.append(f"  {i}. {scene}")
+                            chapter_lines.append(f"{i}. {scene}")
+                    chapter_lines.append("")
 
                 char_devs = ch.get('character_developments', [])
                 if char_devs:
-                    lines.append(f"Character Developments ({len(char_devs)} total)")
+                    chapter_lines.append(f"**Character Developments:** {len(char_devs)} total\n")
 
-        return "\n".join(lines)
+                # Add separator between chapters
+                chapter_lines.append("---\n")
+
+            sections.append("\n".join(chapter_lines))
+
+        # Join all sections with clear separator
+        return "\n\n---\n\n".join(sections)
 
     def _build_combined_result_dict(
         self,
