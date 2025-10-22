@@ -2676,7 +2676,7 @@ Regenerate the foundation addressing the issues above.
             self.console.print(f"Backup: {Path(result['backup_dir']).relative_to(self.project.path)}")
 
             # Commit the changes
-        self._commit(f"Copy editing pass complete ({result['chapters_edited']} chapters)")
+            self._commit(f"Copy editing pass complete ({result['chapters_edited']} chapters)")
 
         except Exception as e:
             self.console.print(f"[red]Copy editing failed: {str(e)}[/red]")
