@@ -315,7 +315,10 @@ USE: [suggestion]"""
             if characters:
                 parts.append("MAIN CHARACTERS:")
                 for char in characters[:3]:  # Top 3 characters
-                    parts.append(f"- {char.get('name', 'Unknown')}: {char.get('role', '')} - {char.get('description', '')[:100]}")
+                    description = char.get('description') or char.get('background', '')
+                    # Handle None values explicitly
+                    description = description[:100] if description else ''
+                    parts.append(f"- {char.get('name', 'Unknown')}: {char.get('role', '')} - {description}")
                 parts.append("")
 
             # Chapter outlines (summary)
@@ -324,7 +327,9 @@ USE: [suggestion]"""
                 parts.append(f"STORY STRUCTURE: {len(chapters)} chapters")
                 parts.append("Chapter highlights:")
                 for ch in chapters[:3]:  # First 3 chapters
-                    parts.append(f"- Ch{ch.get('number', '?')}: {ch.get('title', 'Untitled')} - {ch.get('summary', '')[:100]}")
+                    summary = ch.get('summary', '') or ''  # Handle explicit None
+                    summary_excerpt = summary[:100] if summary else ''
+                    parts.append(f"- Ch{ch.get('number', '?')}: {ch.get('title', 'Untitled')} - {summary_excerpt}")
                 if len(chapters) > 3:
                     parts.append(f"[...and {len(chapters) - 3} more chapters]")
                 parts.append("")
