@@ -244,8 +244,10 @@ class ChapterGenerator:
 
         except Exception as e:
             # Save raw response for debugging before failing
-            debug_file = self.project.path / '.agentic' / 'debug' / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.md'
-            debug_file.parent.mkdir(parents=True, exist_ok=True)
+            from ..config import get_settings
+            settings = get_settings()
+            debug_dir = settings.get_debug_dir(self.project.name)
+            debug_file = debug_dir / f'foundation_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.md'
             debug_file.write_text(response_text, encoding='utf-8')
 
             if logger:
@@ -941,8 +943,10 @@ class ChapterGenerator:
                     logger.error(f"Markdown extraction failed: {extract_error}")
 
                 # Save raw response for debugging
-                debug_file = self.project.path / '.agentic' / 'debug' / f'chapters_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.md'
-                debug_file.parent.mkdir(parents=True, exist_ok=True)
+                from ..config import get_settings
+                settings = get_settings()
+                debug_dir = settings.get_debug_dir(self.project.name)
+                debug_file = debug_dir / f'chapters_failed_{datetime.now().strftime("%Y%m%d_%H%M%S")}_raw.md'
                 debug_file.write_text(response_text, encoding='utf-8')
 
                 self.console.print(f"[red]Failed to extract chapters from response[/red]")

@@ -404,7 +404,12 @@ def parse_foundation_robust(text: str, project_path: Optional[Path] = None) -> D
     debug_path = None
     if project_path:
         from datetime import datetime
+        from ..config import get_settings
+        settings = get_settings()
+        # Extract project name from path (e.g., books/my-project -> my-project)
+        project_name = project_path.name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        debug_path = project_path / '.agentic' / 'debug' / f'foundation_{timestamp}.yaml'
+        debug_dir = settings.get_debug_dir(project_name)
+        debug_path = debug_dir / f'foundation_{timestamp}.yaml'
 
     return RobustYAMLParser.parse_foundation(text, debug_path)

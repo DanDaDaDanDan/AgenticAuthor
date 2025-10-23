@@ -135,7 +135,10 @@ For implementation orientation, see `ARCHITECTURE.md`.
 
 - OpenRouter API key must start with 'sk-or-'
 - Every operation auto-commits to git
-- Logs in `./logs/agentic_YYYYMMDD.log`
+- Centralized .agentic folder at project root (NOT in books/)
+  - Logs: `.agentic/logs/agentic_YYYYMMDD.log`
+  - Debug files: `.agentic/debug/project-name/`
+  - History: `.agentic/history`
 - Generation requires: premise → treatment → chapters → prose
 - Test suite needs rebuilding for v0.3.0+
 

@@ -124,6 +124,30 @@ class Settings(BaseSettings):
         """Get the currently active model."""
         return self.current_model or self.default_model
 
+    @property
+    def agentic_dir(self) -> Path:
+        """Get the centralized .agentic directory (at project root, not in books/)."""
+        # .agentic is at the project root (AgenticAuthor/.agentic), not in books/
+        agentic_path = Path('.agentic').resolve()
+        agentic_path.mkdir(exist_ok=True)
+        return agentic_path
+
+    def get_debug_dir(self, project_name: Optional[str] = None) -> Path:
+        """
+        Get the debug directory for a project.
+
+        Args:
+            project_name: Optional project name for project-specific debug dir
+
+        Returns:
+            Path to debug directory (.agentic/debug/ or .agentic/debug/project-name/)
+        """
+        debug_dir = self.agentic_dir / 'debug'
+        if project_name:
+            debug_dir = debug_dir / project_name
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        return debug_dir
+
     def set_model(self, model: str) -> None:
         """Set the current model and save to config."""
         from ..utils.logging import get_logger
