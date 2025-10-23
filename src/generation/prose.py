@@ -256,9 +256,34 @@ class ProseGenerator:
             ]
         }
 
-        # Serialize modified context to markdown for prompt
+        # Build rich context markdown: chapter index, current outline (raw if available), future outlines
         from ..utils.markdown_extractors import MarkdownFormatter
-        chapters_markdown = MarkdownFormatter.format_chapters_yaml(modified_chapters_data)
+        from pathlib import Path as _P
+
+        # Chapter index (number, title, act)
+        index_lines = ["## Chapter Index"]
+        for ch in chapters:
+            index_lines.append(f"- {ch.get('number','?')}: {ch.get('title','Untitled')} — {ch.get('act','N/A')}")
+        index_md = "\n".join(index_lines) + "\n\n"
+
+        # Current chapter outline: prefer raw chapter-beats markdown if available
+        current_outline_md = ""
+        current_outline_file = self.project.chapter_beats_dir / f"chapter-{chapter_number:02d}.md"
+        if current_outline_file.exists():
+            current_outline_md = current_outline_file.read_text(encoding='utf-8').strip()
+        else:
+            # Fallback to generated formatting from chapter dict
+            current_outline_md = MarkdownFormatter.format_chapters([current_chapter])
+
+        # Future chapter outlines (formatted from dicts)
+        future_chapters = [ch for ch in chapters if ch['number'] > chapter_number]
+        future_md = MarkdownFormatter.format_chapters(future_chapters) if future_chapters else ""
+
+        chapters_markdown = (
+            index_md +
+            "<<<CURRENT CHAPTER OUTLINE START>>>\n" + current_outline_md + "\n<<<CURRENT CHAPTER OUTLINE END>>>\n\n" +
+            ("<<<FUTURE CHAPTER OUTLINES START>>>\n" + future_md + "\n<<<FUTURE CHAPTER OUTLINES END>>>\n" if future_md else "")
+        )
 
         # Build prose generation prompt - QUALITY-FIRST approach
         # Support both structured scenes (new) and simple key_events (old) formats
@@ -271,7 +296,27 @@ class ProseGenerator:
         )
 
         # Extract beat sheet data (current format) - backward compatible
+        # Beats (prefer explicit beats; fallback to key_events/scenes)
         beats = current_chapter.get('beats', [])
+        if not beats:
+            key_events = current_chapter.get('key_events', [])
+            if key_events:
+                beats = key_events
+            else:
+                scenes = current_chapter.get('scenes', [])
+                if scenes and isinstance(scenes, list):
+                    # Convert structured scenes to beat strings
+                    converted = []
+                    for sc in scenes:
+                        if isinstance(sc, dict):
+                            obj = sc.get('objective', sc.get('pov_goal', ''))
+                            out = sc.get('outcome', '')
+                            if obj and out:
+                                converted.append(f"{obj} → {out}")
+                            elif obj:
+                                converted.append(str(obj))
+                    if converted:
+                        beats = converted
         emotional_beat = current_chapter.get('emotional_beat', '')
 
         # Build chapter summary (legacy prose summary format)
