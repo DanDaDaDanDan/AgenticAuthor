@@ -221,9 +221,17 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/generate <type> [options]\n' +
                      '  chapters: [count]  (uses proven single-shot generation)'
         },
+        'finalize': {
+            'description': 'Finalize multi-variant generation (chapters)',
+            'usage': '/finalize chapters'
+        },
         'cull': {
             'description': 'Delete generated content (prose/chapters/treatment/premise/debug)',
             'usage': '/cull <target>'
+        },
+        'iterate': {
+            'description': 'Set iteration target or show current (premise/treatment/chapters/prose)',
+            'usage': '/iterate [target]'
         },
         'analyze': {
             'description': 'Analyze story quality (premise/treatment/chapters/prose)',
