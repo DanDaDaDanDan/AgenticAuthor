@@ -308,27 +308,13 @@ class ProseGenerator:
         )
 
         # Extract beat sheet data (current format) - backward compatible
-        # Beats (prefer explicit beats; fallback to key_events/scenes)
-        beats = current_chapter.get('beats', [])
+        # Beats are required: use 'beats' if present or 'key_events' from the outline
+        beats = current_chapter.get('beats') or current_chapter.get('key_events', [])
         if not beats:
-            key_events = current_chapter.get('key_events', [])
-            if key_events:
-                beats = key_events
-            else:
-                scenes = current_chapter.get('scenes', [])
-                if scenes and isinstance(scenes, list):
-                    # Convert structured scenes to beat strings
-                    converted = []
-                    for sc in scenes:
-                        if isinstance(sc, dict):
-                            obj = sc.get('objective', sc.get('pov_goal', ''))
-                            out = sc.get('outcome', '')
-                            if obj and out:
-                                converted.append(f"{obj} → {out}")
-                            elif obj:
-                                converted.append(str(obj))
-                    if converted:
-                        beats = converted
+            raise Exception(
+                "Current chapter outline missing beats/key_events. "
+                "Regenerate chapter beats with the beat-sheet prompt before prose generation."
+            )
         emotional_beat = current_chapter.get('emotional_beat', '')
 
         # Build chapter summary (legacy prose summary format)
