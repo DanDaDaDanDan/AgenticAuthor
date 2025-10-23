@@ -4,6 +4,7 @@ from typing import Dict, Any, List
 from pathlib import Path
 
 from ..models import Project
+import shutil
 
 
 class CullManager:
@@ -53,6 +54,17 @@ class CullManager:
 
         deleted_files = []
 
+        # Helper to recursively collect and delete a directory tree
+        def _rmtree_collect(root: Path) -> List[str]:
+            collected: List[str] = []
+            if not root.exists():
+                return collected
+            for p in root.rglob('*'):
+                if p.is_file():
+                    collected.append(str(p.relative_to(self.project.path)))
+            shutil.rmtree(root, ignore_errors=True)
+            return collected
+
         # Delete entire chapter-beats/ directory (finalized chapters)
         beats_dir = self.project.chapter_beats_dir
 
@@ -61,42 +73,9 @@ class CullManager:
             logger.debug(f"Directory exists: {beats_dir.exists()}")
 
         if beats_dir.exists():
-            # Delete foundation (both .md and .yaml for backward compatibility)
-            for foundation_ext in ['.md', '.yaml']:
-                foundation_file = beats_dir / f"foundation{foundation_ext}"
-                if foundation_file.exists():
-                    if logger:
-                        logger.debug(f"Deleting foundation: {foundation_file}")
-                    foundation_file.unlink()
-                    deleted_files.append(str(foundation_file.relative_to(self.project.path)))
-
-            # Delete all chapter files (both .md and .yaml formats)
-            chapter_files = list(beats_dir.glob("chapter-*.md")) + list(beats_dir.glob("chapter-*.yaml"))
             if logger:
-                logger.debug(f"Found {len(chapter_files)} chapter files")
-
-            for chapter_file in chapter_files:
-                if logger:
-                    logger.debug(f"Deleting: {chapter_file}")
-                chapter_file.unlink()
-                deleted_files.append(str(chapter_file.relative_to(self.project.path)))
-
-            # Delete any other files (catch-all for both formats)
-            other_files = [f for f in beats_dir.glob("*") if f.is_file()]
-            for file in other_files:
-                if logger:
-                    logger.debug(f"Deleting other file: {file}")
-                file.unlink()
-                deleted_files.append(str(file.relative_to(self.project.path)))
-
-            # Try to remove directory if empty
-            try:
-                beats_dir.rmdir()
-                if logger:
-                    logger.debug(f"Removed empty directory: {beats_dir}")
-            except OSError as e:
-                if logger:
-                    logger.debug(f"Could not remove directory (not empty or error): {e}")
+                logger.debug(f"Deep deleting directory: {beats_dir}")
+            deleted_files.extend(_rmtree_collect(beats_dir))
 
         # NEW: Delete chapter-beats-variants/ directory (multi-variant artifacts)
         variants_dir = self.project.path / 'chapter-beats-variants'
@@ -106,25 +85,9 @@ class CullManager:
             logger.debug(f"Variants directory exists: {variants_dir.exists()}")
 
         if variants_dir.exists():
-            # Delete all variant-N/ subdirectories
-            for variant_dir in variants_dir.glob('variant-*'):
-                if variant_dir.is_dir():
-                    # Delete all files in this variant (both .md and .yaml)
-                    for variant_file in variant_dir.iterdir():
-                        if variant_file.is_file():
-                            if logger:
-                                logger.debug(f"Deleting variant file: {variant_file}")
-                            variant_file.unlink()
-                            deleted_files.append(str(variant_file.relative_to(self.project.path)))
-
-                    # Remove variant directory
-                    try:
-                        variant_dir.rmdir()
-                        if logger:
-                            logger.debug(f"Removed variant directory: {variant_dir}")
-                    except OSError as e:
-                        if logger:
-                            logger.debug(f"Could not remove variant directory: {e}")
+            if logger:
+                logger.debug(f"Deep deleting variants directory: {variants_dir}")
+            deleted_files.extend(_rmtree_collect(variants_dir))
 
             # Delete shared foundation (both .md and .yaml for backward compatibility)
             for foundation_ext in ['.md', '.yaml']:
@@ -190,17 +153,9 @@ class CullManager:
         """
         deleted_files = []
 
-        # Delete entire treatment/ directory
+        # Delete entire treatment/ directory (deep)
         if self.project.treatment_dir.exists():
-            for file in self.project.treatment_dir.glob("*"):
-                file.unlink()
-                deleted_files.append(str(file.relative_to(self.project.path)))
-
-            # Try to remove directory if empty
-            try:
-                self.project.treatment_dir.rmdir()
-            except OSError:
-                pass  # Directory not empty, that's fine
+            deleted_files.extend(_rmtree_collect(self.project.treatment_dir))
 
         # Also delete legacy treatment.md if it exists at root
         legacy_treatment_file = self.project.path / "treatment.md"
@@ -227,17 +182,9 @@ class CullManager:
         """
         deleted_files = []
 
-        # Delete entire premise/ directory
+        # Delete entire premise/ directory (deep)
         if self.project.premise_dir.exists():
-            for file in self.project.premise_dir.glob("*"):
-                file.unlink()
-                deleted_files.append(str(file.relative_to(self.project.path)))
-
-            # Try to remove directory if empty
-            try:
-                self.project.premise_dir.rmdir()
-            except OSError:
-                pass  # Directory not empty, that's fine
+            deleted_files.extend(_rmtree_collect(self.project.premise_dir))
 
         # Also delete legacy files if they exist at root
         legacy_premise_file = self.project.path / "premise.md"
