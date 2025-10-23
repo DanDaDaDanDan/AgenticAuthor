@@ -19,6 +19,43 @@ class CullManager:
         """
         self.project = project
 
+    # === Shared helpers ===
+    def _rmtree(self, root: Path, preserve_root: bool = False) -> List[str]:
+        """Recursively delete a directory tree and collect deleted files.
+
+        Args:
+            root: Directory to delete (or whose contents to delete)
+            preserve_root: If True, delete only contents and keep root dir
+
+        Returns:
+            List of file paths (relative to project root) that were deleted
+        """
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        deleted: List[str] = []
+        if not root.exists():
+            return deleted
+
+        if preserve_root:
+            # Delete children recursively, keep root
+            for item in root.iterdir():
+                if item.is_file():
+                    if logger:
+                        logger.debug(f"Deleting file: {item}")
+                    item.unlink(missing_ok=True)
+                    deleted.append(str(item.relative_to(self.project.path)))
+                elif item.is_dir():
+                    deleted.extend(self._rmtree(item, preserve_root=False))
+            return deleted
+
+        # Delete entire tree and collect files via rglob before removal
+        for p in root.rglob('*'):
+            if p.is_file():
+                deleted.append(str(p.relative_to(self.project.path)))
+        shutil.rmtree(root, ignore_errors=True)
+        return deleted
+
     def cull_prose(self) -> Dict[str, Any]:
         """
         Deep-delete the chapters/ directory (all prose files and subfolders).
@@ -56,17 +93,6 @@ class CullManager:
 
         deleted_files = []
 
-        # Helper to recursively collect and delete a directory tree
-        def _rmtree_collect(root: Path) -> List[str]:
-            collected: List[str] = []
-            if not root.exists():
-                return collected
-            for p in root.rglob('*'):
-                if p.is_file():
-                    collected.append(str(p.relative_to(self.project.path)))
-            shutil.rmtree(root, ignore_errors=True)
-            return collected
-
         # Delete entire chapter-beats/ directory (finalized chapters)
         beats_dir = self.project.chapter_beats_dir
 
@@ -77,7 +103,7 @@ class CullManager:
         if beats_dir.exists():
             if logger:
                 logger.debug(f"Deep deleting directory: {beats_dir}")
-            deleted_files.extend(_rmtree_collect(beats_dir))
+            deleted_files.extend(self._rmtree(beats_dir))
 
         # NEW: Delete chapter-beats-variants/ directory (multi-variant artifacts)
         variants_dir = self.project.path / 'chapter-beats-variants'
@@ -89,7 +115,7 @@ class CullManager:
         if variants_dir.exists():
             if logger:
                 logger.debug(f"Deep deleting variants directory: {variants_dir}")
-            deleted_files.extend(_rmtree_collect(variants_dir))
+            deleted_files.extend(self._rmtree(variants_dir))
 
             # Delete shared foundation (both .md and .yaml for backward compatibility)
             for foundation_ext in ['.md', '.yaml']:
@@ -157,7 +183,7 @@ class CullManager:
 
         # Delete entire treatment/ directory (deep)
         if self.project.treatment_dir.exists():
-            deleted_files.extend(_rmtree_collect(self.project.treatment_dir))
+            deleted_files.extend(self._rmtree(self.project.treatment_dir))
 
         # Also delete legacy treatment.md if it exists at root
         legacy_treatment_file = self.project.path / "treatment.md"
@@ -186,7 +212,7 @@ class CullManager:
 
         # Delete entire premise/ directory (deep)
         if self.project.premise_dir.exists():
-            deleted_files.extend(_rmtree_collect(self.project.premise_dir))
+            deleted_files.extend(self._rmtree(self.project.premise_dir))
 
         # Also delete legacy files if they exist at root
         legacy_premise_file = self.project.path / "premise.md"
@@ -240,29 +266,8 @@ class CullManager:
                 'count': 0
             }
 
-        # Recursively delete all files and subdirectories in .agentic/
-        # Keep the .agentic directory itself
-        def delete_recursively(directory: Path):
-            """Helper to recursively delete all contents of a directory."""
-            for item in directory.iterdir():
-                if item.is_file():
-                    if logger:
-                        logger.debug(f"Deleting file: {item}")
-                    item.unlink()
-                    deleted_files.append(str(item.relative_to(self.project.path)))
-                elif item.is_dir():
-                    # Recursively delete subdirectory contents
-                    delete_recursively(item)
-                    # Remove the now-empty subdirectory
-                    try:
-                        item.rmdir()
-                        if logger:
-                            logger.debug(f"Removed directory: {item}")
-                    except OSError as e:
-                        if logger:
-                            logger.debug(f"Could not remove directory {item}: {e}")
-
-        delete_recursively(agentic_dir)
+        # Delete contents of .agentic/ but keep the folder
+        deleted_files.extend(self._rmtree(agentic_dir, preserve_root=True))
 
         if logger:
             logger.debug(f"Cull debug complete: deleted {len(deleted_files)} files")
