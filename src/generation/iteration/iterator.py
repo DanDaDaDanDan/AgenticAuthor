@@ -1,6 +1,7 @@
 """Main iteration coordinator."""
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
