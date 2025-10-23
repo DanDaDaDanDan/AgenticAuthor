@@ -434,7 +434,7 @@ class OpenRouterClient:
             temperature=temperature,
             max_tokens=max_tokens,
             display=display,
-            min_response_tokens=min_response_tokens,
+            reserve_tokens=reserve_tokens,
             operation=operation,
             **kwargs
         )
