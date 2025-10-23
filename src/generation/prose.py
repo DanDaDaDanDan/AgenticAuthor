@@ -266,18 +266,30 @@ class ProseGenerator:
             index_lines.append(f"- {ch.get('number','?')}: {ch.get('title','Untitled')} — {ch.get('act','N/A')}")
         index_md = "\n".join(index_lines) + "\n\n"
 
-        # Current chapter outline: prefer raw chapter-beats markdown if available
-        current_outline_md = ""
+        # Current chapter outline MUST exist as raw beat file (no fallback)
         current_outline_file = self.project.chapter_beats_dir / f"chapter-{chapter_number:02d}.md"
-        if current_outline_file.exists():
-            current_outline_md = current_outline_file.read_text(encoding='utf-8').strip()
-        else:
-            # Fallback to generated formatting from chapter dict
-            current_outline_md = MarkdownFormatter.format_chapters([current_chapter])
+        if not current_outline_file.exists():
+            raise Exception(
+                f"Chapter outline not found: {current_outline_file}. "
+                f"Finalize chapters first or regenerate beats."
+            )
+        current_outline_md = current_outline_file.read_text(encoding='utf-8').strip()
 
-        # Future chapter outlines (formatted from dicts)
+        # Future chapter outlines: require raw files for each future chapter
+        future_md = ""
         future_chapters = [ch for ch in chapters if ch['number'] > chapter_number]
-        future_md = MarkdownFormatter.format_chapters(future_chapters) if future_chapters else ""
+        if future_chapters:
+            parts = []
+            for ch in future_chapters:
+                num = ch.get('number')
+                fpath = self.project.chapter_beats_dir / f"chapter-{num:02d}.md"
+                if not fpath.exists():
+                    raise Exception(
+                        f"Missing future chapter outline: {fpath}. "
+                        f"All future chapter beat files must exist before prose generation."
+                    )
+                parts.append(fpath.read_text(encoding='utf-8').strip())
+            future_md = "\n\n---\n\n".join(parts)
 
         chapters_markdown = (
             index_md +
