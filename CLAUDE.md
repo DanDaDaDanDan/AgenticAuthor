@@ -8,6 +8,9 @@ When making relevant changes, keep these up to date:
 - **`ARCHITECTURE.md`** – High-level architecture and file hierarchy. Keep this updated with key architectural decisions and changes (brief ADR-style notes are fine).
 - **`codex-overview-2-diagrams.md`** – Diagrammed overview
 - **`README.md`** – Quick start and core pointers (keep minimal)
+- **`docs/CHANGELOG.md`** – Version history and recent changes
+- **`docs/IMPLEMENTATION_STATUS.md`** – Feature tracking and known issues
+- **`docs/USER_GUIDE.md`** – Complete user guide with examples
 
 ## Git Commits
 
@@ -102,6 +105,11 @@ agentic                    # Start REPL
 /generate chapters        # Generate chapter variants
 /finalize chapters        # Select best variant
 /generate prose all       # Generate full prose
+
+# Iteration workflow (v0.4.0)
+/iterate prose            # Set iteration target
+make it darker            # Natural language feedback (no / prefix)
+                          # System validates with judge, shows semantic diff, commits
 ```
 
 Use `/help` in the REPL and tab-completion for command hints.
@@ -113,8 +121,13 @@ AgenticAuthor/
 ├── CLAUDE.md                 # This file
 ├── ARCHITECTURE.md           # High-level architecture (keep decisions updated)
 ├── codex-overview-2-diagrams.md # Diagrammed overview
+├── docs/                     # Comprehensive documentation
+│   ├── CHANGELOG.md          # Version history
+│   ├── IMPLEMENTATION_STATUS.md # Feature tracking
+│   └── USER_GUIDE.md         # Complete user guide
 ├── src/                      # Source code
 │   ├── generation/           # Core generation logic
+│   │   └── iteration/        # Natural language iteration (v0.4.0)
 │   ├── cli/                  # REPL and UI
 │   └── prompts/              # Jinja2 templates
 └── books/                    # Generated projects
@@ -142,7 +155,16 @@ For implementation orientation, see `ARCHITECTURE.md`.
 - Generation requires: premise → treatment → chapters → prose
 - Test suite needs rebuilding for v0.3.0+
 
+**Iteration System (v0.4.0):**
+- ✅ Implementation complete (11 files, 1092 lines, 6 prompt templates)
+- ⚠️ Ready for testing on cloned projects ONLY (use `/clone`)
+- Features: Judge validation, semantic diffs, git tracking, debug storage
+- See `docs/USER_GUIDE.md` for complete iteration examples
+
 ## Getting Help
 
-- Architecture: `ARCHITECTURE.md`
-- Diagrams: `codex-overview-2-diagrams.md`
+- **User Guide:** `docs/USER_GUIDE.md` - Complete guide with iteration examples
+- **Implementation Status:** `docs/IMPLEMENTATION_STATUS.md` - Feature tracking and known issues
+- **Changelog:** `docs/CHANGELOG.md` - Version history and recent changes
+- **Architecture:** `ARCHITECTURE.md` - High-level design and decisions
+- **Diagrams:** `codex-overview-2-diagrams.md` - Visual overviews
