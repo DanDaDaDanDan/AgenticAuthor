@@ -117,9 +117,11 @@
  - project.yaml — Project metadata (name, model, counts, timestamps).
  - premise/ — `premise_metadata.json`, premise candidates.
  - treatment/ — `treatment.md`.
- - chapter‑beats/ — `foundation.yaml` plus per‑chapter outline beats as YAML (`chapter‑NN.yaml`).
- - chapter‑beats‑variants/ — Variant runs (per‑variant chapter YAML) and decisions.
- - chapters/ — Final prose chapters as Markdown (`chapter‑NN.md`) plus combined outline (`chapters.md`).
+- treatment/ — `treatment.md`, `treatment_metadata.json`, and `combined.md` snapshot.
+- chapter‑beats/ — `foundation.md` plus per‑chapter beat sheets (`chapter‑NN.md`), and `combined.md` snapshot.
+- chapter‑beats‑variants/ — Variant runs (per‑variant chapter md) and decisions, plus `combined.md` snapshot of all variants.
+- chapters/ — Final prose chapters as Markdown (`chapter‑NN.md`).
+  - chapters/combined.md — Optional snapshot (when requested) including prose.
  - analysis/ — Editorial analysis reports as Markdown.
  - exports/ — Publishing artifacts (frontmatter, RTF/MD exports).
  
@@ -131,13 +133,16 @@
     - Generate or select a premise; choose taxonomy options (genre, length scope, tone). Persist to `premise/premise_metadata.json`.
  3. Treatment (LOD2)
     - Expand premise into a structured treatment prose document (`treatment/treatment.md`).
- 4. Foundation
-    - Extract structured foundation (metadata, characters, world) from treatment (`chapter‑beats/foundation.yaml`).
- 5. Chapters (Global Plan)
-    - Generate all chapter outlines in one call (`chapter_single_shot.j2`) with act anchors and anti‑redundancy guardrails; save per‑chapter beats to `chapter‑beats/chapter‑NN.yaml`.
-    - Optionally generate multiple variants and judge a winner.
- 6. Prose (Sequential)
-    - Write chapters in order using prior chapters’ FULL prose as authoritative context; validate against beats and iterate surgically if needed; save `chapters/chapter‑NN.md`.
+4. Foundation
+   - Extract structured foundation (metadata, characters, world) from treatment (`chapter‑beats/foundation.md`).
+5. Chapters (Global Plan)
+   - Generate all chapter outlines in one call (`chapter_single_shot.j2`) with act anchors and anti‑redundancy guardrails; save per‑chapter beats to `chapter‑beats/chapter‑NN.md`.
+   - `--auto` mode lets the LLM pick an appropriate chapter count (act weights passed); no target word counts shown.
+   - Optionally generate multiple variants; `chapter‑beats‑variants/combined.md` consolidates foundation and all variant beats.
+6. Prose (Sequential, strict)
+   - Write chapters in order using prior chapters’ FULL prose as authoritative context.
+   - Prompt includes fenced sections and requires current/future beat files; missing beats or files are treated as errors (no silent fallbacks).
+   - Save `chapters/chapter‑NN.md` and update `chapters/combined.md` when requested.
  7. Copy Edit & Polish
     - Run copy editing and generate KDP metadata as needed.
  8. Export & Deliver
@@ -147,14 +152,14 @@
  
  ## How Components Fit Together
  - CLI orchestrates flows, displays streaming output, and records logs.
- - Generation modules render Jinja prompts via `PromptLoader` and call OpenRouter through the async API client.
+ - Generation modules render Jinja prompts via `PromptLoader` and call OpenRouter through the async API client. Prompts use hard fences to avoid source bleed (e.g., TREATMENT, FOUNDATION, TAXONOMY, CHAPTER OUTLINE, PREVIOUS PROSE).
  - Planning artifacts (YAML) and prose (Markdown) are persisted per project, enabling repeatable runs and manual edits.
  - Validators and analyzers provide structured feedback used for surgical iterations.
  - Git integration at `books/` ensures a traceable, shared history across projects.
  
  ## Error Handling & Guardrails
  - Early checks for missing artifacts (premise, treatment, beats) and invalid API keys.
- - Strict prompt contracts (YAML/JSON/Markdown) + robust parsing with fallbacks (e.g., markdown extraction) when feasible.
+ - Strict prompt contracts (YAML/JSON/Markdown) and fenced context; robust parsing where applicable. Prose generation enforces presence of real beat files (current + future) and beats/key_events are required.
  - Analysis‑driven iteration loops with caps and user choice to continue, fix, or abort.
  
  ## Extending the System
@@ -165,36 +170,25 @@
  
  This overview is self‑contained and reflects the current source tree and on‑disk behavior to onboard contributors and guide design decisions.
 
-## The Markdown → YAML Conversion Pipeline
+## Markdown‑First Storage and Optional Extraction
 
-**Core Philosophy:** LLMs write better creative content when focused on storytelling (markdown) rather than syntax (YAML/JSON). We convert post-hoc.
+Core Philosophy: LLMs produce higher quality outputs in markdown. We store raw LLM markdown (foundation.md, chapter‑NN.md) and extract structure as needed.
 
-**Three-Layer Architecture:**
-1. **LLM Prompt (`.j2` template):** Asks LLM to generate natural markdown
-   - Example: `chapter_single_shot.j2` → "Write in clear, natural markdown format: # Chapter 1: Title"
-2. **LLM Response:** Returns markdown text with headers, bold fields, and prose summaries
-   - Example: `# Chapter 1: The Awakening\n**Act:** Act I\n\n[200-300 word prose summary...]`
-3. **Extraction Layer (`MarkdownExtractor`):** Parses markdown → Python dicts using regex patterns
-   - Extracts: `{number: 1, title: "The Awakening", act: "Act I", summary: "..."}`
-4. **Storage Layer:** Saves dicts as YAML files for structured machine access
-   - Example: `yaml.dump(chapter, file)` → `chapter-beats/chapter-01.yaml`
+Layers:
+1. Prompt (`.j2`) → LLM generates markdown with clear headings/fields and fences.
+2. Raw storage (`.md`) for foundation/beat sheets; prose is always `.md`.
+3. Optional extraction (`MarkdownExtractor`) to dicts for validation/analysis.
 
-**Why This Works:**
-- **LLM Strength:** Natural markdown writing (better quality, fewer formatting errors)
-- **Code Strength:** Structured YAML access (easy to parse, validate, iterate)
-- **Graceful Degradation:** Pattern matching handles format variations without hard failures
-- **Best of Both Worlds:** Creative input format + machine-readable storage
+Why:
+- Creative fidelity and fewer formatting failures.
+- Easy human review and diffs.
+- Structure still available when needed for validation or downstream tools.
 
-**Files Using This Pipeline:**
-- Foundation generation: Markdown → `chapter-beats/foundation.yaml`
-- Chapter generation: Markdown → `chapter-beats/chapter-NN.yaml`
-- Prose generation: Markdown → `chapters/chapter-NN.md` (NO conversion, stored as-is)
+File Type Summary:
+- `.j2` — Jinja2 prompt templates
+- `.json` — Metadata/decisions
+- `.md` — Canonical storage for foundation, beats, variants, and prose
+- `.yaml` — Optional/legacy structured artifacts (extracted when necessary)
 
-**Implementation:** See `src/utils/markdown_extractors.py` (MarkdownExtractor class) and usage in `src/generation/chapters.py`.
-
-**File Type Summary:**
-- `.j2` — Jinja2 prompt templates (LLM instructions)
-- `.json` — Machine-readable metadata (premise_metadata, decision records)
-- `.yaml` — Structured planning artifacts (CONVERTED from LLM markdown output)
-- `.md` — Prose chapters and documentation (stored as-is, no conversion)
+Implementation: See `src/utils/markdown_extractors.py` (MarkdownExtractor) and callers in generation modules.
 

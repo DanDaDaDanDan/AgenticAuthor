@@ -2490,7 +2490,7 @@ Regenerate the foundation addressing the issues above.
         elif parts[0] == 'prose':
             # Default to analyzing all prose chapters
             content_type = 'prose'
-            target_id = "1"  # Start with chapter 1
+            target_id = None  # None = analyze all prose
         else:
             self.console.print("[red]Invalid analysis target[/red]")
             self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all]")
@@ -2508,6 +2508,8 @@ Regenerate the foundation addressing the issues above.
             content_desc = content_type
             if target_id:
                 content_desc += f" {target_id}"
+            elif content_type == 'prose':
+                content_desc = "prose (all chapters)"
 
             self.console.print(f"\n[bold cyan]📊 Analyzing {content_desc}...[/bold cyan]")
             self.console.print(f"   ⏳ Reading and evaluating...\n")
@@ -2542,6 +2544,8 @@ Regenerate the foundation addressing the issues above.
         content_desc = result['content_type'].title()
         if result.get('target_id'):
             content_desc += f" {result['target_id']}"
+        elif result['content_type'] == 'prose':
+            content_desc = "Prose (All Chapters)"
 
         self.console.print(f"\n[bold]📊 Analysis: {content_desc}[/bold]\n")
 

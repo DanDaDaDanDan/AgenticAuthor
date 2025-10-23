@@ -183,17 +183,39 @@ class AnalysisCoordinator:
                 content = self.project.get_story()
                 context['treatment'] = self.project.get_treatment()
             else:
-                # Long-form: analyze specific chapter
-                chapter_num = int(target_id) if target_id else 1
-                chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
-                if chapter_file.exists():
-                    content = chapter_file.read_text(encoding='utf-8')
-                    context['treatment'] = self.project.get_treatment()
+                # Long-form: analyze specific chapter or all chapters
+                if target_id is None:
+                    # Analyze ALL prose chapters
+                    chapter_files = sorted(self.project.chapters_dir.glob('chapter-*.md'))
+                    if chapter_files:
+                        chapter_texts = []
+                        for chapter_file in chapter_files:
+                            chapter_text = chapter_file.read_text(encoding='utf-8')
+                            chapter_texts.append(chapter_text)
 
-                    # Get chapter outline for context - load markdown directly
-                    chapter_outline_file = self.project.chapter_beats_dir / f'chapter-{chapter_num:02d}.md'
-                    if chapter_outline_file.exists():
-                        context['chapter_outline'] = chapter_outline_file.read_text(encoding='utf-8')
+                        # Concatenate all chapters with clear separators
+                        content = '\n\n---\n\n'.join(chapter_texts)
+                        context['treatment'] = self.project.get_treatment()
+
+                        # Load all chapter outlines for context
+                        outline_files = sorted(self.project.chapter_beats_dir.glob('chapter-*.md'))
+                        if outline_files:
+                            outline_texts = []
+                            for outline_file in outline_files:
+                                outline_texts.append(outline_file.read_text(encoding='utf-8'))
+                            context['chapter_outline'] = '\n\n---\n\n'.join(outline_texts)
+                else:
+                    # Analyze specific chapter
+                    chapter_num = int(target_id)
+                    chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+                    if chapter_file.exists():
+                        content = chapter_file.read_text(encoding='utf-8')
+                        context['treatment'] = self.project.get_treatment()
+
+                        # Get chapter outline for context - load markdown directly
+                        chapter_outline_file = self.project.chapter_beats_dir / f'chapter-{chapter_num:02d}.md'
+                        if chapter_outline_file.exists():
+                            context['chapter_outline'] = chapter_outline_file.read_text(encoding='utf-8')
 
         return content, context
 
