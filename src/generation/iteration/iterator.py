@@ -70,6 +70,16 @@ class Iterator:
         # Show context summary
         self._show_context_summary(target, context, iteration_history)
 
+        # Safety warning on first iteration
+        if iteration_history.count() == 0:
+            self.console.print("\n[bold yellow]⚠️  WARNING: Iteration replaces content permanently![/yellow]")
+            self.console.print("[dim]Always test on cloned projects first (use /clone).[/dim]")
+            self.console.print("[dim]Git commits are created automatically for easy rollback.[/dim]")
+            choice = input("\nContinue with iteration? (yes/no): ").strip().lower()
+            if choice not in ['yes', 'y']:
+                self.console.print("[yellow]Iteration cancelled[/yellow]")
+                return False
+
         # 2. Check downstream and get user decision
         cull_downstream = await self._check_downstream(target)
         if cull_downstream is None:  # User cancelled
@@ -130,11 +140,13 @@ class Iterator:
         elif target == 'treatment':
             return self.project.treatment_file.exists()
         elif target == 'chapters':
+            # Use project method that handles both .md and .yaml formats
             return self.project.chapter_beats_dir.exists() and \
-                   list(self.project.chapter_beats_dir.glob('chapter-*.md'))
+                   bool(self.project.list_chapter_beats())
         elif target == 'prose':
+            # Use project method for prose chapters
             return self.project.chapters_dir.exists() and \
-                   list(self.project.chapters_dir.glob('chapter-*.md'))
+                   bool(self.project.list_chapters())
         return False
 
     async def _load_context(self, target: str) -> Tuple[Dict[str, Any], IterationHistory]:
@@ -264,13 +276,20 @@ class Iterator:
             return self.project.get_treatment() or ""
 
         elif target == 'chapters':
-            # Combine foundation + all chapters as markdown
+            # Combine foundation + all chapters as text
+            # Read raw content from files (supports both .md and .yaml formats)
             parts = []
 
+            # Try foundation.md first, then foundation.yaml
             foundation_md = self.project.chapter_beats_dir / "foundation.md"
+            foundation_yaml = self.project.chapter_beats_dir / "foundation.yaml"
+
             if foundation_md.exists():
                 parts.append(foundation_md.read_text(encoding='utf-8'))
+            elif foundation_yaml.exists():
+                parts.append(foundation_yaml.read_text(encoding='utf-8'))
 
+            # Read all chapter files (project method handles both formats)
             for chapter_file in sorted(self.project.list_chapter_beats()):
                 parts.append(chapter_file.read_text(encoding='utf-8'))
 
@@ -492,7 +511,7 @@ class Iterator:
             'premise': 'generation/premise_iteration',
             'treatment': 'generation/treatment_iteration',
             'chapters': 'generation/chapter_iteration',
-            'prose': 'generation/prose_iteration'
+            'prose': 'generation/prose_full_iteration'  # Full prose iteration (not surgical fixes)
         }
 
         prompt_name = prompt_map.get(target)
@@ -615,14 +634,13 @@ class Iterator:
         # 3. Update iteration history
         settings = get_settings()
 
-        # Commit first to get SHA
+        # Commit first to get SHA (include project name prefix for shared git)
         git = GitManager(settings.books_dir)
         git.add()
-        commit_message = f"[{target}] {feedback[:80]}"
+        commit_message = f"[{self.project.name}] Iterate {target}: {feedback[:60]}"
         git.commit(commit_message)
 
         # Get commit SHA
-        import subprocess
         commit_sha = subprocess.check_output(
             ['git', 'rev-parse', 'HEAD'],
             cwd=settings.books_dir,
@@ -657,7 +675,13 @@ class Iterator:
         if target == 'premise':
             # Parse and save premise metadata
             # Content should be JSON with text and taxonomy
-            premise_data = json.loads(new_content)
+            try:
+                premise_data = json.loads(new_content)
+            except json.JSONDecodeError as e:
+                raise Exception(
+                    f"Failed to parse premise JSON: {e}\n\n"
+                    f"LLM Response (first 500 chars):\n{new_content[:500]}"
+                )
 
             # Save to premise_metadata.json
             self.project.premise_metadata_file.parent.mkdir(parents=True, exist_ok=True)

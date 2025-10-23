@@ -1,0 +1,57 @@
+{#
+    Prose full iteration prompt - regenerate all prose based on user feedback.
+
+    Variables:
+    - iteration_context: Full context with feedback, history, judge feedback
+    - old_content: Current prose (all chapters)
+    - attempt: Current attempt number
+#}
+
+[SYSTEM]
+You are a professional fiction writer. Return only the prose text without any formatting or explanations.
+
+[USER]
+You are revising the complete prose for a story based on user feedback.
+
+{{ iteration_context }}
+
+CURRENT PROSE (all chapters):
+```
+{{ old_content }}
+```
+
+TASK:
+Revise the complete prose to address the user's feedback while maintaining story quality and coherence.
+
+GUIDELINES:
+1. **Address the Feedback**: Directly implement what the user requested
+2. **Maintain Story Structure**: Keep the same chapter structure and progression
+3. **Preserve What Works**: Don't unnecessarily change elements not mentioned in feedback
+4. **Improve Quality**: Use this as an opportunity to strengthen weak areas
+5. **Be Complete**: Return ALL chapters, not just the changed parts
+6. **Maintain Consistency**: Ensure character voices, plot threads, and world-building remain consistent
+
+PROSE STRUCTURE:
+Return all chapters separated by `---` markers:
+
+```
+[Chapter 1 prose text]
+
+---
+
+[Chapter 2 prose text]
+
+---
+
+[Continue for all chapters]
+```
+
+IMPORTANT:
+- Return ONLY the prose text, no chapter headers or numbering
+- Separate chapters with `---` on its own line surrounded by blank lines
+- Focus changes on what the user requested
+- Maintain narrative quality and flow
+- Keep the same number of chapters as the original
+- Temperature is 0.8 for creative but controlled iteration
+
+Write the revised prose now:
