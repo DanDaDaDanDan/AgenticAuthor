@@ -13,10 +13,8 @@ class ProjectMetadata(BaseModel):
     name: str = Field(description="Project name")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    genre: Optional[str] = Field(None, description="Story genre")
-    model: Optional[str] = Field(None, description="Primary model used")
     story_type: Optional[str] = Field(None, description="Story type: short_form or long_form")
-    status: str = Field("draft", description="Project status")
+    book_metadata: Dict[str, Any] = Field(default_factory=dict, description="Book metadata (title, author, copyright_year)")
 
     def update_timestamp(self):
         """Update the last modified timestamp."""
@@ -131,7 +129,11 @@ class Project:
 
     @property
     def config_file(self) -> Path:
-        """Get path to config.yaml file (for book metadata)."""
+        """
+        DEPRECATED: config.yaml is now merged into project.yaml.
+
+        This property is kept for backward compatibility during migration.
+        """
         return self.path / "config.yaml"
 
     @property
@@ -140,17 +142,40 @@ class Project:
         return self.path.exists() and self.project_file.exists()
 
     def _load_metadata(self):
-        """Load project metadata from project.yaml."""
+        """
+        Load project metadata from project.yaml.
+
+        Automatically migrates from old split structure (config.yaml + project.yaml)
+        to new merged structure (single project.yaml with book_metadata).
+        """
         if self.project_file.exists():
             with open(self.project_file) as f:
                 data = yaml.safe_load(f)
+
+                # Migration: Remove deprecated fields
+                deprecated_fields = ['model', 'status', 'genre', 'word_count',
+                                   'chapter_count', 'tags', 'iteration_target', 'custom_data']
+                for field in deprecated_fields:
+                    data.pop(field, None)
+
+                # Migration: Merge config.yaml into project.yaml if config exists
+                if self.config_file.exists() and 'book_metadata' not in data:
+                    config = self._load_config()
+                    if 'book_metadata' in config:
+                        data['book_metadata'] = config['book_metadata']
+
                 self.metadata = ProjectMetadata(**data)
+
+                # Save migrated data if any changes were made
+                if any(field in yaml.safe_load(self.project_file.read_text()) for field in deprecated_fields):
+                    self.save_metadata()
 
     def _migrate_legacy_files(self):
         """
         Migrate legacy file structure to new folder-based structure.
 
         Old structure:
+        - config.yaml (book metadata) + project.yaml (project metadata) - SEPARATE FILES
         - premise_metadata.json (root)
         - premises_candidates.json (root)
         - treatment.md (root)
@@ -159,6 +184,7 @@ class Project:
         - publishing-metadata.md (root)
 
         New structure:
+        - project.yaml (merged: project metadata + book metadata) - SINGLE FILE
         - premise/premise_metadata.json
         - premise/premises_candidates.json
         - treatment/treatment.md
@@ -203,6 +229,12 @@ class Project:
         if old_publishing_metadata.exists() and not self.publishing_metadata_file.exists():
             self.exports_dir.mkdir(exist_ok=True)
             old_publishing_metadata.rename(self.publishing_metadata_file)
+
+        # Migrate config.yaml into project.yaml (book_metadata merge)
+        # This is handled by _load_metadata(), but we delete config.yaml here after migration
+        if self.config_file.exists() and self.metadata and self.metadata.book_metadata:
+            # config.yaml has been merged into project.yaml, safe to delete
+            self.config_file.unlink()
 
         # Note: chapter-beats/ and chapters/ already use folder structure, no migration needed
 
@@ -852,20 +884,28 @@ class Project:
     # --- Book Metadata Methods ---
 
     def _load_config(self) -> Dict[str, Any]:
-        """Load config.yaml file."""
+        """
+        DEPRECATED: Load config.yaml file (for backward compatibility).
+
+        New code should use self.metadata.book_metadata instead.
+        """
         if self.config_file.exists():
             with open(self.config_file, 'r', encoding='utf-8') as f:
                 return yaml.safe_load(f) or {}
         return {}
 
     def _save_config(self, config: Dict[str, Any]):
-        """Save config.yaml file."""
+        """
+        DEPRECATED: Save config.yaml file (for backward compatibility).
+
+        New code should use self.metadata.book_metadata and self.save_metadata() instead.
+        """
         with open(self.config_file, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
     def get_book_metadata(self, key: Optional[str] = None, default=None):
         """
-        Get book metadata.
+        Get book metadata from project.yaml (merged structure).
 
         Args:
             key: Specific metadata key, or None for all metadata
@@ -874,8 +914,10 @@ class Project:
         Returns:
             Single value if key specified, dict if key is None
         """
-        config = self._load_config()
-        book_meta = config.get('book_metadata', {})
+        if not self.metadata:
+            return default if key else {}
+
+        book_meta = self.metadata.book_metadata
 
         if key is None:
             return book_meta
@@ -883,17 +925,17 @@ class Project:
 
     def set_book_metadata(self, key: str, value):
         """
-        Set book metadata value.
+        Set book metadata value in project.yaml (merged structure).
 
         Args:
             key: Metadata key
             value: Metadata value
         """
-        config = self._load_config()
-        if 'book_metadata' not in config:
-            config['book_metadata'] = {}
-        config['book_metadata'][key] = value
-        self._save_config(config)
+        if not self.metadata:
+            self.metadata = ProjectMetadata(name=self.name)
+
+        self.metadata.book_metadata[key] = value
+        self.save_metadata()
 
     def has_required_metadata(self) -> bool:
         """
@@ -909,14 +951,16 @@ class Project:
     def init_default_book_metadata(self):
         """Initialize book metadata with default values if not exists."""
         from datetime import datetime
-        config = self._load_config()
-        if 'book_metadata' not in config:
-            config['book_metadata'] = {
+        if not self.metadata:
+            self.metadata = ProjectMetadata(name=self.name)
+
+        if not self.metadata.book_metadata:
+            self.metadata.book_metadata = {
                 'title': '',
                 'author': '',
                 'copyright_year': datetime.now().year
             }
-            self._save_config(config)
+            self.save_metadata()
 
     # --- Frontmatter Methods ---
 
