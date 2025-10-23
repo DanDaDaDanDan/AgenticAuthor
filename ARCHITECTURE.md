@@ -80,6 +80,11 @@
      - unified_analyzer.py — Single‑pass, JSON‑structured editorial analysis (duplicates, strengths, next steps).
      - treatment_deviation_analyzer.py — Checks foundation against treatment for contradictions.
      - analyzer.py — Coordinator that collects content/context and renders reports to `analysis/`.
+   - iteration/ (v0.4.0) — Natural language iteration system
+     - iterator.py — Main coordinator for holistic regeneration with judge validation loop (771 lines).
+     - history.py — Iteration history tracking per LOD level (feedback + semantic summaries for context).
+     - judge.py — LLM judge validation (validates generated content matches feedback before showing user).
+     - semantic_diff.py — Human‑readable change summaries (not raw git diffs).
  
  - src/models/
    - __init__.py — Models package marker.
@@ -99,7 +104,13 @@
      - prose_iteration.j2 — Surgical rewrite for validation fixes.
    - editing/copy_edit.j2 — Copy editing.
    - kdp/author_bio.j2, description.j2, keywords.j2 — Publishing assets.
-   - analysis/, validation/, iteration/ — Intent, evaluation, and fidelity templates.
+   - analysis/chapter_judging.j2, semantic_diff.j2 — Evaluation and change summary templates.
+   - validation/iteration_fidelity.j2 — Judge validation for iteration.
+   - iteration/ (v0.4.0) — Iteration prompts:
+     - premise_iteration.j2 — Premise iteration with feedback and history.
+     - treatment_iteration.j2 — Treatment iteration.
+     - chapter_iteration.j2 — Chapter structure iteration.
+     - prose_full_iteration.j2 — Full prose regeneration (distinct from surgical prose_iteration.j2).
  
  - src/storage/
    - __init__.py — Storage package marker.
@@ -115,15 +126,15 @@
  
  ## Project Layout on Disk (`books/<project>/`)
  - project.yaml — Project metadata (name, model, counts, timestamps).
- - premise/ — `premise_metadata.json`, premise candidates.
- - treatment/ — `treatment.md`.
-- treatment/ — `treatment.md`, `treatment_metadata.json`, and `combined.md` snapshot.
-- chapter‑beats/ — `foundation.md` plus per‑chapter beat sheets (`chapter‑NN.md`), and `combined.md` snapshot.
-- chapter‑beats‑variants/ — Variant runs (per‑variant chapter md) and decisions, plus `combined.md` snapshot of all variants.
-- chapters/ — Final prose chapters as Markdown (`chapter‑NN.md`).
-  - chapters/combined.md — Optional snapshot (when requested) including prose.
+ - premise/ — `premise_metadata.json`, `iteration_history.json`, premise candidates.
+ - treatment/ — `treatment.md`, `iteration_history.json`, `treatment_metadata.json`, and `combined.md` snapshot.
+ - chapter‑beats/ — `foundation.md` plus per‑chapter beat sheets (`chapter‑NN.md`), `iteration_history.json`, and `combined.md` snapshot.
+ - chapter‑beats‑variants/ — Variant runs (per‑variant chapter md) and decisions, plus `combined.md` snapshot of all variants.
+ - chapters/ — Final prose chapters as Markdown (`chapter‑NN.md`), `iteration_history.json`.
+   - chapters/combined.md — Optional snapshot (when requested) including prose.
  - analysis/ — Editorial analysis reports as Markdown.
  - exports/ — Publishing artifacts (frontmatter, RTF/MD exports).
+ - .agentic/debug/iteration/ — Iteration debug storage (all attempts, judge verdicts).
  
  ## Runtime Flow (New Book → Finished Book)
  1. Initialize
@@ -149,7 +160,18 @@
     - Export to Markdown/RTF; assemble publishing metadata.
  9. Analyze & Iterate
     - Use unified/treatment‑deviation analysis to identify issues and guide targeted revisions.
- 
+10. Natural Language Iteration (v0.4.0)
+    - Set iteration target (`/iterate premise|treatment|chapters|prose`) or auto‑set after generation.
+    - Provide natural language feedback (no `/` prefix): "make it darker", "add more dialogue in chapter 3".
+    - System regenerates content holistically with full context (premise, treatment, existing chapters/prose).
+    - LLM judge validates changes match feedback (up to 3 attempts with retry logic).
+    - Human‑readable semantic diff displayed for approval (not raw git diff).
+    - Auto‑commit to git on approval with project‑prefixed message: `[project‑name] Iterate target: feedback`.
+    - Iteration history tracked per LOD level (`iteration_history.json`) for cumulative context.
+    - Downstream cascade handling: editing premise prompts to cull or keep treatment/chapters/prose.
+    - Debug storage: all attempts saved to `.agentic/debug/iteration/` with judge verdicts.
+    - Safety warning on first iteration (test on cloned projects only).
+
  ## How Components Fit Together
  - CLI orchestrates flows, displays streaming output, and records logs.
  - Generation modules render Jinja prompts via `PromptLoader` and call OpenRouter through the async API client. Prompts use hard fences to avoid source bleed (e.g., TREATMENT, FOUNDATION, TAXONOMY, CHAPTER OUTLINE, PREVIOUS PROSE).
