@@ -21,18 +21,20 @@ class CullManager:
 
     def cull_prose(self) -> Dict[str, Any]:
         """
-        Remove all prose files.
+        Deep-delete the chapters/ directory (all prose files and subfolders).
 
         Returns:
             Dict with deleted_files list
         """
-        deleted_files = []
+        deleted_files: List[str] = []
 
-        # Find all chapter prose files
-        if self.project.chapters_dir.exists():
-            for prose_file in self.project.chapters_dir.glob("chapter-*.md"):
-                prose_file.unlink()
-                deleted_files.append(str(prose_file.relative_to(self.project.path)))
+        chapters_dir = self.project.chapters_dir
+        if chapters_dir.exists():
+            # Collect all files for reporting, then remove the tree
+            for p in chapters_dir.rglob('*'):
+                if p.is_file():
+                    deleted_files.append(str(p.relative_to(self.project.path)))
+            shutil.rmtree(chapters_dir, ignore_errors=True)
 
         return {
             'deleted_files': deleted_files,
