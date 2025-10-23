@@ -44,6 +44,7 @@ class InteractiveSession:
         self.project: Optional[Project] = None
         self.git: Optional[GitManager] = None
         self.running = False
+        self.iteration_target: Optional[str] = None  # Current iteration target (premise, treatment, chapters, prose)
 
         # Use provided logger or setup basic logging
         self.session_logger = logger
@@ -68,6 +69,7 @@ class InteractiveSession:
             'generate': self.generate_content,
             'finalize': self.finalize_content,
             'cull': self.cull_content,
+            'iterate': self.iterate_command,
             'analyze': self.analyze_story,
             'metadata': self.manage_metadata,
             'export': self.export_story,
@@ -378,11 +380,8 @@ class InteractiveSession:
                 self._print("[dim]Type /help for available commands[/dim]")
 
         else:
-            # Natural language feedback - iteration system not yet implemented
-            msg = "Natural language iteration not yet implemented. Use slash commands (type /help for list)."
-            if self.session_logger:
-                self.session_logger.log(f"User input without command: {user_input[:50]}", "INFO")
-            self._print(f"[dim]⚠  {msg}[/dim]")
+            # Natural language feedback - route to iteration system
+            await self.handle_iteration_feedback(user_input)
 
     async def _run_command(self, command: str, args: str):
         """Run a command handler."""
@@ -954,11 +953,20 @@ class InteractiveSession:
         try:
             if gen_type == "premise":
                 await self._generate_premise(options)
+                # Auto-set iteration target
+                self.iteration_target = "premise"
+                self._print(f"[dim]Iteration target set to: premise[/dim]")
             elif gen_type == "premises":
                 # Batch premise generation
                 await self._generate_premises_batch(options)
+                # Auto-set iteration target
+                self.iteration_target = "premise"
+                self._print(f"[dim]Iteration target set to: premise[/dim]")
             elif gen_type == "treatment":
                 await self._generate_treatment(options)
+                # Auto-set iteration target
+                self.iteration_target = "treatment"
+                self._print(f"[dim]Iteration target set to: treatment[/dim]")
             elif gen_type == "chapters":
                 # Check if short-form story
                 if self.project.is_short_form():
@@ -968,18 +976,29 @@ class InteractiveSession:
                     if "--force" in options:
                         self.console.print("[dim]--force flag detected: proceeding with chapter generation[/dim]")
                         await self._generate_chapters(options.replace("--force", "").strip())
+                        # Auto-set iteration target
+                        self.iteration_target = "chapters"
+                        self._print(f"[dim]Iteration target set to: chapters[/dim]")
                 else:
                     await self._generate_chapters(options)
+                    # Auto-set iteration target
+                    self.iteration_target = "chapters"
+                    self._print(f"[dim]Iteration target set to: chapters[/dim]")
             elif gen_type == "prose":
                 # Route based on story type
                 if self.project.is_short_form():
                     await self._generate_short_story_prose(options)
                 else:
                     await self._generate_prose(options)
+                # Auto-set iteration target
+                self.iteration_target = "prose"
+                self._print(f"[dim]Iteration target set to: prose[/dim]")
             elif gen_type == "marketing":
                 await self._generate_marketing(options)
+                # No iteration target for marketing
             elif gen_type == "combined":
                 await self._generate_combined(options)
+                # No iteration target for combined
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
                 self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, combined[/dim]")
@@ -2992,3 +3011,95 @@ Regenerate the foundation addressing the issues above.
 
         except Exception as e:
             self.console.print(f"[red]Error reading log: {e}[/red]")
+
+    async def iterate_command(self, args: str = ""):
+        """Change iteration target or show current target."""
+        if not self.project:
+            self._print("[yellow]No project open. Use /open or /new first.[/yellow]")
+            return
+
+        if not args:
+            # Show current target
+            if self.iteration_target:
+                self._print(f"[cyan]Current iteration target:[/cyan] [bold]{self.iteration_target}[/bold]")
+                self._print("[dim]Any text input will iterate on this target[/dim]")
+                self._print("[dim]Use /iterate <target> to change target[/dim]")
+            else:
+                self._print("[yellow]No iteration target set[/yellow]")
+                self._print("[dim]Use /iterate <target> to set target[/dim]")
+                self._print("[dim]Valid targets: premise, treatment, chapters, prose[/dim]")
+            return
+
+        # Set new target
+        target = args.strip().lower()
+        valid_targets = ['premise', 'treatment', 'chapters', 'prose']
+
+        if target not in valid_targets:
+            self._print(f"[red]Invalid target: {target}[/red]")
+            self._print(f"[dim]Valid targets: {', '.join(valid_targets)}[/dim]")
+            return
+
+        # Verify target exists
+        from ..generation.iteration import Iterator
+        try:
+            iterator = Iterator(self.client, self.project, self.settings.active_model, self.console)
+            if not iterator._target_exists(target):
+                self._print(f"[yellow]No {target} found in project[/yellow]")
+                self._print(f"[dim]Generate {target} first with /generate {target}[/dim]")
+                return
+        except Exception as e:
+            self._print(f"[red]Error checking target: {e}[/red]")
+            return
+
+        # Set target
+        self.iteration_target = target
+        self._print(f"[green]✓[/green] Iteration target set to [bold]{target}[/bold]")
+        self._print("[dim]Any text input will now iterate on this target[/dim]")
+
+    async def handle_iteration_feedback(self, feedback: str):
+        """Handle natural language iteration feedback."""
+        if not self.project:
+            self._print("[yellow]No project open. Use /open or /new first.[/yellow]")
+            return
+
+        if not self.iteration_target:
+            self._print("[yellow]No iteration target set[/yellow]")
+            self._print("[dim]Use /iterate <target> to set what you want to iterate on[/dim]")
+            self._print("[dim]Valid targets: premise, treatment, chapters, prose[/dim]")
+            return
+
+        if not feedback.strip():
+            self._print("[yellow]Empty feedback - please provide iteration instructions[/yellow]")
+            return
+
+        # Import Iterator
+        from ..generation.iteration import Iterator
+
+        try:
+            # Create iterator
+            iterator = Iterator(
+                client=self.client,
+                project=self.project,
+                model=self.settings.active_model,
+                console=self.console
+            )
+
+            # Run iteration
+            self._print(f"\n[bold cyan]Iterating on {self.iteration_target}...[/bold cyan]")
+            success = await iterator.iterate(
+                target=self.iteration_target,
+                feedback=feedback
+            )
+
+            if success:
+                self._print(f"\n[green]✓[/green] Iteration complete")
+                self._print(f"[dim]Iteration target remains: {self.iteration_target}[/dim]")
+                self._print("[dim]Continue providing feedback or use /iterate <target> to change target[/dim]")
+            else:
+                self._print(f"\n[yellow]Iteration cancelled or rejected[/yellow]")
+
+        except Exception as e:
+            self._print(f"[red]Iteration failed: {e}[/red]")
+            self.logger.exception("Iteration failed")
+            if self.session_logger:
+                self.session_logger.log_error(e, "Iteration failed")

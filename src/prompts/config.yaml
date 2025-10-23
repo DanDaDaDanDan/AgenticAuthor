@@ -32,6 +32,22 @@ generation/prose_iteration:
   reserve_tokens: 5000
   top_p: 0.9
 
+generation/premise_iteration:
+  temperature: 0.7
+  format: json
+  reserve_tokens: 800
+  structured_output: true
+
+generation/treatment_iteration:
+  temperature: 0.7
+  format: text
+  reserve_tokens: 2500
+
+generation/chapter_iteration:
+  temperature: 0.7
+  format: text
+  reserve_tokens: 8000
+
 generation/treatment_generation:
   temperature: 0.7
   format: yaml
@@ -83,11 +99,22 @@ analysis/treatment_deviation:
   reserve_tokens: 3000
   structured_output: true
 
+analysis/semantic_diff:
+  temperature: 0.3
+  format: text
+  reserve_tokens: 1000
+
 # Validation prompts
 validation/treatment_fidelity:
   temperature: 0.1
   format: json
   reserve_tokens: 200
+  structured_output: true
+
+validation/iteration_fidelity:
+  temperature: 0.1
+  format: json
+  reserve_tokens: 1000
   structured_output: true
 
 # Iteration prompts (premise iteration only - chapter/prose iteration removed)

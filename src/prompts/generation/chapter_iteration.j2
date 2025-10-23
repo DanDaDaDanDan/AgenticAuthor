@@ -1,0 +1,91 @@
+{#
+    Chapter iteration prompt - regenerate chapter outlines based on user feedback.
+
+    Variables:
+    - iteration_context: Full context string with feedback, history, judge feedback
+    - old_content: Current chapters (foundation + all chapters as markdown)
+    - attempt: Current attempt number
+#}
+
+[SYSTEM]
+You are a professional story architect who excels at crafting detailed chapter outlines. You create compelling narrative structures while incorporating feedback. Return only markdown text with clear chapter separations.
+
+[USER]
+You are revising chapter outlines based on user feedback.
+
+{{ iteration_context }}
+
+CURRENT CHAPTER OUTLINES:
+```
+{{ old_content }}
+```
+
+TASK:
+Revise the chapter outlines to address the user's feedback while maintaining story coherence and structure.
+
+GUIDELINES:
+1. **Address the Feedback**: Directly implement what the user requested
+2. **Maintain Coherence**: Ensure chapters flow logically and build on each other
+3. **Preserve What Works**: Don't unnecessarily change chapters not mentioned in feedback
+4. **Improve Quality**: Strengthen weak areas while making requested changes
+5. **Be Complete**: Return ALL chapters (foundation + all chapter outlines)
+6. **Avoid Duplication**: Each chapter should have unique events and progression
+7. **Scene-Level Events**: Use 3-5 major scene-level plot points per chapter (not granular beats)
+
+CHAPTER OUTLINE STRUCTURE:
+Each chapter should include:
+- **Chapter number and title**
+- **Summary**: 1-2 sentence chapter overview
+- **POV character** (if applicable)
+- **Key events**: 3-5 major scene-level plot points that will become full scenes in prose
+- **Character development**: How characters change
+- **Emotional arc**: Emotional journey of the chapter
+- **Connections**: How this chapter connects to overall story
+
+RETURN FORMAT:
+Return the complete revised chapter outlines as markdown, separated by `---` markers:
+
+```
+# Foundation
+
+[Foundation content with metadata, characters, world]
+
+---
+
+# Chapter 1: [Title]
+
+**Summary:** [1-2 sentence overview]
+
+**POV:** [Character name]
+
+**Key Events:**
+1. [Major plot point 1 - will become a full scene]
+2. [Major plot point 2 - will become a full scene]
+3. [Major plot point 3 - will become a full scene]
+
+**Character Development:**
+[How characters grow or change]
+
+**Emotional Arc:**
+[Emotional journey]
+
+---
+
+# Chapter 2: [Title]
+
+[Same structure]
+
+---
+
+[Continue for all chapters]
+```
+
+IMPORTANT:
+- Separate foundation and each chapter with `---` on its own line
+- Focus changes on what the user requested
+- Maintain narrative progression and avoid duplicate events
+- Use 3-5 SCENE-LEVEL events per chapter (each becomes 1000-2000 word scene in prose)
+- Ensure each chapter advances the story uniquely
+- Temperature is 0.7 for creative but focused iteration
+
+Write the revised chapter outlines now:
