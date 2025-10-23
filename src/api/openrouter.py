@@ -313,10 +313,23 @@ class OpenRouterClient:
                     else:
                         # Handle non-streaming response
                         data = await response.json()
+
+                        # Validate response structure
+                        if not data.get('choices') or len(data['choices']) == 0:
+                            raise Exception(f"Invalid API response: no choices returned. Response: {data}")
+
+                        choice = data['choices'][0]
+                        if not choice.get('message'):
+                            raise Exception(f"Invalid API response: choice has no message. Choice: {choice}")
+
+                        message = choice['message']
+                        if not message.get('content'):
+                            raise Exception(f"Invalid API response: message has no content. Message: {message}")
+
                         result = {
-                            'content': data['choices'][0]['message']['content'],
+                            'content': message['content'],
                             'usage': data.get('usage', {}),
-                            'finish_reason': data['choices'][0].get('finish_reason'),
+                            'finish_reason': choice.get('finish_reason'),
                             'model': data.get('model')
                         }
                         if display:

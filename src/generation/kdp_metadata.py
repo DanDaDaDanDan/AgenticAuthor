@@ -55,26 +55,39 @@ class KDPMetadataGenerator:
         Returns:
             HTML-formatted book description
         """
-        context = self._build_context()
+        try:
+            context = self._build_context()
 
-        # Render prompt from template
-        prompts = self.prompt_loader.render(
-            "kdp/description",
-            context=context
-        )
+            # Render prompt from template
+            prompts = self.prompt_loader.render(
+                "kdp/description",
+                context=context
+            )
 
-        # Get temperature from config
-        temperature = self.prompt_loader.get_temperature("kdp/description", default=0.7)
+            if not prompts or not isinstance(prompts, dict):
+                raise Exception(f"Prompt rendering failed: prompts={prompts}")
 
-        response = await self.client.completion(
-            model=self.model,
-            prompt=prompts['user'],
-            system_prompt=prompts['system'],
-            temperature=temperature,
-            display=False
-        )
+            if 'user' not in prompts or 'system' not in prompts:
+                raise Exception(f"Prompt missing required keys: {list(prompts.keys())}")
 
-        return response.strip()
+            # Get temperature from config
+            temperature = self.prompt_loader.get_temperature("kdp/description", default=0.7)
+
+            response = await self.client.completion(
+                model=self.model,
+                prompt=prompts['user'],
+                system_prompt=prompts['system'],
+                temperature=temperature,
+                display=False
+            )
+
+            if not response:
+                raise Exception("API returned None/empty response")
+
+            return response.strip()
+
+        except Exception as e:
+            raise Exception(f"Description generation failed at: {type(e).__name__}: {str(e)}")
 
     async def generate_keywords(self) -> List[str]:
         """
