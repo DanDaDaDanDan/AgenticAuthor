@@ -467,6 +467,17 @@ class Iterator:
         if 'taxonomy' in context:
             parts.append(f"TAXONOMY:\n{json.dumps(context['taxonomy'], indent=2)}\n")
 
+        # For prose iteration, include chapter structure
+        if target == 'prose' and 'chapters' in context:
+            import yaml
+            if isinstance(context['chapters'], dict):
+                # Has metadata/characters/world/chapters structure
+                chapters_yaml = yaml.dump(context['chapters'], default_flow_style=False, allow_unicode=True)
+                parts.append(f"CHAPTERS STRUCTURE:\n```yaml\n{chapters_yaml}```\n")
+            elif isinstance(context['chapters'], list):
+                chapters_yaml = yaml.dump({'chapters': context['chapters']}, default_flow_style=False, allow_unicode=True)
+                parts.append(f"CHAPTERS STRUCTURE:\n```yaml\n{chapters_yaml}```\n")
+
         return '\n'.join(parts)
 
     def _build_context_string(self, context: Dict[str, Any]) -> str:
@@ -703,15 +714,28 @@ class Iterator:
             # Expected format: foundation.md, then chapter-NN.md sections
             sections = new_content.split('\n\n---\n\n')
 
-            if len(sections) > 0:
-                # First section is foundation
-                foundation_file = self.project.chapter_beats_dir / "foundation.md"
-                foundation_file.write_text(sections[0], encoding='utf-8')
+            # Validate split result
+            if len(sections) < 2:
+                raise Exception(
+                    f"Expected foundation + chapters separated by '---', got {len(sections)} section(s).\n\n"
+                    f"LLM may not have followed format. Check debug output:\n"
+                    f"{self.console._file if hasattr(self.console, '_file') else 'N/A'}"
+                )
 
-                # Remaining sections are chapters
-                for i, section in enumerate(sections[1:], 1):
-                    chapter_file = self.project.chapter_beats_dir / f"chapter-{i:02d}.md"
-                    chapter_file.write_text(section, encoding='utf-8')
+            # First section is foundation
+            foundation_file = self.project.chapter_beats_dir / "foundation.md"
+            if not sections[0].strip():
+                raise Exception("Foundation section is empty after split")
+            foundation_file.write_text(sections[0].strip(), encoding='utf-8')
+
+            # Remaining sections are chapters
+            chapter_sections = [s.strip() for s in sections[1:] if s.strip()]
+            if not chapter_sections:
+                raise Exception("No chapter sections found after foundation")
+
+            for i, section in enumerate(chapter_sections, 1):
+                chapter_file = self.project.chapter_beats_dir / f"chapter-{i:02d}.md"
+                chapter_file.write_text(section, encoding='utf-8')
 
         elif target == 'prose':
             # Parse prose chapters from content
@@ -721,10 +745,26 @@ class Iterator:
             # Split content by chapter markers
             sections = new_content.split('\n\n---\n\n')
 
-            for i, section in enumerate(sections, 1):
-                if section.strip():  # Only save non-empty sections
-                    chapter_file = self.project.chapters_dir / f"chapter-{i:02d}.md"
-                    chapter_file.write_text(section, encoding='utf-8')
+            # Validate split result
+            prose_sections = [s.strip() for s in sections if s.strip()]
+            if not prose_sections:
+                raise Exception(
+                    "No prose sections found after split. "
+                    "LLM may not have returned valid content."
+                )
+
+            # Count existing chapters to validate we got the right number
+            existing_chapters = len(list(self.project.list_chapters()))
+            if existing_chapters > 0 and len(prose_sections) != existing_chapters:
+                self.console.print(
+                    f"[yellow]Warning: Got {len(prose_sections)} chapters but "
+                    f"expected {existing_chapters}. Proceeding anyway.[/yellow]"
+                )
+
+            # Save each chapter
+            for i, section in enumerate(prose_sections, 1):
+                chapter_file = self.project.chapters_dir / f"chapter-{i:02d}.md"
+                chapter_file.write_text(section, encoding='utf-8')
 
         else:
             raise ValueError(f"Unknown target: {target}")
