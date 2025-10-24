@@ -255,16 +255,16 @@ class Iterator:
 
         # Get user decision
         while True:
-            choice = input("\nAction (cull/keep/cancel): ").strip().lower()
+            choice = input("\nAction (c=cull / k=keep / a=abort): ").strip().lower()
 
             if choice in ['cull', 'c']:
                 return True
             elif choice in ['keep', 'k']:
                 return False
-            elif choice == 'cancel':
+            elif choice in ['abort', 'a', 'cancel']:
                 return None
             else:
-                self.console.print("[red]Invalid choice. Use: cull, keep, or cancel[/red]")
+                self.console.print("[red]Invalid choice. Use: c (cull), k (keep), or a (abort)[/red]")
 
     def _get_current_content(self, target: str) -> str:
         """Get current content for target as string."""
