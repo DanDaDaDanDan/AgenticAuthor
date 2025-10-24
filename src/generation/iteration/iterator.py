@@ -75,8 +75,8 @@ class Iterator:
             self.console.print("\n[bold yellow]⚠️  WARNING: Iteration replaces content permanently![/bold yellow]")
             self.console.print("[dim]Always test on cloned projects first (use /clone).[/dim]")
             self.console.print("[dim]Git commits are created automatically for easy rollback.[/dim]")
-            choice = input("\nContinue with iteration? (yes/no): ").strip().lower()
-            if choice not in ['yes', 'y']:
+            choice = input("\nContinue with iteration? (y/n): ").strip().lower()
+            if choice not in ['y', 'yes']:
                 self.console.print("[yellow]Iteration cancelled[/yellow]")
                 return False
 
@@ -255,16 +255,16 @@ class Iterator:
 
         # Get user decision
         while True:
-            choice = input("\nAction (cull-all/keep-all/cancel): ").strip().lower()
+            choice = input("\nAction (cull/keep/cancel): ").strip().lower()
 
-            if choice in ['cull-all', 'cull']:
+            if choice in ['cull', 'c']:
                 return True
-            elif choice in ['keep-all', 'keep']:
+            elif choice in ['keep', 'k']:
                 return False
             elif choice == 'cancel':
                 return None
             else:
-                self.console.print("[red]Invalid choice. Use: cull-all, keep-all, or cancel[/red]")
+                self.console.print("[red]Invalid choice. Use: cull, keep, or cancel[/red]")
 
     def _get_current_content(self, target: str) -> str:
         """Get current content for target as string."""
@@ -331,7 +331,11 @@ class Iterator:
 
         while True:
             attempt += 1
-            self.console.print(f"\n[cyan]Generating {target}... Attempt {attempt}[/cyan]")
+            # Clarify what's being generated for chapters target
+            if target == 'chapters':
+                self.console.print(f"\n[cyan]Generating foundation + chapters... Attempt {attempt}[/cyan]")
+            else:
+                self.console.print(f"\n[cyan]Generating {target}... Attempt {attempt}[/cyan]")
 
             # Build prompt context
             prompt_context = self._build_prompt_context(
@@ -390,9 +394,9 @@ class Iterator:
 
                 # Get user decision
                 while True:
-                    choice = input("\nContinue with judge feedback? (yes/no/view-partial): ").strip().lower()
+                    choice = input("\nContinue with judge feedback? (y/n/view): ").strip().lower()
 
-                    if choice in ['yes', 'y']:
+                    if choice in ['y', 'yes']:
                         # Add judge feedback to accumulator
                         judge_feedback_text = verdict.get('reasoning', '')
                         if verdict.get('suggestions'):
@@ -402,12 +406,12 @@ class Iterator:
                         accumulated_judge_feedback.append(judge_feedback_text)
                         break
 
-                    elif choice in ['no', 'n']:
+                    elif choice in ['n', 'no']:
                         # Stop loop, accept current result
                         self.console.print("\n[yellow]Accepting partial result without judge approval[/yellow]")
                         return new_content, attempt, verdict
 
-                    elif choice in ['view-partial', 'view', 'v']:
+                    elif choice in ['view', 'v']:
                         # Show semantic diff of current attempt
                         self.console.print("\n[cyan]Generating semantic diff for current attempt...[/cyan]")
                         partial_diff = await self.diff_generator.generate_diff(
@@ -599,22 +603,22 @@ class Iterator:
 
         # Get approval
         while True:
-            choice = input("Accept these changes? (yes/no/diff): ").strip().lower()
+            choice = input("Accept these changes? (y/n/diff): ").strip().lower()
 
-            if choice in ['yes', 'y']:
+            if choice in ['y', 'yes']:
                 return True
 
-            elif choice in ['no', 'n']:
+            elif choice in ['n', 'no']:
                 return False
 
-            elif choice in ['diff', 'd', 'details']:
+            elif choice in ['diff', 'd']:
                 # Show detailed diff (TODO: implement drill-down)
                 self.console.print("\n[yellow]Detailed text diff not yet implemented[/yellow]")
                 self.console.print("[dim]Use: git diff after accepting to see detailed changes[/dim]\n")
                 continue
 
             else:
-                self.console.print("[red]Invalid choice. Use: yes, no, or diff[/red]")
+                self.console.print("[red]Invalid choice. Use: y, n, or diff[/red]")
 
     async def _finalize_iteration(
         self,
