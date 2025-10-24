@@ -2866,6 +2866,62 @@ Regenerate the foundation addressing the issues above.
         # Commit
         self._commit(f"Write combined context file: {target}")
 
+    def split_combined(self, args: str):
+        """
+        Split combined.md back into individual files.
+
+        Reverses the combine operation by parsing combined.md and writing
+        foundation.md and chapter-*.md files.
+
+        Usage:
+            /split chapters    # Split chapter-beats/combined.md → foundation.md + chapter-*.md
+            /split prose       # Split chapters/combined.md → chapter-*.md
+        """
+        if not self.project:
+            self.console.print("[red]No project open. Use /open <project> first.[/red]")
+            return
+
+        if not args:
+            self.console.print("[yellow]Usage: /split <target>[/yellow]")
+            self.console.print("[dim]Valid targets: chapters, prose[/dim]")
+            return
+
+        target = args.strip().lower()
+
+        if target not in ['chapters', 'prose']:
+            self.console.print(f"[red]Invalid target: {target}[/red]")
+            self.console.print("[dim]Valid targets: chapters, prose[/dim]")
+            return
+
+        try:
+            # Perform split
+            files_written, chapters_written = self.project.split_combined_markdown(target)
+
+            # Success message
+            if target == 'chapters':
+                self.console.print(f"[green]✓[/green] Split {target}/combined.md:")
+                self.console.print(f"  • foundation.md")
+                self.console.print(f"  • {chapters_written} chapter files")
+            else:
+                self.console.print(f"[green]✓[/green] Split {target}/combined.md:")
+                self.console.print(f"  • {chapters_written} chapter files")
+
+            self.console.print(f"\n[dim]Total files written: {files_written}[/dim]")
+
+            # Commit
+            self._commit(f"Split {target}/combined.md into individual files")
+
+        except FileNotFoundError as e:
+            self.console.print(f"[red]File not found: {self._escape_markup(e)}[/red]")
+            self.console.print(f"[dim]Generate combined.md first with: /combined {target}[/dim]")
+
+        except ValueError as e:
+            self.console.print(f"[red]Parse error: {self._escape_markup(e)}[/red]")
+            self.console.print("[dim]Check that combined.md has the expected format[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]Split failed: {self._escape_markup(e)}[/red]")
+
     def git_command(self, args: str):
         """Run git command on shared repository."""
         if not self.git:

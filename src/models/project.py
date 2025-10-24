@@ -1139,6 +1139,88 @@ class Project:
         combined_path.write_text("\n".join(lines).strip() + "\n", encoding='utf-8')
         return combined_path
 
+    def split_combined_markdown(self, target: str) -> tuple[int, int]:
+        """
+        Split combined.md back into individual files.
+
+        Reverses the combine operation by parsing combined.md and
+        writing foundation.md and chapter-*.md files.
+
+        Args:
+            target: One of: 'chapters', 'prose'
+
+        Returns:
+            Tuple of (files_written, chapters_written)
+
+        Raises:
+            FileNotFoundError: If combined.md doesn't exist
+            ValueError: If target is invalid or content can't be parsed
+        """
+        # Determine source and destination directories
+        if target == 'chapters':
+            source_dir = self.chapter_beats_dir
+            is_prose = False
+        elif target == 'prose':
+            source_dir = self.chapters_dir
+            is_prose = True
+        else:
+            raise ValueError(f"Invalid target for split: {target}. Use 'chapters' or 'prose'")
+
+        combined_path = source_dir / "combined.md"
+        if not combined_path.exists():
+            raise FileNotFoundError(f"No combined.md found in {source_dir}")
+
+        # Read combined.md
+        content = combined_path.read_text(encoding='utf-8')
+
+        # Find the section marker
+        if target == 'chapters':
+            section_marker = "## Chapter Outlines"
+        else:
+            section_marker = "## Prose (Generated Chapters)"
+
+        # Extract content after section marker
+        if section_marker not in content:
+            raise ValueError(f"Could not find '{section_marker}' section in combined.md")
+
+        section_start = content.index(section_marker) + len(section_marker)
+        section_content = content[section_start:].strip()
+
+        # Split by --- markers
+        sections = [s.strip() for s in section_content.split('\n---\n') if s.strip()]
+
+        if not sections:
+            raise ValueError("No content found after section marker")
+
+        files_written = 0
+        chapters_written = 0
+
+        # For chapters target, first section is foundation
+        if target == 'chapters':
+            if len(sections) < 2:
+                raise ValueError("Expected foundation + chapters, but found too few sections")
+
+            # Write foundation
+            foundation_content = sections[0]
+            foundation_file = source_dir / "foundation.md"
+            foundation_file.write_text(foundation_content + "\n", encoding='utf-8')
+            files_written += 1
+
+            # Write chapters
+            chapter_sections = sections[1:]
+        else:
+            # For prose, all sections are chapters
+            chapter_sections = sections
+
+        # Write chapter files
+        for i, chapter_content in enumerate(chapter_sections, 1):
+            chapter_file = source_dir / f"chapter-{i:02d}.md"
+            chapter_file.write_text(chapter_content + "\n", encoding='utf-8')
+            files_written += 1
+            chapters_written += 1
+
+        return (files_written, chapters_written)
+
     def init_default_frontmatter(self):
         """Initialize frontmatter with default template if not exists."""
         if not self.frontmatter_file.exists():
