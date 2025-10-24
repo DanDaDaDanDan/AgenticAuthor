@@ -1188,19 +1188,17 @@ class Project:
 
         # For chapters target, extract both foundation and chapters
         if target == 'chapters':
-            # Extract foundation from ## Foundation section
+            # Extract foundation from ## Foundation section to ## Chapter Outlines section
             if "## Foundation" not in content:
                 raise ValueError("Could not find '## Foundation' section in combined.md")
+            if "## Chapter Outlines" not in content:
+                raise ValueError("Could not find '## Chapter Outlines' section in combined.md")
 
             foundation_start = content.index("## Foundation") + len("## Foundation")
+            chapter_outlines_pos = content.index("## Chapter Outlines")
 
-            # Find where foundation ends (at next ## section)
-            remaining_content = content[foundation_start:]
-            next_section = remaining_content.find("\n## ")
-            if next_section == -1:
-                raise ValueError("Could not find section after ## Foundation")
-
-            foundation_content = remaining_content[:next_section].strip()
+            # Extract everything between ## Foundation and ## Chapter Outlines
+            foundation_content = content[foundation_start:chapter_outlines_pos].strip()
 
             # Write foundation
             foundation_file = source_dir / "foundation.md"
