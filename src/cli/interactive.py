@@ -74,6 +74,7 @@ class InteractiveSession:
             'metadata': self.manage_metadata,
             'export': self.export_story,
             'copyedit': self.copyedit_story,
+            'split': self.split_combined,
             'git': self.git_command,
             'config': self.show_config,
             'clear': self.clear_screen,

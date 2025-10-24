@@ -265,6 +265,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Show recent log entries',
             'usage': '/logs'
         },
+        'split': {
+            'description': 'Split combined.md back into individual files',
+            'usage': '/split <chapters|prose>'
+        },
         'exit': {
             'description': 'Exit the application',
             'usage': '/exit'
