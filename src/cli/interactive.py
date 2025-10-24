@@ -239,7 +239,7 @@ class InteractiveSession:
                 self._print(f"[dim]Loaded project:[/dim] [bold]{self.project.name}[/bold]")
 
         except Exception as e:
-            self._print(f"[bold red]Error loading project:[/bold red] {e}")
+            self._print(f"[bold red]Error loading project:[/bold red] {self._escape_markup(e)}")
             self.project = None
 
     async def run(self):
@@ -260,12 +260,12 @@ class InteractiveSession:
                 self._cached_model_ids = [m.id for m in models]
             except Exception as e:
                 # Warn user but continue without autocomplete
-                self._print(f"[dim]⚠  Warning:[/dim] Failed to fetch models: {e}")
+                self._print(f"[dim]⚠  Warning:[/dim] Failed to fetch models: {self._escape_markup(e)}")
                 self._print("[dim]Model autocomplete will not be available[/dim]")
                 self._cached_model_ids = []
 
         except Exception as e:
-            self._print(f"[bold red]Failed to initialize API client:[/bold red] {e}")
+            self._print(f"[bold red]Failed to initialize API client:[/bold red] {self._escape_markup(e)}")
             self._print("[dim]Please check your OPENROUTER_API_KEY[/dim]")
             return
 
@@ -307,7 +307,7 @@ class InteractiveSession:
                 break
             except Exception as e:
                 self.logger.error(f"Error in main loop: {e}", exc_info=True)
-                self._print(f"[bold red]Error:[/bold red] {e}")
+                self._print(f"[bold red]Error:[/bold red] {self._escape_markup(e)}")
 
         # Cleanup
         if self.client:
@@ -522,7 +522,7 @@ class InteractiveSession:
             self._print(f"[dim]Location: {project_dir}[/dim]")
 
         except Exception as e:
-            self._print(f"[bold red]Failed to create project:[/bold red] {e}")
+            self._print(f"[bold red]Failed to create project:[/bold red] {self._escape_markup(e)}")
 
     def open_project(self, args: str = ""):
         """Open an existing project."""
@@ -631,9 +631,9 @@ class InteractiveSession:
                 self._print(f"[dim]Switched to:[/dim] [bold]{new_name}[/bold]")
 
         except FileExistsError as e:
-            self._print(f"[bold red]Error:[/bold red] {e}")
+            self._print(f"[bold red]Error:[/bold red] {self._escape_markup(e)}")
         except Exception as e:
-            self._print(f"[bold red]Failed to clone project:[/bold red] {e}")
+            self._print(f"[bold red]Failed to clone project:[/bold red] {self._escape_markup(e)}")
 
     def show_status(self, args: str = ""):
         """Show current project status."""
