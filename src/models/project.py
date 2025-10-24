@@ -1176,25 +1176,6 @@ class Project:
         # Read combined.md
         content = combined_path.read_text(encoding='utf-8')
 
-        # Find the section marker
-        if target == 'chapters':
-            section_marker = "## Chapter Outlines"
-        else:
-            section_marker = "## Prose (Generated Chapters)"
-
-        # Extract content after section marker
-        if section_marker not in content:
-            raise ValueError(f"Could not find '{section_marker}' section in combined.md")
-
-        section_start = content.index(section_marker) + len(section_marker)
-        section_content = content[section_start:].strip()
-
-        # Split by --- markers
-        sections = [s.strip() for s in section_content.split('\n---\n') if s.strip()]
-
-        if not sections:
-            raise ValueError("No content found after section marker")
-
         # Delete existing chapter-*.md files before writing new ones
         # This ensures we don't have orphaned files if the new version has fewer chapters
         files_deleted = 0
@@ -1205,22 +1186,64 @@ class Project:
         files_written = 0
         chapters_written = 0
 
-        # For chapters target, first section is foundation
+        # For chapters target, extract both foundation and chapters
         if target == 'chapters':
-            if len(sections) < 2:
-                raise ValueError("Expected foundation + chapters, but found too few sections")
+            # Extract foundation from ## Foundation section
+            if "## Foundation" not in content:
+                raise ValueError("Could not find '## Foundation' section in combined.md")
+
+            foundation_start = content.index("## Foundation") + len("## Foundation")
+
+            # Find where foundation ends (at next ## section)
+            remaining_content = content[foundation_start:]
+            next_section = remaining_content.find("\n## ")
+            if next_section == -1:
+                raise ValueError("Could not find section after ## Foundation")
+
+            foundation_content = remaining_content[:next_section].strip()
 
             # Write foundation
-            foundation_content = sections[0]
             foundation_file = source_dir / "foundation.md"
             foundation_file.write_text(foundation_content + "\n", encoding='utf-8')
             files_written += 1
 
-            # Write chapters
-            chapter_sections = sections[1:]
+            # Extract chapters from ## Chapter Outlines section
+            if "## Chapter Outlines" not in content:
+                raise ValueError("Could not find '## Chapter Outlines' section in combined.md")
+
+            chapter_start = content.index("## Chapter Outlines") + len("## Chapter Outlines")
+            chapter_content = content[chapter_start:].strip()
+
+            # Split by --- markers, removing the leading --- if present
+            # Format is: \n\n---\n\nChapter1\n---\n\nChapter2...
+            if chapter_content.startswith('---'):
+                # Remove leading --- and split
+                chapter_content = chapter_content[3:].strip()  # Remove '---' and whitespace
+
+            # Split by \n---\n pattern
+            chapter_sections = [s.strip() for s in chapter_content.split('\n---\n') if s.strip()]
+
+            if not chapter_sections:
+                raise ValueError("No chapters found in ## Chapter Outlines section")
+
         else:
-            # For prose, all sections are chapters
-            chapter_sections = sections
+            # For prose, find ## Prose section and split chapters
+            section_marker = "## Prose (Generated Chapters)"
+            if section_marker not in content:
+                raise ValueError(f"Could not find '{section_marker}' section in combined.md")
+
+            section_start = content.index(section_marker) + len(section_marker)
+            section_content = content[section_start:].strip()
+
+            # Remove leading --- if present
+            if section_content.startswith('---'):
+                section_content = section_content[3:].strip()
+
+            # Split by \n---\n pattern
+            chapter_sections = [s.strip() for s in section_content.split('\n---\n') if s.strip()]
+
+            if not chapter_sections:
+                raise ValueError("No prose chapters found")
 
         # Write chapter files
         for i, chapter_content in enumerate(chapter_sections, 1):
