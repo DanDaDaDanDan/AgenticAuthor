@@ -5,12 +5,8 @@ This file provides guidance to Claude Code when working with this repository.
 ## Documentation Updates
 
 When making relevant changes, keep these up to date:
-- **`ARCHITECTURE.md`** – High-level architecture and file hierarchy. Keep this updated with key architectural decisions and changes (brief ADR-style notes are fine).
-- **`codex-overview-2-diagrams.md`** – Diagrammed overview
-- **`README.md`** – Quick start and core pointers (keep minimal)
-- **`docs/CHANGELOG.md`** – Version history and recent changes
-- **`docs/IMPLEMENTATION_STATUS.md`** – Feature tracking and known issues
-- **`docs/USER_GUIDE.md`** – Complete user guide with examples
+- **`ARCHITECTURE.md`** – High-level architecture and file hierarchy. Keep this updated with key architectural decisions and changes (ADR-style notes at end of file).
+- **`AGENTS.md`** – Repository guidelines (structure, commands, style, testing, PR rules)
 
 ## Git Commits
 
@@ -156,15 +152,13 @@ For implementation orientation, see `ARCHITECTURE.md`.
 - Test suite needs rebuilding for v0.3.0+
 
 **Iteration System (v0.4.0):**
-- ✅ Implementation complete (11 files, 1092 lines, 6 prompt templates)
+- ✅ Implementation complete (4 files, 1119 lines, 6 prompt templates)
 - ⚠️ Ready for testing on cloned projects ONLY (use `/clone`)
 - Features: Judge validation, semantic diffs, git tracking, debug storage
-- See `docs/USER_GUIDE.md` for complete iteration examples
+- See `ARCHITECTURE.md` section 10 (Natural Language Iteration) for workflow details
 
 ## Getting Help
 
-- **User Guide:** `docs/USER_GUIDE.md` - Complete guide with iteration examples
-- **Implementation Status:** `docs/IMPLEMENTATION_STATUS.md` - Feature tracking and known issues
-- **Changelog:** `docs/CHANGELOG.md` - Version history and recent changes
-- **Architecture:** `ARCHITECTURE.md` - High-level design and decisions
-- **Diagrams:** `codex-overview-2-diagrams.md` - Visual overviews
+- **Architecture:** `ARCHITECTURE.md` - High-level design, decisions, and ADRs
+- **REPL Help:** Use `/help` in the REPL for command reference
+- **Code Comments:** Inline documentation in source files
