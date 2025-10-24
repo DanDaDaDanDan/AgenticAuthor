@@ -158,24 +158,9 @@ def list():
                 try:
                     project = Project(project_dir)
                     if project.metadata:
-                        # Infer status from what files exist
-                        num_chapters = len(project.list_chapters())
-                        has_outlines = project.chapters_file.exists()
-                        has_premise = project.premise_file.exists()
-
-                        if num_chapters > 0:
-                            status = "in_progress"
-                        elif has_outlines:
-                            status = "planning"
-                        elif has_premise:
-                            status = "draft"
-                        else:
-                            status = "new"
-
                         projects.append({
                             'name': project.name,
                             'genre': project.metadata.genre or "—",
-                            'status': status,
                             'updated': str(project.metadata.updated_at)[:10]
                         })
                 except Exception:
@@ -191,14 +176,12 @@ def list():
         table = Table(title="Book Projects")
         table.add_column("Name", style="cyan")
         table.add_column("Genre")
-        table.add_column("Status")
         table.add_column("Updated")
 
         for p in sorted(projects, key=lambda x: x['updated'], reverse=True):
             table.add_row(
                 p['name'],
                 p['genre'],
-                p['status'],
                 p['updated']
             )
 

@@ -682,17 +682,6 @@ class InteractiveSession:
         has_outlines = self.project.chapters_file.exists()
         num_chapters = len(self.project.list_chapters())
 
-        # Infer status from what's been generated
-        if num_chapters > 0:
-            status = "in_progress"
-        elif has_outlines:
-            status = "planning"
-        elif has_premise:
-            status = "draft"
-        else:
-            status = "new"
-        table.add_row("Status", status)
-
         table.add_row("", "")  # Separator
         table.add_row("Premise", "✓ " if has_premise else "✗ ")
         table.add_row("Treatment", "✓ " if has_treatment else "✗ ")
