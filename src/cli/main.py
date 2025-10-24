@@ -158,10 +158,24 @@ def list():
                 try:
                     project = Project(project_dir)
                     if project.metadata:
+                        # Infer status from what files exist
+                        num_chapters = len(project.list_chapters())
+                        has_outlines = project.chapters_file.exists()
+                        has_premise = project.premise_file.exists()
+
+                        if num_chapters > 0:
+                            status = "in_progress"
+                        elif has_outlines:
+                            status = "planning"
+                        elif has_premise:
+                            status = "draft"
+                        else:
+                            status = "new"
+
                         projects.append({
                             'name': project.name,
                             'genre': project.metadata.genre or "—",
-                            'status': project.metadata.status,
+                            'status': status,
                             'updated': str(project.metadata.updated_at)[:10]
                         })
                 except Exception:

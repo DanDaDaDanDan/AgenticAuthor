@@ -297,10 +297,8 @@ class PremiseGenerator:
 
         # Generate with API
         try:
-            # Get model from project or use default
+            # Get model (use global settings)
             model = self.model
-            if not model and self.project.metadata and self.project.metadata.model:
-                model = self.project.metadata.model
             if not model:
                 from ..config import get_settings
                 settings = get_settings()
@@ -379,10 +377,8 @@ class PremiseGenerator:
         temperature = self.prompt_loader.get_temperature("analysis/taxonomy_extraction", default=0.5)
 
         try:
-            # Get model from project or use default
+            # Get model (use global settings)
             model = self.model
-            if not model and self.project.metadata and self.project.metadata.model:
-                model = self.project.metadata.model
             if not model:
                 from ..config import get_settings
                 settings = get_settings()
@@ -474,10 +470,8 @@ class PremiseGenerator:
         temperature = self.prompt_loader.get_temperature("iteration/premise_revision", default=0.5)
 
         # Generate revision
-        # Get model from project or use default
+        # Get model (use global settings)
         model = self.model
-        if not model and self.project.metadata and self.project.metadata.model:
-            model = self.project.metadata.model
         if not model:
             from ..config import get_settings
             settings = get_settings()

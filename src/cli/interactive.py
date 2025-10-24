@@ -672,9 +672,8 @@ class InteractiveSession:
             else:
                 table.add_row("Type", "Novel")
 
-            # Show current model
-            table.add_row("Model", self.project.metadata.model or self.settings.active_model or "Not set")
-            table.add_row("Status", self.project.metadata.status)
+            # Show current model (from global settings)
+            table.add_row("Model", self.settings.active_model or "Not set")
 
         # Check what exists
         has_premise = self.project.premise_file.exists()
@@ -682,6 +681,17 @@ class InteractiveSession:
         has_story = self.project.story_file.exists()
         has_outlines = self.project.chapters_file.exists()
         num_chapters = len(self.project.list_chapters())
+
+        # Infer status from what's been generated
+        if num_chapters > 0:
+            status = "in_progress"
+        elif has_outlines:
+            status = "planning"
+        elif has_premise:
+            status = "draft"
+        else:
+            status = "new"
+        table.add_row("Status", status)
 
         table.add_row("", "")  # Separator
         table.add_row("Premise", "✓ " if has_premise else "✗ ")
@@ -856,11 +866,6 @@ class InteractiveSession:
                     price = "Free"
                 self.console.print(f"[dim]  Context: {model.context_length:,} tokens | Price: {price}[/dim]")
                 break
-
-        # Update project metadata if loaded
-        if self.project and self.project.metadata:
-            self.project.metadata.model = selected_model
-            self.project.save_metadata()
 
     async def list_models(self, args: str = ""):
         """List available models."""

@@ -128,10 +128,12 @@ class ProseGenerator:
         # Total needed with buffer
         total_needed = total_context + response_needed + 1000
 
-        # Check if configured model is sufficient
-        configured_model = self.project.metadata.model if self.project.metadata else None
+        # Check if configured model is sufficient (use global settings)
+        configured_model = self.model
         if not configured_model:
-            configured_model = self.model
+            from ..config import get_settings
+            settings = get_settings()
+            configured_model = settings.active_model
 
         recommended_model = None
         is_sufficient = False
