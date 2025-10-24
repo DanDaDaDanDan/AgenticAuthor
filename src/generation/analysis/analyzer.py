@@ -43,7 +43,8 @@ class AnalysisCoordinator:
         self,
         content_type: str,
         target_id: Optional[str] = None,
-        dimensions: Optional[List[str]] = None  # Kept for backward compatibility, ignored
+        dimensions: Optional[List[str]] = None,  # Kept for backward compatibility, ignored
+        exclude_treatment: bool = False
     ) -> Dict[str, Any]:
         """
         Analyze content using unified analyzer.
@@ -52,6 +53,7 @@ class AnalysisCoordinator:
             content_type: Type (premise/treatment/chapters/chapter/prose)
             target_id: Specific ID (e.g., chapter number)
             dimensions: Ignored (kept for backward compatibility)
+            exclude_treatment: If True, exclude treatment from analysis context
 
         Returns:
             Analysis results dict
@@ -60,7 +62,7 @@ class AnalysisCoordinator:
             ValueError: If content not found or invalid type
         """
         # Get content and context
-        content, context = self._get_content_and_context(content_type, target_id)
+        content, context = self._get_content_and_context(content_type, target_id, exclude_treatment)
 
         if not content:
             raise ValueError(
@@ -70,9 +72,9 @@ class AnalysisCoordinator:
         # Run unified analysis
         result = await self.analyzer.analyze(content, content_type, context)
 
-        # Run treatment deviation analysis for chapters (if treatment exists)
+        # Run treatment deviation analysis for chapters (if treatment exists and not excluded)
         treatment_result = None
-        if content_type == 'chapters' and 'treatment' in context:
+        if content_type == 'chapters' and 'treatment' in context and not exclude_treatment:
             treatment_result = await self.treatment_analyzer.analyze(content, content_type, context)
 
         # Build aggregated response
@@ -95,9 +97,17 @@ class AnalysisCoordinator:
     def _get_content_and_context(
         self,
         content_type: str,
-        target_id: Optional[str] = None
+        target_id: Optional[str] = None,
+        exclude_treatment: bool = False
     ) -> tuple[Optional[str], Dict[str, Any]]:
-        """Get content to analyze and build context."""
+        """
+        Get content to analyze and build context.
+
+        Args:
+            content_type: Type of content to analyze
+            target_id: Optional specific target ID
+            exclude_treatment: If True, exclude treatment from context
+        """
         context = {}
 
         # Get premise for context (always helpful)
@@ -138,10 +148,11 @@ class AnalysisCoordinator:
                 foundation_md, chapters_md = self._build_chapters_analysis_sections(foundation_file, chapter_files)
                 context['foundation'] = foundation_md
                 content = chapters_md
-                # Add treatment for deviation analysis
-                treatment = self.project.get_treatment()
-                if treatment:
-                    context['treatment'] = treatment
+                # Add treatment for deviation analysis (unless excluded)
+                if not exclude_treatment:
+                    treatment = self.project.get_treatment()
+                    if treatment:
+                        context['treatment'] = treatment
             else:
                 # LEGACY fallback: Try chapters.yaml
                 chapters_yaml = self.project.get_chapters_yaml()
@@ -151,16 +162,18 @@ class AnalysisCoordinator:
                     context['foundation'] = foundation_text
                     context['chapters_index'] = self._format_chapters_index(chapters_yaml)
                     content = chapters_text
-                    # Add treatment for deviation analysis
-                    treatment = self.project.get_treatment()
-                    if treatment:
-                        context['treatment'] = treatment
+                    # Add treatment for deviation analysis (unless excluded)
+                    if not exclude_treatment:
+                        treatment = self.project.get_treatment()
+                        if treatment:
+                            context['treatment'] = treatment
                 else:
                     # OLDER legacy: Try old chapters list
                     chapters = self.project.get_chapters()
                     if chapters:
                         content = self._chapters_to_text(chapters)
-                        context['treatment'] = self.project.get_treatment()
+                        if not exclude_treatment:
+                            context['treatment'] = self.project.get_treatment()
 
         elif content_type == 'chapter':
             # Analyze specific chapter outline - load markdown directly
@@ -168,7 +181,8 @@ class AnalysisCoordinator:
             chapter_file = self.project.chapter_beats_dir / f'chapter-{chapter_num:02d}.md'
             if chapter_file.exists():
                 content = chapter_file.read_text(encoding='utf-8')
-                context['treatment'] = self.project.get_treatment()
+                if not exclude_treatment:
+                    context['treatment'] = self.project.get_treatment()
                 # Load all chapters for context
                 all_chapters_md = []
                 for ch_file in sorted(self.project.chapter_beats_dir.glob('chapter-*.md')):
@@ -181,7 +195,8 @@ class AnalysisCoordinator:
             if self.project.is_short_form():
                 # Short story: analyze story.md
                 content = self.project.get_story()
-                context['treatment'] = self.project.get_treatment()
+                if not exclude_treatment:
+                    context['treatment'] = self.project.get_treatment()
             else:
                 # Long-form: analyze specific chapter or all chapters
                 if target_id is None:
@@ -195,7 +210,8 @@ class AnalysisCoordinator:
 
                         # Concatenate all chapters with clear separators
                         content = '\n\n---\n\n'.join(chapter_texts)
-                        context['treatment'] = self.project.get_treatment()
+                        if not exclude_treatment:
+                            context['treatment'] = self.project.get_treatment()
 
                         # Load all chapter outlines for context
                         outline_files = sorted(self.project.chapter_beats_dir.glob('chapter-*.md'))
@@ -210,7 +226,8 @@ class AnalysisCoordinator:
                     chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
                     if chapter_file.exists():
                         content = chapter_file.read_text(encoding='utf-8')
-                        context['treatment'] = self.project.get_treatment()
+                        if not exclude_treatment:
+                            context['treatment'] = self.project.get_treatment()
 
                         # Get chapter outline for context - load markdown directly
                         chapter_outline_file = self.project.chapter_beats_dir / f'chapter-{chapter_num:02d}.md'

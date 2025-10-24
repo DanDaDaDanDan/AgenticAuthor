@@ -235,7 +235,7 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
         },
         'analyze': {
             'description': 'Analyze story quality (premise/treatment/chapters/prose)',
-            'usage': '/analyze <premise|treatment|chapters|prose> [chapter-number]'
+            'usage': '/analyze <premise|treatment|chapters|prose> [chapter-number] [--no-treatment]'
         },
         'metadata': {
             'description': 'View or set book metadata (title, author, copyright, etc.)',

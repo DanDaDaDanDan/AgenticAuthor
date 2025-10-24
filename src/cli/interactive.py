@@ -2504,7 +2504,15 @@ Regenerate the foundation addressing the issues above.
             return
 
         # Parse args: premise / treatment / chapters / chapter N / prose / prose N / all
-        parts = args.strip().split() if args else []
+        # Check for --no-treatment flag
+        args_str = args.strip() if args else ""
+        exclude_treatment = '--no-treatment' in args_str
+
+        # Remove flag from args for parsing
+        if exclude_treatment:
+            args_str = args_str.replace('--no-treatment', '').strip()
+
+        parts = args_str.split() if args_str else []
 
         if not parts:
             content_type = "all"
@@ -2524,7 +2532,7 @@ Regenerate the foundation addressing the issues above.
             target_id = None  # None = analyze all prose
         else:
             self.console.print("[red]Invalid analysis target[/red]")
-            self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all]")
+            self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all] [--no-treatment]")
             return
 
         try:
@@ -2542,6 +2550,9 @@ Regenerate the foundation addressing the issues above.
             elif content_type == 'prose':
                 content_desc = "prose (all chapters)"
 
+            if exclude_treatment:
+                content_desc += " (excluding treatment)"
+
             self.console.print(f"\n[bold cyan]📊 Analyzing {content_desc}...[/bold cyan]")
             self.console.print(f"   ⏳ Reading and evaluating...\n")
 
@@ -2549,7 +2560,7 @@ Regenerate the foundation addressing the issues above.
             self._ensure_git_repo()
 
             # Run analysis
-            result = await coordinator.analyze(content_type, target_id)
+            result = await coordinator.analyze(content_type, target_id, exclude_treatment=exclude_treatment)
 
             # Display results
             self._display_analysis_results(result)
@@ -2559,6 +2570,8 @@ Regenerate the foundation addressing the issues above.
                 content_desc = result.get('content_type', content_type)
                 if result.get('target_id'):
                     content_desc += f" {result['target_id']}"
+                if exclude_treatment:
+                    content_desc += " (no treatment)"
                 self._commit(f"Analyze {content_desc}")
 
         except Exception as e:
