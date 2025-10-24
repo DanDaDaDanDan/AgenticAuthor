@@ -2050,7 +2050,7 @@ Regenerate the foundation addressing the issues above.
                 self.console.print("[red]Failed to generate story[/red]")
 
         except Exception as e:
-            self.console.print(f"[red]Error: {e}[/red]")
+            self.console.print(f"[red]Error: {self._escape_markup(e)}[/red]")
 
     def _parse_chapter_spec(self, spec: str) -> list:
         """
