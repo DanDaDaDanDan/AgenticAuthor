@@ -2504,12 +2504,15 @@ Regenerate the foundation addressing the issues above.
             return
 
         # Parse args: premise / treatment / chapters / chapter N / prose / prose N / all
-        # Check for --no-treatment flag
+        # Check for treatment inclusion flags
         args_str = args.strip() if args else ""
-        exclude_treatment = '--no-treatment' in args_str
+        include_treatment = '--include-treatment' in args_str
+        exclude_treatment_explicit = '--no-treatment' in args_str
 
-        # Remove flag from args for parsing
-        if exclude_treatment:
+        # Remove flags from args for parsing
+        if include_treatment:
+            args_str = args_str.replace('--include-treatment', '').strip()
+        if exclude_treatment_explicit:
             args_str = args_str.replace('--no-treatment', '').strip()
 
         parts = args_str.split() if args_str else []
@@ -2532,8 +2535,17 @@ Regenerate the foundation addressing the issues above.
             target_id = None  # None = analyze all prose
         else:
             self.console.print("[red]Invalid analysis target[/red]")
-            self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all] [--no-treatment]")
+            self.console.print("Usage: /analyze [premise|treatment|chapters|chapter N|prose|prose N|all] [--include-treatment|--no-treatment]")
             return
+
+        # Determine treatment exclusion:
+        # For 'chapters', default is to EXCLUDE treatment (post-iteration use case)
+        # User can override with --include-treatment
+        if content_type == 'chapters':
+            exclude_treatment = not include_treatment  # Default True, override with --include-treatment
+        else:
+            # For other content types, default is to include treatment
+            exclude_treatment = exclude_treatment_explicit  # Default False, explicit --no-treatment needed
 
         try:
             # Initialize coordinator
