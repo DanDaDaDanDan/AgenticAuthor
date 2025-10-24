@@ -2909,7 +2909,7 @@ Regenerate the foundation addressing the issues above.
 
         try:
             # Perform split
-            files_written, chapters_written = self.project.split_combined_markdown(target)
+            files_written, chapters_written, files_deleted = self.project.split_combined_markdown(target)
 
             # Success message
             if target == 'chapters':
@@ -2920,6 +2920,8 @@ Regenerate the foundation addressing the issues above.
                 self.console.print(f"[green]✓[/green] Split {target}/combined.md:")
                 self.console.print(f"  • {chapters_written} chapter files")
 
+            if files_deleted > 0:
+                self.console.print(f"[dim]  • Removed {files_deleted} old chapter file(s)[/dim]")
             self.console.print(f"\n[dim]Total files written: {files_written}[/dim]")
 
             # Commit

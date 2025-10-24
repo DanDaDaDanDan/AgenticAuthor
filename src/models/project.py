@@ -1139,18 +1139,21 @@ class Project:
         combined_path.write_text("\n".join(lines).strip() + "\n", encoding='utf-8')
         return combined_path
 
-    def split_combined_markdown(self, target: str) -> tuple[int, int]:
+    def split_combined_markdown(self, target: str) -> tuple[int, int, int]:
         """
         Split combined.md back into individual files.
 
         Reverses the combine operation by parsing combined.md and
         writing foundation.md and chapter-*.md files.
 
+        IMPORTANT: Deletes existing chapter-*.md files before writing new ones
+        to handle cases where the new version has fewer chapters.
+
         Args:
             target: One of: 'chapters', 'prose'
 
         Returns:
-            Tuple of (files_written, chapters_written)
+            Tuple of (files_written, chapters_written, files_deleted)
 
         Raises:
             FileNotFoundError: If combined.md doesn't exist
@@ -1192,6 +1195,13 @@ class Project:
         if not sections:
             raise ValueError("No content found after section marker")
 
+        # Delete existing chapter-*.md files before writing new ones
+        # This ensures we don't have orphaned files if the new version has fewer chapters
+        files_deleted = 0
+        for old_chapter_file in source_dir.glob('chapter-*.md'):
+            old_chapter_file.unlink()
+            files_deleted += 1
+
         files_written = 0
         chapters_written = 0
 
@@ -1219,7 +1229,7 @@ class Project:
             files_written += 1
             chapters_written += 1
 
-        return (files_written, chapters_written)
+        return (files_written, chapters_written, files_deleted)
 
     def init_default_frontmatter(self):
         """Initialize frontmatter with default template if not exists."""
