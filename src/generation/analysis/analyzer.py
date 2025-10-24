@@ -627,17 +627,57 @@ CHAPTER OUTLINES
                     lines.append(f"- ✓ **{strength['category']}**: {strength['description']}{loc}")
                 lines.append("")
 
-            # Issues
+            # Group issues by severity
             if dimension['issues']:
-                lines.append("#### Issues Found")
+                issues_by_severity = {
+                    'CRITICAL': [],
+                    'HIGH': [],
+                    'MEDIUM': [],
+                    'LOW': []
+                }
+
                 for issue in dimension['issues']:
-                    confidence = issue.get('confidence', 100)
-                    lines.append(f"- ⚠️ **[{issue['severity']}] {issue['category']}** _(Confidence: {confidence}%)_")
-                    lines.append(f"  - **Location**: {issue['location']}")
-                    lines.append(f"  - **Issue**: {issue['description']}")
-                    lines.append(f"  - **Impact**: {issue['impact']}")
-                    lines.append(f"  - **Suggestion**: {issue['suggestion']}")
+                    severity = issue['severity'].upper()
+                    issues_by_severity.get(severity, issues_by_severity['MEDIUM']).append(issue)
+
+                lines.append("#### Issues Found")
+                lines.append("")
+
+                # Display issues grouped by severity
+                for severity_level in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']:
+                    issues = issues_by_severity[severity_level]
+                    if not issues:
+                        continue
+
+                    # Severity header with emoji
+                    severity_emoji = {
+                        'CRITICAL': '🔴',
+                        'HIGH': '🟠',
+                        'MEDIUM': '🟡',
+                        'LOW': '🔵'
+                    }
+                    lines.append(f"**{severity_emoji[severity_level]} {severity_level}**")
                     lines.append("")
+
+                    for issue in issues:
+                        # Remove "General:" prefix from location
+                        location = issue['location']
+                        if location == "General":
+                            location = "Overall"
+
+                        # Remove "General" category prefix if present
+                        category = issue['category']
+                        if category.startswith("General:"):
+                            category = category.replace("General:", "").strip()
+
+                        lines.append(f"**{category}** _{location}_")
+                        if issue.get('description'):
+                            lines.append(f"- **Issue**: {issue['description']}")
+                        if issue.get('impact'):
+                            lines.append(f"- **Impact**: {issue['impact']}")
+                        if issue.get('suggestion'):
+                            lines.append(f"- **Fix**: {issue['suggestion']}")
+                        lines.append("")
 
             # Notes
             if dimension.get('notes'):

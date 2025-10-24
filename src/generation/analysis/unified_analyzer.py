@@ -99,20 +99,23 @@ class UnifiedAnalyzer(BaseAnalyzer):
             overall_assessment = data.get('overall_assessment', '')
             summary = f"{grade_str}\n{grade_justification}\n\n{overall_assessment}"
 
-            # Convert feedback points to issues (no severity/impact needed for simplified format)
-            feedback_points = data.get('feedback', [])
-            issues = [
-                Issue(
-                    category="Feedback",
-                    severity=Severity.MEDIUM,
-                    location="General",
-                    description=point,
-                    impact="",
-                    suggestion="",
+            # Convert structured issues to Issue objects
+            issues_data = data.get('issues', [])
+            issues = []
+            for issue_dict in issues_data:
+                # Map severity string to enum
+                severity_str = issue_dict.get('severity', 'medium').upper()
+                severity = getattr(Severity, severity_str, Severity.MEDIUM)
+
+                issues.append(Issue(
+                    category=issue_dict.get('category', 'General'),
+                    severity=severity,
+                    location=issue_dict.get('location', 'General'),
+                    description=issue_dict.get('description', ''),
+                    impact=issue_dict.get('impact', ''),
+                    suggestion=issue_dict.get('suggestion', ''),
                     confidence=100
-                )
-                for point in feedback_points
-            ]
+                ))
 
             # Convert strengths (simple strings to Strength objects)
             strength_points = data.get('strengths', [])

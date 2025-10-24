@@ -2612,18 +2612,73 @@ Regenerate the foundation addressing the issues above.
 
         for dim in dimension_results:
             dim_name = dim.get('dimension', 'Analysis')
-            # Issues
+            # Issues - grouped by severity
             issues = dim.get('issues', [])
             if issues:
-                self.console.print(f"[bold]📝 Feedback — {dim_name}:[/bold]")
+                self.console.print(f"[bold]📝 Feedback — {dim_name}:[/bold]\n")
+
+                # Group by severity
+                issues_by_severity = {
+                    'CRITICAL': [],
+                    'HIGH': [],
+                    'MEDIUM': [],
+                    'LOW': []
+                }
                 for issue in issues:
-                    sev = issue.get('severity', 'MEDIUM')
-                    loc = issue.get('location', 'General')
-                    desc = issue.get('description', '')
-                    sugg = issue.get('suggestion', '')
-                    self.console.print(f"  • [{sev}] {loc}: {desc}")
-                    if sugg:
-                        self.console.print(f"    ↳ Suggestion: {sugg}")
+                    sev = issue.get('severity', 'MEDIUM').upper()
+                    issues_by_severity.get(sev, issues_by_severity['MEDIUM']).append(issue)
+
+                # Display grouped by severity
+                severity_colors = {
+                    'CRITICAL': 'red',
+                    'HIGH': 'yellow',
+                    'MEDIUM': 'cyan',
+                    'LOW': 'blue'
+                }
+                severity_emoji = {
+                    'CRITICAL': '🔴',
+                    'HIGH': '🟠',
+                    'MEDIUM': '🟡',
+                    'LOW': '🔵'
+                }
+
+                for sev_level in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']:
+                    sev_issues = issues_by_severity[sev_level]
+                    if not sev_issues:
+                        continue
+
+                    color = severity_colors[sev_level]
+                    self.console.print(f"[bold {color}]{severity_emoji[sev_level]} {sev_level}[/bold {color}]")
+
+                    for issue in sev_issues:
+                        loc = issue.get('location', 'Overall')
+                        # Remove "General:" prefix from location
+                        if loc == "General":
+                            loc = "Overall"
+
+                        cat = issue.get('category', '')
+                        # Remove "General:" prefix from category
+                        if cat.startswith("General:"):
+                            cat = cat.replace("General:", "").strip()
+
+                        desc = issue.get('description', '')
+                        impact = issue.get('impact', '')
+                        sugg = issue.get('suggestion', '')
+
+                        # Format: Category (Location)
+                        if cat and loc:
+                            self.console.print(f"  [bold]{cat}[/bold] [dim]({loc})[/dim]")
+                        elif cat:
+                            self.console.print(f"  [bold]{cat}[/bold]")
+
+                        if desc:
+                            self.console.print(f"    {desc}")
+                        if impact:
+                            self.console.print(f"    [dim]Impact:[/dim] {impact}")
+                        if sugg:
+                            self.console.print(f"    [green]→ Fix:[/green] {sugg}")
+                        self.console.print()
+
                 self.console.print()
 
         # Priority issues (only if truly unique vs dimension issues)

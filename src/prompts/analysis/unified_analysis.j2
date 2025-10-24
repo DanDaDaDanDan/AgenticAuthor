@@ -63,10 +63,15 @@ Respond with ONLY valid JSON:
   "grade": "A+ (Exceptional) | A (Excellent) | B+ (Very Good) | B (Good) | C+ (Above Average) | C (Average) | D+ (Below Average) | D (Poor) | F (Needs Major Revision)",
   "grade_justification": "one sentence explaining the grade",
   "overall_assessment": "2-3 sentences on overall quality",
-  "feedback": [
-    "Specific observation with concrete suggestion (e.g., 'Act II drags - consolidate chapters 9-11 to maintain momentum')",
-    "Another point...",
-    ...
+  "issues": [
+    {
+      "severity": "critical|high|medium|low",
+      "category": "Pacing|Character|Plot|Structure|Dialogue|Worldbuilding|Tone|etc",
+      "location": "specific chapter/section (e.g., 'Chapter 5', 'Act II', 'Chapters 9-11')",
+      "description": "clear explanation of what's wrong",
+      "impact": "how this weakens the story",
+      "suggestion": "specific actionable fix (be concrete: 'consolidate chapters 9-11', 'add scene showing X in chapter 4', etc)"
+    }
   ],
   "strengths": [
     "What works well in this story",
@@ -75,4 +80,8 @@ Respond with ONLY valid JSON:
   "next_steps": "Single most impactful change to improve this {{ content_type }}"
 }
 
-Be honest, specific, and constructive. Focus on impact, not minutiae.
+⚠️ CRITICAL: For every issue identified, you MUST provide a SPECIFIC, ACTIONABLE suggestion.
+- BAD: "improve pacing" | "fix character development" | "make it better"
+- GOOD: "consolidate chapters 9-11 into single chapter" | "add flashback scene in chapter 4 showing protagonist's childhood trauma" | "move alliance formation from chapter 10 to chapter 6"
+
+Be honest, specific, and constructive. Focus on impact, not minutiae. Limit to 5-7 most impactful issues.
