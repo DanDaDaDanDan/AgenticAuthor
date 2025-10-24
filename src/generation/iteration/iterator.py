@@ -637,6 +637,14 @@ class Iterator:
         self._save_content(target, new_content)
         self.console.print("  ✓ Content saved")
 
+        # 1b. Update combined.md if chapters target
+        if target == 'chapters':
+            try:
+                combined_path = self.project.write_combined_markdown(target='chapters', include_prose=False)
+                self.console.print(f"  ✓ Updated combined.md")
+            except Exception as e:
+                self.console.print(f"  [yellow]⚠[/yellow] Failed to update combined.md: {e}")
+
         # 2. Cull downstream if requested
         if cull_downstream:
             self._cull_downstream(target)
