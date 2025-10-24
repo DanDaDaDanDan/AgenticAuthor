@@ -106,7 +106,7 @@ class AnalysisCoordinator:
             context['premise'] = premise
 
         # Get genre
-        if self.project.metadata:
+        if self.project.metadata and self.project.metadata.genre:
             context['genre'] = self.project.metadata.genre
 
         # Get the actual content to analyze

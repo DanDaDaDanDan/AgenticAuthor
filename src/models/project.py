@@ -15,6 +15,7 @@ class ProjectMetadata(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     story_type: Optional[str] = Field(None, description="Story type: short_form or long_form")
     book_metadata: Dict[str, Any] = Field(default_factory=dict, description="Book metadata (title, author, copyright_year)")
+    genre: Optional[str] = Field(None, description="Genre from premise taxonomy")
 
     def update_timestamp(self):
         """Update the last modified timestamp."""
@@ -141,6 +142,34 @@ class Project:
         """Check if this is a valid project directory."""
         return self.path.exists() and self.project_file.exists()
 
+    def _sync_genre_from_premise(self):
+        """
+        Sync genre from premise_metadata into project metadata.
+
+        Genre is stored in premise_metadata.json as part of taxonomy selections.
+        This method extracts it and populates project.metadata.genre for convenience.
+        """
+        if not self.metadata:
+            return
+
+        premise_metadata = self.get_premise_metadata()
+        if not premise_metadata:
+            return
+
+        # Try to get genre from premise_metadata
+        genre = premise_metadata.get('genre')
+
+        # If not directly specified, try to infer from taxonomy selections
+        if not genre:
+            selections = premise_metadata.get('selections', {})
+            if selections:
+                from ..generation.taxonomies import TaxonomyLoader
+                genre = TaxonomyLoader.infer_genre_from_selections(selections)
+
+        # Update project metadata if genre found
+        if genre and genre != self.metadata.genre:
+            self.metadata.genre = genre
+
     def _load_metadata(self):
         """
         Load project metadata from project.yaml.
@@ -153,7 +182,7 @@ class Project:
                 data = yaml.safe_load(f)
 
                 # Migration: Remove deprecated fields
-                deprecated_fields = ['model', 'status', 'genre', 'word_count',
+                deprecated_fields = ['model', 'status', 'word_count',
                                    'chapter_count', 'tags', 'iteration_target', 'custom_data']
                 for field in deprecated_fields:
                     data.pop(field, None)
@@ -165,6 +194,9 @@ class Project:
                         data['book_metadata'] = config['book_metadata']
 
                 self.metadata = ProjectMetadata(**data)
+
+                # Sync genre from premise_metadata if available
+                self._sync_genre_from_premise()
 
                 # Save migrated data if any changes were made
                 if any(field in yaml.safe_load(self.project_file.read_text()) for field in deprecated_fields):
@@ -336,12 +368,14 @@ class Project:
             if logger:
                 logger.info(f"PROJECT: Successfully wrote premise_metadata.json")
 
+            # Sync genre from premise metadata
             if self.metadata:
+                self._sync_genre_from_premise()
                 self.metadata.update_timestamp()
                 self.save_metadata()
 
                 if logger:
-                    logger.info(f"PROJECT: Updated project metadata timestamp")
+                    logger.info(f"PROJECT: Updated project metadata timestamp and synced genre")
 
         except Exception as e:
             if logger:
