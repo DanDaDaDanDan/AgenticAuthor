@@ -431,7 +431,7 @@ class Iterator:
                         continue
 
                     else:
-                        self.console.print("[red]Invalid choice. Use: yes, no, or view-partial[/red]")
+                        self.console.print("[red]Invalid choice. Use: y, n, or view[/red]")
 
     def _build_prompt_context(
         self,
