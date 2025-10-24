@@ -2539,12 +2539,14 @@ Regenerate the foundation addressing the issues above.
             return
 
         # Determine treatment exclusion:
-        # For 'chapters', default is to EXCLUDE treatment (post-iteration use case)
+        # For 'chapters' and 'prose', default is to EXCLUDE treatment (post-iteration use case)
         # User can override with --include-treatment
-        if content_type == 'chapters':
+        # For 'premise', treatment is never used (premise is first LOD level)
+        if content_type in ['chapters', 'prose']:
             exclude_treatment = not include_treatment  # Default True, override with --include-treatment
         else:
-            # For other content types, default is to include treatment
+            # For 'treatment' and other content types, default is to include treatment
+            # (though premise doesn't actually use treatment in its analysis)
             exclude_treatment = exclude_treatment_explicit  # Default False, explicit --no-treatment needed
 
         try:
