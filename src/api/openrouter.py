@@ -353,7 +353,8 @@ class OpenRouterClient:
                                 "stream": stream,
                                 **kwargs
                             },
-                            operation=operation  # Pass operation for debugging
+                            operation=operation,  # Pass operation for debugging
+                            finish_reason=result.get('finish_reason')  # Pass finish_reason for debugging
                         )
 
                     # Update token counter

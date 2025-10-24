@@ -107,7 +107,7 @@ class SessionLogger:
 
         self._write_event("command", event_data)
 
-    def log_api_call(self, model: str, prompt: str, response: str, tokens: dict, error: Optional[str] = None, full_messages: list = None, request_params: dict = None, operation: str = None):
+    def log_api_call(self, model: str, prompt: str, response: str, tokens: dict, error: Optional[str] = None, full_messages: list = None, request_params: dict = None, operation: str = None, finish_reason: str = None):
         """Log an API call with FULL request and response details in JSONL.
 
         Args:
@@ -119,6 +119,7 @@ class SessionLogger:
             full_messages: Complete messages array sent to API (list of dicts)
             request_params: Full request parameters (temperature, max_tokens, etc.)
             operation: Optional operation name (e.g., "premise-generation", "chapter-3")
+            finish_reason: API finish reason (e.g., "stop", "length", "content_filter")
         """
         self._write_event("api_call", {
             "timestamp": datetime.now().isoformat(),
@@ -130,6 +131,7 @@ class SessionLogger:
             "response": response if not error else None,
             "response_length": len(response) if response else 0,
             "tokens": tokens or {},
+            "finish_reason": finish_reason,
             "error": error
         })
 
@@ -141,7 +143,8 @@ class SessionLogger:
             request_params=request_params or {},
             tokens=tokens or {},
             operation=operation,
-            error=error
+            error=error,
+            finish_reason=finish_reason
         )
 
     def log_api_error(self, model: str, error: Exception, request_params: dict = None, full_messages: list = None):
@@ -170,7 +173,8 @@ class SessionLogger:
         request_params: dict,
         tokens: dict,
         operation: Optional[str] = None,
-        error: Optional[str] = None
+        error: Optional[str] = None,
+        finish_reason: Optional[str] = None
     ):
         """Save LLM call details to individual text file for easy debugging.
 
@@ -180,6 +184,7 @@ class SessionLogger:
         - Complete messages/prompt
         - Full response
         - Token usage and cost
+        - Finish reason (stop, length, content_filter, etc.)
 
         Files are saved to: .agentic/debug/llm-calls/YYYYMMDD_HHMMSS_model_operation.txt
 
@@ -191,6 +196,7 @@ class SessionLogger:
             tokens: Token usage dict
             operation: Optional operation name
             error: Optional error message
+            finish_reason: Optional API finish reason
         """
         try:
             # Create debug directory
@@ -269,6 +275,10 @@ class SessionLogger:
                 content_parts.append("Token usage: Not available")
 
             content_parts.append(f"Response Length: {len(response)} characters")
+
+            if finish_reason:
+                content_parts.append(f"Finish Reason: {finish_reason}")
+
             content_parts.append("")
 
             # Write to file
