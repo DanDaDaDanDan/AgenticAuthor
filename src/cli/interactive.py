@@ -1999,7 +1999,7 @@ Regenerate the foundation addressing the issues above.
             except ValueError:
                 self.console.print("[red]Invalid chapter number[/red]")
             except Exception as e:
-                self.console.print(f"[red]Error: {e}[/red]")
+                self.console.print(f"[red]Error: {self._escape_markup(e)}[/red]")
 
     async def _generate_short_story_prose(self, options: str = ""):
         """Generate complete short-form story prose."""
