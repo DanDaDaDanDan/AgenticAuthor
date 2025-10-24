@@ -72,7 +72,7 @@ class Iterator:
 
         # Safety warning on first iteration
         if iteration_history.count() == 0:
-            self.console.print("\n[bold yellow]⚠️  WARNING: Iteration replaces content permanently![/yellow]")
+            self.console.print("\n[bold yellow]⚠️  WARNING: Iteration replaces content permanently![/bold yellow]")
             self.console.print("[dim]Always test on cloned projects first (use /clone).[/dim]")
             self.console.print("[dim]Git commits are created automatically for easy rollback.[/dim]")
             choice = input("\nContinue with iteration? (yes/no): ").strip().lower()

@@ -3085,15 +3085,23 @@ Regenerate the foundation addressing the issues above.
             return
 
         if not args:
+            # Auto-detect most advanced LOD level if no target set
+            if not self.iteration_target:
+                auto_target = self._detect_iteration_target()
+                if auto_target:
+                    self.iteration_target = auto_target
+                    self._print(f"[green]✓[/green] Auto-detected iteration target: [bold]{auto_target}[/bold]")
+                    self._print("[dim]Any text input will now iterate on this target[/dim]")
+                    return
+                else:
+                    self._print("[yellow]No content found to iterate on[/yellow]")
+                    self._print("[dim]Generate content first, then use /iterate[/dim]")
+                    return
+
             # Show current target
-            if self.iteration_target:
-                self._print(f"[cyan]Current iteration target:[/cyan] [bold]{self.iteration_target}[/bold]")
-                self._print("[dim]Any text input will iterate on this target[/dim]")
-                self._print("[dim]Use /iterate <target> to change target[/dim]")
-            else:
-                self._print("[yellow]No iteration target set[/yellow]")
-                self._print("[dim]Use /iterate <target> to set target[/dim]")
-                self._print("[dim]Valid targets: premise, treatment, chapters, prose[/dim]")
+            self._print(f"[cyan]Current iteration target:[/cyan] [bold]{self.iteration_target}[/bold]")
+            self._print("[dim]Any text input will iterate on this target[/dim]")
+            self._print("[dim]Use /iterate <target> to change target[/dim]")
             return
 
         # Set new target
@@ -3122,6 +3130,33 @@ Regenerate the foundation addressing the issues above.
         self._print(f"[green]✓[/green] Iteration target set to [bold]{target}[/bold]")
         self._print("[dim]Any text input will now iterate on this target[/dim]")
 
+    def _detect_iteration_target(self) -> Optional[str]:
+        """
+        Auto-detect the most advanced LOD level that exists.
+
+        Priority: prose > chapters > treatment > premise
+
+        Returns:
+            Target name or None if no content exists
+        """
+        if not self.project:
+            return None
+
+        # Check in order from most advanced to least advanced
+        if self.project.chapters_dir.exists() and list(self.project.list_chapters()):
+            return 'prose'
+
+        if self.project.chapter_beats_dir.exists() and list(self.project.list_chapter_beats()):
+            return 'chapters'
+
+        if self.project.treatment_file.exists():
+            return 'treatment'
+
+        if self.project.get_premise():
+            return 'premise'
+
+        return None
+
     async def handle_iteration_feedback(self, feedback: str):
         """Handle natural language iteration feedback."""
         if not self.project:
@@ -3129,10 +3164,15 @@ Regenerate the foundation addressing the issues above.
             return
 
         if not self.iteration_target:
-            self._print("[yellow]No iteration target set[/yellow]")
-            self._print("[dim]Use /iterate <target> to set what you want to iterate on[/dim]")
-            self._print("[dim]Valid targets: premise, treatment, chapters, prose[/dim]")
-            return
+            # Auto-detect target
+            auto_target = self._detect_iteration_target()
+            if auto_target:
+                self.iteration_target = auto_target
+                self._print(f"[green]✓[/green] Auto-detected iteration target: [bold]{auto_target}[/bold]")
+            else:
+                self._print("[yellow]No content found to iterate on[/yellow]")
+                self._print("[dim]Generate content first, then provide feedback[/dim]")
+                return
 
         if not feedback.strip():
             self._print("[yellow]Empty feedback - please provide iteration instructions[/yellow]")
