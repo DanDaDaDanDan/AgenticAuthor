@@ -329,6 +329,17 @@ class InteractiveSession:
         else:
             self.console.print(*args, **kwargs)
 
+    def _escape_markup(self, text: str) -> str:
+        """
+        Escape Rich markup characters in text to prevent rendering errors.
+
+        Use this when embedding exception messages or user input in Rich markup tags.
+        Rich markup like [red], [yellow], [/red] etc. in exception messages will
+        cause crashes if not escaped before embedding in other markup.
+        """
+        from rich.markup import escape
+        return escape(str(text))
+
     def _show_welcome(self):
         """Show welcome message."""
         self._print()
@@ -929,7 +940,7 @@ class InteractiveSession:
             self.console.print(f"\n[dim]Total models: {len(models)}[/dim]")
 
         except Exception as e:
-            self.console.print(f"[red]Error fetching models: {e}[/red]")
+            self.console.print(f"[red]Error fetching models: {self._escape_markup(e)}[/red]")
 
     async def generate_content(self, args: str):
         """Generate content command."""
@@ -1003,7 +1014,7 @@ class InteractiveSession:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
                 self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, combined[/dim]")
         except Exception as e:
-            self.console.print(f"[red]Generation failed: {e}[/red]")
+            self.console.print(f"[red]Generation failed: {self._escape_markup(e)}[/red]")
 
     async def finalize_content(self, args: str):
         """
@@ -1038,7 +1049,7 @@ class InteractiveSession:
         try:
             await self._finalize_chapters()
         except Exception as e:
-            self.console.print(f"[red]Finalization failed: {e}[/red]")
+            self.console.print(f"[red]Finalization failed: {self._escape_markup(e)}[/red]")
             from ..utils.logging import get_logger
             logger = get_logger()
             if logger:
@@ -1129,7 +1140,7 @@ class InteractiveSession:
         except KeyboardInterrupt:
             self.console.print("\n[yellow]Finalization cancelled by user[/yellow]")
         except Exception as e:
-            self.console.print(f"\n[red]Finalization error: {e}[/red]")
+            self.console.print(f"\n[red]Finalization error: {self._escape_markup(e)}[/red]")
             raise
 
     async def _generate_premise(self, user_input: str = ""):
@@ -1460,7 +1471,7 @@ class InteractiveSession:
             )
 
         except Exception as e:
-            self.console.print(f"[red]Failed to generate premises: {e}[/red]")
+            self.console.print(f"[red]Failed to generate premises: {self._escape_markup(e)}[/red]")
 
     async def _confirm(self, message: str) -> bool:
         """Ask user for yes/no confirmation."""
@@ -1883,7 +1894,7 @@ Regenerate the foundation addressing the issues above.
                 self.console.print("[red]Failed to generate chapter variants[/red]")
 
         except Exception as e:
-            self.console.print(f"[red]Variant generation failed: {e}[/red]")
+            self.console.print(f"[red]Variant generation failed: {self._escape_markup(e)}[/red]")
             from ..utils.logging import get_logger
             logger = get_logger()
             if logger:
@@ -1944,7 +1955,7 @@ Regenerate the foundation addressing the issues above.
                     self.console.print("[red]No chapters were generated[/red]")
 
             except Exception as e:
-                self.console.print(f"[red]Error generating chapters: {e}[/red]")
+                self.console.print(f"[red]Error generating chapters: {self._escape_markup(e)}[/red]")
 
         else:
             # Generate single chapter
@@ -2177,7 +2188,7 @@ Regenerate the foundation addressing the issues above.
             self.console.print("  3. Upload to Amazon KDP with this metadata")
 
         except Exception as e:
-            self.console.print(f"[red]✗ Marketing generation failed: {e}[/red]")
+            self.console.print(f"[red]✗ Marketing generation failed: {self._escape_markup(e)}[/red]")
             self.logger.exception("Marketing metadata generation error")
 
     async def cull_content(self, args: str):
@@ -2838,7 +2849,7 @@ Regenerate the foundation addressing the issues above.
             dest = self.project.write_combined_markdown(target=target, include_prose=(include_prose and target=='chapters'))
             self.console.print(f"[green]✓[/green] Combined written: {dest}")
         except Exception as e:
-            self.console.print(f"[yellow]Failed to write {target}/combined.md: {e}[/yellow]")
+            self.console.print(f"[yellow]Failed to write {target}/combined.md: {self._escape_markup(e)}[/yellow]")
 
         # Variants combined.md
         if include_variants:
@@ -2850,7 +2861,7 @@ Regenerate the foundation addressing the issues above.
                 v_combined = variant_manager.write_variants_combined_markdown()
                 self.console.print(f"[green]✓[/green] Variants combined: {v_combined}")
             except Exception as e:
-                self.console.print(f"[yellow]Failed to write variants combined.md: {e}[/yellow]")
+                self.console.print(f"[yellow]Failed to write variants combined.md: {self._escape_markup(e)}[/yellow]")
 
         # Commit
         self._commit(f"Write combined context file: {target}")
@@ -2970,7 +2981,7 @@ Regenerate the foundation addressing the issues above.
                     self.console.print(result)
 
         except Exception as e:
-            self.console.print(f"[red]Git error: {e}[/red]")
+            self.console.print(f"[red]Git error: {self._escape_markup(e)}[/red]")
 
     def show_config(self, args: str = ""):
         """Show current configuration."""
@@ -3065,7 +3076,7 @@ Regenerate the foundation addressing the issues above.
             self.console.print("[dim]Usage: /logs [lines] or /logs errors[/dim]")
 
         except Exception as e:
-            self.console.print(f"[red]Error reading log: {e}[/red]")
+            self.console.print(f"[red]Error reading log: {self._escape_markup(e)}[/red]")
 
     async def iterate_command(self, args: str = ""):
         """Change iteration target or show current target."""
@@ -3103,7 +3114,7 @@ Regenerate the foundation addressing the issues above.
                 self._print(f"[dim]Generate {target} first with /generate {target}[/dim]")
                 return
         except Exception as e:
-            self._print(f"[red]Error checking target: {e}[/red]")
+            self._print(f"[red]Error checking target: {self._escape_markup(e)}[/red]")
             return
 
         # Set target
@@ -3154,7 +3165,7 @@ Regenerate the foundation addressing the issues above.
                 self._print(f"\n[yellow]Iteration cancelled or rejected[/yellow]")
 
         except Exception as e:
-            self._print(f"[red]Iteration failed: {e}[/red]")
+            self._print(f"[red]Iteration failed: {self._escape_markup(e)}[/red]")
             self.logger.exception("Iteration failed")
             if self.session_logger:
                 self.session_logger.log_error(e, "Iteration failed")
