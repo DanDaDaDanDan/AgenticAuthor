@@ -23,20 +23,29 @@ CURRENT CHAPTER OUTLINES:
 TASK:
 Revise the chapter outlines to address the user's feedback while maintaining story coherence and structure.
 
+IMPORTANT: You are regenerating BOTH foundation AND chapters in this single call because:
+- Changes to chapters may require foundation metadata updates (tone, themes, structure)
+- Changes to foundation may require chapter content adjustments
+- This ensures internal consistency between foundation and chapter content
+- Initial generation uses TWO calls (foundation first, then chapters), but iteration uses ONE call for holistic revision
+
 GUIDELINES:
 1. **Address the Feedback**: Directly implement what the user requested
 2. **Surgical Precision**: Make ONLY the changes necessary to address feedback
    - Identify: What MUST change (directly requested chapters/elements)
-   - Identify: What MAY need adjustment (adjacent chapters, transitions, character arcs)
-   - Identify: What MUST NOT change (unrelated chapters working well)
-3. **Ripple Effect Management**: Adjust related chapters ONLY when necessary for consistency
-   - If feedback changes Chapter 5, adjust Chapter 6 transitions but preserve Chapters 1-4 & 7+ unless they're directly affected
-   - If feedback removes a plot thread, update only chapters that reference it
-   - Make minimum necessary changes to maintain story flow
-4. **Preserve Detail**: Retain existing chapter structure and detail in unchanged chapters
+   - Identify: What MAY need adjustment (adjacent chapters, transitions, character arcs, foundation metadata if affected)
+   - Identify: What MUST NOT change (unrelated chapters, unaffected foundation elements)
+3. **Ripple Effect Management**: Adjust related elements ONLY when necessary for consistency
+   - If feedback changes Chapter 5, adjust Chapter 6 transitions but preserve Chapters 1-4 & 7+ unless directly affected
+   - If feedback changes tone/themes across chapters, update foundation metadata to reflect this
+   - If feedback removes a plot thread, update only chapters that reference it (foundation character/world descriptions stay unless affected)
+   - If feedback adds a character to chapters, add them to foundation characters section
+   - Make minimum necessary changes to maintain story flow and foundation accuracy
+4. **Preserve Detail**: Retain existing structure and detail in unchanged elements
    - Don't rewrite chapters not mentioned in feedback
+   - Don't rewrite foundation sections not affected by changes (preserve character descriptions, world-building details, metadata)
    - Keep specific key events, character beats, and emotional arcs that work
-   - Maintain the same level of detail and richness in untouched chapters
+   - Maintain the same level of detail and richness in untouched chapters and foundation sections
 5. **Avoid Overcorrection**: Don't introduce new problems while fixing requested ones
    - Don't create new plot holes or inconsistencies
    - Don't lose good elements in chapters adjacent to changes
