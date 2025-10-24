@@ -776,6 +776,22 @@ class StreamHandler:
                 f"({actual_completion_tokens} tokens • {tokens_per_sec:.0f} t/s)[/dim]"
             )
 
+        # Check for empty response and provide helpful error
+        if not content and token_count == 0:
+            error_msg = "API returned empty response (0 tokens)"
+
+            # Check for content moderation
+            if finish_reason == "content_filter":
+                error_msg = "Content filtered by model's moderation system (OpenAI content policy)"
+            elif finish_reason:
+                error_msg = f"API returned empty response with finish_reason: {finish_reason}"
+
+            # Add model info if available
+            if model:
+                error_msg = f"{error_msg} [model: {model}]"
+
+            raise Exception(error_msg)
+
         return {
             'content': content,
             'usage': usage,
