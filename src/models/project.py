@@ -16,6 +16,8 @@ class ProjectMetadata(BaseModel):
     story_type: Optional[str] = Field(None, description="Story type: short_form or long_form")
     book_metadata: Dict[str, Any] = Field(default_factory=dict, description="Book metadata (title, author, copyright_year)")
     genre: Optional[str] = Field(None, description="Genre from premise taxonomy")
+    model: Optional[str] = Field(None, description="Preferred model for this project")
+    status: str = Field(default="draft", description="Project status (draft, in_progress, complete)")
 
     def update_timestamp(self):
         """Update the last modified timestamp."""
