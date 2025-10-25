@@ -125,17 +125,13 @@ class CopyEditor:
             # Save checkpoint
             self._save_checkpoint(chapter_num, result, backup_dir)
 
-            # Show success with statistics
-            stats = result.get('statistics', {})
+            # Show success
             console.print(f"\n[green]✓ Chapter {chapter_num} copy edited successfully[/green]")
 
-            total_fixes = stats.get('total_errors_fixed', 0)
-            word_change = stats.get('word_count_change_percent', 0)
-
-            if total_fixes > 0:
-                console.print(f"  [dim]• {total_fixes} total edits made[/dim]")
-            if abs(word_change) > 0.1:
-                console.print(f"  [dim]• Word count: {word_change:+.1f}%[/dim]")
+            # Show number of changes made
+            changes = result.get('changes', [])
+            if changes:
+                console.print(f"  [dim]• {len(changes)} edits applied[/dim]")
 
             console.print(f"  [dim]• Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
 
@@ -228,7 +224,7 @@ class CopyEditor:
             context: Full context from _build_full_context()
 
         Returns:
-            Result dict with edited_chapter, changes_made, statistics, etc.
+            Result dict with edited_chapter, changes (array), and review_flags
         """
         # Build comprehensive prompts using template
         # Format edited chapters (already perfect)
@@ -343,10 +339,12 @@ class CopyEditor:
         if orig_starts_chapter and not edit_starts_chapter:
             warnings.append(f"⚠ Chapter heading was removed")
 
-        # Pronoun consistency check from result
-        if result.get('pronoun_consistency', {}).get('potential_concerns'):
-            for concern in result['pronoun_consistency']['potential_concerns']:
-                warnings.append(f"⚠ Pronoun concern: {concern}")
+        # Check for pronoun-related changes in the changes array
+        changes = result.get('changes', [])
+        for change_item in changes:
+            change_text = change_item.get('change', '') if isinstance(change_item, dict) else str(change_item)
+            if 'pronoun' in change_text.lower():
+                warnings.append(f"⚠ Pronoun change: {change_text}")
 
         # Review flags from LLM
         if result.get('review_flags'):
@@ -374,38 +372,35 @@ class CopyEditor:
         Returns:
             True if user approves, False otherwise
         """
-        stats = result.get('statistics', {})
-        changes = result.get('changes_made', [])
-        continuity = result.get('continuity_fixes', [])
+        changes = result.get('changes', [])
 
-        # Create statistics table
-        table = Table(title=f"Chapter {chapter_num} Edit Summary")
-        table.add_column("Metric", style="cyan")
-        table.add_column("Value", style="green")
+        # Calculate word count statistics
+        original_words = len(original.split())
+        edited_text = result.get('edited_chapter', '')
+        edited_words = len(edited_text.split())
+        word_change_pct = ((edited_words - original_words) / original_words * 100) if original_words > 0 else 0
 
-        table.add_row("Original words", str(stats.get('original_word_count', 0)))
-        table.add_row("Edited words", str(stats.get('edited_word_count', 0)))
-        table.add_row("Change %", f"{stats.get('word_count_change_percent', 0):.1f}%")
-        table.add_row("Total fixes", str(stats.get('total_errors_fixed', 0)))
-        table.add_row("Mechanical errors", str(stats.get('mechanical_errors', 0)))
-        table.add_row("Continuity errors", str(stats.get('continuity_errors', 0)))
-        table.add_row("Clarity improvements", str(stats.get('clarity_improvements', 0)))
+        # Show statistics
+        console.print(f"\n[bold]Chapter {chapter_num} Edit Summary[/bold]")
+        console.print(f"  [dim]Word count: {original_words} → {edited_words} ({word_change_pct:+.1f}%)[/dim]")
+        console.print(f"  [dim]Total edits: {len(changes)}[/dim]")
 
-        console.print(table)
-
-        # Show changes
+        # Show changes with reasons
         if changes:
             console.print("\n[cyan]Changes Made:[/cyan]")
-            for change in changes[:10]:  # Show first 10
-                console.print(f"  • {change}")
-            if len(changes) > 10:
-                console.print(f"  ... and {len(changes) - 10} more")
+            for i, change_item in enumerate(changes[:15], 1):  # Show first 15
+                if isinstance(change_item, dict):
+                    change = change_item.get('change', '')
+                    reason = change_item.get('reason', '')
+                    console.print(f"  {i}. {change}")
+                    if reason:
+                        console.print(f"     [dim]→ {reason}[/dim]")
+                else:
+                    # Fallback for simple string format
+                    console.print(f"  {i}. {change_item}")
 
-        # Show continuity fixes
-        if continuity:
-            console.print("\n[yellow]Continuity Fixes:[/yellow]")
-            for fix in continuity:
-                console.print(f"  • {fix}")
+            if len(changes) > 15:
+                console.print(f"  [dim]... and {len(changes) - 15} more changes[/dim]")
 
         # Show warnings
         if warnings:
