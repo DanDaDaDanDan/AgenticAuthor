@@ -402,6 +402,21 @@ class ProseGenerator:
             # Extract response text (plain prose, not YAML)
             prose_text = result.get('content', result) if isinstance(result, dict) else result
 
+            # Validate response quality
+            from ..utils.logging import get_logger
+            logger = get_logger()
+
+            if not prose_text or len(prose_text.strip()) < 100:
+                error_msg = f"Response too short ({len(prose_text) if prose_text else 0} chars) - likely incomplete or failed"
+                if logger:
+                    logger.error(f"SUSPICIOUS RESPONSE: {error_msg}")
+                raise Exception(error_msg)
+
+            # Log successful extraction
+            if logger:
+                word_count = len(prose_text.split())
+                logger.info(f"Prose extracted successfully: {len(prose_text)} characters, {word_count:,} words")
+
             # Save prose directly to file
             chapter_file = self.project.chapters_dir / f"chapter-{chapter_number:02d}.md"
             self.project.chapters_dir.mkdir(exist_ok=True)
@@ -414,8 +429,14 @@ class ProseGenerator:
             # Update combined context to include latest prose
             try:
                 self.project.write_combined_markdown(target='chapters', include_prose=True)
-            except Exception:
-                pass
+            except Exception as e:
+                # Don't fail the entire generation if combined markdown update fails
+                # But DO log the issue so we know it happened
+                from ..utils.logging import get_logger
+                logger = get_logger()
+                if logger:
+                    logger.warning(f"Failed to update combined markdown after prose generation: {e}")
+                print(f"   ⚠️  Warning: Could not update combined markdown ({e})")
 
             word_count = len(prose_text.split())
             print(f"\n✅ Chapter {chapter_number} generated successfully")

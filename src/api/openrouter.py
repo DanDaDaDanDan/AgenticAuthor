@@ -373,6 +373,14 @@ class OpenRouterClient:
                         if self.settings.show_token_usage:
                             self._display_usage(result['usage'], cost)
 
+                    # Log successful API call completion
+                    from ..utils.logging import get_logger
+                    logger = get_logger()
+                    if logger:
+                        completion_tokens = result.get('usage', {}).get('completion_tokens', 0)
+                        finish_reason = result.get('finish_reason', 'unknown')
+                        logger.info(f"API call SUCCESS: {model}, {completion_tokens} tokens, finish_reason={finish_reason}, operation={operation or 'unknown'}")
+
                     # Stream completed successfully or non-streaming, break retry loop
                     break
 

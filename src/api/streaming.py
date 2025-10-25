@@ -723,8 +723,22 @@ class StreamHandler:
                 if isinstance(stream_error, (aiohttp.ClientPayloadError, aiohttp.ClientConnectionError)):
                     # If we got partial content, return it with a warning
                     if content and token_count > 0:
-                        self.console.print(f"\n[yellow]⚠️  Stream interrupted ({type(stream_error).__name__})[/yellow]")
+                        # Log explicit warning about partial content
+                        from ..utils.logging import get_logger
+                        logger = get_logger()
+                        if logger:
+                            logger.warning(
+                                f"STREAM INTERRUPTED: {type(stream_error).__name__}, "
+                                f"received {token_count} tokens before interruption, "
+                                f"model={model}"
+                            )
+
+                        # Show clear user warning
+                        self.console.print(f"\n[bold yellow]⚠️  STREAM INTERRUPTED ({type(stream_error).__name__})[/bold yellow]")
                         self.console.print(f"[yellow]Received {token_count} tokens before interruption[/yellow]")
+                        self.console.print(f"[yellow]Response saved to emergency backup and debug file[/yellow]")
+                        self.console.print(f"[yellow]Check .agentic/debug/emergency-responses/ for full content[/yellow]")
+
                         # Set finish reason to indicate truncation
                         finish_reason = "connection_error"
                     else:
@@ -791,6 +805,39 @@ class StreamHandler:
                 error_msg = f"{error_msg} [model: {model}]"
 
             raise Exception(error_msg)
+
+        # CRITICAL: Save raw response to emergency backup BEFORE any post-processing
+        # This ensures we never lose a response even if subsequent operations fail
+        try:
+            from ..config import get_settings
+            from datetime import datetime
+            settings = get_settings()
+            emergency_dir = settings.root_dir / ".agentic" / "debug" / "emergency-responses"
+            emergency_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Include model name and token count in filename for easy identification
+            safe_model_name = model.replace('/', '_') if model else 'unknown'
+            emergency_file = emergency_dir / f"{timestamp}_{safe_model_name}_{token_count}tokens.txt"
+
+            # Save with metadata header
+            emergency_content = f"""# Emergency Response Backup
+# Timestamp: {datetime.now().isoformat()}
+# Model: {model}
+# Tokens: {token_count}
+# Finish Reason: {finish_reason}
+# Elapsed: {time.time() - start_time:.2f}s
+
+{content}"""
+            emergency_file.write_text(emergency_content, encoding='utf-8')
+
+            if logger:
+                logger.debug(f"Emergency backup saved: {emergency_file.name}")
+        except Exception as backup_error:
+            # NEVER let backup failure crash actual response
+            if logger:
+                logger.warning(f"Failed to save emergency backup: {backup_error}")
+            pass
 
         return {
             'content': content,

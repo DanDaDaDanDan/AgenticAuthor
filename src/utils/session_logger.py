@@ -279,6 +279,20 @@ class SessionLogger:
             if finish_reason:
                 content_parts.append(f"Finish Reason: {finish_reason}")
 
+            # Add success indicator
+            content_parts.append(f"Success: {not error}")
+
+            # Add timestamp
+            from datetime import datetime
+            content_parts.append(f"Logged At: {datetime.now().isoformat()}")
+
+            # Add emergency backup reference (if not error)
+            if not error:
+                safe_model = model.replace('/', '_') if model else 'unknown'
+                timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+                emergency_path = f".agentic/debug/emergency-responses/{timestamp_str}_{safe_model}_*tokens.txt"
+                content_parts.append(f"Emergency Backup: {emergency_path}")
+
             content_parts.append("")
 
             # Write to file
