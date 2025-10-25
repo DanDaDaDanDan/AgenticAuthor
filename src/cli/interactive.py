@@ -1610,8 +1610,13 @@ class InteractiveSession:
         """
         Generate chapter outline variants using multi-variant generation.
 
-        Creates 4 variants with different temperatures (0.65, 0.70, 0.75, 0.80)
+        Creates 4 variants with different temperatures (0.55, 0.60, 0.65, 0.70)
         saved to chapter-beats-variants/ for judging with /finalize chapters.
+
+        Options:
+            --temperature X.X : Generate single variant at specified temperature (auto-finalizes to chapter-beats/)
+            --auto, -a       : Let LLM decide chapter count
+            N (number)       : Chapter count (if < 50) or total word count (if >= 50)
         """
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -1632,18 +1637,39 @@ class InteractiveSession:
         chapter_count = None
         total_words = None  # Let generator calculate smart default
         auto_plan = False
+        single_temperature = None  # If set, skip variants and auto-finalize
 
         if options:
             parts = options.split()
-            for part in parts:
+            i = 0
+            while i < len(parts):
+                part = parts[i]
                 if part in ("--auto", "-a"):
                     auto_plan = True
-                elif part.isdigit():
-                    num = int(part)
-                    if num < 50:  # Assume it's chapter count
-                        chapter_count = num
+                    i += 1
+                elif part == "--temperature" and i + 1 < len(parts):
+                    # Parse temperature value from next part
+                    try:
+                        single_temperature = float(parts[i + 1])
+                        if not (0.0 <= single_temperature <= 2.0):
+                            self.console.print(f"[yellow]Warning: Temperature {single_temperature} is outside typical range (0.0-2.0)[/yellow]")
+                        i += 2
+                    except ValueError:
+                        self.console.print(f"[red]Invalid temperature value: {parts[i + 1]}[/red]")
+                        return
+                elif part.replace('.', '', 1).isdigit():
+                    # Could be temperature without --temperature flag or chapter/word count
+                    num = float(part)
+                    if num < 50:  # Assume it's chapter count or temperature
+                        if num < 5:  # Likely temperature (0.0-2.0)
+                            self.console.print(f"[yellow]Ambiguous number {num} - use --temperature {num} for temperature or just {int(num)} for {int(num)} chapters[/yellow]")
+                            return
+                        chapter_count = int(num)
                     else:  # Assume it's word count
-                        total_words = num
+                        total_words = int(num)
+                    i += 1
+                else:
+                    i += 1
 
         self.console.rule(style="dim")
 
@@ -1847,7 +1873,73 @@ Regenerate the foundation addressing the issues above.
                 self.console.print(f"[green]✓[/green] Foundation validation passed\n")
                 break  # Exit validation loop
 
-        # Generate 4 variants in parallel
+        # === SINGLE-TEMPERATURE MODE: Generate directly to chapter-beats/ and auto-finalize ===
+        if single_temperature is not None:
+            self.console.print(f"[cyan][2/2] Generating chapters at temperature {single_temperature}...[/cyan]")
+            self.console.print(f"[dim]Saving directly to chapter-beats/ (auto-finalize mode)[/dim]\n")
+
+            # Save foundation directly to chapter-beats/foundation.md
+            from ..utils.markdown_extractors import MarkdownFormatter
+            foundation_markdown = MarkdownFormatter.format_foundation(foundation)
+            foundation_path = self.project.chapter_beats_dir / 'foundation.md'
+            foundation_path.parent.mkdir(parents=True, exist_ok=True)
+            foundation_path.write_text(foundation_markdown, encoding='utf-8')
+
+            # Compute act weights from baseline_count for guidance (Act I/II/III)
+            if baseline_count and baseline_count >= 4:
+                act1 = max(1, int(baseline_count * 0.25))
+                act3 = max(1, int(baseline_count * 0.25))
+                act2 = max(1, baseline_count - act1 - act3)
+                act_weights = [round(act1 / baseline_count, 2), round(act2 / baseline_count, 2), round(act3 / baseline_count, 2)]
+            else:
+                act_weights = [0.25, 0.50, 0.25]
+
+            # Generate chapters directly to chapter-beats/
+            try:
+                result = await generator._generate_single_shot(
+                    context=context,
+                    foundation=foundation,
+                    total_words=total_words,
+                    chapter_count=None if auto_plan else chapter_count,
+                    genre=genre or 'general',
+                    pacing=pacing,
+                    temperature=single_temperature,
+                    output_dir=self.project.chapter_beats_dir,  # Save directly to chapter-beats/
+                    auto_plan=auto_plan,
+                    act_weights=act_weights
+                )
+
+                if result and result.get('count', 0) > 0:
+                    chapter_count_saved = result['count']
+                    self.console.print()  # Blank line
+                    self.console.rule(style="dim")
+                    self.console.print(f"[green]✓  Generated {chapter_count_saved} chapters at temperature {single_temperature}[/green]")
+                    self.console.print(f"[dim]Chapters saved to chapter-beats/ directory (auto-finalized)[/dim]")
+
+                    # Update combined markdown file
+                    try:
+                        self.project.write_combined_markdown(target='chapter-beats', include_prose=False)
+                        self.console.print(f"[dim]Combined context: chapter-beats/combined.md[/dim]")
+                    except Exception:
+                        pass
+
+                    self.console.print(f"\n[yellow]→ Next step: /generate prose (generate full prose from chapters)[/yellow]")
+
+                    # Git commit
+                    self._commit(f"Generate chapters at temperature {single_temperature} (auto-finalized)")
+                else:
+                    self.console.print("[red]Failed to generate chapters[/red]")
+
+            except Exception as e:
+                self.console.print(f"[red]Chapter generation failed: {self._escape_markup(e)}[/red]")
+                from ..utils.logging import get_logger
+                logger = get_logger()
+                if logger:
+                    logger.error(f"Single-temperature generation error: {e}")
+
+            return  # Exit early - no variant generation needed
+
+        # === MULTI-VARIANT MODE: Generate 4 variants in parallel for judging ===
         self.console.print(f"[cyan][2/2] Generating 4 chapter outline variants in parallel...[/cyan]\n")
 
         variant_manager = VariantManager(generator, self.project)

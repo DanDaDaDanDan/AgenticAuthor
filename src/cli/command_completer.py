@@ -219,7 +219,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
         'generate': {
             'description': 'Generate content (premise/treatment/chapters/prose/dedication/marketing)',
             'usage': '/generate <type> [options]\n' +
-                     '  chapters: [count]  (uses proven single-shot generation)\n' +
+                     '  chapters: [count] [--temperature X.X] [--auto]\n' +
+                     '    --temperature X.X: Single variant at specified temp (auto-finalized)\n' +
+                     '    --auto: Let LLM decide chapter count\n' +
+                     '    Default: 4 variants at different temps (requires /finalize)\n' +
                      '  dedication: Generate heartfelt family dedication matching book tone'
         },
         'finalize': {
