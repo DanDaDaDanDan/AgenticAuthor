@@ -22,9 +22,13 @@ class DedicationGenerator:
         self.model = model
         self.prompt_loader = get_prompt_loader()
 
-    async def generate_dedication(self) -> str:
+    async def generate_dedication(self, use_treatment: bool = True, display: bool = False) -> str:
         """
-        Generate a book-specific dedication based on the project's premise and tone.
+        Generate a book-specific dedication based on the project's treatment and tone.
+
+        Args:
+            use_treatment: If True, use treatment for tone/style context (default: True)
+            display: If True, show generation to user (default: False for silent)
 
         Returns:
             Dedication text (2-4 sentences)
@@ -42,6 +46,11 @@ class DedicationGenerator:
         # Get book details
         book_details = self._extract_book_details()
 
+        # Get treatment excerpt for tone/style context
+        treatment_excerpt = None
+        if use_treatment:
+            treatment_excerpt = self._get_treatment_excerpt()
+
         # Render prompt from template
         prompts = self.prompt_loader.render(
             "generation/dedication_generation",
@@ -50,6 +59,7 @@ class DedicationGenerator:
             themes=book_details['themes'],
             hook=book_details.get('hook', ''),
             template_text=template_text,
+            treatment_excerpt=treatment_excerpt,
             genre_guidance=self._get_genre_guidance(book_details['genre']),
             genre_example=self._get_genre_example(book_details['genre'])
         )
@@ -65,7 +75,8 @@ class DedicationGenerator:
                 {"role": "user", "content": prompts['user']}
             ],
             temperature=temperature,
-            display=False  # Silent generation
+            display=display,
+            operation="dedication-generation"
         )
 
         dedication = result.get('content', result) if isinstance(result, dict) else result
@@ -120,6 +131,40 @@ class DedicationGenerator:
             details['premise'] = ''
 
         return details
+
+    def _get_treatment_excerpt(self) -> Optional[str]:
+        """
+        Get excerpt from treatment for tone/style context.
+
+        Returns first 3 paragraphs (up to ~1500 chars) to give LLM
+        a sense of the book's narrative voice and atmosphere.
+        """
+        treatment = self.project.get_treatment()
+        if not treatment:
+            return None
+
+        # Split into paragraphs and take first 3
+        paragraphs = treatment.strip().split('\n\n')
+
+        # Get first 3 paragraphs for context
+        excerpt_parts = []
+        char_count = 0
+        max_chars = 1500
+
+        for para in paragraphs[:5]:  # Check up to 5 paragraphs
+            if char_count + len(para) > max_chars:
+                break
+            excerpt_parts.append(para)
+            char_count += len(para)
+
+            # Stop after 3 good paragraphs
+            if len(excerpt_parts) >= 3:
+                break
+
+        if not excerpt_parts:
+            return None
+
+        return '\n\n'.join(excerpt_parts)
 
     def _get_genre_guidance(self, genre: str) -> str:
         """Get genre-specific writing guidance."""

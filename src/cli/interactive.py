@@ -951,7 +951,7 @@ class InteractiveSession:
         # Parse generation type
         parts = args.strip().split(None, 1)
         if not parts:
-            self.console.print("[yellow]Usage: /generate <premise|premises|treatment|chapters|prose|marketing|combined> [options][/yellow]")
+            self.console.print("[yellow]Usage: /generate <premise|premises|treatment|chapters|prose|marketing|dedication|combined> [options][/yellow]")
             return
 
         gen_type = parts[0].lower()
@@ -1003,12 +1003,15 @@ class InteractiveSession:
             elif gen_type == "marketing":
                 await self._generate_marketing(options)
                 # No iteration target for marketing
+            elif gen_type == "dedication":
+                await self._generate_dedication(options)
+                # No iteration target for dedication
             elif gen_type == "combined":
                 await self._generate_combined(options)
                 # No iteration target for combined
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
-                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, combined[/dim]")
+                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, dedication, combined[/dim]")
         except Exception as e:
             self.console.print(f"[red]Generation failed: {self._escape_markup(e)}[/red]")
 
@@ -2186,6 +2189,62 @@ Regenerate the foundation addressing the issues above.
         except Exception as e:
             self.console.print(f"[red]✗ Marketing generation failed: {self._escape_markup(e)}[/red]")
             self.logger.exception("Marketing metadata generation error")
+
+    async def _generate_dedication(self, options: str = ""):
+        """Generate or regenerate book dedication to family."""
+        if not self.settings.active_model:
+            self.console.print("[red]No model selected. Use /model first.[/red]")
+            return
+
+        # Check if treatment exists (recommended for better tone matching)
+        treatment = self.project.get_treatment()
+        if not treatment:
+            self.console.print("[yellow]⚠  No treatment found. Dedication will use basic genre info.[/yellow]")
+            self.console.print("[dim]For better results, generate treatment first: /generate treatment[/dim]\n")
+
+        # Check if dedication already exists
+        existing = self.project.get_dedication()
+        if existing:
+            self.console.print("[yellow]Dedication already exists:[/yellow]")
+            self.console.print(f"\n[italic]{existing}[/italic]\n")
+
+            try:
+                confirm = input("Overwrite? (y/n): ").strip().lower()
+                if confirm not in ['y', 'yes']:
+                    self.console.print("[yellow]Cancelled[/yellow]")
+                    return
+            except (KeyboardInterrupt, EOFError):
+                self.console.print("\n[yellow]Cancelled[/yellow]")
+                return
+
+            self.console.print()
+
+        # Generate
+        self.console.print("[cyan]Generating heartfelt family dedication...[/cyan]\n")
+
+        try:
+            from ..export.dedication_generator import DedicationGenerator
+            generator = DedicationGenerator(self.client, self.project, self.settings.active_model)
+
+            # Use treatment for context, show generation to user
+            dedication = await generator.generate_dedication(use_treatment=True, display=True)
+
+            # Save
+            self.project.save_dedication(dedication)
+
+            # Display result
+            self.console.print("\n[green]✓ Dedication generated:[/green]\n")
+            self.console.print(f"[bold]{dedication}[/bold]\n")
+
+            # Commit
+            action = "Regenerate" if existing else "Generate"
+            self._commit(f"{action} book dedication")
+
+            self.console.print(f"[dim]Saved to: {self.project.dedication_file}[/dim]")
+
+        except Exception as e:
+            self.console.print(f"[red]Error: {self._escape_markup(str(e))}[/red]")
+            self.logger.exception("Dedication generation error")
 
     async def cull_content(self, args: str):
         """Delete generated content at various LOD levels."""

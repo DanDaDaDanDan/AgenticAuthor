@@ -217,9 +217,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/models [search]'
         },
         'generate': {
-            'description': 'Generate content (premise/premises/treatment/chapters/prose/marketing)',
+            'description': 'Generate content (premise/treatment/chapters/prose/dedication/marketing)',
             'usage': '/generate <type> [options]\n' +
-                     '  chapters: [count]  (uses proven single-shot generation)'
+                     '  chapters: [count]  (uses proven single-shot generation)\n' +
+                     '  dedication: Generate heartfelt family dedication matching book tone'
         },
         'finalize': {
             'description': 'Finalize multi-variant generation (chapters)',

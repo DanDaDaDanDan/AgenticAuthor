@@ -7,53 +7,81 @@
     - themes: Book themes (comma-separated)
     - hook: Book hook/premise
     - template_text: Template dedication text to rewrite
+    - treatment_excerpt: Excerpt from treatment for tone/style (optional)
     - genre_guidance: Genre-specific writing guidance
     - genre_example: Example dedication for this genre
 #}
 
 [SYSTEM]
-You are a literary editor crafting book dedications. Return only the dedication text, no explanations or quotes.
+You are a literary editor crafting heartfelt book dedications to family. Return only the dedication text, no explanations or quotes.
 
 [USER]
-You are rewriting a book dedication to match this book's tone and genre.
+Write a dedication for this book that honors the author's family while matching the book's tone and style.
 
 BOOK DETAILS:
 - Title: {{ title }}
 - Genre: {{ genre }}
 - Themes: {{ themes }}
-- Hook: {{ hook }}
 
-TEMPLATE DEDICATION:
+{% if treatment_excerpt %}
+STORY TONE & STYLE (from treatment):
+{{ treatment_excerpt }}
+
+Use this excerpt to understand the book's narrative voice, atmosphere, and tone. Match these qualities in the dedication while keeping it focused on family.
+{% endif %}
+
+TEMPLATE DEDICATION (rewrite to match book's tone):
 {{ template_text }}
 
-TASK:
-Rewrite the dedication with imagery and language that matches this book's style and genre.
+CRITICAL REQUIREMENTS:
 
-Core sentiment to preserve:
-- Family as sources of joy and inspiration
-- Gratitude for love and connection
-- Celebration of shared happiness and warmth
-- Appreciation for inspiring creativity and passion
+1. **MUST BE TO FAMILY**
+   - Dedication MUST be addressed to the author's family
+   - Start with "To my family" or similar family-focused opening
+   - Express gratitude, love, and appreciation for family
+   - NEVER write generic dedications "to readers" or "to those who..."
+   - This is a personal dedication to family members, not a thematic statement
+
+2. **MATCH BOOK'S TONE**
+   {% if treatment_excerpt %}
+   - Use the narrative voice and atmosphere from the treatment excerpt above
+   {% endif %}
+   - If the book is dark/noir → Use contemplative, precise language (but still loving)
+   - If the book is epic/fantasy → Use grand, mythological language
+   - If the book is warm/contemporary → Use intimate, heartfelt language
+   - If the book is literary → Use lyrical, philosophical language
+   - The TONE should match the book, but the RECIPIENT is always family
+
+3. **STAY POSITIVE & HEARTFELT**
+   - Express genuine love and gratitude
+   - Celebrate what family means to the author
+   - Can reference book themes metaphorically if appropriate
+   - Keep it authentic and touching
+
+4. **LENGTH & STYLE**
+   - 2-4 sentences OR 2-3 short poetic lines
+   - Should feel natural for THIS specific book
+   - Can be concise and powerful or more elaborate
 
 {{ genre_guidance }}
 
-CRITICAL - POSITIVE LANGUAGE ONLY:
-- Use ONLY positive, uplifting, celebratory language
-- NO references to struggle, chaos, difficulty, darkness, loss, or hardship
-- NO metaphors involving burden, weight, fixing, or saving
-- Focus on joy, inspiration, celebration, gratitude, and love
-- Frame family as sources of JOY and INSPIRATION (not rescue or stability from chaos)
-- Use words like: joy, celebration, inspiration, wonder, light, warmth, love, gratitude
-- AVOID words like: chaos, darkness, anchor (implies drift), steady (implies instability), save, fix, struggle
+GOOD EXAMPLES (note all are TO FAMILY):
 
-IMPORTANT:
-- Keep dedication to 2-4 sentences (similar length to template)
-- Use literary, evocative language
-- Make it feel specific to this book's world/tone
-- Return ONLY the dedication text, no quotes, no explanations, no meta-commentary
-- Ensure NOTHING can be interpreted negatively or as implying the author or their life is chaotic/broken/difficult
+Dark/Noir Thriller:
+"To my family—you taught me that the deepest patterns are those of love, and that being understood is the greatest mystery solved."
 
-Example tone for {{ genre }}:
-{{ genre_example }}
+Epic Fantasy:
+"To my family—the wonder that sparks every imagined world, the light that illuminates all my stories, and the magic that makes creation a joy."
+
+Contemplative Literary:
+"For my family, who showed me that different minds see different beauty, and that the truest patterns are found in connection."
+
+Warm Contemporary:
+"To my family—my joy, my inspiration, my home. You are the reason I celebrate life through every word I write."
+
+Psychological Mystery:
+"To my family—my constant when everything shifts, the logic in chaos, the truth I return to."
+
+ALL DEDICATIONS MUST BE TO FAMILY. Return ONLY the dedication text, no quotes or explanations.
 
 Now write the dedication:
