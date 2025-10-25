@@ -334,9 +334,19 @@ class RTFExporter:
             # Convert markdown italic: *text* → \i text\i0 (but not **)
             para_text = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\\i \1\\i0 ', para_text)
 
-            # Convert em dashes (after escaping user text, we add RTF control codes)
-            para_text = para_text.replace('—', '\\emdash ')
-            para_text = para_text.replace('–', '\\endash ')
+            # Convert special characters to proper RTF encoding
+            # Use ANSI hex codes since header declares \ansi
+            para_text = para_text.replace('—', "\\'97")  # Em dash
+            para_text = para_text.replace('–', "\\'96")  # En dash
+
+            # Convert smart quotes to RTF encoding
+            para_text = para_text.replace(''', "\\'91")  # Left single quote
+            para_text = para_text.replace(''', "\\'92")  # Right single quote
+            para_text = para_text.replace('"', "\\'93")  # Left double quote
+            para_text = para_text.replace('"', "\\'94")  # Right double quote
+
+            # Convert ellipsis
+            para_text = para_text.replace('…', "\\'85")  # Ellipsis
 
             # Build paragraph with first-line indent and justification
             rtf_para = r"{\pard\fi360\qj " + para_text + r"\par}"
