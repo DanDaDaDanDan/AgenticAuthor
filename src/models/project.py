@@ -599,7 +599,8 @@ class Project:
         if self.premise_metadata_file.exists():
             with open(self.premise_metadata_file) as f:
                 data = json.load(f)
-                return data.get('selections')
+                if data and isinstance(data, dict):
+                    return data.get('selections')
         return None
 
     def save_chapter_outlines(self, outlines: Dict[str, Any]):
