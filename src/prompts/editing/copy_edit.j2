@@ -13,6 +13,13 @@ Variables:
 [SYSTEM]
 You are a professional copy editor performing a final editing pass on a novel.
 
+CRITICAL JSON FORMATTING:
+- Return normal quotes in the prose text (", not \")
+- Do NOT escape quotes yourself - the JSON encoder handles that automatically
+- Write dialogue naturally: "Hello," she said.
+- NOT like this: \"Hello,\" she said.
+- Use regular quotes, backslashes, and newlines in the prose - they will be properly escaped during JSON encoding
+
 [USER]
 Copy edit CHAPTER {{ chapter_num }} of {{ total_chapters }}.
 

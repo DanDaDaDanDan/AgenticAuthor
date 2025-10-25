@@ -21,6 +21,42 @@ class StreamHandler:
         self.buffer = ""
         self.total_tokens = 0
 
+    def _repair_json_escaping(self, content: str) -> str:
+        """
+        Repair common JSON escaping issues from LLM responses.
+
+        Fixes:
+        - Double-escaped quotes: \\" -> \" (when LLM pre-escapes quotes in prose)
+        - Preserves intentional backslashes (like \\n for newline representation)
+
+        Args:
+            content: Raw JSON string from LLM
+
+        Returns:
+            Repaired JSON string
+        """
+        import re
+        from ..utils.logging import get_logger
+
+        logger = get_logger()
+        original_content = content
+
+        # Fix pattern: \\" (double-escaped quote) -> " (normal quote)
+        # This handles cases where LLM pre-escaped quotes in prose text
+        # The pattern looks for: backslash, backslash, quote
+        # And replaces with: backslash, quote (which is correct JSON escaping)
+        repaired = re.sub(r'\\\\(")', r'\\\1', content)
+
+        # Log if repairs were made
+        if repaired != original_content:
+            if logger:
+                # Count how many fixes we made
+                fixes = original_content.count('\\\\"') - repaired.count('\\\\"')
+                logger.warning(f"JSON repair: Fixed {fixes} double-escaped quote(s) in LLM response")
+                logger.debug(f"JSON repair: Original had {original_content.count('\\\\\\"')} instances of \\\\\" pattern")
+
+        return repaired
+
     def _extract_json_from_markdown(self, content: str) -> Optional[str]:
         """
         Extract JSON from markdown code blocks or other formatting.
@@ -408,7 +444,9 @@ class StreamHandler:
 
         # Parse the complete JSON - try markdown extraction first, then fail fast
         try:
-            parsed_json = json.loads(full_content)
+            # Repair common JSON escaping issues before parsing
+            repaired_content = self._repair_json_escaping(full_content)
+            parsed_json = json.loads(repaired_content)
             if logger:
                 json_type = type(parsed_json).__name__
                 json_len = len(parsed_json) if isinstance(parsed_json, (list, dict)) else 0

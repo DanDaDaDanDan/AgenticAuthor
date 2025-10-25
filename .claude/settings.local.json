@@ -5,7 +5,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(python:*)",
-      "Read(//Users/vogel/**)"
+      "Read(//Users/vogel/**)",
+      "Bash(python3:*)",
+      "Bash(/dev/null)",
+      "Bash(node -e:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
