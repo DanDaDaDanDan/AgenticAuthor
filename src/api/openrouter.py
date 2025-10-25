@@ -171,6 +171,68 @@ class OpenRouterClient:
                 return model
         return None
 
+    async def fetch_generation_metadata(self, generation_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetch comprehensive generation metadata from OpenRouter.
+
+        This is THE CRITICAL API call that gives us:
+        - native_tokens_reasoning (hidden reasoning tokens for o1/o3!)
+        - native_tokens_completion (actual provider tokens)
+        - provider_name (actual provider used)
+        - latency metrics
+        - native_finish_reason
+        - provider health data
+
+        Args:
+            generation_id: The generation ID from X-Generation-ID header or SSE event 'id'
+
+        Returns:
+            Complete generation metadata dict, or None if fetch fails
+        """
+        if not generation_id:
+            return None
+
+        from ..utils.logging import get_logger
+        logger = get_logger()
+
+        try:
+            if logger:
+                logger.debug(f"=== FETCHING GENERATION METADATA ===")
+                logger.debug(f"Generation ID: {generation_id}")
+
+            async with self._session.get(
+                f"{self.base_url}/generation",
+                params={"id": generation_id},
+                headers=self._get_headers()
+            ) as response:
+                response.raise_for_status()
+                metadata = await response.json()
+
+                if logger:
+                    logger.info(f"=== GENERATION METADATA RECEIVED ===")
+                    logger.info(f"Provider: {metadata.get('provider_name', 'N/A')}")
+                    logger.info(f"Native tokens (prompt): {metadata.get('native_tokens_prompt', 'N/A')}")
+                    logger.info(f"Native tokens (completion): {metadata.get('native_tokens_completion', 'N/A')}")
+                    logger.info(f"Native tokens (reasoning): {metadata.get('native_tokens_reasoning', 'N/A')} ⚠️ ")
+                    logger.info(f"OpenRouter tokens (completion): {metadata.get('tokens_completion', 'N/A')}")
+                    logger.info(f"Generation time: {metadata.get('generation_time', 'N/A')}ms")
+                    logger.info(f"Latency: {metadata.get('latency', 'N/A')}ms")
+                    logger.info(f"Native finish reason: {metadata.get('native_finish_reason', 'N/A')}")
+                    logger.info(f"Cancelled: {metadata.get('cancelled', 'N/A')}")
+
+                    # Log provider responses (health data)
+                    if 'provider_responses' in metadata:
+                        logger.debug(f"Provider responses: {len(metadata['provider_responses'])} endpoint(s)")
+                        for i, pr in enumerate(metadata['provider_responses']):
+                            logger.debug(f"  Provider {i+1}: {pr.get('provider_name')} - Status {pr.get('status')} - Latency {pr.get('latency')}ms")
+
+                return metadata
+
+        except Exception as e:
+            if logger:
+                logger.error(f"Failed to fetch generation metadata: {e}")
+            return None
+
     async def streaming_completion(
         self,
         model: str,
@@ -292,6 +354,27 @@ class OpenRouterClient:
                 ) as response:
                     response.raise_for_status()
 
+                    # COMPREHENSIVE METADATA CAPTURE: Extract all OpenRouter headers
+                    generation_id = response.headers.get('X-Generation-ID')
+                    rate_limit_remaining = response.headers.get('X-RateLimit-Remaining')
+                    rate_limit_reset = response.headers.get('X-RateLimit-Reset')
+                    provider_name_header = response.headers.get('X-Provider-Name')
+
+                    # Log all X-* headers for debugging
+                    if logger:
+                        logger.debug(f"=== HTTP RESPONSE HEADERS ===")
+                        logger.debug(f"X-Generation-ID: {generation_id}")
+                        logger.debug(f"X-RateLimit-Remaining: {rate_limit_remaining}")
+                        logger.debug(f"X-RateLimit-Reset: {rate_limit_reset}")
+                        logger.debug(f"X-Provider-Name: {provider_name_header}")
+                        # Log any other X-* headers we might not know about
+                        for header_name, header_value in response.headers.items():
+                            if header_name.startswith('X-') and header_name not in [
+                                'X-Generation-ID', 'X-RateLimit-Remaining',
+                                'X-RateLimit-Reset', 'X-Provider-Name'
+                            ]:
+                                logger.debug(f"{header_name}: {header_value}")
+
                     if stream:
                         # Handle streaming response with live status
                         model_display = model.split('/')[-1] if '/' in model else model
@@ -300,8 +383,23 @@ class OpenRouterClient:
                             model_name=model_display,
                             on_token=on_token,
                             display=display,
-                            display_mode=self.settings.streaming_display_mode
+                            display_mode=self.settings.streaming_display_mode,
+                            generation_id_from_header=generation_id  # Pass generation ID
                         )
+
+                        # COMPREHENSIVE METADATA CAPTURE: Fetch complete generation metadata after stream
+                        # Use generation_id from header, or fall back to ID from stream result
+                        final_generation_id = generation_id or result.get('generation_id')
+                        if final_generation_id:
+                            metadata = await self.fetch_generation_metadata(final_generation_id)
+                            if metadata:
+                                # Store metadata in result for logging
+                                result['openrouter_metadata'] = metadata
+                                # Log critical reasoning tokens if present
+                                if metadata.get('native_tokens_reasoning'):
+                                    if logger:
+                                        reasoning_tokens = metadata['native_tokens_reasoning']
+                                        logger.warning(f"⚠️  REASONING TOKENS DETECTED: {reasoning_tokens} tokens (not visible in output)")
 
                         # Check if stream was interrupted
                         if result.get('finish_reason') == 'connection_error' and retry_count < max_retries:

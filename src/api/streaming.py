@@ -604,7 +604,8 @@ class StreamHandler:
         model_name: str = "Model",
         on_token: Optional[Callable[[str, int], None]] = None,
         display: bool = True,
-        display_mode: str = "status"  # New parameter: "status", "live", or "simple"
+        display_mode: str = "status",  # New parameter: "status", "live", or "simple"
+        generation_id_from_header: Optional[str] = None  # Generation ID from HTTP headers
     ) -> Dict[str, Any]:
         """
         Handle SSE stream with status display.
@@ -638,6 +639,11 @@ class StreamHandler:
         status_context = None
         live = None
 
+        # COMPREHENSIVE METADATA CAPTURE: Track all SSE event metadata
+        generation_id_from_stream = None  # From SSE event 'id' field
+        created_timestamp = None  # From SSE event 'created' field
+        first_event_logged = False  # Track if we've logged the first event
+
         # Initialize display based on mode
         if display:
             if display_mode == "status":
@@ -669,6 +675,33 @@ class StreamHandler:
                         # Parse SSE data
                         data_str = line[6:]  # Remove 'data: ' prefix
                         data = json.loads(data_str)
+
+                        # COMPREHENSIVE METADATA CAPTURE: Extract ALL event metadata on first event
+                        if not first_event_logged:
+                            if 'id' in data:
+                                generation_id_from_stream = data['id']
+                            if 'created' in data:
+                                created_timestamp = data['created']
+                            if 'model' in data:
+                                model = data['model']
+
+                            if logger:
+                                logger.debug(f"=== SSE FIRST EVENT METADATA ===")
+                                logger.debug(f"Event ID (generation_id): {generation_id_from_stream}")
+                                logger.debug(f"Created timestamp: {created_timestamp}")
+                                logger.debug(f"Model (actual): {model}")
+                                logger.debug(f"Object type: {data.get('object', 'N/A')}")
+                                # Log generation_id from header vs stream
+                                if generation_id_from_header and generation_id_from_stream:
+                                    if generation_id_from_header != generation_id_from_stream:
+                                        logger.warning(f"Generation ID mismatch! Header: {generation_id_from_header}, Stream: {generation_id_from_stream}")
+                                # Log any unexpected top-level fields
+                                expected_fields = {'id', 'object', 'created', 'model', 'choices', 'usage'}
+                                unexpected = set(data.keys()) - expected_fields
+                                if unexpected:
+                                    logger.debug(f"Unexpected SSE fields: {unexpected} = {[data.get(k) for k in unexpected]}")
+
+                            first_event_logged = True
 
                         # Handle different event types
                         if 'choices' in data and data['choices']:
@@ -743,13 +776,28 @@ class StreamHandler:
                             if 'finish_reason' in choice and choice['finish_reason']:
                                 finish_reason = choice['finish_reason']
 
-                        # Extract model info
+                        # Extract model info (update if it appears later in stream)
                         if 'model' in data:
                             model = data['model']
 
-                        # Extract usage info
-                        if 'usage' in data:
-                            usage = data['usage']
+                        # COMPREHENSIVE METADATA CAPTURE: Extract COMPLETE usage object with ALL fields
+                        if 'usage' in data and data['usage']:
+                            usage = data['usage']  # Store entire dict - don't cherry-pick fields
+
+                            if logger:
+                                logger.debug(f"=== USAGE DATA RECEIVED ===")
+                                logger.debug(f"Complete usage object: {usage}")
+                                # Log standard fields
+                                logger.debug(f"  prompt_tokens: {usage.get('prompt_tokens', 'N/A')}")
+                                logger.debug(f"  completion_tokens: {usage.get('completion_tokens', 'N/A')}")
+                                logger.debug(f"  total_tokens: {usage.get('total_tokens', 'N/A')}")
+                                # Log any extended/non-standard fields (e.g., reasoning tokens, cached tokens)
+                                standard_fields = {'prompt_tokens', 'completion_tokens', 'total_tokens'}
+                                extended_fields = set(usage.keys()) - standard_fields
+                                if extended_fields:
+                                    logger.info(f"  ⚠️  EXTENDED USAGE FIELDS: {extended_fields}")
+                                    for field in extended_fields:
+                                        logger.info(f"    {field}: {usage[field]}")
 
                     except json.JSONDecodeError:
                         # Skip malformed data
@@ -885,13 +933,16 @@ class StreamHandler:
                 logger.warning(f"Failed to save emergency backup: {backup_error}")
             pass
 
+        # Return ALL captured metadata
         return {
             'content': content,
-            'usage': usage,
+            'usage': usage,  # Complete usage dict with ALL fields (including reasoning tokens if present)
             'finish_reason': finish_reason,
             'model': model,
             'token_count': token_count,
-            'elapsed_time': time.time() - start_time
+            'elapsed_time': time.time() - start_time,
+            'generation_id': generation_id_from_stream or generation_id_from_header,  # For metadata fetch
+            'created_timestamp': created_timestamp  # SSE event creation time
         }
 
     # Removed handle_sse_stream(), stream_with_progress(), and collect_stream()
