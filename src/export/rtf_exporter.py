@@ -461,9 +461,22 @@ class RTFExporter:
         parts.append(r"{\pard\par}")
         parts.append("\n")
 
+        # Escape RTF special characters first
+        dedication_text = self._escape_rtf(dedication)
+
+        # Convert special characters to proper RTF encoding (same as prose)
+        # Use ANSI hex codes since header declares \ansi
+        dedication_text = dedication_text.replace('—', "\\'97")  # Em dash
+        dedication_text = dedication_text.replace('–', "\\'96")  # En dash
+        dedication_text = dedication_text.replace(''', "\\'91")  # Left single quote
+        dedication_text = dedication_text.replace(''', "\\'92")  # Right single quote
+        dedication_text = dedication_text.replace('"', "\\'93")  # Left double quote
+        dedication_text = dedication_text.replace('"', "\\'94")  # Right double quote
+        dedication_text = dedication_text.replace('…', "\\'85")  # Ellipsis
+
         # Dedication text (centered)
         parts.append(r"{\pard\qc ")
-        parts.append(self._escape_rtf(dedication))
+        parts.append(dedication_text)
         parts.append(r"\par}")
         parts.append("\n")
 
