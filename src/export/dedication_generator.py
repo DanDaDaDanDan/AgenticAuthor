@@ -65,7 +65,7 @@ class DedicationGenerator:
         )
 
         # Get temperature from config
-        temperature = self.prompt_loader.get_temperature("generation/dedication_generation", default=0.8)
+        temperature = self.prompt_loader.get_temperature("generation/dedication_generation", default=1.0)
 
         # Generate with LLM
         result = await self.client.streaming_completion(
