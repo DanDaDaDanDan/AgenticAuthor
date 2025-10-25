@@ -608,13 +608,20 @@ class StreamHandler:
         generation_id_from_header: Optional[str] = None  # Generation ID from HTTP headers
     ) -> Dict[str, Any]:
         """
-        Handle SSE stream with status display.
+        Handle SSE stream with status display and graceful long-operation handling.
+
+        DESIGNED FOR VERY LONG OPERATIONS:
+        - Supports 30+ minute operations (novel generation, heavy reasoning)
+        - Shows periodic "heartbeat" messages during long pauses (every 30s)
+        - No read timeouts - waits as long as needed for reasoning models
+        - User can cancel anytime with Ctrl+C
 
         Shows live updates of:
         - Elapsed time
         - Token count
         - Tokens per second
         - Content as it streams
+        - "Model thinking..." messages during long pauses (o1/o3 reasoning)
 
         Args:
             response: The SSE response stream
@@ -622,6 +629,12 @@ class StreamHandler:
             on_token: Optional callback for each token
             display: Whether to display output
             display_mode: Display mode - "status" (console.status), "live" (Live display), "simple" (plain), or "silent" (no status, just content)
+            generation_id_from_header: Generation ID from HTTP X-Generation-ID header
+
+        Note:
+            During long reasoning pauses (5+ minutes), status will show:
+            "Model thinking... (Xm Ys since last token, N tokens so far)"
+            This is NORMAL for reasoning models like o1/o3 - they think before writing.
         """
         # Import loggers at method start
         from ..utils.logging import get_logger
@@ -644,6 +657,11 @@ class StreamHandler:
         created_timestamp = None  # From SSE event 'created' field
         first_event_logged = False  # Track if we've logged the first event
 
+        # GRACEFUL LONG-OPERATION HANDLING: Track time for heartbeat messages
+        last_token_time = time.time()  # When we last received a token
+        last_heartbeat_time = time.time()  # When we last showed a heartbeat
+        heartbeat_interval = 30  # Show heartbeat every 30 seconds of silence
+
         # Initialize display based on mode
         if display:
             if display_mode == "status":
@@ -664,6 +682,30 @@ class StreamHandler:
             try:
                 async for line in response.content:
                     line = line.decode('utf-8').strip()
+
+                    # GRACEFUL LONG-OPERATION HANDLING: Show periodic heartbeat during long pauses
+                    # If no tokens for 30+ seconds, show user that we're still waiting
+                    current_time = time.time()
+                    time_since_last_token = current_time - last_token_time
+                    time_since_last_heartbeat = current_time - last_heartbeat_time
+
+                    if time_since_last_token >= heartbeat_interval and time_since_last_heartbeat >= heartbeat_interval:
+                        elapsed_total = current_time - start_time
+                        if display and display_mode == "status" and status_context:
+                            # Update status to show we're still waiting
+                            mins = int(time_since_last_token // 60)
+                            secs = int(time_since_last_token % 60)
+                            status_context.update(
+                                f"[yellow]Model thinking...[/yellow] ({mins}m {secs}s since last token, {token_count} tokens so far)"
+                            )
+                        elif logger and token_count == 0:
+                            # If we haven't received any tokens yet, log that we're waiting
+                            logger.info(f"Waiting for model response... {int(elapsed_total)}s elapsed (this is normal for reasoning models)")
+                        elif logger:
+                            # Log periodic heartbeat for reasoning pauses
+                            logger.debug(f"Model paused (reasoning): {int(time_since_last_token)}s since last token, {token_count} tokens received so far")
+
+                        last_heartbeat_time = current_time
 
                     if not line or not line.startswith('data: '):
                         continue
@@ -714,6 +756,8 @@ class StreamHandler:
                                 if token:
                                     content += token
                                     token_count += 1
+                                    # Update last_token_time whenever we receive content
+                                    last_token_time = time.time()
 
                                 # Call token callback if provided
                                 if on_token:

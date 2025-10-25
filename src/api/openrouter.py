@@ -61,22 +61,32 @@ class OpenRouterClient:
                 limit_per_host=10            # Max connections per host
             )
 
-            # Configure timeouts optimized for long-running streaming requests
-            # - connect: 30s max to establish connection
-            # - sock_read: 180s between chunks (increased from 120s)
-            # - total: None (no limit on total request time for long generations)
+            # Configure timeouts for VERY long-running streaming requests
+            # Designed to handle o1/o3 reasoning models that can pause for 5+ minutes
+            # and novel generation that can take 30+ minutes total.
             #
-            # Note: sock_read is the critical timeout for streaming. It's the maximum
-            # time between receiving chunks. For very slow models or poor network
-            # conditions, chunks can be delayed. 180s is generous while still
-            # catching genuine connection failures.
+            # CRITICAL TIMEOUT SETTINGS:
+            # - total: 7200s (2 hours) - Safety net for pathological cases
+            # - connect: 30s - Should be quick, this is just TCP handshake
+            # - sock_read: None - NO READ TIMEOUT!
+            #
+            # WHY sock_read=None:
+            # Reasoning models (o1/o3) can pause for 5+ minutes while "thinking"
+            # without sending ANY tokens. A sock_read timeout would kill the stream
+            # during this thinking period. Instead, we rely on:
+            # 1. OpenRouter's server-side timeouts (they'll close if model truly hangs)
+            # 2. Our total timeout as a safety net (2 hours max)
+            # 3. User can Ctrl+C to cancel anytime
+            #
+            # This allows 30+ minute operations to complete successfully while still
+            # protecting against true connection failures.
             self._session = aiohttp.ClientSession(
                 connector=connector,
                 headers=self._get_headers(),
                 timeout=aiohttp.ClientTimeout(
-                    total=None,          # No total timeout - allow long generations
+                    total=7200,          # 2 hour total cap (safety net)
                     connect=30,          # 30s to establish connection
-                    sock_read=180        # 180s between chunks (3 min - very generous)
+                    sock_read=None       # NO read timeout - allow long pauses in reasoning
                 )
             )
 
