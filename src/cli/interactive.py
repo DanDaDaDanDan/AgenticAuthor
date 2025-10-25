@@ -1608,15 +1608,23 @@ class InteractiveSession:
 
     async def _generate_chapters(self, options: str = ""):
         """
-        Generate chapter outline variants using multi-variant generation.
+        Generate chapter outlines using multi-variant or single-temperature generation.
 
-        Creates 4 variants with different temperatures (0.55, 0.60, 0.65, 0.70)
+        Default mode: Creates 4 variants with different temperatures (0.55, 0.60, 0.65, 0.70)
         saved to chapter-beats-variants/ for judging with /finalize chapters.
 
+        Single-temperature mode (--temperature): Generates one variant at specified temperature,
+        saving directly to chapter-beats/ (auto-finalized, ready for /generate prose).
+
         Options:
-            --temperature X.X : Generate single variant at specified temperature (auto-finalizes to chapter-beats/)
+            --temperature X.X : Single variant mode at specified temperature (auto-finalized)
             --auto, -a       : Let LLM decide chapter count
             N (number)       : Chapter count (if < 50) or total word count (if >= 50)
+
+        Examples:
+            /generate chapters                    # 4 variants (requires /finalize)
+            /generate chapters --temperature 0.65 # Single variant (auto-finalized)
+            /generate chapters 15 --temperature 0.65  # 15 chapters at temp 0.65
         """
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -1647,8 +1655,11 @@ class InteractiveSession:
                 if part in ("--auto", "-a"):
                     auto_plan = True
                     i += 1
-                elif part == "--temperature" and i + 1 < len(parts):
+                elif part == "--temperature":
                     # Parse temperature value from next part
+                    if i + 1 >= len(parts):
+                        self.console.print(f"[red]--temperature requires a value (e.g., --temperature 0.65)[/red]")
+                        return
                     try:
                         single_temperature = float(parts[i + 1])
                         if not (0.0 <= single_temperature <= 2.0):
