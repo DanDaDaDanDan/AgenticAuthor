@@ -837,10 +837,18 @@ class StreamHandler:
                 error_msg = "Content filtered by model's moderation system (OpenAI content policy)"
             elif finish_reason:
                 error_msg = f"API returned empty response with finish_reason: {finish_reason}"
+            else:
+                # No finish_reason provided - this is unusual
+                error_msg = f"{error_msg} with no finish_reason (possible API/model issue)"
 
             # Add model info if available
             if model:
                 error_msg = f"{error_msg} [model: {model}]"
+
+            # Log the error details for debugging
+            if logger:
+                logger.error(f"Empty response error: {error_msg}")
+                logger.error(f"Stream stats: token_count={token_count}, finish_reason={finish_reason}, model={model}")
 
             raise Exception(error_msg)
 
