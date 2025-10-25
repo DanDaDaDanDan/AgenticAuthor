@@ -70,6 +70,7 @@ class InteractiveSession:
             'finalize': self.finalize_content,
             'cull': self.cull_content,
             'iterate': self.iterate_command,
+            'improve': self.improve_content,
             'analyze': self.analyze_story,
             'metadata': self.manage_metadata,
             'export': self.export_story,
@@ -3209,6 +3210,44 @@ Regenerate the foundation addressing the issues above.
         self.iteration_target = target
         self._print(f"[green]✓[/green] Iteration target set to [bold]{target}[/bold]")
         self._print("[dim]Any text input will now iterate on this target[/dim]")
+
+    async def improve_content(self, args: str):
+        """Auto-improve content via LLM analysis and incorporation."""
+        if not self.project:
+            self._print("[red]No project loaded. Use /open <name>[/red]")
+            return
+
+        # Parse target
+        target = args.strip().lower()
+        if not target:
+            self._print("[yellow]Usage: /improve [premise|treatment|chapters][/yellow]")
+            return
+
+        if target not in ['premise', 'treatment', 'chapters']:
+            self._print(f"[red]Invalid target: {target}[/red]")
+            self._print("[dim]Valid targets: premise, treatment, chapters[/dim]")
+            return
+
+        # Get model
+        model = self.settings.active_model
+        if not model:
+            self._print("[red]No model selected. Use /model first[/red]")
+            return
+
+        # Run improvement workflow
+        from ..generation.improvement import Improver
+        improver = Improver(self.client, self.project, model, self.console)
+
+        try:
+            await improver.improve(target)
+        except Exception as e:
+            self._print(f"[red]Error during improvement: {self._escape_markup(str(e))}[/red]")
+            import traceback
+            from ..utils.logging import get_logger
+            logger = get_logger()
+            if logger:
+                logger.error(f"Improvement failed: {e}")
+                logger.error(traceback.format_exc())
 
     def _detect_iteration_target(self) -> Optional[str]:
         """

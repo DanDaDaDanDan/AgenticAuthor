@@ -233,6 +233,10 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'description': 'Set iteration target or show current (premise/treatment/chapters/prose)',
             'usage': '/iterate [target]'
         },
+        'improve': {
+            'description': 'Auto-improve content via LLM analysis (premise/treatment/chapters)',
+            'usage': '/improve <premise|treatment|chapters>'
+        },
         'analyze': {
             'description': 'Analyze story quality (premise/treatment/chapters/prose)',
             'usage': '/analyze <premise|treatment|chapters|prose> [chapter-number] [--include-treatment|--no-treatment]'

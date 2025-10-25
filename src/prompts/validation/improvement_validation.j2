@@ -1,0 +1,71 @@
+{#
+    Improvement validation - verify changes match analysis and maintain quality.
+
+    Variables:
+    - target: What was improved
+    - old_content: Original content
+    - new_content: Improved content
+    - analysis: The analysis JSON that drove improvements
+#}
+
+[SYSTEM]
+You are a strict validator. Your job is to verify that improvements match the requested analysis and maintain quality standards.
+
+Return structured JSON without markdown fences.
+
+[USER]
+Validate that the improved {{ target }} properly addresses the analysis suggestions.
+
+ORIGINAL ANALYSIS:
+{{ analysis }}
+
+OLD {{ target | upper }}:
+```
+{{ old_content }}
+```
+
+NEW {{ target | upper }}:
+```
+{{ new_content }}
+```
+
+VALIDATION TASK:
+1. Summarize what actually changed (be specific with examples)
+2. Verify changes match the analysis suggestions
+3. Check for unintended changes or scope creep
+4. Assess quality maintenance
+5. Provide verdict: approved or rejected
+
+RETURN FORMAT (JSON only):
+{
+  "changes_summary": [
+    "Specific change 1 with example from content",
+    "Specific change 2 with example from content",
+    "Specific change 3 with example from content"
+  ],
+  "fidelity_check": {
+    "matches_analysis": true,
+    "analysis_items_addressed": [
+      "High priority: Character arcs - ADDRESSED",
+      "Medium priority: Pacing - ADDRESSED"
+    ],
+    "unintended_changes": [
+      "Minor rewording in chapter 2 opening (acceptable)",
+      "OR empty array if none"
+    ],
+    "quality_maintained": true,
+    "format_preserved": true
+  },
+  "verdict": "approved",
+  "reasoning": "Detailed explanation of why approved or rejected (2-3 sentences)",
+  "concerns": [
+    "Specific concern 1 if any",
+    "OR empty array if none"
+  ]
+}
+
+VERDICT CRITERIA:
+- "approved": All analysis items addressed, quality maintained, no serious scope creep
+- "rejected": Analysis not addressed, quality degraded, or major scope creep
+
+Be thorough but fair. Minor imperfections are acceptable if core improvements are solid.
