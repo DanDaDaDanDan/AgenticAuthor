@@ -334,19 +334,8 @@ class RTFExporter:
             # Convert markdown italic: *text* → \i text\i0 (but not **)
             para_text = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\\i \1\\i0 ', para_text)
 
-            # Convert special characters to proper RTF encoding
-            # Use ANSI hex codes since header declares \ansi
-            para_text = para_text.replace('—', "\\'97")  # Em dash
-            para_text = para_text.replace('–', "\\'96")  # En dash
-
-            # Convert smart quotes to RTF encoding
-            para_text = para_text.replace(''', "\\'91")  # Left single quote
-            para_text = para_text.replace(''', "\\'92")  # Right single quote
-            para_text = para_text.replace('"', "\\'93")  # Left double quote
-            para_text = para_text.replace('"', "\\'94")  # Right double quote
-
-            # Convert ellipsis
-            para_text = para_text.replace('…', "\\'85")  # Ellipsis
+            # Convert special Unicode characters to RTF ANSI hex codes
+            para_text = self._encode_special_characters(para_text)
 
             # Build paragraph with first-line indent and justification
             rtf_para = r"{\pard\fi360\qj " + para_text + r"\par}"
@@ -461,18 +450,9 @@ class RTFExporter:
         parts.append(r"{\pard\par}")
         parts.append("\n")
 
-        # Escape RTF special characters first
+        # Escape RTF special characters first, then encode Unicode characters
         dedication_text = self._escape_rtf(dedication)
-
-        # Convert special characters to proper RTF encoding (same as prose)
-        # Use ANSI hex codes since header declares \ansi
-        dedication_text = dedication_text.replace('—', "\\'97")  # Em dash
-        dedication_text = dedication_text.replace('–', "\\'96")  # En dash
-        dedication_text = dedication_text.replace(''', "\\'91")  # Left single quote
-        dedication_text = dedication_text.replace(''', "\\'92")  # Right single quote
-        dedication_text = dedication_text.replace('"', "\\'93")  # Left double quote
-        dedication_text = dedication_text.replace('"', "\\'94")  # Right double quote
-        dedication_text = dedication_text.replace('…', "\\'85")  # Ellipsis
+        dedication_text = self._encode_special_characters(dedication_text)
 
         # Dedication text (centered)
         parts.append(r"{\pard\qc ")
@@ -564,6 +544,30 @@ class RTFExporter:
         # Escape braces
         text = text.replace('{', '\\{')
         text = text.replace('}', '\\}')
+
+        return text
+
+    def _encode_special_characters(self, text: str) -> str:
+        """
+        Convert special Unicode characters to RTF ANSI hex codes.
+
+        Use this after _escape_rtf() to convert Unicode characters
+        that need special encoding in RTF (em/en dashes, smart quotes, etc.)
+
+        Args:
+            text: RTF-escaped text
+
+        Returns:
+            Text with Unicode characters converted to ANSI hex codes
+        """
+        # Use ANSI hex codes since header declares \ansi
+        text = text.replace('—', "\\'97")  # Em dash
+        text = text.replace('–', "\\'96")  # En dash
+        text = text.replace(''', "\\'91")  # Left single quote
+        text = text.replace(''', "\\'92")  # Right single quote
+        text = text.replace('"', "\\'93")  # Left double quote
+        text = text.replace('"', "\\'94")  # Right double quote
+        text = text.replace('…', "\\'85")  # Ellipsis
 
         return text
 
