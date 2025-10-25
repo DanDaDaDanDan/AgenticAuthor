@@ -314,7 +314,20 @@ class OpenRouterClient:
                         # Handle non-streaming response
                         data = await response.json()
 
+                        # Validate response is not None
+                        if data is None:
+                            raise Exception(
+                                f"API returned null/empty response. "
+                                f"Status: {response.status}, Model: {model}, Operation: {operation or 'unknown'}"
+                            )
+
                         # Validate response structure
+                        if not isinstance(data, dict):
+                            raise Exception(
+                                f"API returned non-dict response: {type(data).__name__}. "
+                                f"Response: {data}"
+                            )
+
                         if not data.get('choices') or len(data['choices']) == 0:
                             raise Exception(f"Invalid API response: no choices returned. Response: {data}")
 
