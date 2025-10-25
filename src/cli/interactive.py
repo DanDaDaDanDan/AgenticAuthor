@@ -2828,13 +2828,16 @@ Regenerate the foundation addressing the issues above.
 
     async def copyedit_story(self, args: str):
         """
-        Copy edit all chapter prose with full accumulated context.
+        Copy edit chapter prose with full accumulated context.
 
-        Edits all chapters sequentially, auto-applying all changes.
+        Edits chapters sequentially, auto-applying all changes.
         Creates timestamped backup before starting.
 
         Usage:
             /copyedit           # Edit all chapters
+            /copyedit 3         # Edit only chapter 3
+            /copyedit 5-8       # Edit chapters 5, 6, 7, 8
+            /copyedit 1,3,5-7   # Edit chapters 1, 3, 5, 6, 7
         """
         if not self.project:
             self.console.print("[red]No project open. Use /open <project> first.[/red]")
@@ -2851,10 +2854,21 @@ Regenerate the foundation addressing the issues above.
             self.console.print("[red]No model selected. Use /model <model-name> first.[/red]")
             return
 
-        # Show info before starting
-        chapter_count = len(prose_files)
-        self.console.print(f"\n[cyan]Copy Editing Pass[/cyan]")
-        self.console.print(f"Editing {chapter_count} chapter prose files with {self.settings.active_model}")
+        # Parse chapter range if provided
+        chapter_filter = None
+        if args.strip():
+            try:
+                chapter_filter = self._parse_chapter_range(args.strip())
+                self.console.print(f"\n[cyan]Copy Editing Chapters: {', '.join(map(str, chapter_filter))}[/cyan]")
+            except ValueError as e:
+                self.console.print(f"[red]Invalid range: {e}[/red]")
+                self.console.print("[yellow]Examples: /copyedit 3  or  /copyedit 5-8  or  /copyedit 1,3,5-7[/yellow]")
+                return
+        else:
+            chapter_count = len(prose_files)
+            self.console.print(f"\n[cyan]Copy Editing Pass[/cyan]")
+            self.console.print(f"Editing {chapter_count} chapter prose files with {self.settings.active_model}")
+
         self.console.print(f"[dim]Backup will be created automatically[/dim]\n")
 
         try:
@@ -2865,7 +2879,8 @@ Regenerate the foundation addressing the issues above.
             # Run copy editing pass (always auto-apply, no per-chapter prompts)
             result = await copy_editor.copy_edit_all_chapters(
                 show_preview=False,  # Never show preview prompt
-                auto_apply=True      # Always auto-apply all chapters
+                auto_apply=True,     # Always auto-apply all chapters
+                chapter_filter=chapter_filter  # Optional chapter filter
             )
 
             # Show results
@@ -2876,11 +2891,71 @@ Regenerate the foundation addressing the issues above.
             self.console.print(f"Backup: {Path(result['backup_dir']).relative_to(self.project.path)}")
 
             # Commit the changes
-            self._commit(f"Copy editing pass complete ({result['chapters_edited']} chapters)")
+            if chapter_filter:
+                chapter_desc = ', '.join(map(str, chapter_filter))
+                self._commit(f"Copy edit chapters {chapter_desc}")
+            else:
+                self._commit(f"Copy editing pass complete ({result['chapters_edited']} chapters)")
 
         except Exception as e:
             self.console.print(f"[red]Copy editing failed: {str(e)}[/red]")
             self.logger.exception("Copy editing error")
+
+    def _parse_chapter_range(self, range_str: str) -> List[int]:
+        """
+        Parse chapter range string into list of chapter numbers.
+
+        Supports:
+            "3" → [3]
+            "5-8" → [5, 6, 7, 8]
+            "1,3,5-7" → [1, 3, 5, 6, 7]
+
+        Args:
+            range_str: Range string to parse
+
+        Returns:
+            List of chapter numbers
+
+        Raises:
+            ValueError: If range format is invalid
+        """
+        chapters = []
+
+        # Split by comma first
+        parts = range_str.split(',')
+
+        for part in parts:
+            part = part.strip()
+
+            # Check if it's a range (5-8)
+            if '-' in part:
+                try:
+                    start, end = part.split('-', 1)
+                    start_num = int(start.strip())
+                    end_num = int(end.strip())
+
+                    if start_num > end_num:
+                        raise ValueError(f"Invalid range '{part}': start must be <= end")
+
+                    chapters.extend(range(start_num, end_num + 1))
+                except ValueError as e:
+                    if "invalid literal" in str(e):
+                        raise ValueError(f"Invalid range '{part}': must be numbers")
+                    raise
+            else:
+                # Single chapter number
+                try:
+                    chapters.append(int(part))
+                except ValueError:
+                    raise ValueError(f"Invalid chapter number '{part}': must be a number")
+
+        if not chapters:
+            raise ValueError("No chapters specified")
+
+        # Remove duplicates and sort
+        chapters = sorted(set(chapters))
+
+        return chapters
 
     async def _generate_combined(self, options: str = ""):
         """Backfill folder-level combined.md for current context.

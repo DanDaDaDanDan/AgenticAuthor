@@ -44,13 +44,20 @@ class CopyEditor:
         self.edited_chapters = {}  # Store edited prose as we process
         self.prompt_loader = get_prompt_loader()
 
-    async def copy_edit_all_chapters(self, show_preview: bool = True, auto_apply: bool = False) -> Dict[str, Any]:
+    async def copy_edit_all_chapters(
+        self,
+        show_preview: bool = True,
+        auto_apply: bool = False,
+        chapter_filter: Optional[List[int]] = None
+    ) -> Dict[str, Any]:
         """
         Edit all chapter prose files sequentially with full accumulated context.
 
         Args:
             show_preview: Show preview and get approval before applying (default True)
             auto_apply: Automatically apply all edits without preview (default False)
+            chapter_filter: Optional list of chapter numbers to edit (e.g., [3, 5, 6, 7, 8])
+                          If None, edits all chapters
 
         Returns:
             Dict with chapters_edited count and backup directory
@@ -61,7 +68,20 @@ class CopyEditor:
             raise ValueError("No prose files found. Generate prose first with /generate prose")
 
         # Extract chapter numbers from paths (chapter-01.md -> 1)
-        chapter_nums = [int(p.stem.split('-')[1]) for p in prose_files]
+        all_chapter_nums = [int(p.stem.split('-')[1]) for p in prose_files]
+
+        # Filter chapters if specified
+        if chapter_filter is not None:
+            # Validate that all requested chapters exist
+            invalid_chapters = [ch for ch in chapter_filter if ch not in all_chapter_nums]
+            if invalid_chapters:
+                raise ValueError(f"Chapters not found: {', '.join(map(str, invalid_chapters))}")
+
+            chapter_nums = [ch for ch in all_chapter_nums if ch in chapter_filter]
+            # Keep original order from chapter_filter for predictable editing
+            chapter_nums.sort()
+        else:
+            chapter_nums = all_chapter_nums
 
         # Create timestamped backup directory
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

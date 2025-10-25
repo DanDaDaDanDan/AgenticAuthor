@@ -251,8 +251,9 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/export <rtf|markdown> [filename]'
         },
         'copyedit': {
-            'description': 'Copy edit all chapter prose',
-            'usage': '/copyedit [--auto]'
+            'description': 'Copy edit chapter prose',
+            'usage': '/copyedit [chapters]\n' +
+                     '  Examples: /copyedit 3  or  /copyedit 5-8  or  /copyedit 1,3,5-7'
         },
         'git': {
             'description': 'View git history and commit manual changes',
