@@ -1617,14 +1617,17 @@ class InteractiveSession:
         saving directly to chapter-beats/ (auto-finalized, ready for /generate prose).
 
         Options:
-            --temperature X.X : Single variant mode at specified temperature (auto-finalized)
-            --auto, -a       : Let LLM decide chapter count
-            N (number)       : Chapter count (if < 50) or total word count (if >= 50)
+            --temperature X.X         : Single variant mode at specified temperature (auto-finalized)
+            --reuse-foundation, -r    : Reuse existing foundation (skip generation/validation)
+            --auto, -a                : Let LLM decide chapter count
+            N (number)                : Chapter count (if < 50) or total word count (if >= 50)
 
         Examples:
-            /generate chapters                    # 4 variants (requires /finalize)
-            /generate chapters --temperature 0.65 # Single variant (auto-finalized)
-            /generate chapters 15 --temperature 0.65  # 15 chapters at temp 0.65
+            /generate chapters                         # 4 variants (requires /finalize)
+            /generate chapters --temperature 0.65      # Single variant (auto-finalized)
+            /generate chapters 15 --temperature 0.65   # 15 chapters at temp 0.65
+            /generate chapters --reuse-foundation      # Reuse existing foundation
+            /generate chapters --reuse --temperature 0.70  # Reuse foundation, new chapters at 0.70
         """
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -1634,18 +1637,12 @@ class InteractiveSession:
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
             return
 
-        # Clean up downstream content before generation
-        from ..generation.cull import CullManager
-        culler = CullManager(self.project)
-
-        self.console.print("[dim]Cleaning up existing chapters and prose...[/dim]")
-        culler.cull_chapters()  # Deletes chapter-beats/, chapter-beats-variants/, and chapters/ (prose)
-
-        # Parse options (chapter count or word count) and flags
+        # Parse options (chapter count or word count) and flags BEFORE culling
         chapter_count = None
         total_words = None  # Let generator calculate smart default
         auto_plan = False
         single_temperature = None  # If set, skip variants and auto-finalize
+        reuse_foundation = False  # If set, preserve and reuse existing foundation
 
         if options:
             parts = options.split()
@@ -1654,6 +1651,9 @@ class InteractiveSession:
                 part = parts[i]
                 if part in ("--auto", "-a"):
                     auto_plan = True
+                    i += 1
+                elif part in ("--reuse-foundation", "--reuse", "-r"):
+                    reuse_foundation = True
                     i += 1
                 elif part == "--temperature":
                     # Parse temperature value from next part
@@ -1683,6 +1683,62 @@ class InteractiveSession:
                     i += 1
 
         self.console.rule(style="dim")
+
+        # Save existing foundation if reusing (before cull)
+        saved_foundation = None
+        saved_foundation_markdown = None
+        if reuse_foundation:
+            # Try to load existing foundation (markdown format preferred)
+            foundation_md_path = self.project.chapter_beats_dir / 'foundation.md'
+            variants_foundation_path = self.project.path / 'chapter-beats-variants' / 'foundation.md'
+
+            if foundation_md_path.exists():
+                try:
+                    saved_foundation_markdown = foundation_md_path.read_text(encoding='utf-8')
+                    from ..utils.markdown_extractors import MarkdownExtractor
+                    saved_foundation = MarkdownExtractor.extract_foundation(saved_foundation_markdown)
+                    self.console.print(f"[dim]Found existing foundation in chapter-beats/foundation.md[/dim]")
+                except Exception as e:
+                    self.console.print(f"[red]Failed to load foundation from chapter-beats/foundation.md: {e}[/red]")
+                    self.console.print(f"[yellow]Proceeding without --reuse-foundation[/yellow]")
+                    reuse_foundation = False
+            elif variants_foundation_path.exists():
+                try:
+                    saved_foundation_markdown = variants_foundation_path.read_text(encoding='utf-8')
+                    from ..utils.markdown_extractors import MarkdownExtractor
+                    saved_foundation = MarkdownExtractor.extract_foundation(saved_foundation_markdown)
+                    self.console.print(f"[dim]Found existing foundation in chapter-beats-variants/foundation.md[/dim]")
+                except Exception as e:
+                    self.console.print(f"[red]Failed to load foundation from variants: {e}[/red]")
+                    self.console.print(f"[yellow]Proceeding without --reuse-foundation[/yellow]")
+                    reuse_foundation = False
+            else:
+                # Try legacy YAML format as fallback
+                existing_foundation = self.project.get_foundation()
+                if existing_foundation:
+                    saved_foundation = existing_foundation
+                    # Convert to markdown for consistency
+                    from ..utils.markdown_extractors import MarkdownFormatter
+                    saved_foundation_markdown = MarkdownFormatter.format_foundation(saved_foundation)
+                    self.console.print(f"[dim]Found existing foundation (legacy YAML format)[/dim]")
+                else:
+                    self.console.print(f"[yellow]--reuse-foundation specified but no existing foundation found[/yellow]")
+                    self.console.print(f"[dim]Checked: chapter-beats/foundation.md, chapter-beats-variants/foundation.md[/dim]")
+                    self.console.print(f"[yellow]Proceeding with fresh foundation generation[/yellow]")
+                    reuse_foundation = False
+
+        # Clean up downstream content before generation
+        from ..generation.cull import CullManager
+        culler = CullManager(self.project)
+
+        self.console.print("[dim]Cleaning up existing chapters and prose...[/dim]")
+        culler.cull_chapters()  # Deletes chapter-beats/, chapter-beats-variants/, and chapters/ (prose)
+
+        # Restore foundation if reusing (after cull)
+        if reuse_foundation and saved_foundation:
+            self.console.print(f"[green]✓[/green] Reusing existing foundation (skipping generation)")
+            # Restore foundation to chapter-beats/ for single-temp mode or variants dir for multi-variant
+            # We'll decide which location based on single_temperature flag below
 
         # Create chapter generator for foundation
         from ..generation.chapters import ChapterGenerator
@@ -1738,102 +1794,110 @@ class InteractiveSession:
         if chapter_count is None:
             chapter_count = baseline_count
 
-        # Generate foundation (ONCE for all variants)
-        self.console.print(f"[cyan][1/2] Generating foundation (metadata + characters + world)...[/cyan]\n")
+        # === FOUNDATION GENERATION OR REUSE ===
+        if reuse_foundation and saved_foundation:
+            # Use saved foundation (skip generation and validation)
+            self.console.print(f"[cyan][1/2] Using existing foundation (reuse mode)...[/cyan]\n")
+            foundation = saved_foundation
+            self.console.print(f"[green]✓ Foundation loaded from existing[/green]\n")
+        else:
+            # Generate foundation (ONCE for all variants)
+            self.console.print(f"[cyan][1/2] Generating foundation (metadata + characters + world)...[/cyan]\n")
 
-        original_concept = premise_metadata.get('original_concept', '')
-        unique_elements = premise_metadata.get('unique_elements', [])
+            original_concept = premise_metadata.get('original_concept', '')
+            unique_elements = premise_metadata.get('unique_elements', [])
 
-        context_markdown = context_builder.build_markdown_context(
-            project=self.project,
-            context_level='treatment'
-        )
-
-        foundation = await generator._generate_foundation(
-            context_markdown=context_markdown,
-            taxonomy_data=taxonomy_data,
-            total_words=total_words,
-            chapter_count=chapter_count,
-            original_concept=original_concept,
-            unique_elements=unique_elements,
-            feedback=None,
-            genre=genre
-        )
-
-        self.console.print(f"[green]✓ Foundation complete[/green]\n")
-
-        # Parse markdown to dict for validation and variant generation
-        from ..utils.markdown_extractors import MarkdownExtractor
-        foundation = MarkdownExtractor.extract_foundation(foundation)
-
-        # Validate foundation fidelity before generating variants
-        validation_loop_count = 0
-        max_validation_iterations = 3
-
-        while validation_loop_count < max_validation_iterations:
-            self.console.print(f"[dim]Validating foundation fidelity...[/dim]")
-
-            treatment_text = context.get('treatment', {}).get('text', '')
-            is_valid, critical_issues = await generator._validate_foundation_fidelity(
-                foundation_data=foundation,
-                treatment_text=treatment_text
+            context_markdown = context_builder.build_markdown_context(
+                project=self.project,
+                context_level='treatment'
             )
 
-            if not is_valid and critical_issues:
-                # Show validation issues
-                self.console.print(f"\n[bold yellow]{'='*70}[/bold yellow]")
-                self.console.print(f"[bold yellow]⚠️  FOUNDATION VALIDATION ISSUES[/bold yellow]")
-                self.console.print(f"[bold yellow]{'='*70}[/bold yellow]\n")
+            foundation = await generator._generate_foundation(
+                context_markdown=context_markdown,
+                taxonomy_data=taxonomy_data,
+                total_words=total_words,
+                chapter_count=chapter_count,
+                original_concept=original_concept,
+                unique_elements=unique_elements,
+                feedback=None,
+                genre=genre
+            )
 
-                for i, issue in enumerate(critical_issues, 1):
-                    issue_type = issue.get('type', 'unknown').replace('_', ' ').title()
-                    element = issue.get('element', 'Unknown')
-                    reasoning = issue.get('reasoning', 'No details')
-                    recommendation = issue.get('recommendation', '')
-                    severity = issue.get('severity', 'medium')
+            self.console.print(f"[green]✓ Foundation complete[/green]\n")
 
-                    severity_color = "red" if severity == "critical" else "yellow"
+            # Parse markdown to dict for validation and variant generation
+            from ..utils.markdown_extractors import MarkdownExtractor
+            foundation = MarkdownExtractor.extract_foundation(foundation)
 
-                    self.console.print(f"[cyan]{i}.[/cyan] [{severity_color}]{issue_type}[/{severity_color}]")
-                    self.console.print(f"   Element: {element}")
-                    self.console.print(f"   Problem: {reasoning}")
-                    if recommendation:
-                        self.console.print(f"   Fix: {recommendation}")
-                    self.console.print()
+        # Validate foundation fidelity before generating variants (skip if reusing)
+        if not reuse_foundation:
+            validation_loop_count = 0
+            max_validation_iterations = 3
 
-                # Prompt user for action
-                self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
-                self.console.print(f"  [cyan]1.[/cyan] Continue anyway (ignore issues)")
-                self.console.print(f"  [cyan]2.[/cyan] Iterate on selected issues (regenerate foundation)")
-                self.console.print(f"  [cyan]3.[/cyan] Abort generation")
+            while validation_loop_count < max_validation_iterations:
+                self.console.print(f"[dim]Validating foundation fidelity...[/dim]")
 
-                try:
-                    choice = input("\nEnter choice (1-3): ").strip()
-                except (KeyboardInterrupt, EOFError):
-                    self.console.print(f"\n[yellow]Generation cancelled by user[/yellow]")
-                    return
+                treatment_text = context.get('treatment', {}).get('text', '')
+                is_valid, critical_issues = await generator._validate_foundation_fidelity(
+                    foundation_data=foundation,
+                    treatment_text=treatment_text
+                )
 
-                if choice == "1":
-                    # Continue anyway
-                    self.console.print(f"\n[yellow]⚠️  Continuing with foundation issues...[/yellow]\n")
-                    break  # Exit validation loop
+                if not is_valid and critical_issues:
+                    # Show validation issues
+                    self.console.print(f"\n[bold yellow]{'='*70}[/bold yellow]")
+                    self.console.print(f"[bold yellow]⚠️  FOUNDATION VALIDATION ISSUES[/bold yellow]")
+                    self.console.print(f"[bold yellow]{'='*70}[/bold yellow]\n")
 
-                elif choice == "2":
-                    # Iterate - let user select which issues to address
-                    selected_issues = generator._select_validation_issues(
-                        issues=critical_issues,
-                        context="foundation"
-                    )
+                    for i, issue in enumerate(critical_issues, 1):
+                        issue_type = issue.get('type', 'unknown').replace('_', ' ').title()
+                        element = issue.get('element', 'Unknown')
+                        reasoning = issue.get('reasoning', 'No details')
+                        recommendation = issue.get('recommendation', '')
+                        severity = issue.get('severity', 'medium')
 
-                    if not selected_issues:
-                        self.console.print(f"[yellow]No issues selected, continuing anyway...[/yellow]\n")
-                        break
+                        severity_color = "red" if severity == "critical" else "yellow"
 
-                    # Format selected issues for iteration prompt
-                    formatted_issues = generator._format_validation_issues(selected_issues)
+                        self.console.print(f"[cyan]{i}.[/cyan] [{severity_color}]{issue_type}[/{severity_color}]")
+                        self.console.print(f"   Element: {element}")
+                        self.console.print(f"   Problem: {reasoning}")
+                        if recommendation:
+                            self.console.print(f"   Fix: {recommendation}")
+                        self.console.print()
 
-                    # Build iteration feedback
-                    iteration_feedback = f"""FOUNDATION VALIDATION ISSUES TO FIX:
+                    # Prompt user for action
+                    self.console.print(f"[bold cyan]What would you like to do?[/bold cyan]")
+                    self.console.print(f"  [cyan]1.[/cyan] Continue anyway (ignore issues)")
+                    self.console.print(f"  [cyan]2.[/cyan] Iterate on selected issues (regenerate foundation)")
+                    self.console.print(f"  [cyan]3.[/cyan] Abort generation")
+
+                    try:
+                        choice = input("\nEnter choice (1-3): ").strip()
+                    except (KeyboardInterrupt, EOFError):
+                        self.console.print(f"\n[yellow]Generation cancelled by user[/yellow]")
+                        return
+
+                    if choice == "1":
+                        # Continue anyway
+                        self.console.print(f"\n[yellow]⚠️  Continuing with foundation issues...[/yellow]\n")
+                        break  # Exit validation loop
+
+                    elif choice == "2":
+                        # Iterate - let user select which issues to address
+                        selected_issues = generator._select_validation_issues(
+                            issues=critical_issues,
+                            context="foundation"
+                        )
+
+                        if not selected_issues:
+                            self.console.print(f"[yellow]No issues selected, continuing anyway...[/yellow]\n")
+                            break
+
+                        # Format selected issues for iteration prompt
+                        formatted_issues = generator._format_validation_issues(selected_issues)
+
+                        # Build iteration feedback
+                        iteration_feedback = f"""FOUNDATION VALIDATION ISSUES TO FIX:
 
 {formatted_issues}
 
@@ -1843,46 +1907,46 @@ Regenerate the foundation addressing the issues above.
 - Ensure alignment with treatment
 - Maintain the overall structure and quality"""
 
-                    # Regenerate foundation with validation feedback
-                    self.console.print(f"\n[cyan]Regenerating foundation to address {len(selected_issues)} issue(s)...[/cyan]\n")
+                        # Regenerate foundation with validation feedback
+                        self.console.print(f"\n[cyan]Regenerating foundation to address {len(selected_issues)} issue(s)...[/cyan]\n")
 
-                    foundation = await generator._generate_foundation(
-                        context_yaml=context_yaml,
-                        taxonomy_data=taxonomy_data,
-                        total_words=total_words,
-                        chapter_count=chapter_count,
-                        original_concept=original_concept,
-                        unique_elements=unique_elements,
-                        feedback=iteration_feedback,
-                        genre=genre
-                    )
+                        foundation = await generator._generate_foundation(
+                            context_yaml=context_yaml,
+                            taxonomy_data=taxonomy_data,
+                            total_words=total_words,
+                            chapter_count=chapter_count,
+                            original_concept=original_concept,
+                            unique_elements=unique_elements,
+                            feedback=iteration_feedback,
+                            genre=genre
+                        )
 
-                    self.console.print(f"[green]✓ Foundation regenerated[/green]\n")
+                        self.console.print(f"[green]✓ Foundation regenerated[/green]\n")
 
-                    # Parse markdown to dict for next validation iteration
-                    foundation = MarkdownExtractor.extract_foundation(foundation)
+                        # Parse markdown to dict for next validation iteration
+                        foundation = MarkdownExtractor.extract_foundation(foundation)
 
-                    # Increment loop counter and continue validation
-                    validation_loop_count += 1
+                        # Increment loop counter and continue validation
+                        validation_loop_count += 1
 
-                    if validation_loop_count >= max_validation_iterations:
-                        self.console.print(f"[yellow]⚠️  Max validation iterations ({max_validation_iterations}) reached.[/yellow]")
-                        self.console.print(f"[yellow]Continuing with current foundation...[/yellow]\n")
-                        break
+                        if validation_loop_count >= max_validation_iterations:
+                            self.console.print(f"[yellow]⚠️  Max validation iterations ({max_validation_iterations}) reached.[/yellow]")
+                            self.console.print(f"[yellow]Continuing with current foundation...[/yellow]\n")
+                            break
 
-                elif choice == "3":
-                    # Abort
-                    self.console.print(f"\n[red]Generation aborted due to foundation validation issues[/red]")
-                    return
+                    elif choice == "3":
+                        # Abort
+                        self.console.print(f"\n[red]Generation aborted due to foundation validation issues[/red]")
+                        return
+
+                    else:
+                        self.console.print(f"\n[yellow]Invalid choice, aborting[/yellow]")
+                        return
 
                 else:
-                    self.console.print(f"\n[yellow]Invalid choice, aborting[/yellow]")
-                    return
-
-            else:
-                # Validation passed
-                self.console.print(f"[green]✓[/green] Foundation validation passed\n")
-                break  # Exit validation loop
+                    # Validation passed
+                    self.console.print(f"[green]✓[/green] Foundation validation passed\n")
+                    break  # Exit validation loop
 
         # === SINGLE-TEMPERATURE MODE: Generate directly to chapter-beats/ and auto-finalize ===
         if single_temperature is not None:
