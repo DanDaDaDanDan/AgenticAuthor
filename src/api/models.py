@@ -37,8 +37,23 @@ class Model(BaseModel):
 
     @property
     def cost_per_1k_tokens(self) -> float:
-        """Get average cost per 1k tokens."""
-        return (self.pricing.prompt + self.pricing.completion) / 2
+        """
+        DEPRECATED: Returns input cost only (output cost typically differs).
+        Use pricing.prompt and pricing.completion directly for accurate costs.
+
+        Returns input cost since most operations use more input than output tokens.
+        """
+        return self.pricing.prompt
+
+    @property
+    def input_cost_per_1m(self) -> float:
+        """Get input cost per 1M tokens."""
+        return self.pricing.prompt * 1000
+
+    @property
+    def output_cost_per_1m(self) -> float:
+        """Get output cost per 1M tokens."""
+        return self.pricing.completion * 1000
 
     def estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
         """

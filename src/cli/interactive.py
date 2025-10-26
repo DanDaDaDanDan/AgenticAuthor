@@ -810,9 +810,13 @@ class InteractiveSession:
 
                 # Show numbered list with details
                 for i, (model, _) in enumerate(matches[:9], 1):
-                    price = f"${model.cost_per_1k_tokens * 1000:.2f}/1M"
+                    # Show actual input/output pricing
                     if model.is_free:
                         price = "Free"
+                    else:
+                        input_1m = model.pricing.prompt * 1000
+                        output_1m = model.pricing.completion * 1000
+                        price = f"In:${input_1m:.2f} Out:${output_1m:.2f}/1M"
 
                     # Highlight current model
                     if model.id == self.settings.active_model:
@@ -886,9 +890,9 @@ class InteractiveSession:
                     grouped[provider] = []
                 grouped[provider].append(model)
 
-            # Sort each group by price
+            # Sort each group by input price (models typically use more input than output)
             for provider in grouped:
-                grouped[provider].sort(key=lambda m: m.cost_per_1k_tokens)
+                grouped[provider].sort(key=lambda m: m.pricing.prompt)
 
             # Create table
             table = Table(title="Available Models", show_lines=True)
@@ -905,18 +909,17 @@ class InteractiveSession:
                     # Show provider name only on first row
                     provider_display = provider.capitalize() if i == 0 else ""
 
-                    # Convert price from per 1K to per 1M tokens
-                    input_price = model.cost_per_1k_tokens * 1000
-                    # Assume output is 2x input price (typical for most models)
-                    output_price = model.cost_per_1k_tokens * 2000
+                    # Convert from per 1K to per 1M tokens (pricing is already per 1k from API)
+                    input_price_1m = model.pricing.prompt * 1000  # $X per 1k -> $X*1000 per 1M
+                    output_price_1m = model.pricing.completion * 1000
 
                     # Format prices
                     if model.is_free:
                         input_str = "Free"
                         output_str = "Free"
                     else:
-                        input_str = f"${input_price:.2f}"
-                        output_str = f"${output_price:.2f}"
+                        input_str = f"${input_price_1m:.2f}"
+                        output_str = f"${output_price_1m:.2f}"
 
                     # Extract model name (remove provider prefix)
                     model_name = model.id.split('/')[-1] if '/' in model.id else model.id

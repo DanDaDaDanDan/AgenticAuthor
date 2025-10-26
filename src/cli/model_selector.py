@@ -34,11 +34,13 @@ class ModelSelector:
             provider = model.id.split('/')[0] if '/' in model.id else 'other'
             name = model.id.split('/', 1)[1] if '/' in model.id else model.id
 
-            # Price info
+            # Price info (show input/output pricing)
             if model.is_free:
                 price = "Free"
             else:
-                price = f"${model.cost_per_1k_tokens * 1000:.4f}/1M"
+                input_1m = model.input_cost_per_1m
+                output_1m = model.output_cost_per_1m
+                price = f"In:${input_1m:.2f} Out:${output_1m:.2f}/1M"
 
             self.model_info.append({
                 'model': model,
