@@ -781,16 +781,17 @@ class StreamHandler:
 
                     # STALL DETECTION: If stream has stalled (started generating but stopped), abort and retry
                     # This catches API backend failures where connection stays open but data stops flowing
-                    MAX_STALL_TIME = 60  # seconds without tokens before considering it stalled
+                    # IMPORTANT: Must be long enough for thinking models (o1/o3) that pause between token bursts
+                    MAX_STALL_TIME = 300  # 5 minutes - allows reasoning pauses while catching true stalls
                     MIN_TOKENS_FOR_STALL = 10  # need at least some tokens to consider it "stalled" vs "slow start"
 
                     if token_count > MIN_TOKENS_FOR_STALL and time_since_last_token > MAX_STALL_TIME:
-                        # Stream has stalled - we started generating but haven't received tokens in 60s
+                        # Stream has stalled - we started generating but haven't received tokens in MAX_STALL_TIME seconds
                         elapsed_total = current_time - start_time
                         error_msg = (
                             f"Stream stalled: received {token_count} tokens then stopped. "
                             f"No new tokens for {int(time_since_last_token)}s (max: {MAX_STALL_TIME}s). "
-                            f"This usually indicates an API backend failure."
+                            f"This usually indicates an API backend failure (not a thinking pause)."
                         )
                         if logger:
                             logger.error(error_msg)
