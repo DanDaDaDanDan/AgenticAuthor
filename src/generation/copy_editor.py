@@ -113,12 +113,78 @@ class CopyEditor:
             # Build full context with ALL previously edited chapters
             context = self._build_full_context(chapter_num)
 
-            # Copy edit this chapter (streams edited text in real-time)
-            result = await self._copy_edit_chapter(
-                chapter_num=chapter_num,
-                chapter_text=original,
-                context=context
-            )
+            # Copy edit this chapter with retry logic (streams edited text in real-time)
+            max_auto_retries = 2
+            result = None
+
+            for attempt in range(1, max_auto_retries + 2):  # 1 initial + 2 auto-retries + 1 user-prompted
+                try:
+                    if attempt > 1:
+                        if attempt <= max_auto_retries + 1:
+                            console.print(f"\n[yellow]⚠ Retry attempt {attempt - 1}/{max_auto_retries}...[/yellow]\n")
+                        else:
+                            console.print(f"\n[yellow]⚠ Retry attempt (user-requested)...[/yellow]\n")
+
+                    result = await self._copy_edit_chapter(
+                        chapter_num=chapter_num,
+                        chapter_text=original,
+                        context=context
+                    )
+
+                    # Success - break retry loop
+                    break
+
+                except Exception as e:
+                    error_msg = str(e)
+
+                    # Check if this is a recoverable error pattern
+                    is_empty_response = "empty response" in error_msg.lower() and "0 tokens" in error_msg
+                    is_json_error = "json" in error_msg.lower() or "parse" in error_msg.lower()
+                    is_timeout = "timeout" in error_msg.lower() or "timed out" in error_msg.lower()
+                    is_recoverable = is_empty_response or is_json_error or is_timeout
+
+                    # Auto-retry for first 2 attempts on recoverable errors
+                    if attempt <= max_auto_retries and is_recoverable:
+                        console.print(f"\n[red]✗ Error:[/red] {error_msg}")
+                        console.print(f"[yellow]Auto-retrying ({attempt}/{max_auto_retries})...[/yellow]")
+                        continue
+
+                    # After 2 auto-retries, prompt user
+                    elif attempt == max_auto_retries + 1 and is_recoverable:
+                        console.print(f"\n[red]✗ Chapter {chapter_num} failed after {max_auto_retries} auto-retries:[/red]")
+                        console.print(f"   {error_msg}\n")
+
+                        # Show model-specific guidance
+                        if "gpt-5-pro" in self.model.lower():
+                            console.print("[yellow]⚠ Note: gpt-5-pro has known reliability issues with cold starts[/yellow]")
+                            console.print("[yellow]   Consider switching to claude-opus-4 or grok-2 for production work[/yellow]\n")
+
+                        # Prompt for retry/abort
+                        console.print("[yellow]Options:[/yellow]")
+                        console.print("  [cyan]y[/cyan] - Retry this chapter again")
+                        console.print("  [cyan]n[/cyan] - Abort copy editing (no changes will be committed)")
+
+                        from ..utils.logging import get_logger
+                        logger = get_logger()
+                        if logger:
+                            logger.warning(f"Copy edit chapter {chapter_num} failed after {max_auto_retries} retries, prompting user")
+
+                        choice = input("\nChoice (y/n): ").strip().lower()
+
+                        if choice == 'y':
+                            continue  # Retry
+                        else:
+                            console.print("\n[red]Copy editing aborted by user[/red]")
+                            raise Exception(f"Copy editing aborted after failure on chapter {chapter_num}")
+
+                    # Non-recoverable error or user declined retry
+                    else:
+                        console.print(f"\n[red]✗ Chapter {chapter_num} failed:[/red] {error_msg}")
+                        raise
+
+            # Check if we got a result
+            if result is None:
+                raise Exception(f"Failed to copy edit chapter {chapter_num} after all retry attempts")
 
             console.print()  # Blank line after streaming
 
