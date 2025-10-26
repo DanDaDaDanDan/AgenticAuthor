@@ -560,7 +560,6 @@ class StreamHandler:
                             debug_dir.mkdir(parents=True, exist_ok=True)
                             sse_debug_file = debug_dir / f"sse_events_{int(time.time())}.jsonl"
 
-                            import json
                             with open(sse_debug_file, 'w', encoding='utf-8') as f:
                                 for event_num, event_data in raw_sse_events:
                                     f.write(json.dumps({"event": event_num, "data": event_data}) + '\n')
