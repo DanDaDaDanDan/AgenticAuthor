@@ -242,16 +242,20 @@ class CullManager:
         This cleans up all debug artifacts, session logs, and temporary files
         without affecting generated content (premise, treatment, chapters, prose).
 
+        NOTE: .agentic is centralized at the repository root (NOT inside books/project-name/).
+
         Returns:
             Dict with deleted_files list
         """
         from ..utils.logging import get_logger
+        from pathlib import Path
         logger = get_logger()
 
         deleted_files = []
 
-        # .agentic directory path
-        agentic_dir = self.project.path / '.agentic'
+        # .agentic directory is at repository root (centralized for all projects)
+        # Use relative path from current working directory (repository root)
+        agentic_dir = Path('.agentic')
 
         if logger:
             logger.debug(f"Cull debug: checking directory {agentic_dir}")
