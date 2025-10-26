@@ -27,6 +27,9 @@ class StreamHandler:
 
         Fixes:
         - Double-escaped quotes: \\" -> \" (when LLM pre-escapes quotes in prose)
+        - Literal newlines in string values: \n → \\n (CRITICAL for copy editing)
+        - Literal tabs in string values: \t → \\t
+        - Literal carriage returns: \r → \\r
         - Preserves intentional backslashes (like \\n for newline representation)
 
         Args:
@@ -40,22 +43,76 @@ class StreamHandler:
 
         logger = get_logger()
         original_content = content
+        repairs_made = []
 
         # Fix pattern: \\" (double-escaped quote) -> " (normal quote)
         # This handles cases where LLM pre-escaped quotes in prose text
         # The pattern looks for: backslash, backslash, quote
         # And replaces with: backslash, quote (which is correct JSON escaping)
         repaired = re.sub(r'\\\\(")', r'\\\1', content)
+        if repaired != content:
+            fixes = content.count('\\\\"') - repaired.count('\\\\"')
+            repairs_made.append(f"double-escaped quotes: {fixes}")
+            content = repaired
+
+        # CRITICAL FIX: Literal newlines/tabs/cr in JSON string values
+        # This is the PRIMARY cause of copy editing failures at position ~9760
+        # Pattern: detect literal newlines/tabs that should be escaped
+        # We need to be careful not to break already-valid JSON structure
+
+        # First, let's detect if we have literal newlines in what should be string values
+        # Look for the pattern: \" followed by literal newline/tab followed by more content
+        # This suggests we're inside a JSON string value that has unescaped whitespace
+
+        literal_newlines = content.count('\n')
+        literal_tabs = content.count('\t')
+        literal_cr = content.count('\r')
+
+        if literal_newlines > 30 or literal_tabs > 30 or literal_cr > 5:
+            # Large number of literal whitespace suggests they're in a string value
+            # Need to escape them, but ONLY within string values, not in JSON structure
+
+            # Strategy: Parse JSON structure to identify string value regions
+            # Then escape only the literal whitespace within those regions
+
+            # Quick heuristic: if we see `\\" \n\n\"` pattern, that's definitely wrong
+            problem_pattern = r'(\\") ([\n\r\t]+)(")'
+            if re.search(problem_pattern, content):
+                if logger:
+                    logger.warning("DETECTED: Literal whitespace after escaped quote (copy editing bug pattern)")
+
+                # Fix this specific pattern: `\\" \n\n\"` → `\\"\n\n\"`
+                content = re.sub(r'(\\") +([\n\r\t]+)', r'\1\2', content)  # Remove space before newlines
+                repairs_made.append("removed spaces before literal newlines")
+
+            # Now escape all literal newlines/tabs/cr in the JSON
+            # We need to do this ONLY in string value regions
+            # For simplicity, we'll do a smart replacement that avoids JSON structure newlines
+
+            # Count newlines in what appears to be a large string value (line 2 usually)
+            lines = content.split('\n')
+            if len(lines) > 2 and len(lines[1]) > 5000:
+                # Line 2 is huge - this is typical of copy editing with edited_chapter field
+                # All newlines in line 2 (after the opening brace and key) should be escaped
+
+                # Reconstruct: keep line 1 intact, escape all in line 2+, keep last line
+                line1 = lines[0]
+                # Find where the string value actually starts (after "edited_chapter": ")
+                remaining = '\n'.join(lines[1:])
+
+                # Escape literal newlines, tabs, cr in the string value
+                escaped = remaining.replace('\n', '\\n').replace('\t', '\\t').replace('\r', '\\r')
+
+                content = line1 + '\n' + escaped
+                repairs_made.append(f"escaped literal newlines: {literal_newlines}, tabs: {literal_tabs}, cr: {literal_cr}")
 
         # Log if repairs were made
-        if repaired != original_content:
+        if repairs_made:
             if logger:
-                # Count how many fixes we made
-                fixes = original_content.count('\\\\"') - repaired.count('\\\\"')
-                logger.warning(f"JSON repair: Fixed {fixes} double-escaped quote(s) in LLM response")
-                logger.debug(f"JSON repair: Original had {original_content.count('\\\\\\"')} instances of \\\\\" pattern")
+                logger.warning(f"JSON repair: Applied fixes - {', '.join(repairs_made)}")
+                logger.debug(f"JSON repair: Original length {len(original_content)}, repaired length {len(content)}")
 
-        return repaired
+        return content
 
     def _extract_json_from_markdown(self, content: str) -> Optional[str]:
         """
@@ -161,6 +218,9 @@ class StreamHandler:
         self.console.print(f"[cyan]{display_label}...[/cyan]")
         self.console.print()  # Blank line for readability
 
+        # DIAGNOSTIC: Capture raw SSE events for debugging JSON issues
+        raw_sse_events = [] if logger else None
+
         try:
             event_count = 0
             async for line in response.content:
@@ -168,6 +228,10 @@ class StreamHandler:
                 if event_count == 1 and logger:
                     logger.debug(f"Stream: First SSE event received, starting to parse")
                 line = line.decode('utf-8').strip()
+
+                # Capture raw SSE events for potential debugging (sample only to avoid memory issues)
+                if raw_sse_events is not None and (event_count <= 50 or event_count % 100 == 0):
+                    raw_sse_events.append((event_count, line[:500]))  # Truncate to 500 chars per event
 
                 if not line or not line.startswith('data: '):
                     continue
@@ -186,6 +250,15 @@ class StreamHandler:
                             token = choice['delta']['content']
                             # Skip empty content deltas (common with Grok)
                             if token:
+                                # DIAGNOSTIC: Detect literal newlines being added to JSON string values
+                                # This is the root cause of copy editing failures at position ~9760
+                                if logger and '\n' in token and token_count > 50:
+                                    # Only log if we're deep enough into the response (not just JSON structure)
+                                    # And if we see a literal newline in the token
+                                    if token_count % 100 == 0:  # Sample every 100 tokens to avoid spam
+                                        logger.debug(f"Token {token_count}: contains {token.count(chr(10))} literal newline(s), token_len={len(token)}")
+                                        logger.debug(f"Token sample: {repr(token[:50])}")
+
                                 full_content += token
                                 token_count += 1
 
@@ -478,6 +551,24 @@ class StreamHandler:
                     logger.error(f"Full content length: {len(full_content)} chars")
                     logger.error(f"Finish reason was: {finish_reason}")
                     logger.error(f"Content preview: {full_content[:500]}")
+
+                    # Save raw SSE events if we captured them (DIAGNOSTIC)
+                    if raw_sse_events:
+                        try:
+                            from pathlib import Path
+                            debug_dir = Path('.agentic/debug')
+                            debug_dir.mkdir(parents=True, exist_ok=True)
+                            sse_debug_file = debug_dir / f"sse_events_{int(time.time())}.jsonl"
+
+                            import json
+                            with open(sse_debug_file, 'w', encoding='utf-8') as f:
+                                for event_num, event_data in raw_sse_events:
+                                    f.write(json.dumps({"event": event_num, "data": event_data}) + '\n')
+
+                            logger.warning(f"Saved {len(raw_sse_events)} raw SSE events to: {sse_debug_file}")
+                        except Exception as sse_err:
+                            logger.error(f"Failed to save SSE events: {sse_err}")
+
                 self._handle_truncated_json(full_content.strip(), e, model_obj, model_name, finish_reason)
 
         # Return result with metadata in a wrapper if parsed_json is not a dict
