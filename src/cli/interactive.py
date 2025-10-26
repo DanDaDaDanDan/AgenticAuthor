@@ -2147,7 +2147,22 @@ Regenerate the foundation addressing the issues above.
                     return
 
     async def _generate_prose(self, options: str = ""):
-        """Generate prose for chapters with full sequential context."""
+        """Generate prose for chapters with full sequential context.
+
+        Defaults to generating all missing chapters.
+
+        Options:
+            N (chapter number) : Generate specific chapter
+            all                : Generate all chapters (default if no args)
+            --use-style-card   : Use misc/prose-style-card.md for writing guidance
+
+        Examples:
+            /generate prose                     # Generate all missing chapters
+            /generate prose all                 # Generate all chapters
+            /generate prose 5                   # Generate chapter 5 only
+            /generate prose --use-style-card    # Generate all with style guidance
+            /generate prose 5 --use-style-card  # Generate chapter 5 with style guidance
+        """
         # Ensure git repo exists
         self._ensure_git_repo()
 
@@ -2157,22 +2172,35 @@ Regenerate the foundation addressing the issues above.
             self.console.print("[yellow]No chapter outlines found. Generate chapters first with /generate chapters[/yellow]")
             return
 
-        # Parse options: chapter number or "all"
-        if not options:
-            self.console.print("[yellow]Usage: /generate prose <chapter_number|all>[/yellow]")
-            self.console.print("[dim]  Examples:[/dim]")
-            self.console.print("[dim]    /generate prose 1       - Generate chapter 1 with full context[/dim]")
-            self.console.print("[dim]    /generate prose all     - Generate all chapters sequentially[/dim]")
-            return
+        # Parse options: chapter number, "all", and flags
+        use_style_card = False
+        target = "all"  # Default to generating all
 
-        # Parse target
-        parts = options.split()
+        if options:
+            parts = options.split()
+            for part in parts:
+                if part in ("--use-style-card", "--style-card", "-s"):
+                    use_style_card = True
+                elif part.lower() == "all":
+                    target = "all"
+                elif part.isdigit():
+                    target = part
+                # Ignore unknown options
 
-        if not parts:
-            self.console.print("[yellow]Must specify chapter number or 'all'[/yellow]")
-            return
-
-        target = parts[0]
+        # Load style card if requested
+        style_card_content = None
+        if use_style_card:
+            style_card_path = self.project.path / 'misc' / 'prose-style-card.md'
+            if style_card_path.exists():
+                try:
+                    style_card_content = style_card_path.read_text(encoding='utf-8')
+                    self.console.print(f"[dim]Using style card: {style_card_path}[/dim]")
+                except Exception as e:
+                    self.console.print(f"[yellow]Warning: Failed to read style card: {e}[/yellow]")
+                    self.console.print(f"[dim]Proceeding without style card[/dim]")
+            else:
+                self.console.print(f"[yellow]Style card not found: {style_card_path}[/yellow]")
+                self.console.print(f"[dim]Create misc/prose-style-card.md to use this feature[/dim]")
 
         generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
 
@@ -2185,10 +2213,13 @@ Regenerate the foundation addressing the issues above.
             culler.cull_prose()  # Delete all chapter prose files
 
             # Generate all chapters sequentially
-            self.console.print("[cyan]Generating all chapters sequentially with full context...[/cyan]")
+            if use_style_card:
+                self.console.print("[cyan]Generating all chapters sequentially with full context and style card...[/cyan]")
+            else:
+                self.console.print("[cyan]Generating all chapters sequentially with full context...[/cyan]")
 
             try:
-                results = await generator.generate_all_chapters()
+                results = await generator.generate_all_chapters(style_card=style_card_content)
 
                 if results:
                     # Git commit
@@ -2220,14 +2251,17 @@ Regenerate the foundation addressing the issues above.
                 self.console.rule(style="dim")
 
                 # Generate prose
-                self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
+                if use_style_card:
+                    self.console.print(f"[cyan]Generating prose for chapter {chapter_num} with style card...[/cyan]")
+                else:
+                    self.console.print(f"[cyan]Generating prose for chapter {chapter_num}...[/cyan]")
                 self.console.print(f"[dim]Mode: Sequential (Full Context)[/dim]")
                 self.console.print(f"[dim]Context tokens: {token_calc['total_context_tokens']:,}[/dim]")
                 self.console.print(f"[dim]Response tokens: {token_calc['response_tokens']:,}[/dim]")
                 self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
                 self.console.print()
 
-                result = await generator.generate_chapter(chapter_number=chapter_num)
+                result = await generator.generate_chapter(chapter_number=chapter_num, style_card=style_card_content)
                 commit_suffix = "(sequential)"
 
                 if result:

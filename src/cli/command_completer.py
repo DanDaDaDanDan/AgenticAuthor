@@ -224,6 +224,9 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
                      '    --reuse-foundation: Reuse existing foundation (skip generation)\n' +
                      '    --auto: Let LLM decide chapter count\n' +
                      '    Default: 4 variants at different temps (requires /finalize)\n' +
+                     '  prose: [chapter_num] [--use-style-card]\n' +
+                     '    Default: Generate all missing chapters\n' +
+                     '    --use-style-card: Use misc/prose-style-card.md for writing guidance\n' +
                      '  dedication: Generate heartfelt family dedication matching book tone'
         },
         'finalize': {

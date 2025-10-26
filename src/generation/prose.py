@@ -183,7 +183,8 @@ class ProseGenerator:
     async def generate_chapter_sequential(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited"
+        narrative_style: str = "third person limited",
+        style_card: Optional[str] = None
     ) -> str:
         """
         Generate full prose for a chapter using ONLY chapters.yaml (self-contained).
@@ -191,6 +192,7 @@ class ProseGenerator:
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
+            style_card: Optional prose style guidance from misc/prose-style-card.md
 
         Returns:
             Chapter prose text
@@ -367,7 +369,8 @@ class ProseGenerator:
             chapter_summary=chapter_summary,  # LEGACY: prose summary format
             moments_text=moments_text,  # LEGACY: key moments format
             metadata=metadata,
-            narrative_style=narrative_style
+            narrative_style=narrative_style,
+            style_card=style_card  # Optional style guidance
         )
 
         prompt = prompts['user']
@@ -450,7 +453,8 @@ class ProseGenerator:
     async def generate_chapter(
         self,
         chapter_number: int,
-        narrative_style: str = "third person limited"
+        narrative_style: str = "third person limited",
+        style_card: Optional[str] = None
     ) -> str:
         """
         Generate full prose for a chapter with complete story context.
@@ -458,20 +462,23 @@ class ProseGenerator:
         Args:
             chapter_number: Chapter to generate
             narrative_style: Narrative voice/style
+            style_card: Optional prose style guidance from misc/prose-style-card.md
 
         Returns:
             Chapter prose text
         """
         return await self.generate_chapter_sequential(
             chapter_number=chapter_number,
-            narrative_style=narrative_style
+            narrative_style=narrative_style,
+            style_card=style_card
         )
 
     async def generate_all_chapters(
         self,
         narrative_style: str = "third person limited",
         start_chapter: int = 1,
-        end_chapter: Optional[int] = None
+        end_chapter: Optional[int] = None,
+        style_card: Optional[str] = None
     ) -> Dict[int, str]:
         """
         Generate prose for all chapters sequentially with full context.
@@ -480,6 +487,7 @@ class ProseGenerator:
             narrative_style: Narrative voice/style
             start_chapter: First chapter to generate
             end_chapter: Last chapter (None for all)
+            style_card: Optional prose style guidance from misc/prose-style-card.md
 
         Returns:
             Dict mapping chapter numbers to prose
@@ -521,7 +529,8 @@ class ProseGenerator:
 
                     prose = await self.generate_chapter(
                         chapter_number=chapter_num,
-                        narrative_style=narrative_style
+                        narrative_style=narrative_style,
+                        style_card=style_card
                     )
                     results[chapter_num] = prose
                     success = True
