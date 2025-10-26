@@ -141,7 +141,8 @@ class CopyEditor:
                     is_empty_response = "empty response" in error_msg.lower() and "0 tokens" in error_msg
                     is_json_error = "json" in error_msg.lower() or "parse" in error_msg.lower()
                     is_timeout = "timeout" in error_msg.lower() or "timed out" in error_msg.lower()
-                    is_recoverable = is_empty_response or is_json_error or is_timeout
+                    is_stalled = "stalled" in error_msg.lower()  # NEW: Detect stream stalls
+                    is_recoverable = is_empty_response or is_json_error or is_timeout or is_stalled
 
                     # Auto-retry for first 2 attempts on recoverable errors
                     if attempt <= max_auto_retries and is_recoverable:

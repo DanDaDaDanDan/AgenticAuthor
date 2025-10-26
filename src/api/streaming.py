@@ -779,6 +779,26 @@ class StreamHandler:
                     time_since_last_token = current_time - last_token_time
                     time_since_last_heartbeat = current_time - last_heartbeat_time
 
+                    # STALL DETECTION: If stream has stalled (started generating but stopped), abort and retry
+                    # This catches API backend failures where connection stays open but data stops flowing
+                    MAX_STALL_TIME = 60  # seconds without tokens before considering it stalled
+                    MIN_TOKENS_FOR_STALL = 10  # need at least some tokens to consider it "stalled" vs "slow start"
+
+                    if token_count > MIN_TOKENS_FOR_STALL and time_since_last_token > MAX_STALL_TIME:
+                        # Stream has stalled - we started generating but haven't received tokens in 60s
+                        elapsed_total = current_time - start_time
+                        error_msg = (
+                            f"Stream stalled: received {token_count} tokens then stopped. "
+                            f"No new tokens for {int(time_since_last_token)}s (max: {MAX_STALL_TIME}s). "
+                            f"This usually indicates an API backend failure."
+                        )
+                        if logger:
+                            logger.error(error_msg)
+                            logger.error(f"Stream stats: {token_count} tokens, {len(content)} chars, {elapsed_total:.1f}s total")
+
+                        # Raise exception to trigger retry logic
+                        raise Exception(f"Generation stalled after {token_count} tokens (API backend likely crashed)")
+
                     if time_since_last_token >= heartbeat_interval and time_since_last_heartbeat >= heartbeat_interval:
                         elapsed_total = current_time - start_time
                         if display and display_mode == "status" and status_context:
