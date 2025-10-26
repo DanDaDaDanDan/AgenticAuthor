@@ -1913,8 +1913,14 @@ Regenerate the foundation addressing the issues above.
                         # Regenerate foundation with validation feedback
                         self.console.print(f"\n[cyan]Regenerating foundation to address {len(selected_issues)} issue(s)...[/cyan]\n")
 
+                        # Rebuild context markdown for regeneration
+                        context_markdown = context_builder.build_markdown_context(
+                            project=self.project,
+                            context_level='treatment'
+                        )
+
                         foundation = await generator._generate_foundation(
-                            context_yaml=context_yaml,
+                            context_markdown=context_markdown,
                             taxonomy_data=taxonomy_data,
                             total_words=total_words,
                             chapter_count=chapter_count,
