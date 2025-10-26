@@ -1969,48 +1969,87 @@ Regenerate the foundation addressing the issues above.
             else:
                 act_weights = [0.25, 0.50, 0.25]
 
-            # Generate chapters directly to chapter-beats/
-            try:
-                result = await generator._generate_single_shot(
-                    context=context,
-                    foundation=foundation,
-                    total_words=total_words,
-                    chapter_count=None if auto_plan else chapter_count,
-                    genre=genre or 'general',
-                    pacing=pacing,
-                    temperature=single_temperature,
-                    output_dir=self.project.chapter_beats_dir,  # Save directly to chapter-beats/
-                    auto_plan=auto_plan,
-                    act_weights=act_weights
-                )
+            # Retry loop for single-temperature generation
+            max_retry_attempts = 2
+            for attempt in range(max_retry_attempts):
+                try:
+                    result = await generator._generate_single_shot(
+                        context=context,
+                        foundation=foundation,
+                        total_words=total_words,
+                        chapter_count=None if auto_plan else chapter_count,
+                        genre=genre or 'general',
+                        pacing=pacing,
+                        temperature=single_temperature,
+                        output_dir=self.project.chapter_beats_dir,  # Save directly to chapter-beats/
+                        auto_plan=auto_plan,
+                        act_weights=act_weights
+                    )
 
-                if result and result.get('count', 0) > 0:
-                    chapter_count_saved = result['count']
-                    self.console.print()  # Blank line
-                    self.console.rule(style="dim")
-                    self.console.print(f"[green]✓  Generated {chapter_count_saved} chapters at temperature {single_temperature}[/green]")
-                    self.console.print(f"[dim]Chapters saved to chapter-beats/ directory (auto-finalized)[/dim]")
+                    if result and result.get('count', 0) > 0:
+                        chapter_count_saved = result['count']
+                        self.console.print()  # Blank line
+                        self.console.rule(style="dim")
+                        self.console.print(f"[green]✓  Generated {chapter_count_saved} chapters at temperature {single_temperature}[/green]")
+                        self.console.print(f"[dim]Chapters saved to chapter-beats/ directory (auto-finalized)[/dim]")
 
-                    # Update combined markdown file
-                    try:
-                        self.project.write_combined_markdown(target='chapter-beats', include_prose=False)
-                        self.console.print(f"[dim]Combined context: chapter-beats/combined.md[/dim]")
-                    except Exception:
-                        pass
+                        # Update combined markdown file
+                        try:
+                            self.project.write_combined_markdown(target='chapter-beats', include_prose=False)
+                            self.console.print(f"[dim]Combined context: chapter-beats/combined.md[/dim]")
+                        except Exception:
+                            pass
 
-                    self.console.print(f"\n[yellow]→ Next step: /generate prose (generate full prose from chapters)[/yellow]")
+                        self.console.print(f"\n[yellow]→ Next step: /generate prose (generate full prose from chapters)[/yellow]")
 
-                    # Git commit
-                    self._commit(f"Generate chapters at temperature {single_temperature} (auto-finalized)")
-                else:
-                    self.console.print("[red]Failed to generate chapters[/red]")
+                        # Git commit
+                        self._commit(f"Generate chapters at temperature {single_temperature} (auto-finalized)")
+                        break  # Success - exit retry loop
+                    else:
+                        self.console.print("[red]Failed to generate chapters[/red]")
+                        break  # No result but no exception - don't retry
 
-            except Exception as e:
-                self.console.print(f"[red]Chapter generation failed: {self._escape_markup(e)}[/red]")
-                from ..utils.logging import get_logger
-                logger = get_logger()
-                if logger:
-                    logger.error(f"Single-temperature generation error: {e}")
+                except Exception as e:
+                    error_msg = str(e)
+                    is_empty_response = "empty response" in error_msg.lower() and "0 tokens" in error_msg.lower()
+
+                    if is_empty_response and attempt < max_retry_attempts - 1:
+                        # Show failure
+                        self.console.print(f"\n[yellow]{'='*70}[/yellow]")
+                        self.console.print(f"[bold yellow]⚠️  CHAPTER GENERATION ISSUE[/bold yellow]")
+                        self.console.print(f"[yellow]{'='*70}[/yellow]\n")
+                        self.console.print(f"[dim]{error_msg}[/dim]\n")
+
+                        # Explain the likely cause
+                        if "gpt-5-pro" in self.settings.active_model:
+                            self.console.print(f"[yellow]Note: openai/gpt-5-pro can have reliability issues on first attempt.[/yellow]")
+                            self.console.print(f"[yellow]Retrying often succeeds. Consider switching to anthropic/claude-opus-4.1 for better reliability.[/yellow]\n")
+
+                        # Prompt for retry
+                        self.console.print(f"[bold cyan]Retry chapter generation?[/bold cyan]")
+                        self.console.print(f"  [cyan]y[/cyan] - Retry (attempt {attempt + 2}/{max_retry_attempts})")
+                        self.console.print(f"  [cyan]n[/cyan] - Abort")
+
+                        try:
+                            choice = input("\nChoice (y/n): ").strip().lower()
+                        except (KeyboardInterrupt, EOFError):
+                            self.console.print(f"\n[yellow]Generation cancelled by user[/yellow]")
+                            return
+
+                        if choice == 'y':
+                            self.console.print(f"\n[cyan]Retrying chapter generation (attempt {attempt + 2}/{max_retry_attempts})...[/cyan]\n")
+                            continue  # Retry
+                        else:
+                            self.console.print(f"\n[yellow]Generation aborted by user[/yellow]")
+                            return
+                    else:
+                        # Final attempt failed or not a retry-able error
+                        self.console.print(f"[red]Chapter generation failed: {self._escape_markup(e)}[/red]")
+                        from ..utils.logging import get_logger
+                        logger = get_logger()
+                        if logger:
+                            logger.error(f"Single-temperature generation error: {e}")
+                        return
 
             return  # Exit early - no variant generation needed
 
@@ -2019,52 +2058,93 @@ Regenerate the foundation addressing the issues above.
 
         variant_manager = VariantManager(generator, self.project)
 
-        try:
-            # Compute act weights from baseline_count for guidance (Act I/II/III)
-            # Use 25/50/25 if baseline is too small
-            if baseline_count and baseline_count >= 4:
-                act1 = max(1, int(baseline_count * 0.25))
-                act3 = max(1, int(baseline_count * 0.25))
-                act2 = max(1, baseline_count - act1 - act3)
-                act_weights = [round(act1 / baseline_count, 2), round(act2 / baseline_count, 2), round(act3 / baseline_count, 2)]
-            else:
-                act_weights = [0.25, 0.50, 0.25]
+        # Compute act weights from baseline_count for guidance (Act I/II/III)
+        # Use 25/50/25 if baseline is too small
+        if baseline_count and baseline_count >= 4:
+            act1 = max(1, int(baseline_count * 0.25))
+            act3 = max(1, int(baseline_count * 0.25))
+            act2 = max(1, baseline_count - act1 - act3)
+            act_weights = [round(act1 / baseline_count, 2), round(act2 / baseline_count, 2), round(act3 / baseline_count, 2)]
+        else:
+            act_weights = [0.25, 0.50, 0.25]
 
-            successful_variants = await variant_manager.generate_variants(
-                context=context,
-                foundation=foundation,
-                total_words=total_words,
-                chapter_count=None if auto_plan else chapter_count,
-                genre=genre or 'general',
-                pacing=pacing,
-                auto_plan=auto_plan,
-                act_weights=act_weights
-            )
+        # Retry loop for variant generation
+        max_retry_attempts = 2
+        for attempt in range(max_retry_attempts):
+            try:
+                successful_variants = await variant_manager.generate_variants(
+                    context=context,
+                    foundation=foundation,
+                    total_words=total_words,
+                    chapter_count=None if auto_plan else chapter_count,
+                    genre=genre or 'general',
+                    pacing=pacing,
+                    auto_plan=auto_plan,
+                    act_weights=act_weights
+                )
 
-            if successful_variants:
-                self.console.print()  # Blank line
-                self.console.rule(style="dim")
-                self.console.print(f"[green]✓  Generated {len(successful_variants)} variants[/green]")
-                self.console.print(f"[dim]Variants saved to chapter-beats-variants/ directory[/dim]")
-                # Write combined variants context file
-                try:
-                    combined_variants = variant_manager.write_variants_combined_markdown()
-                    self.console.print(f"[dim]Combined variants: {combined_variants}[/dim]")
-                except Exception:
-                    pass
-                self.console.print(f"\n[yellow]→ Next step: /finalize chapters (judge variants and select winner)[/yellow]")
+                if successful_variants:
+                    self.console.print()  # Blank line
+                    self.console.rule(style="dim")
+                    self.console.print(f"[green]✓  Generated {len(successful_variants)} variants[/green]")
+                    self.console.print(f"[dim]Variants saved to chapter-beats-variants/ directory[/dim]")
+                    # Write combined variants context file
+                    try:
+                        combined_variants = variant_manager.write_variants_combined_markdown()
+                        self.console.print(f"[dim]Combined variants: {combined_variants}[/dim]")
+                    except Exception:
+                        pass
+                    self.console.print(f"\n[yellow]→ Next step: /finalize chapters (judge variants and select winner)[/yellow]")
 
-                # Git commit
-                self._commit(f"Generate {len(successful_variants)} chapter outline variants")
-            else:
-                self.console.print("[red]Failed to generate chapter variants[/red]")
+                    # Git commit
+                    self._commit(f"Generate {len(successful_variants)} chapter outline variants")
+                    break  # Success - exit retry loop
+                else:
+                    self.console.print("[red]Failed to generate chapter variants[/red]")
+                    break  # No variants but no exception - don't retry
 
-        except Exception as e:
-            self.console.print(f"[red]Variant generation failed: {self._escape_markup(e)}[/red]")
-            from ..utils.logging import get_logger
-            logger = get_logger()
-            if logger:
-                logger.error(f"Variant generation error: {e}")
+            except Exception as e:
+                # Check if this is a "not enough variants" failure
+                error_msg = str(e)
+                is_insufficient_variants = "variants succeeded" in error_msg.lower()
+
+                if is_insufficient_variants and attempt < max_retry_attempts - 1:
+                    # Show what failed
+                    self.console.print(f"\n[yellow]{'='*70}[/yellow]")
+                    self.console.print(f"[bold yellow]⚠️  VARIANT GENERATION ISSUE[/bold yellow]")
+                    self.console.print(f"[yellow]{'='*70}[/yellow]\n")
+                    self.console.print(f"[dim]{error_msg}[/dim]\n")
+
+                    # Explain the likely cause
+                    if "gpt-5-pro" in self.settings.active_model:
+                        self.console.print(f"[yellow]Note: openai/gpt-5-pro can have reliability issues on first attempt.[/yellow]")
+                        self.console.print(f"[yellow]Retrying often succeeds. Consider switching to anthropic/claude-opus-4.1 for better reliability.[/yellow]\n")
+
+                    # Prompt for retry
+                    self.console.print(f"[bold cyan]Retry variant generation?[/bold cyan]")
+                    self.console.print(f"  [cyan]y[/cyan] - Retry (attempt {attempt + 2}/{max_retry_attempts})")
+                    self.console.print(f"  [cyan]n[/cyan] - Abort")
+
+                    try:
+                        choice = input("\nChoice (y/n): ").strip().lower()
+                    except (KeyboardInterrupt, EOFError):
+                        self.console.print(f"\n[yellow]Generation cancelled by user[/yellow]")
+                        return
+
+                    if choice == 'y':
+                        self.console.print(f"\n[cyan]Retrying variant generation (attempt {attempt + 2}/{max_retry_attempts})...[/cyan]\n")
+                        continue  # Retry
+                    else:
+                        self.console.print(f"\n[yellow]Generation aborted by user[/yellow]")
+                        return
+                else:
+                    # Final attempt failed or not a retry-able error
+                    self.console.print(f"[red]Variant generation failed: {self._escape_markup(e)}[/red]")
+                    from ..utils.logging import get_logger
+                    logger = get_logger()
+                    if logger:
+                        logger.error(f"Variant generation error: {e}")
+                    return
 
     async def _generate_prose(self, options: str = ""):
         """Generate prose for chapters with full sequential context."""
