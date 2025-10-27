@@ -100,12 +100,17 @@ agentic                    # Start REPL
 /generate treatment       # Generate treatment
 /generate chapters        # Generate chapter variants
 /finalize chapters        # Select best variant
-/generate prose all       # Generate full prose
+/generate prose all       # Generate full prose (uses style card by default)
 
 # Iteration workflow (v0.4.0)
 /iterate prose            # Set iteration target
 make it darker            # Natural language feedback (no / prefix)
                           # System validates with judge, shows semantic diff, commits
+
+# Style cards (prose generation)
+# Style cards are used BY DEFAULT - stored in books/project/misc/prose-style-card.md
+/generate prose           # Uses style card automatically
+/generate prose --no-style-card  # Skip style card if needed
 ```
 
 Use `/help` in the REPL and tab-completion for command hints.

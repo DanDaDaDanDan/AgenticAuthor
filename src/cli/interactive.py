@@ -2169,19 +2169,21 @@ Regenerate the foundation addressing the issues above.
         WARNING: Deletes ALL existing prose before regenerating (ensures consistency).
         Use '/generate prose resume' to continue from where you left off.
 
+        Style Card: Uses misc/prose-style-card.md by default for writing guidance.
+
         Options:
             N (chapter number) : Generate specific chapter (deletes that chapter only)
             all                : Generate all chapters (deletes all, then regenerates)
             resume             : Resume from first missing chapter (no deletion)
-            --use-style-card   : Use misc/prose-style-card.md for writing guidance
+            --no-style-card    : Skip style card (generate without writing guidelines)
 
         Examples:
-            /generate prose                     # Delete all, regenerate all
-            /generate prose all                 # Delete all, regenerate all
-            /generate prose 5                   # Delete ch 5, regenerate ch 5
+            /generate prose                     # Delete all, regenerate all (with style card)
+            /generate prose all                 # Delete all, regenerate all (with style card)
+            /generate prose 5                   # Delete ch 5, regenerate ch 5 (with style card)
             /generate prose resume              # Resume from first missing (RECOMMENDED)
-            /generate prose --use-style-card    # Regenerate all with style guidance
-            /generate prose resume -s           # Resume with style card
+            /generate prose --no-style-card     # Regenerate all without style guidance
+            /generate prose resume --no-style-card  # Resume without style card
         """
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -2193,14 +2195,14 @@ Regenerate the foundation addressing the issues above.
             return
 
         # Parse options: chapter number, "all", and flags
-        use_style_card = False
+        use_style_card = True  # DEFAULT: Use style card
         target = "all"  # Default to generating all
 
         if options:
             parts = options.split()
             for part in parts:
-                if part in ("--use-style-card", "--style-card", "-s"):
-                    use_style_card = True
+                if part in ("--no-style-card", "--no-style", "--skip-style"):
+                    use_style_card = False
                 elif part.lower() == "all":
                     target = "all"
                 elif part.isdigit():
@@ -2326,13 +2328,15 @@ Regenerate the foundation addressing the issues above.
         3. Generating sequentially from that point
         4. Handling gaps safely (chapters after gaps may need regeneration)
 
+        Style Card: Uses misc/prose-style-card.md by default for writing guidance.
+
         Options:
-            --use-style-card, -s : Use misc/prose-style-card.md for writing guidance
-            --force, -f          : Skip confirmation prompts
+            --no-style-card : Skip style card (generate without writing guidelines)
+            --force, -f     : Skip confirmation prompts
 
         Examples:
-            /generate prose resume                  # Resume from first missing chapter
-            /generate prose resume --use-style-card # Resume with style guidance
+            /generate prose resume                  # Resume from first missing (with style card)
+            /generate prose resume --no-style-card  # Resume without style guidance
             /generate prose resume --force          # Resume without confirmation
 
         Sequential Context Dependency:
@@ -2345,14 +2349,14 @@ Regenerate the foundation addressing the issues above.
         self._ensure_git_repo()
 
         # Parse options
-        use_style_card = False
+        use_style_card = True  # DEFAULT: Use style card
         force = False
 
         if options:
             parts = options.split()
             for part in parts:
-                if part in ("--use-style-card", "--style-card", "-s"):
-                    use_style_card = True
+                if part in ("--no-style-card", "--no-style", "--skip-style"):
+                    use_style_card = False
                 elif part in ("--force", "-f"):
                     force = True
 
