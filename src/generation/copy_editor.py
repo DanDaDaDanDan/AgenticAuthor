@@ -299,7 +299,7 @@ class CopyEditor:
         chapter_num: int,
         chapter_text: str,
         context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    ) -> str:
         """
         Copy edit a single chapter prose with full accumulated context.
 
@@ -309,7 +309,7 @@ class CopyEditor:
             context: Full context from _build_full_context()
 
         Returns:
-            Result dict with edited_chapter, changes (array), and review_flags
+            Edited chapter text (plain text, no JSON formatting)
         """
         # Build comprehensive prompts using template
         # Format edited chapters (already copy edited)
