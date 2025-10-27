@@ -995,14 +995,22 @@ class InteractiveSession:
                     self.iteration_target = "chapters"
                     self._print(f"[dim]Iteration target set to: chapters[/dim]")
             elif gen_type == "prose":
+                # Check for "resume" subcommand
+                if options.strip().startswith("resume"):
+                    # Extract remaining options after "resume"
+                    resume_options = options.strip()[6:].strip()  # Remove "resume" prefix
+                    await self._generate_prose_resume(resume_options)
+                    # Auto-set iteration target
+                    self.iteration_target = "prose"
+                    self._print(f"[dim]Iteration target set to: prose[/dim]")
                 # Route based on story type
-                if self.project.is_short_form():
+                elif self.project.is_short_form():
                     await self._generate_short_story_prose(options)
                 else:
                     await self._generate_prose(options)
-                # Auto-set iteration target
-                self.iteration_target = "prose"
-                self._print(f"[dim]Iteration target set to: prose[/dim]")
+                    # Auto-set iteration target
+                    self.iteration_target = "prose"
+                    self._print(f"[dim]Iteration target set to: prose[/dim]")
             elif gen_type == "marketing":
                 await self._generate_marketing(options)
                 # No iteration target for marketing
@@ -2158,19 +2166,22 @@ Regenerate the foundation addressing the issues above.
     async def _generate_prose(self, options: str = ""):
         """Generate prose for chapters with full sequential context.
 
-        Defaults to generating all missing chapters.
+        WARNING: Deletes ALL existing prose before regenerating (ensures consistency).
+        Use '/generate prose resume' to continue from where you left off.
 
         Options:
-            N (chapter number) : Generate specific chapter
-            all                : Generate all chapters (default if no args)
+            N (chapter number) : Generate specific chapter (deletes that chapter only)
+            all                : Generate all chapters (deletes all, then regenerates)
+            resume             : Resume from first missing chapter (no deletion)
             --use-style-card   : Use misc/prose-style-card.md for writing guidance
 
         Examples:
-            /generate prose                     # Generate all missing chapters
-            /generate prose all                 # Generate all chapters
-            /generate prose 5                   # Generate chapter 5 only
-            /generate prose --use-style-card    # Generate all with style guidance
-            /generate prose 5 --use-style-card  # Generate chapter 5 with style guidance
+            /generate prose                     # Delete all, regenerate all
+            /generate prose all                 # Delete all, regenerate all
+            /generate prose 5                   # Delete ch 5, regenerate ch 5
+            /generate prose resume              # Resume from first missing (RECOMMENDED)
+            /generate prose --use-style-card    # Regenerate all with style guidance
+            /generate prose resume -s           # Resume with style card
         """
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -2305,6 +2316,265 @@ Regenerate the foundation addressing the issues above.
                 self.console.print("[red]Invalid chapter number[/red]")
             except Exception as e:
                 self.console.print(f"[red]Error: {self._escape_markup(e)}[/red]")
+
+    async def _generate_prose_resume(self, options: str = ""):
+        """Resume prose generation from where it left off.
+
+        Intelligently resumes by:
+        1. Scanning existing chapter prose files
+        2. Finding the first missing chapter
+        3. Generating sequentially from that point
+        4. Handling gaps safely (chapters after gaps may need regeneration)
+
+        Options:
+            --use-style-card, -s : Use misc/prose-style-card.md for writing guidance
+            --force, -f          : Skip confirmation prompts
+
+        Examples:
+            /generate prose resume                  # Resume from first missing chapter
+            /generate prose resume --use-style-card # Resume with style guidance
+            /generate prose resume --force          # Resume without confirmation
+
+        Sequential Context Dependency:
+            Each chapter needs all previous chapters as context. If there's a gap
+            (e.g., chapters 1-3 exist, 4-6 missing, 7-10 exist), we must regenerate
+            from chapter 4 onward because chapters 7-10 were written with context
+            that may not match what we'll generate for 4-6.
+        """
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
+        # Parse options
+        use_style_card = False
+        force = False
+
+        if options:
+            parts = options.split()
+            for part in parts:
+                if part in ("--use-style-card", "--style-card", "-s"):
+                    use_style_card = True
+                elif part in ("--force", "-f"):
+                    force = True
+
+        # Check for chapter outlines
+        chapters_data = self.project.get_chapters_yaml()
+        if not chapters_data or not chapters_data.get('chapters'):
+            self.console.print("[yellow]No chapter outlines found. Generate chapters first with /generate chapters[/yellow]")
+            return
+
+        all_chapters = chapters_data.get('chapters', [])
+        total_chapters = len(all_chapters)
+
+        # Scan existing prose files
+        existing_chapters = []
+        missing_chapters = []
+
+        for chapter in all_chapters:
+            chapter_num = chapter['number']
+            chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+            if chapter_file.exists():
+                existing_chapters.append(chapter_num)
+            else:
+                missing_chapters.append(chapter_num)
+
+        # === CASE 1: All chapters complete ===
+        if not missing_chapters:
+            self.console.print()
+            self.console.print("[green]✓ All chapters already generated[/green]")
+            self.console.print(f"[dim]Chapters 1-{total_chapters} exist in chapters/ directory[/dim]")
+            self.console.print()
+            self.console.print("[dim]Nothing to resume. Use one of these commands:[/dim]")
+            self.console.print("[dim]  /generate prose N     - Regenerate specific chapter[/dim]")
+            self.console.print("[dim]  /generate prose all   - Regenerate all chapters from scratch[/dim]")
+            return
+
+        # === CASE 2: All chapters missing ===
+        if not existing_chapters:
+            self.console.print()
+            self.console.print("[yellow]No existing prose found - starting fresh generation[/yellow]")
+            self.console.print(f"[dim]Will generate all {total_chapters} chapters sequentially[/dim]")
+
+            if not force:
+                self.console.print()
+                choice = input("Continue? [Y/n]: ").strip().lower()
+                if choice == 'n':
+                    self.console.print("[yellow]Resume cancelled[/yellow]")
+                    return
+
+            # Generate all chapters (same as /generate prose all but without deletion)
+            await self._generate_prose_with_range(
+                start_chapter=1,
+                end_chapter=total_chapters,
+                use_style_card=use_style_card,
+                commit_message=f"Generate prose for all {total_chapters} chapters (resume)"
+            )
+            return
+
+        # === CASE 3: Clean continuation (no gaps) ===
+        # Find first missing chapter
+        first_missing = missing_chapters[0]
+
+        # Check if there's a gap (chapters exist after first missing)
+        has_gap = any(ch > first_missing for ch in existing_chapters)
+
+        if not has_gap:
+            # Clean continuation - just generate missing chapters at the end
+            self.console.print()
+            self.console.print("[cyan]═══════════════════════════════════════════════════════════[/cyan]")
+            self.console.print("[cyan]                    RESUME PROSE GENERATION                  [/cyan]")
+            self.console.print("[cyan]═══════════════════════════════════════════════════════════[/cyan]")
+            self.console.print()
+            self.console.print(f"[green]✓ Found existing prose:[/green] Chapters {existing_chapters[0]}-{existing_chapters[-1]}")
+            self.console.print(f"[yellow]○ Missing chapters:[/yellow] Chapters {first_missing}-{total_chapters}")
+            self.console.print()
+            self.console.print(f"[cyan]Will generate:[/cyan] Chapters {first_missing}-{total_chapters} ({len(missing_chapters)} chapters)")
+            self.console.print(f"[dim]Mode: Sequential with full context from existing chapters[/dim]")
+
+            if not force:
+                self.console.print()
+                choice = input("Resume generation? [Y/n]: ").strip().lower()
+                if choice == 'n':
+                    self.console.print("[yellow]Resume cancelled[/yellow]")
+                    return
+
+            await self._generate_prose_with_range(
+                start_chapter=first_missing,
+                end_chapter=total_chapters,
+                use_style_card=use_style_card,
+                commit_message=f"Resume prose generation: chapters {first_missing}-{total_chapters}"
+            )
+            return
+
+        # === CASE 4: Gap detected (chapters exist after first missing) ===
+        # Find chapters that will be deleted
+        chapters_after_gap = [ch for ch in existing_chapters if ch > first_missing]
+        last_gap_chapter = max(missing_chapters)
+
+        self.console.print()
+        self.console.print("[yellow]═══════════════════════════════════════════════════════════[/yellow]")
+        self.console.print("[yellow]                    ⚠️  GAP DETECTED                         [/yellow]")
+        self.console.print("[yellow]═══════════════════════════════════════════════════════════[/yellow]")
+        self.console.print()
+        self.console.print("[dim]Sequential context dependency requires regenerating chapters after gaps[/dim]")
+        self.console.print()
+        self.console.print(f"[green]✓ Keeping:[/green]")
+
+        # Show contiguous existing chapters before first gap
+        kept_chapters = [ch for ch in existing_chapters if ch < first_missing]
+        if kept_chapters:
+            self.console.print(f"    Chapters {kept_chapters[0]}-{kept_chapters[-1]} ({len(kept_chapters)} chapters)")
+
+        self.console.print()
+        self.console.print(f"[yellow]○ Missing in gap:[/yellow]")
+        gap_chapters = [ch for ch in missing_chapters if ch <= last_gap_chapter]
+        if gap_chapters:
+            self.console.print(f"    Chapters {', '.join(map(str, gap_chapters))}")
+
+        self.console.print()
+        self.console.print(f"[red]✗ Will delete and regenerate:[/red]")
+        self.console.print(f"    Chapters {', '.join(map(str, chapters_after_gap))} ({len(chapters_after_gap)} chapters)")
+        self.console.print(f"    [dim]Reason: Written with context that won't match regenerated gap chapters[/dim]")
+
+        self.console.print()
+        self.console.print(f"[cyan]Will generate:[/cyan] Chapters {first_missing}-{total_chapters} ({total_chapters - first_missing + 1} chapters)")
+
+        if not force:
+            self.console.print()
+            self.console.print("[bold yellow]This will delete existing chapters after the gap![/bold yellow]")
+            choice = input("Continue? [y/N]: ").strip().lower()
+            if choice != 'y':
+                self.console.print("[yellow]Resume cancelled[/yellow]")
+                return
+
+        # Delete chapters after the gap
+        self.console.print()
+        self.console.print("[dim]Deleting chapters after gap...[/dim]")
+        for chapter_num in chapters_after_gap:
+            chapter_file = self.project.chapters_dir / f"chapter-{chapter_num:02d}.md"
+            if chapter_file.exists():
+                chapter_file.unlink()
+                self.console.print(f"[dim]  Deleted chapter-{chapter_num:02d}.md[/dim]")
+
+        # Generate from first missing to end
+        await self._generate_prose_with_range(
+            start_chapter=first_missing,
+            end_chapter=total_chapters,
+            use_style_card=use_style_card,
+            commit_message=f"Resume prose with gap handling: chapters {first_missing}-{total_chapters}"
+        )
+
+    async def _generate_prose_with_range(
+        self,
+        start_chapter: int,
+        end_chapter: int,
+        use_style_card: bool,
+        commit_message: str
+    ):
+        """Helper method to generate prose for a specific chapter range.
+
+        Args:
+            start_chapter: First chapter to generate
+            end_chapter: Last chapter to generate (inclusive)
+            use_style_card: Whether to use style card
+            commit_message: Git commit message
+        """
+        # Load style card if requested
+        style_card_content = None
+        if use_style_card:
+            style_card_path = self.project.path / 'misc' / 'prose-style-card.md'
+
+            # If project style card doesn't exist, copy from root misc/ folder
+            if not style_card_path.exists():
+                from pathlib import Path
+                root_style_card = Path('misc') / 'prose-style-card.md'
+
+                if root_style_card.exists():
+                    style_card_path.parent.mkdir(parents=True, exist_ok=True)
+                    try:
+                        import shutil
+                        shutil.copy2(root_style_card, style_card_path)
+                        self.console.print(f"[dim]Copied default style card from {root_style_card}[/dim]")
+                    except Exception as e:
+                        self.console.print(f"[yellow]Warning: Failed to copy style card: {e}[/yellow]")
+
+            if style_card_path.exists():
+                try:
+                    style_card_content = style_card_path.read_text(encoding='utf-8')
+                    self.console.print(f"[dim]Using style card: {style_card_path}[/dim]")
+                except Exception as e:
+                    self.console.print(f"[yellow]Warning: Failed to read style card: {e}[/yellow]")
+
+        # Generate chapters in range
+        generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
+
+        self.console.print()
+        if use_style_card and style_card_content:
+            self.console.print("[cyan]Generating chapters sequentially with full context and style card...[/cyan]")
+        else:
+            self.console.print("[cyan]Generating chapters sequentially with full context...[/cyan]")
+
+        try:
+            results = await generator.generate_all_chapters(
+                start_chapter=start_chapter,
+                end_chapter=end_chapter,
+                style_card=style_card_content
+            )
+
+            if results:
+                # Git commit
+                self._commit(commit_message)
+
+                self.console.print()
+                self.console.rule(style="dim")
+                self.console.print(f"[green]✅  Successfully generated {len(results)} chapters[/green]")
+                total_words = sum(len(p.split()) for p in results.values())
+                self.console.print(f"[dim]Total word count: {total_words:,}[/dim]")
+                self.console.print(f"[dim]Chapters saved to chapters/ directory[/dim]")
+            else:
+                self.console.print("[red]No chapters were generated[/red]")
+
+        except Exception as e:
+            self.console.print(f"[red]Error generating chapters: {self._escape_markup(e)}[/red]")
 
     async def _generate_short_story_prose(self, options: str = ""):
         """Generate complete short-form story prose."""
