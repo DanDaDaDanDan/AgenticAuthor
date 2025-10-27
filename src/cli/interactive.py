@@ -2200,6 +2200,22 @@ Regenerate the foundation addressing the issues above.
         style_card_content = None
         if use_style_card:
             style_card_path = self.project.path / 'misc' / 'prose-style-card.md'
+
+            # If project style card doesn't exist, copy from root misc/ folder
+            if not style_card_path.exists():
+                from pathlib import Path
+                root_style_card = Path('misc') / 'prose-style-card.md'
+
+                if root_style_card.exists():
+                    # Copy default style card to project
+                    style_card_path.parent.mkdir(parents=True, exist_ok=True)
+                    try:
+                        import shutil
+                        shutil.copy2(root_style_card, style_card_path)
+                        self.console.print(f"[dim]Copied default style card from {root_style_card}[/dim]")
+                    except Exception as e:
+                        self.console.print(f"[yellow]Warning: Failed to copy style card: {e}[/yellow]")
+
             if style_card_path.exists():
                 try:
                     style_card_content = style_card_path.read_text(encoding='utf-8')
@@ -2208,8 +2224,8 @@ Regenerate the foundation addressing the issues above.
                     self.console.print(f"[yellow]Warning: Failed to read style card: {e}[/yellow]")
                     self.console.print(f"[dim]Proceeding without style card[/dim]")
             else:
-                self.console.print(f"[yellow]Style card not found: {style_card_path}[/yellow]")
-                self.console.print(f"[dim]Create misc/prose-style-card.md to use this feature[/dim]")
+                self.console.print(f"[yellow]Style card not found in project or root misc/ folder[/yellow]")
+                self.console.print(f"[dim]Create misc/prose-style-card.md (at repo root) or books/{self.project.path.name}/misc/prose-style-card.md[/dim]")
 
         generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
 
