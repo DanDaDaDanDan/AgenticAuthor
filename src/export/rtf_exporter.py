@@ -117,7 +117,9 @@ class RTFExporter:
 
         # Title (large, bold, centered)
         parts.append(r"{\pard\qc\fs48\b ")
-        parts.append(self._escape_rtf(title))
+        title_text = self._escape_rtf(title)
+        title_text = self._encode_special_characters(title_text)
+        parts.append(title_text)
         parts.append(r"\b0\fs24\par}")
         parts.append("\n")
 
@@ -129,7 +131,9 @@ class RTFExporter:
         parts.append(r"{\pard\qc\fs32 by\par}")
         parts.append("\n")
         parts.append(r"{\pard\qc\fs32 ")
-        parts.append(self._escape_rtf(author))
+        author_text = self._escape_rtf(author)
+        author_text = self._encode_special_characters(author_text)
+        parts.append(author_text)
         parts.append(r"\fs24\par}")
         parts.append("\n")
 
@@ -145,7 +149,9 @@ class RTFExporter:
 
         # Copyright symbol and year
         parts.append(r"{\pard ")
-        parts.append(f"Copyright \\u169  {year} by {self._escape_rtf(author)}")
+        author_text = self._escape_rtf(author)
+        author_text = self._encode_special_characters(author_text)
+        parts.append(f"Copyright \\u169  {year} by {author_text}")
         parts.append(r"\par}")
         parts.append("\n")
 
@@ -251,7 +257,9 @@ class RTFExporter:
         # Chapter title if present (centered, bold)
         if title:
             parts.append(r"{\pard\qc\b ")
-            parts.append(self._escape_rtf(title))
+            title_text = self._escape_rtf(title)
+            title_text = self._encode_special_characters(title_text)
+            parts.append(title_text)
             parts.append(r"\b0\par}")
             parts.append("\n")
 
@@ -401,7 +409,9 @@ class RTFExporter:
 
         # Section heading (centered, bold)
         parts.append(r"{\pard\qc\b ")
-        parts.append(self._escape_rtf(heading.title()))
+        heading_text = self._escape_rtf(heading.title())
+        heading_text = self._encode_special_characters(heading_text)
+        parts.append(heading_text)
         parts.append(r"\b0\par}")
         parts.append("\n")
 
@@ -509,7 +519,9 @@ class RTFExporter:
 
                 # Section heading (bold, left-aligned)
                 parts.append(r"{\pard\b ")
-                parts.append(self._escape_rtf(heading))
+                heading_text = self._escape_rtf(heading)
+                heading_text = self._encode_special_characters(heading_text)
+                parts.append(heading_text)
                 parts.append(r"\b0\par}")
                 parts.append("\n")
 
