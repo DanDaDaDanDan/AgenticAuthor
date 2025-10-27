@@ -23,6 +23,14 @@ CRITICAL JSON FORMATTING:
 [USER]
 Copy edit CHAPTER {{ chapter_num }} of {{ total_chapters }}.
 
+{% if copy_edit_instructions %}
+═══════════════════════════════════════════════════════════════
+PROJECT-SPECIFIC COPY EDITING GUIDELINES
+═══════════════════════════════════════════════════════════════
+
+{{ copy_edit_instructions }}
+
+{% else %}
 ═══════════════════════════════════════════════════════════════
 COPY EDITING SCOPE
 ═══════════════════════════════════════════════════════════════
@@ -45,6 +53,7 @@ COPY EDITING SCOPE
   • Author's narrative voice or style
   • Scene order or pacing
   • Creative choices that aren't errors
+{% endif %}
 
 ═══════════════════════════════════════════════════════════════
 STORY STRUCTURE & CHARACTER REFERENCE
@@ -72,6 +81,7 @@ CURRENT CHAPTER TO EDIT
 
 {{ current_chapter_text }}
 
+{% if not copy_edit_instructions %}
 ═══════════════════════════════════════════════════════════════
 EDITING GUIDELINES
 ═══════════════════════════════════════════════════════════════
@@ -101,6 +111,7 @@ EXAMPLE EDITS:
 ✗ "Sarah walked into the room."
   → "Sarah strode confidently into the spacious room."
   (Don't add details or embellish - only fix errors)
+{% endif %}
 
 ═══════════════════════════════════════════════════════════════
 OUTPUT FORMAT

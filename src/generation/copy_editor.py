@@ -343,6 +343,9 @@ class CopyEditor:
         from ..utils.markdown_extractors import MarkdownFormatter
         chapters_markdown = MarkdownFormatter.format_chapters_yaml(context['chapters_yaml'])
 
+        # Load copy-edit instructions if available
+        copy_edit_instructions = self._load_copy_edit_instructions()
+
         # Render prompts from template
         prompts = self.prompt_loader.render(
             "editing/copy_edit",
@@ -352,7 +355,8 @@ class CopyEditor:
             edited_chapters_text=edited_chapters_text,
             remaining_chapters_text=remaining_chapters_text,
             current_chapter_text=current_chapter_text,
-            original_word_count=len(chapter_text.split())
+            original_word_count=len(chapter_text.split()),
+            copy_edit_instructions=copy_edit_instructions
         )
 
         # Get temperature from config
@@ -517,3 +521,44 @@ class CopyEditor:
 
         with open(checkpoint_file, 'w', encoding='utf-8') as f:
             json.dump(checkpoint, f, indent=2)
+
+    def _load_copy_edit_instructions(self) -> Optional[str]:
+        """
+        Load project-specific copy editing instructions from misc/copy-edit.md.
+
+        If project-specific instructions don't exist, attempts to copy from
+        repo root misc/copy-edit.md. Similar to style card loading pattern.
+
+        Returns:
+            Copy editing instructions text, or None if not found
+        """
+        copy_edit_path = self.project.path / 'misc' / 'copy-edit.md'
+
+        # If project copy-edit doesn't exist, try to copy from repo root
+        if not copy_edit_path.exists():
+            from pathlib import Path
+            root_copy_edit = Path('misc') / 'copy-edit.md'
+
+            if root_copy_edit.exists():
+                # Copy default copy-edit instructions to project
+                copy_edit_path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    import shutil
+                    shutil.copy2(root_copy_edit, copy_edit_path)
+                    console.print(f"[dim]Copied default copy-edit instructions from {root_copy_edit}[/dim]")
+                except Exception as e:
+                    console.print(f"[yellow]Warning: Failed to copy copy-edit instructions: {e}[/yellow]")
+                    return None
+
+        # Load instructions if they exist
+        if copy_edit_path.exists():
+            try:
+                instructions = copy_edit_path.read_text(encoding='utf-8')
+                console.print(f"[dim]Using copy-edit instructions: {copy_edit_path.relative_to(self.project.path)}[/dim]")
+                return instructions
+            except Exception as e:
+                console.print(f"[yellow]Warning: Failed to read copy-edit instructions: {e}[/yellow]")
+                return None
+        else:
+            console.print(f"[dim]No copy-edit instructions found - using default editing guidelines[/dim]")
+            return None
