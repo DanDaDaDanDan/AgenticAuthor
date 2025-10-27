@@ -44,19 +44,70 @@ class MarkdownExporter:
         if output_path is None:
             output_path = self.project.get_export_path('md')
 
+        # Choose between original and edited chapters
+        use_edited = self._choose_chapter_source()
+
         # Ensure dedication exists (generate if needed)
         await self._ensure_dedication()
 
         # Build markdown content
-        markdown = await self._build_markdown()
+        markdown = await self._build_markdown(use_edited=use_edited)
 
         # Write to file
         output_path.write_text(markdown, encoding='utf-8')
 
         return output_path
 
-    async def _build_markdown(self) -> str:
-        """Build complete markdown document."""
+    def _choose_chapter_source(self) -> bool:
+        """
+        Choose between original and edited chapters for export.
+
+        Returns:
+            True to use edited chapters, False to use original
+        """
+        from rich.console import Console
+        console = Console()
+
+        # Check if both folders exist
+        has_original = len(self.project.list_chapters()) > 0
+        has_edited = len(self.project.list_edited_chapters()) > 0
+
+        # Only original exists
+        if has_original and not has_edited:
+            return False
+
+        # Only edited exists
+        if has_edited and not has_original:
+            console.print("[yellow]Note: Using copy-edited chapters from chapters-edited/[/yellow]")
+            return True
+
+        # Both exist - ask user
+        if has_original and has_edited:
+            console.print("\n[bold]Both original and edited chapters exist.[/bold]")
+            console.print("  [cyan]1[/cyan] - Export from [bold]chapters/[/bold] (original prose)")
+            console.print("  [cyan]2[/cyan] - Export from [bold]chapters-edited/[/bold] (copy-edited prose)")
+
+            while True:
+                choice = input("\nChoice (1/2): ").strip()
+                if choice == '1':
+                    console.print("[dim]Using original chapters[/dim]\n")
+                    return False
+                elif choice == '2':
+                    console.print("[dim]Using edited chapters[/dim]\n")
+                    return True
+                else:
+                    console.print("[red]Invalid choice. Please enter 1 or 2.[/red]")
+
+        # No chapters at all
+        return False
+
+    async def _build_markdown(self, use_edited: bool = False) -> str:
+        """
+        Build complete markdown document.
+
+        Args:
+            use_edited: If True, use chapters-edited/, otherwise use chapters/
+        """
         from datetime import datetime
         parts = []
 
@@ -132,7 +183,10 @@ class MarkdownExporter:
             else:
                 chapters = self.project.get_chapters() or []
 
-            for chapter_file in sorted(self.project.list_chapters()):
+            # Choose chapter source based on use_edited flag
+            chapter_files = sorted(self.project.list_edited_chapters() if use_edited else self.project.list_chapters())
+
+            for chapter_file in chapter_files:
                 chapter_num = self._extract_chapter_number(chapter_file)
                 chapter_text = chapter_file.read_text(encoding='utf-8')
 

@@ -4,6 +4,7 @@ Variables:
 - chapter_num: Current chapter number being edited
 - total_chapters: Total number of chapters in the book
 - edited_chapters_text: Text of previously edited chapters
+- remaining_chapters_text: Text of chapters not yet edited (for forward reference)
 - current_chapter_text: The current chapter prose to edit
 - copy_edit_instructions: Project-specific copy editing guidelines (optional)
 #}
@@ -59,6 +60,17 @@ PREVIOUSLY EDITED CHAPTERS (for consistency reference)
 {{ edited_chapters_text }}
 
 Use these to ensure consistency in character details, terminology, spelling choices, and style.
+{% endif %}
+
+{% if remaining_chapters_text %}
+═══════════════════════════════════════════════════════════════
+REMAINING CHAPTERS (not yet edited - for forward reference)
+═══════════════════════════════════════════════════════════════
+
+{{ remaining_chapters_text }}
+
+Use these to ensure your editing choices are consistent with the full book context.
+For example, if a character name or technical term appears in these chapters, maintain the same spelling/formatting.
 {% endif %}
 
 ═══════════════════════════════════════════════════════════════

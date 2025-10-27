@@ -95,8 +95,13 @@ class Project:
 
     @property
     def chapters_dir(self) -> Path:
-        """Get path to chapters directory (prose files)."""
+        """Get path to chapters directory (original prose files)."""
         return self.path / "chapters"
+
+    @property
+    def chapters_edited_dir(self) -> Path:
+        """Get path to chapters-edited directory (copy-edited prose files)."""
+        return self.path / "chapters-edited"
 
     @property
     def story_file(self) -> Path:
@@ -688,10 +693,50 @@ class Project:
             self.save_metadata()
 
     def list_chapters(self) -> List[Path]:
-        """List all chapter files."""
+        """List all chapter files (original prose)."""
         if not self.chapters_dir.exists():
             return []
         return sorted(self.chapters_dir.glob("chapter-*.md"))
+
+    def get_edited_chapter(self, chapter_num: int) -> Optional[str]:
+        """
+        Load a specific edited chapter's content.
+
+        Args:
+            chapter_num: Chapter number (1-based)
+
+        Returns:
+            Edited chapter content or None if not found
+        """
+        chapter_file = self.chapters_edited_dir / f"chapter-{chapter_num:02d}.md"
+        if chapter_file.exists():
+            return chapter_file.read_text(encoding='utf-8')
+        return None
+
+    def save_edited_chapter(self, chapter_num: int, content: str):
+        """
+        Save an edited chapter's content to chapters-edited/ folder.
+
+        Args:
+            chapter_num: Chapter number (1-based)
+            content: Edited chapter content
+        """
+        # Ensure chapters-edited directory exists
+        self.chapters_edited_dir.mkdir(exist_ok=True)
+
+        chapter_file = self.chapters_edited_dir / f"chapter-{chapter_num:02d}.md"
+        chapter_file.write_text(content, encoding='utf-8')
+
+        # Update timestamp
+        if self.metadata:
+            self.metadata.update_timestamp()
+            self.save_metadata()
+
+    def list_edited_chapters(self) -> List[Path]:
+        """List all edited chapter files."""
+        if not self.chapters_edited_dir.exists():
+            return []
+        return sorted(self.chapters_edited_dir.glob("chapter-*.md"))
 
     def get_story(self) -> Optional[str]:
         """

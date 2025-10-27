@@ -201,8 +201,8 @@ class CopyEditor:
                     skipped_count += 1
                     continue
 
-            # Save edited prose (result is plain text now)
-            self.project.save_chapter(chapter_num, result)
+            # Save edited prose to chapters-edited/ (result is plain text now)
+            self.project.save_edited_chapter(chapter_num, result)
 
             # Store edited version for next chapter's context
             self.edited_chapters[chapter_num] = result
@@ -320,6 +320,17 @@ class CopyEditor:
                 for ch in context['edited_chapters']
             ])
 
+        # Format remaining chapters (not yet copy edited, for forward reference)
+        remaining_chapters_text = ""
+        if context['remaining_chapters']:
+            # Exclude current chapter from remaining (it's being edited now)
+            remaining_for_context = [ch for ch in context['remaining_chapters'] if ch['number'] != chapter_num]
+            if remaining_for_context:
+                remaining_chapters_text = "\n\n".join([
+                    f"### Chapter {ch['number']}\n\n{ch['text']}"
+                    for ch in remaining_for_context
+                ])
+
         # Get current chapter text
         current_chapter_text = chapter_text
 
@@ -332,6 +343,7 @@ class CopyEditor:
             chapter_num=chapter_num,
             total_chapters=context['total_chapters'],
             edited_chapters_text=edited_chapters_text,
+            remaining_chapters_text=remaining_chapters_text,
             current_chapter_text=current_chapter_text,
             copy_edit_instructions=copy_edit_instructions
         )
