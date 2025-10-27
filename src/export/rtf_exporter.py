@@ -165,7 +165,7 @@ class RTFExporter:
                 parts.append(self._page_break())
 
         # Chapters
-        parts.append(self._build_all_chapters())
+        parts.append(self._build_all_chapters(use_edited))
 
         # Backmatter (if author is Sloane Grey)
         backmatter = await self._get_backmatter()
@@ -247,8 +247,13 @@ class RTFExporter:
 
         return ''.join(parts)
 
-    def _build_all_chapters(self) -> str:
-        """Build RTF for all chapters (or short story)."""
+    def _build_all_chapters(self, use_edited: bool = False) -> str:
+        """
+        Build RTF for all chapters (or short story).
+
+        Args:
+            use_edited: If True, use chapters-edited/, otherwise use chapters/
+        """
         parts = []
 
         # Check if short-form story
