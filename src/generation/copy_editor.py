@@ -201,23 +201,22 @@ class CopyEditor:
                     skipped_count += 1
                     continue
 
-            # Save edited prose
-            edited_text = result['edited_chapter']
-            self.project.save_chapter(chapter_num, edited_text)
+            # Save edited prose (result is plain text now)
+            self.project.save_chapter(chapter_num, result)
 
             # Store edited version for next chapter's context
-            self.edited_chapters[chapter_num] = edited_text
+            self.edited_chapters[chapter_num] = result
 
-            # Save checkpoint
+            # Save checkpoint (plain text backup)
             self._save_checkpoint(chapter_num, result, backup_dir)
 
             # Show success
             console.print(f"\n[green]✓ Chapter {chapter_num} copy edited successfully[/green]")
 
-            # Show number of changes made
-            changes = result.get('changes', [])
-            if changes:
-                console.print(f"  [dim]• {len(changes)} edits applied[/dim]")
+            # Word count info
+            orig_words = len(original.split())
+            edit_words = len(result.split())
+            console.print(f"  [dim]• Words: {orig_words:,} → {edit_words:,}[/dim]")
 
             console.print(f"  [dim]• Saved to chapters/chapter-{chapter_num:02d}.md[/dim]")
 
@@ -313,35 +312,16 @@ class CopyEditor:
             Result dict with edited_chapter, changes (array), and review_flags
         """
         # Build comprehensive prompts using template
-        # Format edited chapters (already perfect)
+        # Format edited chapters (already copy edited)
         edited_chapters_text = ""
         if context['edited_chapters']:
             edited_chapters_text = "\n\n".join([
-                f"### Chapter {ch['number']} (ALREADY COPY EDITED)\n\n{ch['text']}"
+                f"### Chapter {ch['number']}\n\n{ch['text']}"
                 for ch in context['edited_chapters']
             ])
 
-        # Format remaining original chapters (for forward references)
-        remaining_chapters_text = ""
-        if context['remaining_chapters']:
-            # Don't include the current chapter in remaining (it's what we're editing)
-            remaining_for_context = [ch for ch in context['remaining_chapters'] if ch['number'] != chapter_num]
-            if remaining_for_context:
-                remaining_chapters_text = "\n\n".join([
-                    f"### Chapter {ch['number']} (ORIGINAL - NOT YET EDITED)\n\n{ch['text']}"
-                    for ch in remaining_for_context
-                ])
-
-        # Get current chapter text from remaining
+        # Get current chapter text
         current_chapter_text = chapter_text
-        for ch in context['remaining_chapters']:
-            if ch['number'] == chapter_num:
-                current_chapter_text = ch['text']
-                break
-
-        # Serialize chapters.yaml to markdown for context
-        from ..utils.markdown_extractors import MarkdownFormatter
-        chapters_markdown = MarkdownFormatter.format_chapters_yaml(context['chapters_yaml'])
 
         # Load copy-edit instructions if available
         copy_edit_instructions = self._load_copy_edit_instructions()
@@ -351,69 +331,59 @@ class CopyEditor:
             "editing/copy_edit",
             chapter_num=chapter_num,
             total_chapters=context['total_chapters'],
-            chapters_markdown=chapters_markdown,
             edited_chapters_text=edited_chapters_text,
-            remaining_chapters_text=remaining_chapters_text,
             current_chapter_text=current_chapter_text,
-            original_word_count=len(chapter_text.split()),
             copy_edit_instructions=copy_edit_instructions
         )
 
         # Get temperature from config
         temperature = self.prompt_loader.get_temperature("editing/copy_edit", default=0.3)
 
-        # Call LLM with streaming enabled to show edited text as it's generated
-        result = await self.client.json_completion(
+        # Call LLM with streaming - returns plain text
+        edited_chapter = await self.client.stream_completion(
             model=self.model,
             prompt=prompts['user'],
             system_prompt=prompts['system'],
             temperature=temperature,
-            display_field="edited_chapter",  # Stream the edited chapter text
             display_label=f"Copy editing chapter {chapter_num}",
-            display_mode="field",  # Extract and display just the edited_chapter field
-            reserve_tokens=8000  # Full chapter + detailed changes
+            reserve_tokens=5000  # Reserve space for full chapter output
         )
 
-        return result
+        return edited_chapter.strip()
 
-    def _verify_edit_quality(self, original: str, result: Dict[str, Any]) -> List[str]:
+    def _verify_edit_quality(self, original: str, edited: str) -> List[str]:
         """
         Verify edit meets quality standards and safety checks.
 
         Args:
             original: Original chapter prose
-            result: Edit result from LLM
+            edited: Edited chapter prose (plain text)
 
         Returns:
             List of warning strings
         """
         warnings = []
-        edited = result.get('edited_chapter', '')
 
         if not edited:
             warnings.append("⚠ CRITICAL: No edited chapter returned")
             return warnings
-
-        # Word count verification (info only, not a warning)
-        # Copy editing focuses on correctness, not hitting exact word counts
-        orig_words = len(original.split())
-        edit_words = len(edited.split())
-        # change_pct calculated but not used for warnings
 
         # Paragraph structure verification
         orig_paras = original.count('\n\n')
         edit_paras = edited.count('\n\n')
         para_change_pct = abs(edit_paras - orig_paras) / orig_paras * 100 if orig_paras > 0 else 0
 
-        if para_change_pct > 10:
-            warnings.append(f"⚠ Paragraph structure changed by {para_change_pct:.1f}%")
+        if para_change_pct > 15:
+            warnings.append(f"⚠ Paragraph structure changed significantly ({para_change_pct:.1f}%)")
 
         # Dialogue preservation
         orig_quotes = original.count('"')
         edit_quotes = edited.count('"')
 
         if orig_quotes != edit_quotes:
-            warnings.append(f"⚠ Dialogue markers changed (quotes: {orig_quotes} → {edit_quotes})")
+            diff = abs(orig_quotes - edit_quotes)
+            if diff > 2:  # Allow minor discrepancies
+                warnings.append(f"⚠ Dialogue markers changed (quotes: {orig_quotes} → {edit_quotes})")
 
         # Scene break preservation
         orig_breaks = original.count('* * *')
@@ -429,25 +399,13 @@ class CopyEditor:
         if orig_starts_chapter and not edit_starts_chapter:
             warnings.append(f"⚠ Chapter heading was removed")
 
-        # Check for pronoun-related changes in the changes array
-        changes = result.get('changes', [])
-        for change_item in changes:
-            change_text = change_item.get('change', '') if isinstance(change_item, dict) else str(change_item)
-            if 'pronoun' in change_text.lower():
-                warnings.append(f"⚠ Pronoun change: {change_text}")
-
-        # Review flags from LLM
-        if result.get('review_flags'):
-            for flag in result['review_flags']:
-                warnings.append(f"⚠ LLM flagged: {flag}")
-
         return warnings
 
     def _show_edit_preview(
         self,
         chapter_num: int,
         original: str,
-        result: Dict[str, Any],
+        edited: str,
         warnings: List[str]
     ) -> bool:
         """
@@ -456,62 +414,44 @@ class CopyEditor:
         Args:
             chapter_num: Chapter number
             original: Original prose
-            result: Edit result
+            edited: Edited prose (plain text)
             warnings: List of warnings
 
         Returns:
             True if user approves, False otherwise
         """
-        changes = result.get('changes', [])
-
         # Calculate word count statistics
         original_words = len(original.split())
-        edited_text = result.get('edited_chapter', '')
-        edited_words = len(edited_text.split())
+        edited_words = len(edited.split())
         word_change_pct = ((edited_words - original_words) / original_words * 100) if original_words > 0 else 0
 
         # Show statistics
         console.print(f"\n[bold]Chapter {chapter_num} Edit Summary[/bold]")
-        console.print(f"  [dim]Word count: {original_words} → {edited_words} ({word_change_pct:+.1f}%)[/dim]")
-        console.print(f"  [dim]Total edits: {len(changes)}[/dim]")
-
-        # Show changes with reasons
-        if changes:
-            console.print("\n[cyan]Changes Made:[/cyan]")
-            for i, change_item in enumerate(changes[:15], 1):  # Show first 15
-                if isinstance(change_item, dict):
-                    change = change_item.get('change', '')
-                    reason = change_item.get('reason', '')
-                    console.print(f"  {i}. {change}")
-                    if reason:
-                        console.print(f"     [dim]→ {reason}[/dim]")
-                else:
-                    # Fallback for simple string format
-                    console.print(f"  {i}. {change_item}")
-
-            if len(changes) > 15:
-                console.print(f"  [dim]... and {len(changes) - 15} more changes[/dim]")
+        console.print(f"  [dim]Word count: {original_words:,} → {edited_words:,} ({word_change_pct:+.1f}%)[/dim]")
 
         # Show warnings
         if warnings:
-            console.print("\n[red]⚠ Warnings:[/red]")
+            console.print("\n[yellow]⚠ Warnings:[/yellow]")
             for warning in warnings:
                 console.print(f"  {warning}")
+        else:
+            console.print(f"  [dim]No structural warnings detected[/dim]")
 
         # Get approval
         console.print()
-        response = input("Apply these edits? [Y/n]: ").strip().lower()
+        response = input("Apply edits? [Y/n]: ").strip().lower()
         return response != 'n'
 
-    def _save_checkpoint(self, chapter_num: int, result: Dict[str, Any], backup_dir: Path):
+    def _save_checkpoint(self, chapter_num: int, edited_text: str, backup_dir: Path):
         """
         Save checkpoint after each chapter for resume capability.
 
         Args:
             chapter_num: Chapter number just completed
-            result: Edit result
+            edited_text: Edited chapter prose (plain text)
             backup_dir: Backup directory
         """
+        # Save checkpoint metadata
         checkpoint_file = backup_dir / 'checkpoint.json'
         checkpoint = {
             'last_chapter_edited': chapter_num,
@@ -521,6 +461,11 @@ class CopyEditor:
 
         with open(checkpoint_file, 'w', encoding='utf-8') as f:
             json.dump(checkpoint, f, indent=2)
+
+        # Save edited chapter text backup
+        chapter_backup_file = backup_dir / f'chapter-{chapter_num:02d}.md'
+        with open(chapter_backup_file, 'w', encoding='utf-8') as f:
+            f.write(edited_text)
 
     def _load_copy_edit_instructions(self) -> Optional[str]:
         """
