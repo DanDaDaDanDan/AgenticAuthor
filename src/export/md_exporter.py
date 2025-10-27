@@ -62,41 +62,60 @@ class MarkdownExporter:
         """
         Choose between original and edited chapters for export.
 
+        Only prompts if original chapters are newer than edited chapters
+        (suggesting modifications after copy editing).
+
         Returns:
             True to use edited chapters, False to use original
         """
         from rich.console import Console
         console = Console()
 
-        # Check if both folders exist
-        has_original = len(self.project.list_chapters()) > 0
-        has_edited = len(self.project.list_edited_chapters()) > 0
+        original_files = self.project.list_chapters()
+        edited_files = self.project.list_edited_chapters()
 
         # Only original exists
-        if has_original and not has_edited:
+        if original_files and not edited_files:
             return False
 
         # Only edited exists
-        if has_edited and not has_original:
-            console.print("[yellow]Note: Using copy-edited chapters from chapters-edited/[/yellow]")
+        if edited_files and not original_files:
+            console.print("[dim]Using copy-edited chapters from chapters-edited/[/dim]")
             return True
 
-        # Both exist - ask user
-        if has_original and has_edited:
-            console.print("\n[bold]Both original and edited chapters exist.[/bold]")
-            console.print("  [cyan]1[/cyan] - Export from [bold]chapters/[/bold] (original prose)")
-            console.print("  [cyan]2[/cyan] - Export from [bold]chapters-edited/[/bold] (copy-edited prose)")
+        # Both exist - check timestamps
+        if original_files and edited_files:
+            # Get newest modification time from each folder
+            newest_original = max(f.stat().st_mtime for f in original_files)
+            newest_edited = max(f.stat().st_mtime for f in edited_files)
 
-            while True:
-                choice = input("\nChoice (1/2): ").strip()
-                if choice == '1':
-                    console.print("[dim]Using original chapters[/dim]\n")
-                    return False
-                elif choice == '2':
-                    console.print("[dim]Using edited chapters[/dim]\n")
-                    return True
-                else:
-                    console.print("[red]Invalid choice. Please enter 1 or 2.[/red]")
+            # If original chapters are newer, warn and prompt
+            if newest_original > newest_edited:
+                from datetime import datetime
+                orig_time = datetime.fromtimestamp(newest_original).strftime('%Y-%m-%d %H:%M:%S')
+                edit_time = datetime.fromtimestamp(newest_edited).strftime('%Y-%m-%d %H:%M:%S')
+
+                console.print("\n[yellow]⚠ Warning: Original chapters have been modified after copy editing[/yellow]")
+                console.print(f"  Original chapters: last modified {orig_time}")
+                console.print(f"  Edited chapters:   last modified {edit_time}")
+                console.print("\n[bold]Which version do you want to export?[/bold]")
+                console.print("  [cyan]1[/cyan] - Export from [bold]chapters/[/bold] (newer originals)")
+                console.print("  [cyan]2[/cyan] - Export from [bold]chapters-edited/[/bold] (copy-edited)")
+
+                while True:
+                    choice = input("\nChoice (1/2): ").strip()
+                    if choice == '1':
+                        console.print("[dim]Using original chapters[/dim]\n")
+                        return False
+                    elif choice == '2':
+                        console.print("[dim]Using edited chapters (ignoring newer originals)[/dim]\n")
+                        return True
+                    else:
+                        console.print("[red]Invalid choice. Please enter 1 or 2.[/red]")
+            else:
+                # Edited is newer or same age - auto-use edited
+                console.print("[dim]Using copy-edited chapters from chapters-edited/[/dim]")
+                return True
 
         # No chapters at all
         return False
