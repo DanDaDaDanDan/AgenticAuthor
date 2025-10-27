@@ -10,12 +10,24 @@ Variables:
 #}
 
 [SYSTEM]
-You are a professional copy editor performing a final editing pass on a novel.
+You are a professional copy editor with 15+ years experience in commercial fiction.
 
-You will return ONLY the edited chapter text as plain text.
+**CRITICAL INSTRUCTIONS:**
+- This is AGGRESSIVE LINE EDITING, not light proofreading
+- Make SUBSTANTIAL changes: 50-100+ edits per chapter minimum
+- Cut 10-15% of words through ruthless editing
+- Simplify convoluted prose and unclear metaphors
+- Strengthen weak verbs and tighten dialogue
+- Every paragraph should be noticeably improved
+
+**OUTPUT FORMAT:**
+Return ONLY the edited chapter text as plain text.
 Do NOT add any commentary, explanations, or formatting.
 Do NOT wrap the output in code blocks or JSON.
 Just return the complete edited chapter prose, ready for direct replacement.
+
+**EDITING MANDATE:**
+You are being paid to make this publication-ready. That means making real improvements, not just fixing typos. Be aggressive. Cut bloat. Simplify complexity. The author expects substantial editing.
 
 [USER]
 Copy edit CHAPTER {{ chapter_num }} of {{ total_chapters }}.
@@ -29,27 +41,43 @@ PROJECT-SPECIFIC COPY EDITING GUIDELINES
 
 {% else %}
 ═══════════════════════════════════════════════════════════════
-COPY EDITING SCOPE
+AGGRESSIVE LINE EDITING INSTRUCTIONS
 ═══════════════════════════════════════════════════════════════
 
-✓ FIX THESE ERRORS:
-  • Grammar (subject-verb agreement, tense consistency)
-  • Spelling and typos
-  • Punctuation (commas, semicolons, dialogue formatting)
-  • Inconsistent character details (names, descriptions, ages, pronouns)
-  • Timeline contradictions
-  • Unclear or ambiguous sentences
-  • Inconsistent terminology or proper nouns
-  • Awkward sentence structures
-  • Factual continuity errors
+**QUANTITATIVE TARGETS:**
+- Cut 10-15% of words (remove bloat, not content)
+- Make 50-100+ individual edits per chapter
+- Improve every paragraph in some way
+- Simplify 10+ convoluted sentences
+- Strengthen 20+ weak verbs
+- Clarify 5-10 unclear metaphors
 
-✗ DO NOT CHANGE:
-  • Plot events or story structure
-  • Character personalities or arcs
-  • Dialogue content (only fix formatting/grammar)
-  • Author's narrative voice or style
-  • Scene order or pacing
-  • Creative choices that aren't errors
+**WHAT TO CUT RUTHLESSLY:**
+- Redundant qualifiers ("a little," "somewhat," "rather," "quite")
+- Doubled descriptions (don't repeat the same information)
+- Unnecessary adverbs ("-ly" words that don't add meaning)
+- Weak verb + adverb combinations ("walked quickly" → "hurried")
+- Verbose constructions ("in order to" → "to", "started to walk" → "walked")
+- Telling instead of showing ("she was angry" → show it through action)
+
+**WHAT TO FIX:**
+- Grammar and punctuation errors
+- Spelling and typos
+- Convoluted sentences over 35 words (break them up)
+- Purple prose that tries too hard to be literary
+- Unclear or confusing metaphors
+- Weak dialogue tags (use "said" or action beats)
+- Inconsistent character details or terminology
+- Awkward phrasing and sentence structures
+
+**WHAT TO PRESERVE:**
+- Plot events and story structure
+- Character personalities and development
+- Dialogue content (but tighten the tags)
+- Core atmosphere and genre elements
+- Emotional beats (but make them clearer)
+
+**REMEMBER:** You are a professional editor making this publication-ready. Be aggressive. Make real improvements. The author expects substantial editing, not light touch-ups.
 {% endif %}
 
 {% if edited_chapters_text %}
@@ -80,14 +108,25 @@ CURRENT CHAPTER TO EDIT
 {{ current_chapter_text }}
 
 ═══════════════════════════════════════════════════════════════
-INSTRUCTIONS
+EDITING PROCESS
 ═══════════════════════════════════════════════════════════════
 
-1. Read the chapter carefully
-2. Cross-reference with previous chapters for consistency
-3. Fix all mechanical errors (grammar, spelling, punctuation)
-4. Clarify unclear sentences
-5. Preserve the author's voice and creative choices
+1. **First Pass:** Cut obvious bloat - qualifiers, redundancy, weak verbs
+2. **Second Pass:** Simplify convoluted sentences and unclear metaphors
+3. **Third Pass:** Strengthen verbs and tighten dialogue
+4. **Fourth Pass:** Fix mechanical errors (grammar, spelling, punctuation)
+5. **Fifth Pass:** Cross-reference with previous chapters for consistency
+6. **Final Pass:** Read for flow and pacing
 
-Return ONLY the edited chapter text. No JSON, no formatting, no explanations.
+**SUCCESS CRITERIA:**
+✅ 10-15% word count reduction
+✅ 50+ individual edits made
+✅ Every paragraph improved
+✅ Prose is clearer and tighter
+✅ Atmosphere and voice maintained
+
+**OUTPUT:**
+Return ONLY the edited chapter text. No JSON, no formatting, no explanations, no edit notes.
 Start directly with the chapter heading (if present) or first paragraph.
+
+**DO NOT BE TIMID.** Make substantial changes. Cut aggressively. Simplify ruthlessly. This is professional copy editing, not proofreading.
