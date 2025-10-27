@@ -352,13 +352,14 @@ class CopyEditor:
         temperature = self.prompt_loader.get_temperature("editing/copy_edit", default=0.3)
 
         # Call LLM with streaming - returns plain text
-        edited_chapter = await self.client.stream_completion(
+        edited_chapter = await self.client.completion(
             model=self.model,
             prompt=prompts['user'],
             system_prompt=prompts['system'],
             temperature=temperature,
-            display_label=f"Copy editing chapter {chapter_num}",
-            reserve_tokens=5000  # Reserve space for full chapter output
+            display=True,
+            reserve_tokens=5000,  # Reserve space for full chapter output
+            operation=f"copy-edit-chapter-{chapter_num}"
         )
 
         return edited_chapter.strip()
