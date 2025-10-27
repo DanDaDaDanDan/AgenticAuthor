@@ -554,22 +554,43 @@ class RTFExporter:
         Use this after _escape_rtf() to convert Unicode characters
         that need special encoding in RTF (em/en dashes, smart quotes, etc.)
 
+        Handles all Windows-1252 (ANSI) characters including:
+        - Smart quotes and dashes (0x80-0x9F)
+        - Latin-1 extended characters (0xA0-0xFF) like é, ç, ñ, etc.
+
         Args:
             text: RTF-escaped text
 
         Returns:
             Text with Unicode characters converted to ANSI hex codes
         """
-        # Use ANSI hex codes since header declares \ansi
-        text = text.replace('—', "\\'97")  # Em dash
-        text = text.replace('–', "\\'96")  # En dash
-        text = text.replace(''', "\\'91")  # Left single quote
-        text = text.replace(''', "\\'92")  # Right single quote
-        text = text.replace('"', "\\'93")  # Left double quote
-        text = text.replace('"', "\\'94")  # Right double quote
-        text = text.replace('…', "\\'85")  # Ellipsis
+        # Process character by character for comprehensive encoding
+        result = []
+        for char in text:
+            # ASCII characters (0x00-0x7F) pass through unchanged
+            if ord(char) < 0x80:
+                result.append(char)
+                continue
 
-        return text
+            # For characters >= 0x80, try to encode to Windows-1252
+            try:
+                # Encode character to Windows-1252 (cp1252)
+                byte_value = char.encode('cp1252')
+
+                # If it's a single byte, convert to RTF hex format
+                if len(byte_value) == 1:
+                    hex_code = byte_value[0]
+                    result.append(f"\\'{hex_code:02x}")
+                else:
+                    # Multi-byte or unmappable - use Unicode escape
+                    result.append(f"\\u{ord(char)}?")
+
+            except UnicodeEncodeError:
+                # Character not in Windows-1252, use Unicode escape
+                # RTF format: \uN? where N is the Unicode code point
+                result.append(f"\\u{ord(char)}?")
+
+        return ''.join(result)
 
     def _page_break(self) -> str:
         """Return RTF page break."""
