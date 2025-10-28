@@ -1156,8 +1156,10 @@ class InteractiveSession:
     async def _generate_premise(self, user_input: str = ""):
         """Generate story premise with enhanced genre and taxonomy support.
 
-        Supports file paths: /generate premise path/to/story.txt
-        If a file path is provided, the contents will be used as the concept.
+        Supports file input: /generate premise --file=path/to/story.txt
+                           /generate premise sci-fi --file=path/to/story.txt
+
+        File contents will be used as the concept/story input.
         """
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -1165,22 +1167,21 @@ class InteractiveSession:
         genre = None
         concept = ""
         length_scope = None
+        file_path = None
+
+        # Parse --file flag if present
+        if user_input.strip():
+            user_input, file_path = self._extract_file_flag(user_input)
 
         # NEW FLOW: Interactive questions if no input provided
-        if not user_input.strip():
-            # 1. Ask for concept (or file path)
-            self.console.print("\n[cyan]Story Concept (or file path):[/cyan]")
+        if not user_input.strip() and not file_path:
+            # 1. Ask for concept
+            self.console.print("\n[cyan]Story Concept:[/cyan]")
             try:
-                concept_input = input("> ").strip()
-                if not concept_input:
+                concept = input("> ").strip()
+                if not concept:
                     self.console.print("[yellow]Cancelled[/yellow]")
                     return
-
-                # Check if input is a file path
-                concept = self._read_file_if_path(concept_input)
-                if not concept:
-                    return  # Error message already shown
-
             except (KeyboardInterrupt, EOFError):
                 self.console.print("[yellow]Cancelled[/yellow]")
                 return
@@ -1204,24 +1205,25 @@ class InteractiveSession:
 
         else:
             # OLD FLOW: Parse command-line input (backwards compatible)
-            parts = user_input.strip().split(None, 1)
+            # Note: --file flag already extracted above
+            parts = user_input.strip().split(None, 1) if user_input.strip() else []
 
             if parts:
                 # Check if first part is a genre
                 normalized = self.taxonomy_loader.normalize_genre(parts[0])
                 if normalized != 'general' or parts[0].lower() in ['custom', 'general']:
                     genre = parts[0]
-                    concept_input = parts[1] if len(parts) > 1 else ""
-                    # Check if concept is a file path
-                    if concept_input:
-                        concept = self._read_file_if_path(concept_input)
-                        if not concept:
-                            return  # Error message already shown
+                    concept = parts[1] if len(parts) > 1 else ""
                 else:
-                    # First part is not a genre, treat all as concept (or file path)
-                    concept = self._read_file_if_path(user_input)
-                    if not concept:
-                        return  # Error message already shown
+                    # First part is not a genre, treat all as concept
+                    concept = user_input
+
+        # Load from file if --file flag was provided
+        if file_path:
+            loaded_concept = self._read_file_from_path(file_path)
+            if not loaded_concept:
+                return  # Error message already shown
+            concept = loaded_concept
 
             # If no genre specified, auto-detect or ask
             if not genre:
@@ -1508,45 +1510,73 @@ class InteractiveSession:
         except (KeyboardInterrupt, EOFError):
             return False
 
-    def _read_file_if_path(self, text: str) -> str:
-        """Check if text is a file path and read it if so.
+    def _extract_file_flag(self, user_input: str) -> tuple[str, str | None]:
+        """Extract --file flag from user input.
+
+        Supports both formats:
+        - --file=path/to/file.txt
+        - --file path/to/file.txt
 
         Args:
-            text: User input that might be a file path or direct text
+            user_input: User input potentially containing --file flag
 
         Returns:
-            File contents if path exists, otherwise the original text
-            Returns empty string on error (error message already shown)
+            Tuple of (remaining_input, file_path)
+            file_path is None if no flag found
+        """
+        import re
+
+        # Pattern 1: --file=path (no spaces in path, or quoted)
+        match = re.search(r'--file[=\s]+([^\s]+)', user_input)
+        if match:
+            file_path = match.group(1)
+            # Remove the --file flag from input
+            remaining = user_input[:match.start()] + user_input[match.end():]
+            return remaining.strip(), file_path
+
+        return user_input, None
+
+    def _read_file_from_path(self, file_path_str: str) -> str:
+        """Read content from a file path.
+
+        Args:
+            file_path_str: File path string
+
+        Returns:
+            File contents, or empty string on error (error message shown)
         """
         from pathlib import Path
 
-        # Check if text looks like it could be a file path
-        # (has file extension or path separators)
-        if '/' in text or '\\' in text or '.' in text:
+        try:
+            # Try to resolve as absolute or relative path
+            file_path = Path(file_path_str)
+
+            # Also try relative to current directory
+            if not file_path.exists():
+                file_path = Path.cwd() / file_path_str
+
+            if not file_path.exists():
+                self.console.print(f"[red]File not found: {file_path_str}[/red]")
+                self.console.print(f"[dim]Tried: {file_path.absolute()}[/dim]")
+                return ""
+
+            if not file_path.is_file():
+                self.console.print(f"[red]Not a file: {file_path_str}[/red]")
+                return ""
+
+            self.console.print(f"[dim]Reading from file: {file_path}[/dim]")
             try:
-                # Try to resolve as absolute or relative path
-                file_path = Path(text)
+                content = file_path.read_text(encoding='utf-8')
+                word_count = len(content.split())
+                self.console.print(f"[dim]Loaded {word_count:,} words from file[/dim]\n")
+                return content
+            except Exception as e:
+                self.console.print(f"[red]Error reading file: {e}[/red]")
+                return ""
 
-                # Also try relative to current directory
-                if not file_path.exists():
-                    file_path = Path.cwd() / text
-
-                if file_path.exists() and file_path.is_file():
-                    self.console.print(f"[dim]Reading from file: {file_path}[/dim]")
-                    try:
-                        content = file_path.read_text(encoding='utf-8')
-                        word_count = len(content.split())
-                        self.console.print(f"[dim]Loaded {word_count:,} words from file[/dim]\n")
-                        return content
-                    except Exception as e:
-                        self.console.print(f"[red]Error reading file: {e}[/red]")
-                        return ""
-            except Exception:
-                # Not a valid path, treat as direct text
-                pass
-
-        # Not a file path or doesn't exist - return as-is
-        return text
+        except Exception as e:
+            self.console.print(f"[red]Invalid file path: {e}[/red]")
+            return ""
 
     async def _select_genre_interactive(self, allow_auto_detect: bool = False):
         """Interactive genre selection."""
