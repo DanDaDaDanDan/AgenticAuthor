@@ -54,6 +54,36 @@ Generate {{ chapter_count }} chapter outlines using BEAT SHEET format.
 
 ---
 
+⚠️ PROGRESSIVE CONTEXT INTRODUCTION (CRITICAL):
+
+You are generating ALL chapter beat files in a single session. As you write each chapter
+sequentially, track what context you've already introduced to avoid repetition.
+
+CONTEXT INTRODUCTION RULES:
+- **Chapter 1:** Introduce protagonist, primary setting, core tone/genre, key relationships
+- **Chapters 2+:** ONLY introduce NEW characters, locations, or concepts as they FIRST appear
+- **DO NOT** repeat character descriptions from previous chapters
+- **DO NOT** include character arc resolutions or future plot outcomes
+- **Focus on CURRENT state only**, not future development or "ultimately/by the end"
+
+Each beat file MUST include a "Story Context" section with ONLY new elements:
+
+**Story Context:**
+- Characters: [Only NEW characters in this chapter - Name, role, current state (1-2 sentences)]
+- Locations: [Only NEW locations - Name, relevance to this chapter]
+- Concepts: [Only NEW technical/world elements becoming relevant]
+- If nothing new: "No new context (continuing: [character names])"
+
+KEEP CONTEXT BRIEF: Prose generation will see ALL beats from chapters 1-N cumulatively.
+Context introduced in Chapter 1 will be available when writing Chapter 20.
+
+Progressive introduction prevents:
+- Spoiling character arcs (no "ultimately learns/becomes/sacrifices")
+- Repetitive descriptions (describe Eliza once, not in every chapter)
+- Information overload (introduce as story needs, not upfront data dump)
+
+---
+
 ⚠️ CRITICAL PACING PRINCIPLES (HIGHEST PRIORITY):
 - The first 10-15% of the book (first 2-3 chapters) must be EXCEPTIONALLY captivating and fast-paced
 - Pose intriguing questions early to create immediate reader curiosity
@@ -136,6 +166,11 @@ OUTPUT FORMAT (use clean markdown):
 
 # Chapter 1: [Compelling Title]
 
+**Story Context:**
+- Characters: [Protagonist name], [role], [current state - 1-2 sentences]; [Other new characters]
+- Locations: [Primary setting - brief description]
+- World/Tone: [Genre, tone, key world element if relevant]
+
 **Act:** Act I
 **POV:** [Name]
 **Primary Operation Type:** [investigation|confrontation|...]
@@ -159,6 +194,11 @@ OUTPUT FORMAT (use clean markdown):
 ---
 
 # Chapter 2: [Title]
+
+**Story Context:**
+- Characters: [ONLY new characters introduced in Chapter 2 - do NOT repeat Chapter 1 characters]
+- Locations: [ONLY new locations]
+- [If nothing new: "No new context (continuing: [names from Ch 1])"]
 
 **Act:** Act I
 **POV:** [Name]

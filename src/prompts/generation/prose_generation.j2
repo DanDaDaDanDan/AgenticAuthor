@@ -2,7 +2,7 @@
     Prose generation prompt for chapters.
 
     Variables:
-    - chapters_markdown: Full chapters.yaml content as markdown (metadata, characters, world, chapters)
+    - chapters_markdown: Cumulative chapter beats (1-N) with progressive story context
     - taxonomy_markdown: Taxonomy selections (constraints/preferences) as markdown (optional)
     - prev_summary: Context from previous chapters (full prose)
     - chapter_number: Current chapter number
@@ -13,6 +13,10 @@
     - moments_text: Formatted list of key moments to include (LEGACY)
     - metadata: Story metadata dict
     - narrative_style: Narrative voice/style (default: "third person limited")
+
+    Note: chapters_markdown contains cumulative beats from chapters 1-N where each chapter
+    introduces context progressively (characters/locations/concepts as they first appear).
+    No foundation data is passed separately - context is embedded in beat files.
 #}
 
 [SYSTEM]
@@ -27,9 +31,9 @@ NON-NEGOTIABLES:
 [USER]
 Generate excellent prose for a chapter using this story context.
 
-<<<STORY CONTEXT (FOUNDATION + OUTLINES) START>>>
+<<<STORY CONTEXT (CUMULATIVE BEATS) START>>>
 {{ chapters_markdown }}
-<<<STORY CONTEXT (FOUNDATION + OUTLINES) END>>>
+<<<STORY CONTEXT (CUMULATIVE BEATS) END>>>
 
 {% if taxonomy_markdown %}
 <<<TAXONOMY (CONSTRAINTS) START>>>
@@ -97,12 +101,12 @@ STRUCTURE GUIDANCE:
 - Consolidate closely related discovery steps into one coherent scene (avoid fragmenting the same action across multiple micro-scenes)
 
 CONTINUITY & FIDELITY:
-- Use metadata (tone, pacing, themes) and character/world details from chapters.yaml
-- Respect previous chapters' FULL PROSE above; do not re-stage scenes already written
+- Use story context (characters, world, tone) from cumulative beats above
+- Respect previous chapters' FULL PROSE; do not re-stage scenes already written
 - Each key moment becomes a complete dramatic scene — no list-like recaps
-- Avoid internal duplication: do not re-explain the same clue, location, or confrontation in multiple segments within this chapter.
-- If a beat requires referencing earlier revelations, allude briefly and move forward; do not re-summarize past chapters.
-- Maintain temporal and spatial continuity (time of day, weather, wounds, relationship state, open threads).
+- Avoid internal duplication: do not re-explain the same clue, location, or confrontation in multiple segments within this chapter
+- If a beat requires referencing earlier revelations, allude briefly and move forward; do not re-summarize past chapters
+- Maintain temporal and spatial continuity (time of day, weather, wounds, relationship state, open threads)
 
 SHOW vs TELL - ESSENTIAL:
 

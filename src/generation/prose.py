@@ -248,33 +248,31 @@ class ProseGenerator:
                     prev_summary += f"Summary (from outline): {ch.get('summary', 'N/A')}\n"
                     prev_summary += f"Note: Full prose not yet generated for this chapter\n\n"
 
-        # Build rich context markdown with foundation + chapter beats
-        from ..utils.markdown_extractors import MarkdownFormatter
+        # Build cumulative context from progressive beat files (no foundation needed)
+        # Each beat file includes "Story Context" sections that progressively introduce
+        # characters, locations, and concepts as they first appear in the story.
 
-        # Format foundation (metadata, characters, world) as markdown
-        foundation_data = {
-            'metadata': chapters_data.get('metadata', {}),
-            'characters': chapters_data.get('characters', []),
-            'world': chapters_data.get('world', {})
-        }
-        foundation_md = MarkdownFormatter.format_foundation(foundation_data)
-
-        # Chapter index (number, title, act)
+        # Chapter index (provides high-level structure overview)
         index_lines = ["## Chapter Index"]
         for ch in chapters:
             index_lines.append(f"- {ch.get('number','?')}: {ch.get('title','Untitled')} — {ch.get('act','N/A')}")
         index_md = "\n".join(index_lines) + "\n\n"
 
-        # Current chapter outline MUST exist as raw beat file (no fallback)
-        current_outline_file = self.project.chapter_beats_dir / f"chapter-{chapter_number:02d}.md"
-        if not current_outline_file.exists():
-            raise Exception(
-                f"Chapter outline not found: {current_outline_file}. "
-                f"Finalize chapters first or regenerate beats."
-            )
-        current_outline_md = current_outline_file.read_text(encoding='utf-8').strip()
+        # Load cumulative beats from chapters 1 through N
+        # This builds progressive context as each chapter introduces new elements
+        cumulative_beats = []
+        for i in range(1, chapter_number + 1):
+            beat_file = self.project.chapter_beats_dir / f"chapter-{i:02d}.md"
+            if not beat_file.exists():
+                raise Exception(
+                    f"Chapter beat file not found: {beat_file}. "
+                    f"Generate chapters with /generate chapters first."
+                )
+            cumulative_beats.append(beat_file.read_text(encoding='utf-8').strip())
 
-        # Future chapter outlines: require raw files for each future chapter
+        cumulative_context = "\n\n---\n\n".join(cumulative_beats)
+
+        # Future chapter outlines: load for forward reference
         future_md = ""
         future_chapters = [ch for ch in chapters if ch['number'] > chapter_number]
         if future_chapters:
@@ -290,12 +288,13 @@ class ProseGenerator:
                 parts.append(fpath.read_text(encoding='utf-8').strip())
             future_md = "\n\n---\n\n".join(parts)
 
-        # Combine foundation + chapter structure + beat files
+        # Combine: index + cumulative beats (1-N) + future beats (N+1-end)
+        # NO foundation needed - context is progressively introduced in beat files
         chapters_markdown = (
-            foundation_md + "\n\n" +
             index_md +
-            "<<<CURRENT CHAPTER OUTLINE START>>>\n" + current_outline_md + "\n<<<CURRENT CHAPTER OUTLINE END>>>\n\n" +
-            ("<<<FUTURE CHAPTER OUTLINES START>>>\n" + future_md + "\n<<<FUTURE CHAPTER OUTLINES END>>>\n" if future_md else "")
+            f"## Cumulative Story Context (Chapters 1-{chapter_number})\n\n" +
+            cumulative_context +
+            ("\n\n## Future Chapters\n\n" + future_md if future_md else "")
         )
 
         # Build prose generation prompt - QUALITY-FIRST approach
