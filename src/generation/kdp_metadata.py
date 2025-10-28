@@ -270,7 +270,13 @@ USE: [suggestion]"""
         return comp_titles
 
     def _build_context(self) -> str:
-        """Build comprehensive context from book content."""
+        """
+        Build marketing-safe context from book content.
+
+        CRITICAL: Only includes setup/Act I information to avoid spoilers.
+        Marketing descriptions should NOT reveal plot twists, resolutions,
+        character arcs, deaths, betrayals, or climax events.
+        """
         parts = []
 
         # Book metadata
@@ -279,21 +285,21 @@ USE: [suggestion]"""
         parts.append(f"TITLE: {title}")
         parts.append(f"AUTHOR: {author}\n")
 
-        # Premise
+        # Premise (safe - only setup)
         premise = self.project.get_premise()
         if premise:
-            parts.append("PREMISE:")
+            parts.append("PREMISE (SETUP ONLY):")
             parts.append(premise)
             parts.append("")
 
-        # Treatment (first 2000 words for context)
+        # Treatment - ONLY Act I setup (first 500 words max)
+        # This avoids spoiling midpoint twists, climax, or resolution
         treatment = self.project.get_treatment()
         if treatment:
-            parts.append("TREATMENT (excerpt):")
-            words = treatment.split()[:2000]
+            parts.append("STORY SETUP (ACT I ONLY - NO SPOILERS BEYOND THIS):")
+            words = treatment.split()[:500]  # Reduced from 2000 to 500
             parts.append(' '.join(words))
-            if len(treatment.split()) > 2000:
-                parts.append("[...truncated]")
+            parts.append("[...rest omitted to avoid spoilers]")
             parts.append("")
 
         # Chapters metadata (from chapters.yaml)
@@ -310,40 +316,40 @@ USE: [suggestion]"""
                 parts.append(f"Tropes: {', '.join(metadata.get('tropes', []))}")
                 parts.append("")
 
-            # Characters summary
+            # Characters summary (initial state only - no arc spoilers)
             characters = chapters_yaml.get('characters', [])
             if characters:
-                parts.append("MAIN CHARACTERS:")
+                parts.append("MAIN CHARACTERS (STARTING STATE ONLY):")
                 for char in characters[:3]:  # Top 3 characters
                     description = char.get('description') or char.get('background', '')
                     # Handle None values explicitly
-                    description = description[:100] if description else ''
+                    description = description[:150] if description else ''
                     parts.append(f"- {char.get('name', 'Unknown')}: {char.get('role', '')} - {description}")
                 parts.append("")
 
-            # Chapter outlines (summary)
+            # Chapter outlines - ONLY first 2 chapters (Act I setup)
+            # Avoid revealing midpoint, climax, or resolution
             chapters = chapters_yaml.get('chapters', [])
             if chapters:
-                parts.append(f"STORY STRUCTURE: {len(chapters)} chapters")
-                parts.append("Chapter highlights:")
-                for ch in chapters[:3]:  # First 3 chapters
+                parts.append(f"STORY STRUCTURE: {len(chapters)} chapters total")
+                parts.append("ACT I SETUP (First 2 chapters only - no spoilers beyond):")
+                for ch in chapters[:2]:  # ONLY first 2 chapters
                     summary = ch.get('summary', '') or ''  # Handle explicit None
-                    summary_excerpt = summary[:100] if summary else ''
+                    summary_excerpt = summary[:150] if summary else ''
                     parts.append(f"- Ch{ch.get('number', '?')}: {ch.get('title', 'Untitled')} - {summary_excerpt}")
-                if len(chapters) > 3:
-                    parts.append(f"[...and {len(chapters) - 3} more chapters]")
+                parts.append(f"[{len(chapters) - 2} more chapters omitted to avoid spoilers]")
                 parts.append("")
 
-        # Sample of actual prose (first chapter excerpt)
+        # Sample of actual prose (first chapter opening only - for voice/style)
         chapter_files = list(self.project.list_chapters())
         if chapter_files:
             first_chapter = min(chapter_files, key=lambda f: f.name)
             prose = first_chapter.read_text(encoding='utf-8')
-            words = prose.split()[:500]
-            parts.append("PROSE SAMPLE (Chapter 1 excerpt):")
+            words = prose.split()[:300]  # Reduced from 500 to 300
+            parts.append("PROSE SAMPLE (Chapter 1 opening - for writing style/voice only):")
             parts.append(' '.join(words))
-            if len(prose.split()) > 500:
-                parts.append("[...truncated]")
+            if len(prose.split()) > 300:
+                parts.append("[...truncated to avoid spoilers]")
             parts.append("")
 
         return '\n'.join(parts)
