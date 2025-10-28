@@ -1154,7 +1154,11 @@ class InteractiveSession:
             raise
 
     async def _generate_premise(self, user_input: str = ""):
-        """Generate story premise with enhanced genre and taxonomy support."""
+        """Generate story premise with enhanced genre and taxonomy support.
+
+        Supports file paths: /generate premise path/to/story.txt
+        If a file path is provided, the contents will be used as the concept.
+        """
         # Ensure git repo exists
         self._ensure_git_repo()
 
@@ -1164,13 +1168,19 @@ class InteractiveSession:
 
         # NEW FLOW: Interactive questions if no input provided
         if not user_input.strip():
-            # 1. Ask for concept
-            self.console.print("\n[cyan]Story Concept:[/cyan]")
+            # 1. Ask for concept (or file path)
+            self.console.print("\n[cyan]Story Concept (or file path):[/cyan]")
             try:
-                concept = input("> ").strip()
-                if not concept:
+                concept_input = input("> ").strip()
+                if not concept_input:
                     self.console.print("[yellow]Cancelled[/yellow]")
                     return
+
+                # Check if input is a file path
+                concept = self._read_file_if_path(concept_input)
+                if not concept:
+                    return  # Error message already shown
+
             except (KeyboardInterrupt, EOFError):
                 self.console.print("[yellow]Cancelled[/yellow]")
                 return
@@ -1201,10 +1211,17 @@ class InteractiveSession:
                 normalized = self.taxonomy_loader.normalize_genre(parts[0])
                 if normalized != 'general' or parts[0].lower() in ['custom', 'general']:
                     genre = parts[0]
-                    concept = parts[1] if len(parts) > 1 else ""
+                    concept_input = parts[1] if len(parts) > 1 else ""
+                    # Check if concept is a file path
+                    if concept_input:
+                        concept = self._read_file_if_path(concept_input)
+                        if not concept:
+                            return  # Error message already shown
                 else:
-                    # First part is not a genre, treat all as concept
-                    concept = user_input
+                    # First part is not a genre, treat all as concept (or file path)
+                    concept = self._read_file_if_path(user_input)
+                    if not concept:
+                        return  # Error message already shown
 
             # If no genre specified, auto-detect or ask
             if not genre:
@@ -1490,6 +1507,46 @@ class InteractiveSession:
             return response in ['y', 'yes']
         except (KeyboardInterrupt, EOFError):
             return False
+
+    def _read_file_if_path(self, text: str) -> str:
+        """Check if text is a file path and read it if so.
+
+        Args:
+            text: User input that might be a file path or direct text
+
+        Returns:
+            File contents if path exists, otherwise the original text
+            Returns empty string on error (error message already shown)
+        """
+        from pathlib import Path
+
+        # Check if text looks like it could be a file path
+        # (has file extension or path separators)
+        if '/' in text or '\\' in text or '.' in text:
+            try:
+                # Try to resolve as absolute or relative path
+                file_path = Path(text)
+
+                # Also try relative to current directory
+                if not file_path.exists():
+                    file_path = Path.cwd() / text
+
+                if file_path.exists() and file_path.is_file():
+                    self.console.print(f"[dim]Reading from file: {file_path}[/dim]")
+                    try:
+                        content = file_path.read_text(encoding='utf-8')
+                        word_count = len(content.split())
+                        self.console.print(f"[dim]Loaded {word_count:,} words from file[/dim]\n")
+                        return content
+                    except Exception as e:
+                        self.console.print(f"[red]Error reading file: {e}[/red]")
+                        return ""
+            except Exception:
+                # Not a valid path, treat as direct text
+                pass
+
+        # Not a file path or doesn't exist - return as-is
+        return text
 
     async def _select_genre_interactive(self, allow_auto_detect: bool = False):
         """Interactive genre selection."""
