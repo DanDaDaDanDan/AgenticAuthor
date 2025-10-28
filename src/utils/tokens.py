@@ -126,9 +126,36 @@ class TokenEstimator:
         # Calculate available tokens
         available_tokens = context_window - prompt_tokens - buffer_tokens
 
-        # Ensure we have at least reserve_tokens
+        # Check if prompt exceeds context window
         if available_tokens < reserve_tokens:
-            # If we don't have enough space, use minimum but log warning
+            # Get logger for error reporting
+            from ..utils.logging import get_logger
+            logger = get_logger()
+
+            # If available tokens is negative or very small, prompt is too large
+            if available_tokens <= 0:
+                error_msg = (
+                    f"Prompt exceeds model context window!\n"
+                    f"  Context window: {context_window:,} tokens\n"
+                    f"  Prompt size: {prompt_tokens:,} tokens\n"
+                    f"  Buffer: {buffer_tokens:,} tokens\n"
+                    f"  Available: {available_tokens:,} tokens (NEGATIVE - prompt too large!)\n\n"
+                    f"Solutions:\n"
+                    f"  • Use a model with larger context window\n"
+                    f"  • Reduce prompt size (fewer previous chapters, shorter beats)\n"
+                    f"  • Generate earlier chapters first to reduce cumulative context"
+                )
+                if logger:
+                    logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            # Available tokens positive but less than reserve - log warning and continue
+            if logger:
+                logger.warning(
+                    f"Low available tokens: {available_tokens:,} < reserve {reserve_tokens:,}. "
+                    f"Prompt: {prompt_tokens:,}, Context: {context_window:,}. "
+                    f"Response may be truncated."
+                )
             return reserve_tokens
 
         # Apply max_response_tokens cap if specified
