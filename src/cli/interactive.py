@@ -2342,6 +2342,16 @@ Regenerate the foundation addressing the issues above.
                 self.console.print(f"[yellow]Style card not found in project or root misc/ folder[/yellow]")
                 self.console.print(f"[dim]Create misc/prose-style-card.md (at repo root) or books/{self.project.path.name}/misc/prose-style-card.md[/dim]")
 
+        # Extract narrative style from taxonomy if available
+        narrative_style = "third person limited"  # Default
+        taxonomy = self.project.get_taxonomy()
+        if taxonomy and 'point_of_view' in taxonomy:
+            pov_list = taxonomy['point_of_view']
+            if isinstance(pov_list, list) and pov_list:
+                narrative_style = pov_list[0]  # Use first POV if multiple
+            elif isinstance(pov_list, str):
+                narrative_style = pov_list
+
         generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
 
         if target.lower() == "all":
@@ -2359,7 +2369,10 @@ Regenerate the foundation addressing the issues above.
                 self.console.print("[cyan]Generating all chapters sequentially with full context...[/cyan]")
 
             try:
-                results = await generator.generate_all_chapters(style_card=style_card_content)
+                results = await generator.generate_all_chapters(
+                    narrative_style=narrative_style,
+                    style_card=style_card_content
+                )
 
                 if results:
                     # Git commit
@@ -2401,7 +2414,11 @@ Regenerate the foundation addressing the issues above.
                 self.console.print(f"[dim]Total needed: {token_calc['total_needed']:,}[/dim]")
                 self.console.print()
 
-                result = await generator.generate_chapter(chapter_number=chapter_num, style_card=style_card_content)
+                result = await generator.generate_chapter(
+                    chapter_number=chapter_num,
+                    narrative_style=narrative_style,
+                    style_card=style_card_content
+                )
                 commit_suffix = "(sequential)"
 
                 if result:
@@ -2650,6 +2667,16 @@ Regenerate the foundation addressing the issues above.
                 except Exception as e:
                     self.console.print(f"[yellow]Warning: Failed to read style card: {e}[/yellow]")
 
+        # Extract narrative style from taxonomy if available
+        narrative_style = "third person limited"  # Default
+        taxonomy = self.project.get_taxonomy()
+        if taxonomy and 'point_of_view' in taxonomy:
+            pov_list = taxonomy['point_of_view']
+            if isinstance(pov_list, list) and pov_list:
+                narrative_style = pov_list[0]  # Use first POV if multiple
+            elif isinstance(pov_list, str):
+                narrative_style = pov_list
+
         # Generate chapters in range
         generator = ProseGenerator(self.client, self.project, model=self.settings.active_model)
 
@@ -2663,6 +2690,7 @@ Regenerate the foundation addressing the issues above.
             results = await generator.generate_all_chapters(
                 start_chapter=start_chapter,
                 end_chapter=end_chapter,
+                narrative_style=narrative_style,
                 style_card=style_card_content
             )
 
