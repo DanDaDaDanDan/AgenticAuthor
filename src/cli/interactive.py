@@ -1711,11 +1711,12 @@ class InteractiveSession:
         Default mode: Creates 4 variants with different temperatures (0.55, 0.60, 0.65, 0.70)
         saved to chapter-beats-variants/ for judging with /finalize chapters.
 
-        Single-temperature mode (--temperature): Generates one variant at specified temperature,
+        Single-temperature mode (--temperature/-t): Generates one variant at specified temperature,
         saving directly to chapter-beats/ (auto-finalized, ready for /generate prose).
 
         Options:
-            --temperature X.X         : Single variant mode at specified temperature (auto-finalized)
+            --temperature X.X, -t X.X : Single variant mode at specified temperature (auto-finalized)
+            --temperature=X.X, -t=X.X : Also supports equals format
             --reuse-foundation, -r    : Reuse existing foundation (skip generation/validation)
             --auto, -a                : Let LLM decide chapter count
             N (number)                : Chapter count (if < 50) or total word count (if >= 50)
@@ -1723,9 +1724,10 @@ class InteractiveSession:
         Examples:
             /generate chapters                         # 4 variants (requires /finalize)
             /generate chapters --temperature 0.65      # Single variant (auto-finalized)
-            /generate chapters 15 --temperature 0.65   # 15 chapters at temp 0.65
+            /generate chapters -t=0.65                 # Same, short form with equals
+            /generate chapters 15 -t 0.65              # 15 chapters at temp 0.65
             /generate chapters --reuse-foundation      # Reuse existing foundation
-            /generate chapters --reuse --temperature 0.70  # Reuse foundation, new chapters at 0.70
+            /generate chapters --reuse -t=0.70         # Reuse foundation, new chapters at 0.70
         """
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -1753,19 +1755,32 @@ class InteractiveSession:
                 elif part in ("--reuse-foundation", "--reuse", "-r"):
                     reuse_foundation = True
                     i += 1
-                elif part == "--temperature":
-                    # Parse temperature value from next part
-                    if i + 1 >= len(parts):
-                        self.console.print(f"[red]--temperature requires a value (e.g., --temperature 0.65)[/red]")
-                        return
-                    try:
-                        single_temperature = float(parts[i + 1])
-                        if not (0.0 <= single_temperature <= 2.0):
-                            self.console.print(f"[yellow]Warning: Temperature {single_temperature} is outside typical range (0.0-2.0)[/yellow]")
-                        i += 2
-                    except ValueError:
-                        self.console.print(f"[red]Invalid temperature value: {parts[i + 1]}[/red]")
-                        return
+                elif part == "--temperature" or part == "-t" or part.startswith("--temperature=") or part.startswith("-t="):
+                    # Handle both --temperature/-t with space or equals format
+                    if "=" in part:
+                        # Format: --temperature=0.65 or -t=0.65
+                        try:
+                            temp_str = part.split("=", 1)[1]
+                            single_temperature = float(temp_str)
+                            if not (0.0 <= single_temperature <= 2.0):
+                                self.console.print(f"[yellow]Warning: Temperature {single_temperature} is outside typical range (0.0-2.0)[/yellow]")
+                            i += 1
+                        except (ValueError, IndexError):
+                            self.console.print(f"[red]Invalid temperature value in: {part}[/red]")
+                            return
+                    else:
+                        # Format: --temperature 0.65 or -t 0.65
+                        if i + 1 >= len(parts):
+                            self.console.print(f"[red]--temperature/-t requires a value (e.g., --temperature 0.65 or -t 0.65)[/red]")
+                            return
+                        try:
+                            single_temperature = float(parts[i + 1])
+                            if not (0.0 <= single_temperature <= 2.0):
+                                self.console.print(f"[yellow]Warning: Temperature {single_temperature} is outside typical range (0.0-2.0)[/yellow]")
+                            i += 2
+                        except ValueError:
+                            self.console.print(f"[red]Invalid temperature value: {parts[i + 1]}[/red]")
+                            return
                 elif part.replace('.', '', 1).isdigit():
                     # Could be temperature without --temperature flag or chapter/word count
                     num = float(part)
