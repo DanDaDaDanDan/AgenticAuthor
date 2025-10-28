@@ -248,21 +248,16 @@ class ProseGenerator:
                     prev_summary += f"Summary (from outline): {ch.get('summary', 'N/A')}\n"
                     prev_summary += f"Note: Full prose not yet generated for this chapter\n\n"
 
-        # Build modified chapters_data excluding previous chapter outlines (only current + future)
-        # This prevents confusion about authority - prose is authoritative for completed chapters
-        modified_chapters_data = {
+        # Build rich context markdown with foundation + chapter beats
+        from ..utils.markdown_extractors import MarkdownFormatter
+
+        # Format foundation (metadata, characters, world) as markdown
+        foundation_data = {
             'metadata': chapters_data.get('metadata', {}),
             'characters': chapters_data.get('characters', []),
-            'world': chapters_data.get('world', {}),
-            'chapters': [
-                ch for ch in chapters
-                if ch['number'] >= chapter_number  # Only current + future chapters
-            ]
+            'world': chapters_data.get('world', {})
         }
-
-        # Build rich context markdown: chapter index, current outline (raw if available), future outlines
-        from ..utils.markdown_extractors import MarkdownFormatter
-        from pathlib import Path as _P
+        foundation_md = MarkdownFormatter.format_foundation(foundation_data)
 
         # Chapter index (number, title, act)
         index_lines = ["## Chapter Index"]
@@ -295,7 +290,9 @@ class ProseGenerator:
                 parts.append(fpath.read_text(encoding='utf-8').strip())
             future_md = "\n\n---\n\n".join(parts)
 
+        # Combine foundation + chapter structure + beat files
         chapters_markdown = (
+            foundation_md + "\n\n" +
             index_md +
             "<<<CURRENT CHAPTER OUTLINE START>>>\n" + current_outline_md + "\n<<<CURRENT CHAPTER OUTLINE END>>>\n\n" +
             ("<<<FUTURE CHAPTER OUTLINES START>>>\n" + future_md + "\n<<<FUTURE CHAPTER OUTLINES END>>>\n" if future_md else "")
