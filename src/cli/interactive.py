@@ -1536,6 +1536,42 @@ class InteractiveSession:
 
         return user_input, None
 
+    def _detect_chapter_count_from_text(self, text: str) -> int | None:
+        """
+        Detect chapter count from treatment text by looking for chapter markers.
+
+        Args:
+            text: Treatment text content
+
+        Returns:
+            Detected chapter count, or None if couldn't detect
+        """
+        import re
+
+        # Look for patterns like:
+        # - "Chapter 1:", "Chapter 2:", etc.
+        # - "# Chapter 1", "# Chapter 2", etc. (markdown)
+        # - "**Chapter 1:**", "**Chapter 2:**", etc. (bold)
+        # - "Part I: ... (Chapters 1-3)" structure
+
+        chapter_numbers = set()
+
+        # Pattern 1: "Chapter N" or "# Chapter N" or "**Chapter N"
+        chapter_pattern = re.compile(r'(?:^|\s|#|\*{1,2})Chapter\s+(\d+)', re.MULTILINE | re.IGNORECASE)
+        for match in chapter_pattern.finditer(text):
+            chapter_numbers.add(int(match.group(1)))
+
+        # Pattern 2: "Ch N" or "Ch. N"
+        ch_pattern = re.compile(r'Ch\.?\s+(\d+)', re.MULTILINE | re.IGNORECASE)
+        for match in ch_pattern.finditer(text):
+            chapter_numbers.add(int(match.group(1)))
+
+        if chapter_numbers:
+            # Return the maximum chapter number found
+            return max(chapter_numbers)
+
+        return None
+
     def _read_file_from_path(self, file_path_str: str) -> str:
         """Read content from a file path.
 
@@ -1719,22 +1755,40 @@ class InteractiveSession:
             --temperature=X.X, -t=X.X : Also supports equals format
             --reuse-foundation, -r    : Reuse existing foundation (skip generation/validation)
             --auto, -a                : Let LLM decide chapter count
+            --file PATH, --file=PATH  : Use external treatment file (skips premise requirement)
+            --chapters N, --chapters=N: Explicit chapter count (for use with --file)
             N (number)                : Chapter count (if < 50) or total word count (if >= 50)
 
         Examples:
-            /generate chapters                         # 4 variants (requires /finalize)
-            /generate chapters --temperature 0.65      # Single variant (auto-finalized)
-            /generate chapters -t=0.65                 # Same, short form with equals
-            /generate chapters 15 -t 0.65              # 15 chapters at temp 0.65
-            /generate chapters --reuse-foundation      # Reuse existing foundation
-            /generate chapters --reuse -t=0.70         # Reuse foundation, new chapters at 0.70
+            /generate chapters                                # 4 variants (requires /finalize)
+            /generate chapters --temperature 0.65             # Single variant (auto-finalized)
+            /generate chapters -t=0.65                        # Same, short form with equals
+            /generate chapters 15 -t 0.65                     # 15 chapters at temp 0.65
+            /generate chapters --reuse-foundation             # Reuse existing foundation
+            /generate chapters --reuse -t=0.70                # Reuse foundation, new chapters at 0.70
+            /generate chapters --file=treatment.txt --chapters=9  # Use external treatment file
         """
         # Ensure git repo exists
         self._ensure_git_repo()
 
-        # Check for treatment
-        if not self.project.get_treatment():
+        # Extract --file flag first (before checking treatment)
+        treatment_file_path = None
+        treatment_override = None
+        if options:
+            remaining_options, treatment_file_path = self._extract_file_flag(options)
+            if treatment_file_path:
+                # Load treatment from file
+                treatment_override = self._read_file_from_path(treatment_file_path)
+                if not treatment_override:
+                    # Error already printed by _read_file_from_path
+                    return
+                self.console.print(f"[green]✓[/green] Loaded treatment from file: {treatment_file_path}\n")
+                options = remaining_options  # Use remaining options for further parsing
+
+        # Check for treatment (skip if --file provided)
+        if not treatment_file_path and not self.project.get_treatment():
             self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
+            self.console.print("[dim]Or use --file=path/to/treatment.txt to provide an external treatment file[/dim]")
             return
 
         # Parse options (chapter count or word count) and flags BEFORE culling
@@ -1755,6 +1809,34 @@ class InteractiveSession:
                 elif part in ("--reuse-foundation", "--reuse", "-r"):
                     reuse_foundation = True
                     i += 1
+                elif part == "--chapters" or part.startswith("--chapters="):
+                    # Handle --chapters flag (explicit chapter count)
+                    if "=" in part:
+                        # Format: --chapters=9
+                        try:
+                            chapters_str = part.split("=", 1)[1]
+                            chapter_count = int(chapters_str)
+                            if chapter_count < 1 or chapter_count > 200:
+                                self.console.print(f"[red]Invalid chapter count: {chapter_count} (must be 1-200)[/red]")
+                                return
+                            i += 1
+                        except (ValueError, IndexError):
+                            self.console.print(f"[red]Invalid chapter count value in: {part}[/red]")
+                            return
+                    else:
+                        # Format: --chapters 9
+                        if i + 1 >= len(parts):
+                            self.console.print(f"[red]--chapters requires a value (e.g., --chapters 9)[/red]")
+                            return
+                        try:
+                            chapter_count = int(parts[i + 1])
+                            if chapter_count < 1 or chapter_count > 200:
+                                self.console.print(f"[red]Invalid chapter count: {chapter_count} (must be 1-200)[/red]")
+                                return
+                            i += 2
+                        except ValueError:
+                            self.console.print(f"[red]Invalid chapter count value: {parts[i + 1]}[/red]")
+                            return
                 elif part == "--temperature" or part == "-t" or part.startswith("--temperature=") or part.startswith("-t="):
                     # Handle both --temperature/-t with space or equals format
                     if "=" in part:
@@ -1862,19 +1944,32 @@ class InteractiveSession:
 
         # Build context for foundation generation
         context_builder = LODContextBuilder()
-        context = context_builder.build_context(
-            project=self.project,
-            context_level='treatment',
-            include_downstream=False
-        )
 
-        if 'premise' not in context:
-            self.console.print("[yellow]No premise found. Generate premise first with /generate premise[/yellow]")
-            return
+        # If treatment_override provided, build minimal context with override
+        if treatment_override:
+            # Use override treatment, skip premise requirement
+            context = {
+                'treatment': {
+                    'text': treatment_override,
+                    'metadata': {}
+                }
+            }
+            self.console.print(f"[dim]Using external treatment file (premise not required)[/dim]")
+        else:
+            # Normal flow: load premise + treatment from project
+            context = context_builder.build_context(
+                project=self.project,
+                context_level='treatment',
+                include_downstream=False
+            )
 
-        if 'treatment' not in context:
-            self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
-            return
+            if 'premise' not in context:
+                self.console.print("[yellow]No premise found. Generate premise first with /generate premise[/yellow]")
+                return
+
+            if 'treatment' not in context:
+                self.console.print("[yellow]No treatment found. Generate treatment first with /generate treatment[/yellow]")
+                return
 
         # Get taxonomy and genre for smart defaults
         taxonomy_data = self.project.get_taxonomy() or {}
@@ -1904,7 +1999,18 @@ class InteractiveSession:
         from ..generation.depth_calculator import DepthCalculator
         structure = DepthCalculator.calculate_structure(total_words, pacing, length_scope)
         baseline_count = structure['chapter_count']
-        if chapter_count is None:
+
+        # Try to detect chapter count from file if using --file and --chapters not specified
+        if chapter_count is None and treatment_override:
+            detected_count = self._detect_chapter_count_from_text(treatment_override)
+            if detected_count:
+                chapter_count = detected_count
+                self.console.print(f"[dim]Detected {chapter_count} chapters from treatment file[/dim]")
+            else:
+                self.console.print(f"[yellow]Could not detect chapter count from file. Use --chapters=N to specify explicitly.[/yellow]")
+                self.console.print(f"[dim]Falling back to calculated baseline: {baseline_count} chapters[/dim]")
+                chapter_count = baseline_count
+        elif chapter_count is None:
             chapter_count = baseline_count
 
         # === FOUNDATION GENERATION OR REUSE ===
@@ -1920,10 +2026,16 @@ class InteractiveSession:
             original_concept = premise_metadata.get('original_concept', '')
             unique_elements = premise_metadata.get('unique_elements', [])
 
-            context_markdown = context_builder.build_markdown_context(
-                project=self.project,
-                context_level='treatment'
-            )
+            # Build context markdown (use treatment_override if provided)
+            if treatment_override:
+                # For treatment_override, build minimal markdown context
+                context_markdown = f"# Treatment\n\n{treatment_override}"
+            else:
+                # Normal flow: build from project files
+                context_markdown = context_builder.build_markdown_context(
+                    project=self.project,
+                    context_level='treatment'
+                )
 
             foundation = await generator._generate_foundation(
                 context_markdown=context_markdown,
