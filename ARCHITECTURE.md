@@ -1,5 +1,7 @@
 # AgenticAuthor — High-Level Architecture (Codex Overview v2)
 
+> **Note:** For a comprehensive, self-contained architecture guide with complete file hierarchy and detailed explanations (1800+ lines, 18 sections), see **[COMPREHENSIVE_ARCHITECTURE.md](COMPREHENSIVE_ARCHITECTURE.md)**. This document provides a concise overview.
+
 This document is a self-contained overview of AgenticAuthor's architecture: how the codebase is organized, the guiding philosophies, data formats chosen, and the end-to-end flow from a blank idea to completed prose and exports.
 
 ## Development Philosophies

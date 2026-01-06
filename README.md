@@ -174,11 +174,10 @@ Generated automatically during prose generation, stored in `books/project/misc/p
 
 ## Documentation
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - High-level architecture and design decisions
-- **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - Comprehensive user guide
-- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version history and changes
-- **[docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)** - Feature tracking
+- **[COMPREHENSIVE_ARCHITECTURE.md](COMPREHENSIVE_ARCHITECTURE.md)** - Complete architecture guide (1800+ lines, 18 sections covering all system details)
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Concise architecture overview and design decisions
 - **[CLAUDE.md](CLAUDE.md)** - Development guidance for AI assistants
+- **[AGENTS.md](AGENTS.md)** - Repository guidelines
 
 ## Core Principles
 
@@ -205,8 +204,8 @@ Generated automatically during prose generation, stored in `books/project/misc/p
 ## Getting Help
 
 - Use `/help` in the REPL for command reference
-- Check documentation in the `docs/` directory
-- Review `ARCHITECTURE.md` for system design details
+- Review **`COMPREHENSIVE_ARCHITECTURE.md`** for complete system architecture
+- Check **`ARCHITECTURE.md`** for a concise overview
 
 ## License
 

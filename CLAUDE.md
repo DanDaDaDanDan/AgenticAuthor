@@ -5,7 +5,8 @@ This file provides guidance to Claude Code when working with this repository.
 ## Documentation Updates
 
 When making relevant changes, keep these up to date:
-- **`ARCHITECTURE.md`** – High-level architecture and file hierarchy. Keep this updated with key architectural decisions and changes (ADR-style notes at end of file).
+- **`COMPREHENSIVE_ARCHITECTURE.md`** – Complete, self-contained architecture guide with full file hierarchy, design philosophies, and workflows (1800+ lines, 18 comprehensive sections)
+- **`ARCHITECTURE.md`** – Concise high-level architecture overview with key design decisions
 - **`AGENTS.md`** – Repository guidelines (structure, commands, style, testing, PR rules)
 
 ## Git Commits
@@ -43,7 +44,7 @@ AgenticAuthor is a Python CLI for AI-powered book generation using OpenRouter AP
 - Short story support (≤2 chapters → single story.md file)
 - Shared git repository at books/ level
 
-For a high-level summary and layout, see `ARCHITECTURE.md`.
+For a comprehensive deep-dive, see `COMPREHENSIVE_ARCHITECTURE.md` (1800+ lines, complete guide). For a concise overview, see `ARCHITECTURE.md`.
 
 ## Core Principles
 
@@ -119,20 +120,17 @@ Use `/help` in the REPL and tab-completion for command hints.
 
 ```
 AgenticAuthor/
-├── CLAUDE.md                 # This file
-├── ARCHITECTURE.md           # High-level architecture (keep decisions updated)
-├── codex-overview-2-diagrams.md # Diagrammed overview
-├── docs/                     # Comprehensive documentation
-│   ├── CHANGELOG.md          # Version history
-│   ├── IMPLEMENTATION_STATUS.md # Feature tracking
-│   └── USER_GUIDE.md         # Complete user guide
-├── src/                      # Source code
-│   ├── generation/           # Core generation logic
-│   │   └── iteration/        # Natural language iteration (v0.4.0)
-│   ├── cli/                  # REPL and UI
-│   └── prompts/              # Jinja2 templates
-└── books/                    # Generated projects
-    └── .git/                 # Shared git repo
+├── CLAUDE.md                        # This file
+├── COMPREHENSIVE_ARCHITECTURE.md    # Complete architecture guide (1800+ lines)
+├── ARCHITECTURE.md                  # Concise architecture overview
+├── AGENTS.md                        # Repository guidelines
+├── src/                             # Source code
+│   ├── generation/                  # Core generation logic
+│   │   └── iteration/               # Natural language iteration (v0.4.0)
+│   ├── cli/                         # REPL and UI
+│   └── prompts/                     # Jinja2 templates
+└── books/                           # Generated projects
+    └── .git/                        # Shared git repo
 ```
 
 ## Key Implementation Files
@@ -143,7 +141,7 @@ AgenticAuthor/
 - **CLI:** `interactive.py` - Main REPL
 - **Prompts:** `src/prompts/` - All LLM prompt templates
 
-For implementation orientation, see `ARCHITECTURE.md`.
+For comprehensive implementation details, see `COMPREHENSIVE_ARCHITECTURE.md`. For a quick overview, see `ARCHITECTURE.md`.
 
 ## Important Notes
 
@@ -164,6 +162,7 @@ For implementation orientation, see `ARCHITECTURE.md`.
 
 ## Getting Help
 
-- **Architecture:** `ARCHITECTURE.md` - High-level design, decisions, and ADRs
+- **Comprehensive Guide:** `COMPREHENSIVE_ARCHITECTURE.md` - Complete architecture with 18 sections covering all system details
+- **Quick Overview:** `ARCHITECTURE.md` - Concise high-level design and ADRs
 - **REPL Help:** Use `/help` in the REPL for command reference
 - **Code Comments:** Inline documentation in source files
