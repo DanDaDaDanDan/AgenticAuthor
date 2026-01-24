@@ -806,11 +806,6 @@ class InteractiveSession:
             elif comp_status != 'pending':
                 table.add_row("COMPLETION Gate", f"[yellow]{comp_status}[/yellow]")
 
-        # Show context mode if in prose phase
-        if state.context_mode and state.context_mode != "full":
-            table.add_row("", "")  # Separator
-            table.add_row("Context", f"{state.context_mode} ({state.context_tokens:,} tokens)")
-
         self.console.print(table)
 
         # Show git status if available

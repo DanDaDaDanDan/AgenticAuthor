@@ -72,8 +72,6 @@ class GenerationState:
     started_at: Optional[str] = None
     updated_at: Optional[str] = None
     error: Optional[str] = None
-    context_mode: str = "full"  # "full" or "optimized"
-    context_tokens: int = 0
 
     # Quality gate statuses
     structure_gate: Optional[QualityGateStatus] = None
@@ -91,8 +89,6 @@ class GenerationState:
             'started_at': self.started_at,
             'updated_at': self.updated_at,
             'error': self.error,
-            'context_mode': self.context_mode,
-            'context_tokens': self.context_tokens,
         }
 
         if self.structure_gate:
@@ -116,8 +112,6 @@ class GenerationState:
             started_at=data.get('started_at'),
             updated_at=data.get('updated_at'),
             error=data.get('error'),
-            context_mode=data.get('context_mode', 'full'),
-            context_tokens=data.get('context_tokens', 0),
         )
 
         if 'structure_gate' in data and data['structure_gate']:
@@ -258,8 +252,6 @@ class StateManager:
         total_chapters: Optional[int] = None,
         word_count: Optional[int] = None,
         target_word_count: Optional[int] = None,
-        context_mode: Optional[str] = None,
-        context_tokens: Optional[int] = None,
     ) -> None:
         """Update progress metrics."""
         state = self.get_state()
@@ -272,10 +264,6 @@ class StateManager:
             state.word_count = word_count
         if target_word_count is not None:
             state.target_word_count = target_word_count
-        if context_mode is not None:
-            state.context_mode = context_mode
-        if context_tokens is not None:
-            state.context_tokens = context_tokens
 
         self.save()
 

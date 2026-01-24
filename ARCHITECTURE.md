@@ -288,11 +288,6 @@ Implementation: See `src/utils/markdown_extractors.py` (MarkdownExtractor) and c
 **Rationale:** Catch issues early before wasting tokens on prose generation.
 **Impact:** Reuses IterationJudge infrastructure; adds ~150 lines of validation logic.
 
-### ADR-008: Context Optimization for Large Books
-**Decision:** Smart context management above 50KB threshold.
-**Rationale:** Enable 20+ chapter books without context overflow.
-**Impact:** Full prose for recent 3 chapters; LLM-generated summaries for earlier ones.
-
 ## Orchestration System (v0.5.0)
 
 New orchestration module (`src/orchestration/`) enables autonomous generation and quality validation.
@@ -345,26 +340,3 @@ Usage:
 - `src/prompts/validation/structure_gate.j2` — Structure validation prompt
 - `src/prompts/validation/continuity_gate.j2` — Continuity validation prompt
 - `src/prompts/validation/completion_gate.j2` — Completion validation prompt
-
-## Context Optimization
-
-For books with 20+ chapters, prior prose context can exceed 50KB. The ContextManager provides smart optimization.
-
-### Behavior
-- **Below 50KB:** Full prose context (quality-first, unchanged)
-- **Above 50KB:** Optimized mode
-  - Full prose for last 3 chapters (recent context)
-  - LLM-generated summaries for earlier chapters
-
-### Summary Caching
-- Summaries cached in `chapter-beats/summaries/chapter-NN-summary.md`
-- Invalidated when chapter content changes
-- ~200-400 words per summary (detailed enough for continuity)
-
-### Files
-- `src/generation/context_manager.py` — Context size detection, summary generation, caching (~150 lines)
-
-### Usage
-Context optimization is automatic during prose generation. The `/status` command shows:
-- Context mode (full or optimized)
-- Context token count
