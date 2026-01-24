@@ -719,7 +719,7 @@ class InteractiveSession:
             GenerationPhase.IDLE: "dim",
             GenerationPhase.PREMISE: "yellow",
             GenerationPhase.TREATMENT: "yellow",
-            GenerationPhase.CHAPTERS: "yellow",
+            GenerationPhase.PLAN: "yellow",
             GenerationPhase.PROSE: "cyan",
             GenerationPhase.COMPLETE: "green",
         }
@@ -744,7 +744,7 @@ class InteractiveSession:
 
         # Show different info based on story type
         if is_short_form:
-            # Short story: show story.md status
+            # Short story: show story.md status (direct treatment → prose)
             if has_story:
                 story_content = self.project.get_story()
                 word_count = len(story_content.split()) if story_content else 0
@@ -752,25 +752,25 @@ class InteractiveSession:
             else:
                 table.add_row("Story", "[red]✗[/red]")
         else:
-            # Novel: show chapters.yaml and prose chapters
-            if has_outlines:
+            # Novel: show structure plan and prose units
+            structure_plan_file = self.project.path / "structure-plan.md"
+            has_plan = structure_plan_file.exists()
+
+            # Check for legacy chapter beats as fallback
+            if has_plan:
+                table.add_row("Structure Plan", "[green]✓[/green]")
+            elif has_outlines:
+                # Legacy: show old chapter beats info
                 chapters_yaml = self.project.get_chapters_yaml()
                 if chapters_yaml:
-                    metadata = chapters_yaml.get('metadata', {})
-                    characters = chapters_yaml.get('characters', [])
                     chapters = chapters_yaml.get('chapters', [])
-
-                    outline_info = f"[green]✓[/green]  ({len(chapters)} chapters"
-                    if len(characters) > 0:
-                        outline_info += f", {len(characters)} chars"
-                    outline_info += ")"
-                    table.add_row("Outlines", outline_info)
+                    table.add_row("Structure Plan", f"[green]✓[/green] (legacy: {len(chapters)} chapters)")
                 else:
-                    table.add_row("Outlines", "[green]✓[/green]")
+                    table.add_row("Structure Plan", "[green]✓[/green] (legacy)")
             else:
-                table.add_row("Outlines", "[red]✗[/red]")
+                table.add_row("Structure Plan", "[red]✗[/red]")
 
-            table.add_row("Prose Chapters", f"{num_prose_chapters}/{total_chapters}" if total_chapters else str(num_prose_chapters))
+            table.add_row("Prose Units", f"{num_prose_chapters}" if num_prose_chapters else "0")
 
         # Show quality gates if state file exists
         state = state_manager.load()

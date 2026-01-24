@@ -288,31 +288,67 @@ Implementation: See `src/utils/markdown_extractors.py` (MarkdownExtractor) and c
 **Rationale:** Catch issues early before wasting tokens on prose generation.
 **Impact:** Reuses IterationJudge infrastructure; adds ~150 lines of validation logic.
 
+### ADR-008: Model-Driven Structure Planning
+**Decision:** Let the model decide how to structure the story instead of forcing rigid chapter beats.
+**Rationale:** Different stories need different structures (chapters, scenes, epistolary, etc.). The model knows best what serves each story.
+**Impact:** New `structure-plan.md` replaces rigid `chapter-beats/` for novels. Short stories skip planning entirely.
+
 ## Orchestration System (v0.5.0)
 
 New orchestration module (`src/orchestration/`) enables autonomous generation and quality validation.
 
+### Flow by Story Type
+
+**Short Stories (≤7,500 words):**
+```
+PREMISE → TREATMENT → PROSE (direct) → COMPLETE
+```
+- No intermediate planning step
+- Treatment provides sufficient guidance
+- Single `story.md` output file
+
+**Novels (>7,500 words):**
+```
+PREMISE → TREATMENT → PLAN → PROSE → COMPLETE
+```
+- Model-driven structure planning
+- Model proposes its own format (chapters, sections, parts, etc.)
+- Sequential unit generation with full prior prose context
+
 ### State Machine
-- **Phases:** IDLE → PREMISE → TREATMENT → CHAPTERS → PROSE → COMPLETE
+- **Phases:** IDLE → PREMISE → TREATMENT → [PLAN] → PROSE → COMPLETE
 - **Persistence:** `state.json` in project directory for resume after interruption
 - **Detection:** Auto-detects current phase from existing files
+- **Short form skip:** PLAN phase automatically skipped for short stories
+
+### Model-Driven Planning
+
+Instead of forcing rigid chapter beats, the model decides how to structure each story:
+
+**Input:** Premise + Treatment + Taxonomy
+**Output:** `structure-plan.md` containing:
+1. **Structural Approach** - Why this format serves the story
+2. **Outline** - Detailed breakdown of units (chapters/sections/scenes/etc.)
+3. **Pacing Notes** - How tension flows through the structure
+4. **Technical Notes** - Voice, motifs, transitions
+
+The model might propose:
+- Traditional 12-chapter structure with act breaks
+- Scene-based continuous prose with `* * *` breaks
+- Alternating POV chapters between protagonists
+- Epistolary format with letters and documents
+- Non-linear timeline with labeled sections
 
 ### Quality Gates
-Three explicit validation checkpoints using LLM judges:
+Two validation checkpoints using LLM judges:
 
-1. **STRUCTURE_GATE** (after chapters)
-   - Arc coherence (beginning, middle, end)
-   - No duplicate events across chapters
-   - Balanced pacing
-   - Character arc completeness
-
-2. **CONTINUITY_GATE** (per prose chapter)
+1. **CONTINUITY_GATE** (per prose unit)
    - Character consistency
-   - Plot coherence with prior chapters
+   - Plot coherence with prior units
    - Setting continuity
    - Factual consistency
 
-3. **COMPLETION_GATE** (after all prose)
+2. **COMPLETION_GATE** (after all prose)
    - Overall narrative coherence
    - Plot resolution
    - Thematic consistency
@@ -323,20 +359,24 @@ Three explicit validation checkpoints using LLM judges:
 ### Autonomous Mode
 Usage:
 ```bash
-/generate all --autonomous  # Fresh start
-/resume                     # Resume from saved state
+/generate all             # Full autonomous generation
+/resume                   # Resume from saved state
 ```
 
-- Runs premise→treatment→chapters→prose without intervention
+- Flow adapts to story type (short vs novel)
 - State saved after each phase for resume
-- Quality gates auto-iterate on issues (max 2 attempts)
+- Quality gates validate at natural breakpoints
 - Blocks only on unrecoverable errors
 
 ### Files
 - `src/orchestration/__init__.py` — Module exports
-- `src/orchestration/state_machine.py` — Phase tracking and state persistence (~150 lines)
-- `src/orchestration/quality_gates.py` — Quality validation using LLM judges (~150 lines)
-- `src/orchestration/autonomous.py` — Autonomous generation coordinator (~200 lines)
-- `src/prompts/validation/structure_gate.j2` — Structure validation prompt
+- `src/orchestration/state_machine.py` — Phase tracking and state persistence
+- `src/orchestration/quality_gates.py` — Quality validation using LLM judges
+- `src/orchestration/autonomous.py` — Autonomous generation coordinator
+- `src/generation/structure_planner.py` — Model-driven structure planning
+- `src/generation/flexible_prose.py` — Flexible prose generation (direct and from-plan)
+- `src/prompts/generation/structure_plan.j2` — Structure planning prompt
+- `src/prompts/generation/prose_direct.j2` — Direct prose (short stories)
+- `src/prompts/generation/prose_from_plan.j2` — Prose from structure plan
 - `src/prompts/validation/continuity_gate.j2` — Continuity validation prompt
 - `src/prompts/validation/completion_gate.j2` — Completion validation prompt

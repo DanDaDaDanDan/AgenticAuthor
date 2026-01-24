@@ -14,7 +14,7 @@ class GenerationPhase(str, Enum):
     IDLE = "idle"            # No generation in progress
     PREMISE = "premise"      # Generating premise
     TREATMENT = "treatment"  # Generating treatment
-    CHAPTERS = "chapters"    # Generating chapter outlines
+    PLAN = "plan"            # Model-driven structure planning (novels only)
     PROSE = "prose"          # Generating prose
     COMPLETE = "complete"    # All generation done
 
@@ -24,17 +24,29 @@ class GenerationPhase(str, Enum):
         try:
             return cls(value.lower())
         except ValueError:
+            # Handle legacy 'chapters' phase -> map to PLAN
+            if value.lower() == 'chapters':
+                return cls.PLAN
             return cls.IDLE
 
-    def next_phase(self) -> Optional['GenerationPhase']:
-        """Get the next phase in the progression."""
-        phases = list(GenerationPhase)
-        try:
-            idx = phases.index(self)
-            if idx < len(phases) - 1:
-                return phases[idx + 1]
-        except ValueError:
-            pass
+    def next_phase(self, is_short_form: bool = False) -> Optional['GenerationPhase']:
+        """
+        Get the next phase in the progression.
+
+        Args:
+            is_short_form: If True, skip PLAN phase (short stories go direct to PROSE)
+        """
+        if self == GenerationPhase.IDLE:
+            return GenerationPhase.PREMISE
+        elif self == GenerationPhase.PREMISE:
+            return GenerationPhase.TREATMENT
+        elif self == GenerationPhase.TREATMENT:
+            # Short stories skip planning, go direct to prose
+            return GenerationPhase.PROSE if is_short_form else GenerationPhase.PLAN
+        elif self == GenerationPhase.PLAN:
+            return GenerationPhase.PROSE
+        elif self == GenerationPhase.PROSE:
+            return GenerationPhase.COMPLETE
         return None
 
     @property
@@ -340,26 +352,37 @@ class StateManager:
         """
         Detect current phase by examining project files.
 
+        Handles both new structure plan system and legacy chapter beats.
+
         Args:
             project: Project instance
 
         Returns:
             Detected generation phase
         """
-        # Check for prose chapters
-        prose_chapters = list(project.chapters_dir.glob("chapter-*.md"))
-        chapter_beats = list(project.chapter_beats_dir.glob("chapter-*.md"))
+        # Check for prose - either chapters/ or story.md
+        prose_chapters = list(project.chapters_dir.glob("chapter-*.md")) if project.chapters_dir.exists() else []
+        has_story = project.story_file.exists() if hasattr(project, 'story_file') else False
 
-        if prose_chapters:
-            # Check if all chapters have prose
-            if len(prose_chapters) >= len(chapter_beats) and chapter_beats:
+        if prose_chapters or has_story:
+            # For short stories, having story.md means complete
+            if has_story and project.is_short_form():
                 return GenerationPhase.COMPLETE
-            return GenerationPhase.PROSE
+            # For novels, check if we have prose
+            if prose_chapters:
+                return GenerationPhase.PROSE
 
-        if chapter_beats or project.chapter_beats_dir.exists():
+        # Check for structure plan (new system)
+        structure_plan = project.path / "structure-plan.md"
+        if structure_plan.exists():
+            return GenerationPhase.PLAN
+
+        # Check for legacy chapter beats (backward compatibility)
+        chapter_beats = list(project.chapter_beats_dir.glob("chapter-*.md")) if project.chapter_beats_dir.exists() else []
+        if chapter_beats:
             foundation = project.chapter_beats_dir / "foundation.md"
             if foundation.exists() or chapter_beats:
-                return GenerationPhase.CHAPTERS
+                return GenerationPhase.PLAN  # Map legacy chapters to PLAN phase
 
         if project.treatment_file.exists():
             return GenerationPhase.TREATMENT

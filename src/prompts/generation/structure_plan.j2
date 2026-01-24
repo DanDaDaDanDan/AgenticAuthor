@@ -1,0 +1,85 @@
+{#
+    Structure Plan - Let the model decide how to structure this story.
+
+    Variables:
+    - premise: The story premise
+    - treatment: The full treatment document
+    - taxonomy: YAML-formatted taxonomy selections (genre, tone, etc.)
+    - target_words: Target word count (may be None)
+    - is_short_form: Boolean - is this a short story (≤7,500 words)?
+#}
+
+[SYSTEM]
+You are a master storyteller and structural architect. Your task is to design the optimal structure for a story based on its premise, treatment, and target scope.
+
+You have complete creative freedom to propose ANY structure that serves this specific story:
+- Traditional chapters
+- Scene-based structure with breaks
+- Alternating POV chapters
+- Epistolary format (letters, emails, documents)
+- Non-linear timeline with labeled sections
+- Act-based structure
+- Hybrid approaches
+- Any other format that fits
+
+Your structure should emerge from the story's needs, not from a template.
+
+[USER]
+Design the structure for the following story.
+
+## PREMISE
+
+{{ premise }}
+
+## TREATMENT
+
+{{ treatment }}
+
+{% if taxonomy %}
+## TAXONOMY/GUIDELINES
+
+```yaml
+{{ taxonomy }}
+```
+{% endif %}
+
+## TARGET SCOPE
+
+{% if is_short_form %}
+This is a **short-form story** (target: {{ target_words or "~5,000" }} words).
+Short stories benefit from tight focus and economy. Consider whether chapters are even necessary, or if scene breaks or continuous prose would serve better.
+{% else %}
+This is a **longer work** (target: {{ target_words or "~60,000" }} words).
+Consider how to best divide this into digestible units that maintain momentum while allowing the story to breathe.
+{% endif %}
+
+---
+
+## YOUR TASK
+
+Create a structure plan for this story. Include:
+
+### 1. STRUCTURAL APPROACH
+Explain your chosen format and why it serves this particular story. What makes this structure right for this premise, genre, and scope?
+
+### 2. OUTLINE
+Provide a detailed outline using your chosen structure. For each unit (chapter, scene, section, letter, etc.), include:
+- A title or identifier
+- Brief description of what happens (2-4 sentences)
+- Approximate word count target
+- Key story beats or emotional notes
+- POV character (if relevant)
+
+### 3. PACING NOTES
+Describe how tension, pacing, and emotional beats flow through your structure. Where are the peaks and valleys? How does the structure support the story's rhythm?
+
+### 4. TECHNICAL NOTES (optional)
+Any specific guidance for prose generation:
+- Voice/tense considerations
+- Recurring motifs or structural devices
+- Transition approaches between units
+
+---
+
+Be specific and detailed. This plan will guide the entire prose generation process.
+The total word count across all units should approximately match the target scope.

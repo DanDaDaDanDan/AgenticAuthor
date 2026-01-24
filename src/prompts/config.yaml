@@ -74,6 +74,23 @@ generation/dedication_generation:
   format: text
   reserve_tokens: 300
 
+generation/structure_plan:
+  temperature: 0.7
+  format: text
+  reserve_tokens: 4000
+
+generation/prose_from_plan:
+  temperature: 0.8
+  format: text
+  reserve_tokens: 6000
+  top_p: 0.9
+
+generation/prose_direct:
+  temperature: 0.8
+  format: text
+  reserve_tokens: 8000
+  top_p: 0.9
+
 # Analysis prompts
 analysis/chapter_judging:
   temperature: 0.1
