@@ -79,7 +79,8 @@ class InteractiveSession:
             'git': self.git_command,
             'config': self.show_config,
             'clear': self.clear_screen,
-            'logs': self.show_logs
+            'logs': self.show_logs,
+            'resume': self.resume_autonomous
         }
 
         # Cache for model IDs (populated when client is initialized)
@@ -638,7 +639,7 @@ class InteractiveSession:
             self._print(f"[bold red]Failed to clone project:[/bold red] {self._escape_markup(e)}")
 
     def show_status(self, args: str = ""):
-        """Show current project status."""
+        """Show current project status with phase tracking and quality gates."""
         if not self.project:
             self.console.print("[yellow]No project loaded[/yellow]")
             return
@@ -676,16 +677,70 @@ class InteractiveSession:
             # Show current model (from global settings)
             table.add_row("Model", self.settings.active_model or "Not set")
 
-        # Check what exists
-        has_premise = self.project.premise_file.exists()
+        # Check what exists and detect phase
+        has_premise = self.project.premise_metadata_file.exists() or self.project.premise_file.exists()
         has_treatment = self.project.treatment_file.exists()
         has_story = self.project.story_file.exists()
-        has_outlines = self.project.chapters_file.exists()
-        num_chapters = len(self.project.list_chapters())
+
+        # Check chapter beats (new architecture)
+        chapter_beats = list(self.project.chapter_beats_dir.glob("chapter-*.md")) if self.project.chapter_beats_dir.exists() else []
+        has_outlines = len(chapter_beats) > 0 or self.project.chapters_file.exists()
+
+        # Count prose chapters
+        prose_chapters = self.project.list_chapters()
+        num_prose_chapters = len(prose_chapters)
+
+        # Determine phase
+        from ..orchestration import StateManager, GenerationPhase
+        state_manager = StateManager(self.project.path)
+        detected_phase = state_manager.detect_phase_from_files(self.project)
+
+        # Calculate total word count from prose
+        total_words = 0
+        if prose_chapters:
+            for ch_path in prose_chapters:
+                try:
+                    content = ch_path.read_text(encoding='utf-8')
+                    total_words += len(content.split())
+                except:
+                    pass
+
+        # Get total chapters from outlines
+        total_chapters = len(chapter_beats)
+        if not total_chapters:
+            chapters_yaml = self.project.get_chapters_yaml()
+            if chapters_yaml:
+                total_chapters = len(chapters_yaml.get('chapters', []))
 
         table.add_row("", "")  # Separator
-        table.add_row("Premise", "✓ " if has_premise else "✗ ")
-        table.add_row("Treatment", "✓ " if has_treatment else "✗ ")
+
+        # Show phase with color
+        phase_colors = {
+            GenerationPhase.IDLE: "dim",
+            GenerationPhase.PREMISE: "yellow",
+            GenerationPhase.TREATMENT: "yellow",
+            GenerationPhase.CHAPTERS: "yellow",
+            GenerationPhase.PROSE: "cyan",
+            GenerationPhase.COMPLETE: "green",
+        }
+        phase_color = phase_colors.get(detected_phase, "white")
+        table.add_row("Phase", f"[{phase_color}]{detected_phase.display_name}[/{phase_color}]")
+
+        # Show progress for prose phase
+        if detected_phase == GenerationPhase.PROSE and total_chapters > 0:
+            progress_pct = int((num_prose_chapters / total_chapters) * 100)
+            table.add_row("Progress", f"{num_prose_chapters}/{total_chapters} chapters ({progress_pct}%)")
+
+        # Word count
+        if total_words > 0:
+            word_display = f"{total_words:,}"
+            if target_words:
+                word_display += f" (target: ~{target_words:,})"
+            table.add_row("Word Count", word_display)
+
+        table.add_row("", "")  # Separator
+        table.add_row("Premise", "[green]✓[/green]" if has_premise else "[red]✗[/red]")
+        table.add_row("Treatment", "[green]✓[/green]" if has_treatment else "[red]✗[/red]")
 
         # Show different info based on story type
         if is_short_form:
@@ -693,33 +748,68 @@ class InteractiveSession:
             if has_story:
                 story_content = self.project.get_story()
                 word_count = len(story_content.split()) if story_content else 0
-                table.add_row("Story", f"✓  ({word_count:,} words)")
+                table.add_row("Story", f"[green]✓[/green]  ({word_count:,} words)")
             else:
-                table.add_row("Story", "✗ ")
+                table.add_row("Story", "[red]✗[/red]")
         else:
             # Novel: show chapters.yaml and prose chapters
             if has_outlines:
                 chapters_yaml = self.project.get_chapters_yaml()
                 if chapters_yaml:
-                    # New self-contained format - show additional info
                     metadata = chapters_yaml.get('metadata', {})
                     characters = chapters_yaml.get('characters', [])
-                    world = chapters_yaml.get('world', {})
                     chapters = chapters_yaml.get('chapters', [])
 
-                    outline_info = f"✓  ({len(chapters)} chapters"
-                    if metadata.get('genre'):
-                        outline_info += f", {metadata.get('genre')}"
+                    outline_info = f"[green]✓[/green]  ({len(chapters)} chapters"
                     if len(characters) > 0:
                         outline_info += f", {len(characters)} chars"
                     outline_info += ")"
                     table.add_row("Outlines", outline_info)
                 else:
-                    table.add_row("Outlines", "✓ ")
+                    table.add_row("Outlines", "[green]✓[/green]")
             else:
-                table.add_row("Outlines", "✗ ")
+                table.add_row("Outlines", "[red]✗[/red]")
 
-            table.add_row("Prose Chapters", str(num_chapters))
+            table.add_row("Prose Chapters", f"{num_prose_chapters}/{total_chapters}" if total_chapters else str(num_prose_chapters))
+
+        # Show quality gates if state file exists
+        state = state_manager.load()
+        gates_summary = state.get_quality_gates_summary()
+
+        if any(v != 'pending' and v != '0/0' for v in gates_summary.values()):
+            table.add_row("", "")  # Separator
+
+            # Structure gate
+            struct_status = gates_summary['structure']
+            if struct_status == 'PASS':
+                table.add_row("STRUCTURE Gate", "[green]PASS[/green]")
+            elif struct_status == 'FAIL':
+                table.add_row("STRUCTURE Gate", "[red]FAIL[/red]")
+            elif struct_status != 'pending':
+                table.add_row("STRUCTURE Gate", f"[yellow]{struct_status}[/yellow]")
+
+            # Continuity gates
+            cont_status = gates_summary['continuity']
+            if cont_status != '0/0':
+                passed, total = cont_status.split('/')
+                if passed == total:
+                    table.add_row("CONTINUITY Gates", f"[green]{cont_status} passed[/green]")
+                else:
+                    table.add_row("CONTINUITY Gates", f"[yellow]{cont_status} passed[/yellow]")
+
+            # Completion gate
+            comp_status = gates_summary['completion']
+            if comp_status == 'PASS':
+                table.add_row("COMPLETION Gate", "[green]PASS[/green]")
+            elif comp_status == 'FAIL':
+                table.add_row("COMPLETION Gate", "[red]FAIL[/red]")
+            elif comp_status != 'pending':
+                table.add_row("COMPLETION Gate", f"[yellow]{comp_status}[/yellow]")
+
+        # Show context mode if in prose phase
+        if state.context_mode and state.context_mode != "full":
+            table.add_row("", "")  # Separator
+            table.add_row("Context", f"{state.context_mode} ({state.context_tokens:,} tokens)")
 
         self.console.print(table)
 
@@ -1020,9 +1110,12 @@ class InteractiveSession:
             elif gen_type == "combined":
                 await self._generate_combined(options)
                 # No iteration target for combined
+            elif gen_type == "all":
+                # Full autonomous generation: premise → prose
+                await self._generate_all_autonomous(options)
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
-                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, dedication, combined[/dim]")
+                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, dedication, combined, all[/dim]")
         except Exception as e:
             self.console.print(f"[red]Generation failed: {self._escape_markup(e)}[/red]")
 
@@ -3844,6 +3937,129 @@ Regenerate the foundation addressing the issues above.
 
         # Commit
         self._commit(f"Write combined context file: {target}")
+
+    async def _generate_all_autonomous(self, options: str = ""):
+        """
+        Run fully autonomous generation from premise to prose.
+
+        Usage:
+            /generate all --autonomous     # Fresh start from premise
+            /generate all                  # Same as above (--autonomous implied)
+
+        Uses quality gates at each checkpoint:
+        - STRUCTURE_GATE: After chapters
+        - CONTINUITY_GATE: Per prose chapter
+        - COMPLETION_GATE: After all prose
+
+        State is saved to state.json for resume after interruption.
+        Use /resume to continue from where it left off.
+        """
+        if not self.project:
+            self.console.print("[yellow]No project loaded. Use /new or /open first.[/yellow]")
+            return
+
+        if not self.settings.active_model:
+            self.console.print("[yellow]No model selected. Use /model to select first.[/yellow]")
+            return
+
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
+        # Parse options
+        is_resume = '--resume' in options
+
+        try:
+            from ..orchestration.autonomous import AutonomousGenerator
+
+            generator = AutonomousGenerator(
+                client=self.client,
+                project=self.project,
+                model=self.settings.active_model,
+                console=self.console,
+            )
+
+            # Define callbacks for git commits
+            async def on_phase_complete(phase):
+                self._commit(f"Autonomous: Complete {phase.value} phase")
+
+            self.console.print("\n[bold cyan]Starting Autonomous Generation[/bold cyan]")
+            self.console.print("[dim]Press Ctrl+C to cancel (state is saved for resume)[/dim]\n")
+
+            success = await generator.run(
+                resume=is_resume,
+                on_phase_complete=on_phase_complete,
+            )
+
+            if success:
+                self.console.print("\n[bold green]Autonomous generation completed successfully![/bold green]")
+                self._commit("Autonomous: Generation complete")
+            else:
+                self.console.print("\n[yellow]Generation incomplete. Use /resume to continue.[/yellow]")
+
+        except KeyboardInterrupt:
+            self.console.print("\n[yellow]Generation interrupted. Use /resume to continue.[/yellow]")
+        except Exception as e:
+            self.console.print(f"[red]Autonomous generation failed: {self._escape_markup(e)}[/red]")
+
+    async def resume_autonomous(self, args: str = ""):
+        """
+        Resume interrupted autonomous generation.
+
+        Usage:
+            /resume              # Resume from saved state
+
+        Continues from where the last autonomous run left off,
+        using the saved state.json file.
+        """
+        if not self.project:
+            self.console.print("[yellow]No project loaded. Use /new or /open first.[/yellow]")
+            return
+
+        if not self.settings.active_model:
+            self.console.print("[yellow]No model selected. Use /model to select first.[/yellow]")
+            return
+
+        # Check if state file exists
+        state_file = self.project.path / "state.json"
+        if not state_file.exists():
+            self.console.print("[yellow]No saved state found. Use /generate all to start fresh.[/yellow]")
+            return
+
+        # Ensure git repo exists
+        self._ensure_git_repo()
+
+        try:
+            from ..orchestration.autonomous import AutonomousGenerator
+
+            generator = AutonomousGenerator(
+                client=self.client,
+                project=self.project,
+                model=self.settings.active_model,
+                console=self.console,
+            )
+
+            # Define callbacks for git commits
+            async def on_phase_complete(phase):
+                self._commit(f"Autonomous: Complete {phase.value} phase")
+
+            self.console.print("\n[bold cyan]Resuming Autonomous Generation[/bold cyan]")
+            self.console.print("[dim]Press Ctrl+C to cancel (state is saved for resume)[/dim]\n")
+
+            success = await generator.run(
+                resume=True,
+                on_phase_complete=on_phase_complete,
+            )
+
+            if success:
+                self.console.print("\n[bold green]Autonomous generation completed successfully![/bold green]")
+                self._commit("Autonomous: Generation complete")
+            else:
+                self.console.print("\n[yellow]Generation incomplete. Use /resume to try again.[/yellow]")
+
+        except KeyboardInterrupt:
+            self.console.print("\n[yellow]Generation interrupted. Use /resume to continue.[/yellow]")
+        except Exception as e:
+            self.console.print(f"[red]Resume failed: {self._escape_markup(e)}[/red]")
 
     def split_combined(self, args: str):
         """

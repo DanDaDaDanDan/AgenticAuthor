@@ -123,6 +123,24 @@ validation/iteration_fidelity:
   reserve_tokens: 1000
   structured_output: true
 
+validation/structure_gate:
+  temperature: 0.1
+  format: json
+  reserve_tokens: 1500
+  structured_output: true
+
+validation/continuity_gate:
+  temperature: 0.1
+  format: json
+  reserve_tokens: 1500
+  structured_output: true
+
+validation/completion_gate:
+  temperature: 0.1
+  format: json
+  reserve_tokens: 2000
+  structured_output: true
+
 # Iteration prompts (premise iteration only - chapter/prose iteration removed)
 iteration/taxonomy_update:
   temperature: 0.4

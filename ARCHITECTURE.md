@@ -277,3 +277,94 @@ Implementation: See `src/utils/markdown_extractors.py` (MarkdownExtractor) and c
 **Decision:** Fail early if no model selected; never substitute defaults.
 **Rationale:** Respect user choice, prevent unexpected costs/quality issues.
 **Impact:** Users must explicitly select model via `/model` command.
+
+### ADR-006: Autonomous Generation with State Machine
+**Decision:** Implement fully autonomous generation mode with persistent state.
+**Rationale:** Fire-and-forget book generation; resume after interruption.
+**Impact:** New `src/orchestration/` module with state_machine.py, autonomous.py.
+
+### ADR-007: Quality Gates at Natural Breakpoints
+**Decision:** Add explicit quality validation gates (STRUCTURE, CONTINUITY, COMPLETION).
+**Rationale:** Catch issues early before wasting tokens on prose generation.
+**Impact:** Reuses IterationJudge infrastructure; adds ~150 lines of validation logic.
+
+### ADR-008: Context Optimization for Large Books
+**Decision:** Smart context management above 50KB threshold.
+**Rationale:** Enable 20+ chapter books without context overflow.
+**Impact:** Full prose for recent 3 chapters; LLM-generated summaries for earlier ones.
+
+## Orchestration System (v0.5.0)
+
+New orchestration module (`src/orchestration/`) enables autonomous generation and quality validation.
+
+### State Machine
+- **Phases:** IDLE → PREMISE → TREATMENT → CHAPTERS → PROSE → COMPLETE
+- **Persistence:** `state.json` in project directory for resume after interruption
+- **Detection:** Auto-detects current phase from existing files
+
+### Quality Gates
+Three explicit validation checkpoints using LLM judges:
+
+1. **STRUCTURE_GATE** (after chapters)
+   - Arc coherence (beginning, middle, end)
+   - No duplicate events across chapters
+   - Balanced pacing
+   - Character arc completeness
+
+2. **CONTINUITY_GATE** (per prose chapter)
+   - Character consistency
+   - Plot coherence with prior chapters
+   - Setting continuity
+   - Factual consistency
+
+3. **COMPLETION_GATE** (after all prose)
+   - Overall narrative coherence
+   - Plot resolution
+   - Thematic consistency
+   - Reader satisfaction
+
+**Outcomes:** PASS (continue), NEEDS_WORK (auto-iterate 2x), BLOCKED (human review)
+
+### Autonomous Mode
+Usage:
+```bash
+/generate all --autonomous  # Fresh start
+/resume                     # Resume from saved state
+```
+
+- Runs premise→treatment→chapters→prose without intervention
+- State saved after each phase for resume
+- Quality gates auto-iterate on issues (max 2 attempts)
+- Blocks only on unrecoverable errors
+
+### Files
+- `src/orchestration/__init__.py` — Module exports
+- `src/orchestration/state_machine.py` — Phase tracking and state persistence (~150 lines)
+- `src/orchestration/quality_gates.py` — Quality validation using LLM judges (~150 lines)
+- `src/orchestration/autonomous.py` — Autonomous generation coordinator (~200 lines)
+- `src/prompts/validation/structure_gate.j2` — Structure validation prompt
+- `src/prompts/validation/continuity_gate.j2` — Continuity validation prompt
+- `src/prompts/validation/completion_gate.j2` — Completion validation prompt
+
+## Context Optimization
+
+For books with 20+ chapters, prior prose context can exceed 50KB. The ContextManager provides smart optimization.
+
+### Behavior
+- **Below 50KB:** Full prose context (quality-first, unchanged)
+- **Above 50KB:** Optimized mode
+  - Full prose for last 3 chapters (recent context)
+  - LLM-generated summaries for earlier chapters
+
+### Summary Caching
+- Summaries cached in `chapter-beats/summaries/chapter-NN-summary.md`
+- Invalidated when chapter content changes
+- ~200-400 words per summary (detailed enough for continuity)
+
+### Files
+- `src/generation/context_manager.py` — Context size detection, summary generation, caching (~150 lines)
+
+### Usage
+Context optimization is automatic during prose generation. The `/status` command shows:
+- Context mode (full or optimized)
+- Context token count

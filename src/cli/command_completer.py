@@ -217,8 +217,9 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
             'usage': '/models [search]'
         },
         'generate': {
-            'description': 'Generate content (premise/treatment/chapters/prose/dedication/marketing)',
+            'description': 'Generate content (premise/treatment/chapters/prose/dedication/marketing/all)',
             'usage': '/generate <type> [options]\n' +
+                     '  all --autonomous: Full premise→prose pipeline (fire-and-forget)\n' +
                      '  chapters: [count] [--temperature X.X] [--reuse-foundation] [--auto]\n' +
                      '    --temperature X.X: Single variant at specified temp (auto-finalized)\n' +
                      '    --reuse-foundation: Reuse existing foundation (skip generation)\n' +
@@ -289,5 +290,9 @@ def create_command_descriptions() -> Dict[str, Dict[str, str]]:
         'quit': {
             'description': 'Exit the application',
             'usage': '/quit'
+        },
+        'resume': {
+            'description': 'Resume interrupted autonomous generation',
+            'usage': '/resume'
         },
     }

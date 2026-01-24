@@ -1,0 +1,95 @@
+{#
+    Continuity Gate - Validate prose chapter against prior chapters.
+
+    Variables:
+    - chapter_num: Current chapter number
+    - current_prose: Full prose of current chapter
+    - current_outline: Chapter outline dict (optional)
+    - prior_chapters: List of dicts with 'number' and 'content' (truncated prose)
+#}
+
+[SYSTEM]
+You are a continuity validator for fiction. Your job is to check that a chapter maintains consistency with prior chapters in character, plot, and setting. You return structured JSON assessments.
+
+[USER]
+Validate Chapter {{ chapter_num }} for continuity with prior chapters.
+
+{% if current_outline %}
+CHAPTER {{ chapter_num }} OUTLINE:
+Title: {{ current_outline.get('title', 'Untitled') }}
+Summary: {{ current_outline.get('summary', 'No summary') }}
+{% endif %}
+
+PRIOR CHAPTERS (excerpts):
+{% for ch in prior_chapters %}
+---
+Chapter {{ ch.number }}:
+{{ ch.content }}
+
+{% endfor %}
+{% if not prior_chapters %}
+No prior chapters (this is Chapter 1).
+{% endif %}
+
+CURRENT CHAPTER {{ chapter_num }} PROSE:
+---
+{{ current_prose[:8000] }}
+{% if current_prose | length > 8000 %}
+... [truncated, {{ current_prose | length }} total characters]
+{% endif %}
+
+VALIDATION CRITERIA:
+
+1. **Character Consistency**
+   - Do characters maintain consistent traits (appearance, personality, speech patterns)?
+   - Are character names spelled consistently?
+   - Do characters remember previous events appropriately?
+   - Are character relationships consistent with prior chapters?
+
+2. **Plot Coherence**
+   - Does this chapter follow logically from previous events?
+   - Are there any contradictions with established plot points?
+   - Do character decisions make sense given their prior actions?
+   - Are there unexplained jumps in time or location?
+
+3. **Setting Continuity**
+   - Are locations described consistently?
+   - Do physical details match earlier descriptions?
+   - Is the world's logic/rules maintained?
+
+4. **Temporal Consistency**
+   - Is the timeline clear and consistent?
+   - Are references to time (day, night, seasons) logical?
+   - Do characters age/change appropriately over time?
+
+5. **Factual Consistency**
+   - Are established facts (names, dates, events) consistent?
+   - Do objects/items remain where they were placed?
+   - Are injuries, conditions, or changes tracked correctly?
+
+RETURN FORMAT:
+Return ONLY valid JSON (no markdown fences):
+
+{
+  "verdict": "pass" or "needs_work" or "blocked",
+  "reasoning": "Explanation of the continuity assessment",
+  "issues": [
+    "Issue 1: Specific continuity problem found",
+    "Issue 2: Another inconsistency"
+  ],
+  "suggestions": [
+    "Suggestion 1: How to fix the issue",
+    "Suggestion 2: Alternative fix"
+  ]
+}
+
+VERDICT MEANINGS:
+- "pass": No significant continuity issues, chapter is consistent
+- "needs_work": Minor issues that can be fixed with iteration
+- "blocked": Major contradictions requiring human review
+
+{% if not prior_chapters %}
+NOTE: This is Chapter 1, so focus on internal consistency rather than cross-chapter continuity.
+{% endif %}
+
+Be strict on character names and major plot points. Be lenient on minor details that readers might not notice.

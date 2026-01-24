@@ -1,0 +1,100 @@
+{#
+    Completion Gate - Final quality check after all prose is generated.
+
+    Variables:
+    - chapter_summaries: List of dicts with 'number', 'word_count', 'opening', 'closing'
+    - total_chapters: Total number of chapters
+    - total_words: Total word count
+    - foundation: Foundation metadata dict
+    - characters: List of character dicts
+#}
+
+[SYSTEM]
+You are a final manuscript validator. Your job is to assess the overall quality and completeness of a finished book. You return structured JSON assessments focusing on narrative coherence and reader satisfaction.
+
+[USER]
+Perform final quality assessment of the completed manuscript.
+
+MANUSCRIPT OVERVIEW:
+Total Chapters: {{ total_chapters }}
+Total Words: {{ total_words | default(0) | int }}{%- if total_words >= 1000 %} (~{{ (total_words / 1000) | round(1) }}K){%- endif %}
+
+{% if foundation %}
+STORY METADATA:
+Genre: {{ foundation.get('genre', 'Not specified') }}
+Target Word Count: {{ foundation.get('target_word_count', 'Not specified') }}
+Tone: {{ foundation.get('tone', 'Not specified') }}
+{% endif %}
+
+MAIN CHARACTERS:
+{% for char in characters[:5] %}
+- {{ char.get('name', 'Unknown') }}: {{ char.get('role', 'Unknown role') }}
+{% endfor %}
+
+CHAPTER SUMMARIES:
+{% for ch in chapter_summaries %}
+---
+Chapter {{ ch.number }} ({{ ch.word_count }} words):
+
+OPENING:
+{{ ch.opening }}
+
+CLOSING:
+{{ ch.closing }}
+
+{% endfor %}
+
+VALIDATION CRITERIA:
+
+1. **Narrative Coherence**
+   - Does the story flow logically from beginning to end?
+   - Are transitions between chapters smooth?
+   - Is the overall narrative arc clear and satisfying?
+
+2. **Plot Resolution**
+   - Are all major plot threads resolved?
+   - Is the ending satisfying and earned?
+   - Are there any obvious plot holes?
+
+3. **Character Arc Completion**
+   - Do main characters undergo meaningful change?
+   - Are character arcs resolved appropriately?
+   - Are character motivations clear throughout?
+
+4. **Thematic Consistency**
+   - Are themes explored consistently?
+   - Does the ending reinforce or thoughtfully subvert themes?
+   - Is the message clear without being preachy?
+
+5. **Pacing and Balance**
+   - Is chapter length relatively balanced?
+   - Does the pacing match the genre expectations?
+   - Is there a clear buildup to climax and resolution?
+
+6. **Reader Satisfaction**
+   - Would a reader feel satisfied at the end?
+   - Are there any jarring or confusing moments?
+   - Does the book deliver on its premise?
+
+RETURN FORMAT:
+Return ONLY valid JSON (no markdown fences):
+
+{
+  "verdict": "pass" or "needs_work" or "blocked",
+  "reasoning": "Overall assessment of manuscript quality",
+  "issues": [
+    "Issue 1: Major quality concern",
+    "Issue 2: Another issue found"
+  ],
+  "suggestions": [
+    "Suggestion 1: How to improve",
+    "Suggestion 2: Alternative approach"
+  ]
+}
+
+VERDICT MEANINGS:
+- "pass": Manuscript is complete and ready for publication/export
+- "needs_work": Issues that could be addressed with targeted iteration
+- "blocked": Major problems requiring substantial revision
+
+This is a final check, so be thorough. However, remember that perfection is not the goal - a good, coherent story is sufficient.
