@@ -1,0 +1,318 @@
+# Skill: /generate
+
+Generate content at any stage of the book creation process.
+
+## Usage
+
+```
+/generate [stage]
+```
+
+## Arguments
+
+- `stage`: One of `premise`, `treatment`, `plan`, `prose`, or `all`
+
+## Instructions
+
+### Step 0: Detect Current Project
+
+Check if the current working directory is inside a book project:
+- Look for `project.yaml` in the current directory or parent directories under `books/`
+- If not found, ask the user which project to work on
+
+Read `project.yaml` to get project metadata (genre, length, title, author).
+
+### Stage: premise
+
+Generate the core concept and story foundation.
+
+**Context to read:**
+- `taxonomies/{genre}-taxonomy.json` - Genre-specific options and categories
+
+**Output file:** `premise.md`
+
+**Generation instructions:**
+
+Ask the user for a brief concept (1-3 sentences describing the story idea).
+
+Then generate a complete premise document:
+
+```markdown
+# Premise
+
+{Expand the concept into 2-3 paragraphs that capture the essence of the story}
+
+## Core Elements
+
+- **Protagonist:** {Name and key traits - who is the main character?}
+- **Antagonist:** {The opposing force - person, society, nature, or self}
+- **Central Conflict:** {What the protagonist wants vs what stands in their way}
+- **Stakes:** {What happens if they fail?}
+- **Hook:** {The unique element that makes this story compelling}
+
+## Setting
+
+{Describe the world/time/place where the story unfolds - 1-2 paragraphs}
+
+## Themes
+
+- {Primary theme}
+- {Secondary theme}
+- {Optional tertiary theme}
+
+## Tone and Style
+
+- **Tone:** {e.g., Dark and brooding, Light and humorous, Tense and atmospheric}
+- **Pacing:** {e.g., Fast-paced thriller, Slow-burn character study}
+- **Voice:** {e.g., First person intimate, Third person limited, Multiple POV}
+
+## Taxonomy Selections
+
+Based on the {genre} taxonomy, these elements apply:
+
+- **Subgenre:** {Selected from taxonomy}
+- **Length:** {novel/short-story} ({estimated word count})
+- **Target Audience:** {e.g., Adult, Young Adult}
+- **Additional tags:** {2-4 relevant tags from taxonomy}
+```
+
+**After generation:**
+```bash
+cd books/{project} && git add premise.md && git commit -m "Add: Generate premise for {project}"
+```
+
+### Stage: treatment
+
+Generate the story outline/treatment.
+
+**Context to read:**
+- `premise.md` - Full premise document
+- `taxonomies/{genre}-taxonomy.json` - For genre-specific structure
+
+**Output file:** `treatment.md`
+
+**Generation instructions:**
+
+Generate a detailed treatment that expands the premise into a story structure:
+
+```markdown
+# Treatment
+
+## Story Overview
+
+{2-3 paragraph summary of the complete story arc}
+
+## Act Structure
+
+### Act I: {Title} (Setup)
+
+{Describe the opening situation, character introductions, inciting incident, and first plot point}
+
+**Key scenes:**
+1. {Opening scene description}
+2. {Character establishment}
+3. {Inciting incident}
+4. {First plot point / point of no return}
+
+### Act II: {Title} (Confrontation)
+
+{Describe the rising action, complications, midpoint, and escalating conflict}
+
+**Key scenes:**
+1. {First major complication}
+2. {Midpoint reversal or revelation}
+3. {Protagonist's darkest moment}
+4. {Second plot point}
+
+### Act III: {Title} (Resolution)
+
+{Describe the climax, resolution, and ending}
+
+**Key scenes:**
+1. {Final approach to climax}
+2. {Climax scene}
+3. {Resolution and aftermath}
+4. {Final image/closing}
+
+## Character Arcs
+
+### {Protagonist Name}
+- **Starting state:** {How they begin}
+- **Key transformation:** {What changes them}
+- **Ending state:** {Who they become}
+
+### {Antagonist/Key Character}
+- **Role in story:** {Their function}
+- **Arc:** {How they develop or remain static}
+
+## Subplots
+
+1. **{Subplot name}:** {Brief description and how it connects to main plot}
+2. **{Subplot name}:** {Brief description}
+
+## World Elements
+
+{Any important world-building details needed for the story}
+```
+
+**After generation:**
+```bash
+cd books/{project} && git add treatment.md && git commit -m "Add: Generate treatment for {project}"
+```
+
+### Stage: plan
+
+Generate the chapter structure plan (novels only).
+
+**Context to read:**
+- `premise.md` - Full premise
+- `treatment.md` - Full treatment
+
+**Output file:** `structure-plan.md`
+
+**Generation instructions:**
+
+For novels, generate a detailed chapter-by-chapter plan:
+
+```markdown
+# Structure Plan
+
+## Overview
+
+- **Total chapters:** {number}
+- **Estimated word count:** {total}
+- **POV structure:** {Single POV / Multiple POV / Alternating}
+
+## Chapter Breakdown
+
+### Chapter 1: {Title}
+
+**POV:** {Character name}
+**Setting:** {Location and time}
+**Word count target:** {2,500-4,000}
+
+**Summary:**
+{2-3 sentences describing what happens in this chapter}
+
+**Scene breakdown:**
+1. {Scene 1 - brief description}
+2. {Scene 2 - brief description}
+3. {Scene 3 - brief description}
+
+**Chapter goals:**
+- {What this chapter must accomplish for plot}
+- {What this chapter must accomplish for character}
+
+**Ends with:** {Hook or turn that leads to next chapter}
+
+---
+
+### Chapter 2: {Title}
+
+{Repeat structure for each chapter}
+
+---
+
+## Pacing Notes
+
+- **Action chapters:** {List chapter numbers}
+- **Character/Reflection chapters:** {List chapter numbers}
+- **Climax chapters:** {List chapter numbers}
+
+## Continuity Tracking
+
+| Element | Introduced | Resolved |
+|---------|-----------|----------|
+| {Plot thread} | Ch {X} | Ch {Y} |
+| {Character arc} | Ch {X} | Ch {Y} |
+```
+
+**For short stories:** Skip this stage (no chapter plan needed).
+
+**After generation:**
+```bash
+cd books/{project} && git add structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
+```
+
+### Stage: prose
+
+Generate the actual story prose.
+
+**Context to read (ALL of these, in full):**
+- `premise.md` - Full premise
+- `treatment.md` - Full treatment
+- `structure-plan.md` - Chapter plan (novels only)
+- `misc/prose-style-card.md` - Style guidelines
+- All previously generated chapters in `chapters/` directory
+
+**Output files:**
+- Novels: `chapters/chapter-{NN}.md` (one per chapter)
+- Short stories: `story.md` (single file)
+
+**Generation instructions:**
+
+Read the prose style card carefully and apply all its guidelines.
+
+For each chapter/story:
+
+1. Review the full context (premise, treatment, plan, previous chapters)
+2. Generate prose that:
+   - Follows the style card guidelines (sentence length, dialogue ratio, etc.)
+   - Maintains consistency with previous chapters
+   - Advances the plot according to the plan
+   - Develops characters as outlined
+3. Do NOT include chapter planning notes in the output - only the prose itself
+
+**Chapter format:**
+
+```markdown
+# Chapter {N}: {Title}
+
+{Prose content - scenes flow naturally without explicit scene breaks unless dramatically appropriate}
+
+{Use "* * *" for scene breaks when needed}
+
+{Continue prose...}
+```
+
+**Short story format:**
+
+```markdown
+# {Story Title}
+
+{Complete story prose}
+```
+
+**After each chapter:**
+```bash
+cd books/{project} && git add chapters/chapter-{NN}.md && git commit -m "Add: Generate chapter {N} prose"
+```
+
+### Stage: all
+
+Generate all stages in sequence: premise → treatment → plan → prose
+
+For each stage:
+1. Check if it already exists
+2. If exists, ask user if they want to regenerate
+3. If not exists or user confirms, generate it
+4. Wait for user to review before proceeding to next stage
+
+## Context Management
+
+**CRITICAL:** Always include full context from previous stages. Token cost is negligible compared to quality loss from missing context.
+
+For prose generation of chapter N, include:
+- premise.md (100%)
+- treatment.md (100%)
+- structure-plan.md (100%)
+- chapters 1 through N-1 (100% of each)
+- prose-style-card.md (100%)
+
+Never truncate or summarize context. If the context is too large, ask the user rather than silently truncating.
+
+## Error Handling
+
+- If a required file is missing, tell the user which stage to generate first
+- If project.yaml is missing, prompt to run `/new-book` first
+- Never generate placeholder or skeleton content - always generate complete, quality prose

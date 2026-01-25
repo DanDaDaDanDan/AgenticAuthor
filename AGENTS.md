@@ -1,33 +1,37 @@
 # Repository Guidelines
 
-Keep this guide concise. Treat `CLAUDE.md` and `ARCHITECTURE.md` as the sources of truth. When you change how things are structured or interact, add a short note to `ARCHITECTURE.md` (key decisions, rationale, date).
+Keep this guide concise. Treat `CLAUDE.md` and `ARCHITECTURE.md` as the sources of truth.
 
 ## Project Structure
+
 - See `ARCHITECTURE.md` for the complete layout and roles.
-- In brief: `src/` holds CLI, generation, prompts, storage, utils; `books/` stores per‑project artifacts; `taxonomies/` configures genre/form; logs go to `logs/`.
+- In brief: `.claude/skills/` holds skill definitions; `books/` stores per-project artifacts; `taxonomies/` configures genres; `misc/` contains style cards.
 
-## Build, Test, and Dev
-- `python -m venv .venv && source .venv/bin/activate`
-- `pip install -e .[dev]`
-- `agentic` to start; `agentic repl <project>` to resume (use `/help` and tab completion).
-- `pytest` (add `--cov=src --cov-report=term-missing` for coverage)
-- `ruff check src tests`, `black src tests`, `mypy src`
+## Skills
 
-## Coding Style
-- Black (4 spaces, 100‑char lines) + Ruff import sorting (see `pyproject.toml`).
-- Naming: `snake_case` (modules/functions), `PascalCase` (classes), `UPPER_SNAKE_CASE` (constants).
-- Prefer Pydantic models/dataclasses for structured data; keep Typer commands non‑blocking.
-- New prompts go in `src/prompts` with descriptive filenames; capture high‑level changes in `ARCHITECTURE.md`.
+Skills are markdown files in `.claude/skills/` that define Claude Code operations:
 
-## Testing Guidelines
-- Name tests `test_<module>.py`; use `pytest.mark.asyncio` for async.
-- Mock network (OpenRouter) and add fixtures under `tests/fixtures`.
-- Exercise generation (`src/generation`) and persistence (`src/storage`) paths; share helpers via `tests/conftest.py`.
+- `new-book.md` - Create new book projects
+- `generate.md` - Generate content at each stage
+- `iterate.md` - Refine content with feedback
+- `status.md` - Show project progress
+- `export.md` - Export book to single file
 
-## Commit & PR Guidelines
-- Format: `<Type>: <summary>` (e.g., `Fix: ...`, `Add: ...`, `Docs: ...`), ≤72 chars, imperative mood.
-- Include verification evidence (`pytest`, `ruff`, `mypy` outputs) and any CLI examples affected.
-- Link `ARCHITECTURE.md` when architectural behavior changes; add a brief decision note (what/why).
+## Adding New Skills
 
-Rule — Always Check In Your Work
-- Commit after each meaningful change; avoid large uncommitted diffs. Keep the tree clean before switching tasks or requesting review.
+1. Create `.claude/skills/your-skill.md`
+2. Define purpose, arguments, and step-by-step instructions
+3. Document in `ARCHITECTURE.md` and `CLAUDE.md`
+
+## Commit Guidelines
+
+- Format: `<Type>: <summary>` (e.g., `Add: ...`, `Update: ...`, `Fix: ...`)
+- ≤72 chars, imperative mood
+- Commit after each meaningful change
+- Link `ARCHITECTURE.md` when making architectural changes
+
+## File Conventions
+
+- `.md` - Human-readable content (prose, premises, treatments, skills)
+- `.yaml` - Project metadata
+- `.json` - Genre taxonomies

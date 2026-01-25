@@ -1,169 +1,158 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
-
-## Documentation Updates
-
-When making relevant changes, keep these up to date:
-- **`ARCHITECTURE.md`** – High-level architecture and file hierarchy. Keep this updated with key architectural decisions and changes (ADR-style notes at end of file).
-- **`AGENTS.md`** – Repository guidelines (structure, commands, style, testing, PR rules)
-
-## Git Commits
-
-**Commit changes regularly with descriptive messages.**
-
-- Commit after each meaningful change
-- Format: `Type: Short description` (e.g., "Fix: Resolve duplication issue")
-- Common types: Fix, Add, Update, Refactor, Docs
-
-## Verification Process
-
-**After completing ANY feature or fix, ALWAYS verify:**
-
-1. **Code Review** - Read all modified files completely
-2. **Edge Cases** - Empty inputs, boundaries, error paths, cancellation
-3. **Integration** - Compatible with existing systems
-4. **Documentation** - Updated all relevant docs
-5. **User Experience** - Clear errors, consistent patterns
-
-Even "trivial" changes need verification. Takes 5-10 minutes, prevents hours of debugging.
+This file provides guidance to Claude Code when working with AgenticAuthor.
 
 ## Project Overview
 
-AgenticAuthor is a Python CLI for AI-powered book generation using OpenRouter API.
+AgenticAuthor is a **Claude Code skills-based** system for AI-powered book generation. Claude Code is the orchestrator - there is no separate application, API client, or REPL.
 
-**Core Flow:** premise → treatment → chapters → prose (Level of Detail approach)
+**Core Workflow:** premise → treatment → structure plan → prose
 
-**Key Innovation:** Natural language iteration with git-backed version control.
+**Key Features:**
+- Natural language iteration with git-backed version control
+- Quality-first prose generation using the prose style card
+- Genre taxonomies for consistent story elements
+- Claude Code skills handle all operations
 
-**Architecture Highlights:**
-- Quality-first prose generation (no word count pressure)
-- Multi-variant chapter generation with LLM judging
-- Self-contained chapters.yaml for prose generation
-- Short story support (≤2 chapters → single story.md file)
-- Shared git repository at books/ level
+## Available Skills
 
-For a high-level summary and layout, see `ARCHITECTURE.md`.
+| Skill | Purpose |
+|-------|---------|
+| `/new-book` | Create a new book project |
+| `/generate` | Generate premise, treatment, plan, or prose |
+| `/iterate` | Refine content with natural language feedback |
+| `/status` | Show project progress |
+| `/export` | Export book to single file |
 
-## Core Principles
-
-### 1. Natural Language First
-Always listening for feedback, no explicit iteration commands needed.
-
-### 2. Single Model Policy
-**CRITICAL:** Use the user's selected model for ALL operations. Never fall back or substitute.
-
-```python
-if not model:
-    raise ValueError("No model selected. Use /model to select.")
-```
-
-### 3. Fail Early, No Fallbacks
-Never use `or ""` or hardcoded defaults. Get actual data from API.
-
-```python
-# BAD
-premise = self.project.get_premise() or ""
-
-# GOOD
-premise = self.project.get_premise()
-if not premise:
-    raise Exception("No premise found. Generate with /generate premise")
-```
-
-### 4. Context is King
-**Always prioritize complete context over token savings.**
-
-- Include full chapters.yaml + all previous prose for generation
-- Include all chapters for iteration
-- Ask user if uncertain about context inclusion
-- Token costs are negligible vs quality (100k tokens ≈ $0.50-1.00)
-
-### 5. UI/UX Inline
-- No modal dialogs - everything in terminal flow
-- Numbered lists for selection
-- Progressive disclosure
-- Rich for formatted output
-
-## Key Commands
-
-```bash
-# Setup
-pip install -e .
-export OPENROUTER_API_KEY="sk-or-..."
-
-# Basic workflow
-agentic                    # Start REPL
-/new my-book              # Create project
-/model                    # Select model interactively
-/generate premise         # Generate premise
-/generate treatment       # Generate treatment
-/generate chapters        # Generate chapter variants
-/finalize chapters        # Select best variant
-/generate prose all       # Generate full prose (uses style card by default)
-
-# Iteration workflow (v0.4.0)
-/iterate prose            # Set iteration target
-make it darker            # Natural language feedback (no / prefix)
-                          # System validates with judge, shows semantic diff, commits
-
-# Style cards (prose generation)
-# Style cards are used BY DEFAULT - stored in books/project/misc/prose-style-card.md
-/generate prose           # Uses style card automatically
-/generate prose --no-style-card  # Skip style card if needed
-```
-
-Use `/help` in the REPL and tab-completion for command hints.
+Run any skill by typing it in Claude Code (e.g., `/new-book my-fantasy`).
 
 ## Repository Structure
 
 ```
 AgenticAuthor/
-├── CLAUDE.md                 # This file
-├── ARCHITECTURE.md           # High-level architecture (keep decisions updated)
-├── codex-overview-2-diagrams.md # Diagrammed overview
-├── docs/                     # Comprehensive documentation
-│   ├── CHANGELOG.md          # Version history
-│   ├── IMPLEMENTATION_STATUS.md # Feature tracking
-│   └── USER_GUIDE.md         # Complete user guide
-├── src/                      # Source code
-│   ├── generation/           # Core generation logic
-│   │   └── iteration/        # Natural language iteration (v0.4.0)
-│   ├── cli/                  # REPL and UI
-│   └── prompts/              # Jinja2 templates
-└── books/                    # Generated projects
-    └── .git/                 # Shared git repo
+├── CLAUDE.md              # This file
+├── ARCHITECTURE.md        # Architecture documentation
+├── taxonomies/            # Genre classification (12 JSON files)
+│   ├── fantasy-taxonomy.json
+│   ├── science-fiction-taxonomy.json
+│   └── ...
+├── misc/
+│   └── prose-style-card.md  # Style guidance for prose
+├── .claude/
+│   └── skills/            # Skill definitions
+└── books/                 # Book projects (separate git repo)
+    └── {book-name}/
+        ├── project.yaml   # Metadata
+        ├── premise.md     # Core concept
+        ├── treatment.md   # Story outline
+        ├── structure-plan.md  # Chapter plan (novels)
+        ├── chapters/      # Prose chapters (novels)
+        └── story.md       # Complete story (short stories)
 ```
 
-## Key Implementation Files
+## Core Principles
 
-- **Generation:** `premise.py`, `treatment.py`, `chapters.py`, `prose.py`
-- **Iteration:** `src/generation/iteration/` - Natural language processing
-- **Variants:** `variant_manager.py` - Multi-variant generation
-- **CLI:** `interactive.py` - Main REPL
-- **Prompts:** `src/prompts/` - All LLM prompt templates
+### 1. Context is King
 
-For implementation orientation, see `ARCHITECTURE.md`.
+**Always include full context from previous stages when generating.**
+
+For prose generation, include:
+- premise.md (100%)
+- treatment.md (100%)
+- structure-plan.md (100%)
+- All previous chapters (100%)
+- prose-style-card.md (100%)
+
+Token costs are negligible compared to quality loss from missing context.
+
+### 2. Quality First
+
+- Follow the prose style card guidelines strictly
+- Never generate placeholder or skeleton content
+- Each generation should be publication-ready
+
+### 3. Git Everything
+
+- Every operation commits to git
+- This enables natural language iteration ("make it darker" just works)
+- Users can review history, diff versions, and revert changes
+
+### 4. Natural Language Iteration
+
+Users can refine any content with plain English:
+- "Make the protagonist more conflicted"
+- "Add more tension to chapter 3"
+- "The pacing feels slow, tighten it up"
+
+## Quick Start
+
+```bash
+# Navigate to AgenticAuthor
+cd AgenticAuthor
+
+# Create a new book
+/new-book my-fantasy
+
+# Generate content
+/generate premise
+/generate treatment
+/generate plan
+/generate prose
+
+# Check progress
+/status
+
+# Iterate on content
+/iterate prose "add more sensory details"
+
+# Export final book
+/export
+```
+
+## Taxonomy Files
+
+Located in `taxonomies/`, these provide genre-specific options:
+
+| File | Genre |
+|------|-------|
+| fantasy-taxonomy.json | Fantasy |
+| science-fiction-taxonomy.json | Science Fiction |
+| romance-taxonomy.json | Romance |
+| horror-taxonomy.json | Horror |
+| mystery-thriller-taxonomy.json | Mystery/Thriller |
+| urban-fantasy-taxonomy.json | Urban Fantasy |
+| romantasy-taxonomy.json | Romantasy |
+| contemporary-fiction-taxonomy.json | Contemporary Fiction |
+| literary-fiction-taxonomy.json | Literary Fiction |
+| historical-fiction-taxonomy.json | Historical Fiction |
+| young-adult-taxonomy.json | Young Adult |
+| generic-taxonomy.json | Generic (fallback) |
+
+Each taxonomy contains subgenres, themes, world types, and other genre-specific elements to guide story development.
+
+## Prose Style Card
+
+The `misc/prose-style-card.md` defines writing standards:
+
+- **Readability:** Flesch Reading Ease 60-80
+- **Sentence length:** 12-16 words average
+- **Dialogue:** 35-50% in character scenes
+- **POV:** Single POV per scene
+- **Pacing:** POISE structure (Purpose, Obstacle, Interaction, Stakes, End-turn)
+
+Always apply these guidelines when generating prose.
+
+## Git Commits
+
+**Commit changes regularly with descriptive messages.**
+
+- Commit after each generation or iteration
+- Format: `Type: Short description` (e.g., "Add: Generate premise for my-book")
+- Common types: Add, Update, Iterate
 
 ## Important Notes
 
-- OpenRouter API key must start with 'sk-or-'
-- Every operation auto-commits to git
-- Centralized .agentic folder at project root (NOT in books/)
-  - Logs: `.agentic/logs/agentic_YYYYMMDD.log`
-  - Debug files: `.agentic/debug/project-name/`
-  - History: `.agentic/history`
-- Generation requires: premise → treatment → chapters → prose
-- Test suite needs rebuilding for v0.3.0+
-
-**Iteration System (v0.4.0):**
-- ✅ Implementation complete (4 files, 1119 lines, 6 prompt templates)
-- ⚠️ Ready for testing on cloned projects ONLY (use `/clone`)
-- Features: Judge validation, semantic diffs, git tracking, debug storage
-- See `ARCHITECTURE.md` section 10 (Natural Language Iteration) for workflow details
-
-## Getting Help
-
-- **Architecture:** `ARCHITECTURE.md` - High-level design, decisions, and ADRs
-- **REPL Help:** Use `/help` in the REPL for command reference
-- **Code Comments:** Inline documentation in source files
+- The `books/` directory has its own git repository
+- Each book project is self-contained in `books/{project}/`
+- Short stories use `story.md` instead of `chapters/`
+- Novels use `structure-plan.md` + `chapters/` directory

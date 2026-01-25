@@ -1,145 +1,88 @@
 # AgenticAuthor
 
-**AI-powered book generation using natural language and git-backed version control.**
+**AI-powered book generation using Claude Code skills.**
 
-AgenticAuthor is a Python CLI tool that leverages Large Language Models to help you write complete books through a structured, iterative process. It uses a "Level of Detail" approach, starting from a premise and progressively building up to full prose.
+AgenticAuthor uses Claude Code as the orchestrator to help you write complete books through a structured, iterative process. It uses a "Level of Detail" approach, starting from a premise and progressively building up to full prose.
 
 ## Features
 
-- **Structured Generation Pipeline**: premise → treatment → chapters → prose
+- **Structured Generation Pipeline**: premise → treatment → structure plan → prose
 - **Natural Language Iteration**: Give feedback in plain English to refine your content
-- **Multi-Variant Generation**: Generate multiple chapter variants and select the best
 - **Git-Backed Version Control**: Every change is automatically committed
 - **Quality-First Approach**: No artificial word count pressure
 - **Style Cards**: Define and maintain consistent prose style across your book
-- **Short Story Support**: Optimized handling for stories with ≤2 chapters
-- **OpenRouter Integration**: Access to multiple LLM providers through a single API
+- **Genre Taxonomies**: 12 genre-specific taxonomies guide story development
 
 ## Prerequisites
 
-- Python 3.8+
-- OpenRouter API key (get one at [openrouter.ai](https://openrouter.ai))
-
-## Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd AgenticAuthor
-   ```
-
-2. **Install the package:**
-   ```bash
-   pip install -e .
-   ```
-
-3. **Set your API key:**
-   ```bash
-   export OPENROUTER_API_KEY="sk-or-your-key-here"
-   ```
-
-   Or on Windows (PowerShell):
-   ```powershell
-   $env:OPENROUTER_API_KEY="sk-or-your-key-here"
-   ```
+- [Claude Code](https://claude.com/claude-code) CLI installed
 
 ## Quick Start
 
-1. **Launch the REPL:**
+1. **Navigate to AgenticAuthor:**
    ```bash
-   agentic
+   cd AgenticAuthor
    ```
 
 2. **Create a new project:**
    ```
-   /new my-first-book
+   /new-book my-fantasy
    ```
 
-3. **Select your AI model:**
-   ```
-   /model
-   ```
-   Choose from the interactive list of available models.
-
-4. **Generate your book step by step:**
+3. **Generate your book step by step:**
    ```
    /generate premise
    /generate treatment
-   /generate chapters
-   /finalize chapters
-   /generate prose all
+   /generate plan        # For novels only
+   /generate prose
    ```
+
+4. **Iterate with natural language:**
+   ```
+   /iterate prose "make it darker and more suspenseful"
+   ```
+
+5. **Export your book:**
+   ```
+   /export
+   ```
+
+## Available Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/new-book` | Create a new book project |
+| `/generate` | Generate premise, treatment, plan, or prose |
+| `/iterate` | Refine content with natural language feedback |
+| `/status` | Show project progress |
+| `/export` | Export book to single file |
 
 ## Core Workflow
 
 ### 1. Premise Generation
-The starting point - a high-level concept for your book.
-```
-/generate premise
-```
+The starting point - a high-level concept for your book including protagonist, antagonist, conflict, stakes, and themes.
 
 ### 2. Treatment
-Expands the premise into a detailed outline with character arcs and plot structure.
-```
-/generate treatment
-```
+Expands the premise into a detailed outline with character arcs and plot structure (Act I, II, III).
 
-### 3. Chapter Generation
-Generates multiple variants of chapter plans. You'll review and select the best.
-```
-/generate chapters
-/finalize chapters
-```
+### 3. Structure Plan (Novels only)
+A chapter-by-chapter breakdown with POV, settings, and goals for each chapter.
 
 ### 4. Prose Generation
-Writes the actual prose for your chapters. Uses style cards by default for consistency.
-```
-/generate prose all           # Generate all chapters
-/generate prose 1             # Generate specific chapter
-/generate prose 1-3           # Generate range of chapters
-/generate prose --no-style-card  # Skip style card if needed
-```
+Writes the actual prose following the style card guidelines. For novels, generates chapter-by-chapter. For short stories, generates a single story.md file.
 
 ## Natural Language Iteration
 
-Once content is generated, you can refine it using natural language feedback:
+Refine any content using plain English feedback:
 
 ```
 /iterate prose
-make it darker and more suspenseful
-add more internal dialogue
-focus more on the character's backstory
+"add more internal dialogue"
+"focus more on the character's backstory"
+"increase the tension in the climax"
 ```
 
-The system validates changes with an AI judge, shows semantic diffs, and commits approved changes to git.
-
-## Key Commands
-
-### Project Management
-- `/new <name>` - Create a new book project
-- `/list` - List all projects
-- `/switch <name>` - Switch to a different project
-- `/clone <name>` - Clone existing project for safe experimentation
-
-### Model Selection
-- `/model` - Interactively select AI model
-- `/model <name>` - Set model directly
-
-### Generation
-- `/generate premise` - Generate book premise
-- `/generate treatment` - Generate detailed treatment
-- `/generate chapters` - Generate chapter variants
-- `/finalize chapters` - Select best chapter variant
-- `/generate prose <target>` - Generate prose (all, chapter #, or range)
-
-### Iteration
-- `/iterate prose` - Enter iteration mode for prose refinement
-- Provide natural language feedback (no `/` prefix)
-- System validates, diffs, and commits changes
-
-### Utilities
-- `/help` - Show all available commands
-- `/quit` or `/exit` - Exit the REPL
+Each iteration is committed to git, so you can always review history or revert changes.
 
 ## Project Structure
 
@@ -149,64 +92,48 @@ Generated projects are stored in the `books/` directory:
 books/
 ├── .git/                      # Shared git repository
 └── my-book/
+    ├── project.yaml           # Metadata
     ├── premise.md             # Book premise
     ├── treatment.md           # Detailed treatment
-    ├── chapters.yaml          # Chapter plans (finalized)
-    ├── prose/                 # Generated prose chapters
-    │   ├── chapter_01.md
-    │   ├── chapter_02.md
+    ├── structure-plan.md      # Chapter plan (novels)
+    ├── chapters/              # Prose chapters (novels)
+    │   ├── chapter-01.md
     │   └── ...
-    └── misc/
-        └── prose-style-card.md  # Style guide for prose
+    └── story.md               # Complete story (short stories)
 ```
 
-## Style Cards
+## Genre Taxonomies
 
-Style cards define the prose style for your book and are used by default during generation. They include:
+The `taxonomies/` directory contains 12 genre-specific JSON files that guide story development:
 
-- Narrative voice and POV
-- Tone and pacing
-- Dialogue style
-- Descriptive focus
-- Technical elements
+- Fantasy, Science Fiction, Romance, Horror
+- Mystery/Thriller, Urban Fantasy, Romantasy
+- Contemporary Fiction, Literary Fiction
+- Historical Fiction, Young Adult, Generic
 
-Generated automatically during prose generation, stored in `books/project/misc/prose-style-card.md`.
+Each taxonomy provides subgenres, themes, world types, and other genre-specific elements.
+
+## Style Card
+
+The prose style card (`misc/prose-style-card.md`) defines writing standards:
+
+- Readability: Flesch Reading Ease 60-80
+- Sentence length: 12-16 words average
+- Dialogue ratio: 35-50% in character scenes
+- POV: Single POV per scene
+- Pacing: POISE structure (Purpose, Obstacle, Interaction, Stakes, End-turn)
 
 ## Documentation
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - High-level architecture and design decisions
-- **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - Comprehensive user guide
-- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version history and changes
-- **[docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)** - Feature tracking
-- **[CLAUDE.md](CLAUDE.md)** - Development guidance for AI assistants
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design
+- **[CLAUDE.md](CLAUDE.md)** - Development guidance
 
 ## Core Principles
 
-1. **Natural Language First** - Iterate using plain English feedback
-2. **Single Model Policy** - One model for all operations, no fallbacks
-3. **Fail Early** - Clear errors instead of silent failures
-4. **Context is King** - Complete context over token savings
-5. **Quality First** - No artificial constraints on generation
-
-## Tips
-
-- Use tab-completion in the REPL for command hints
-- All operations automatically commit to git
-- Use `/clone` before experimenting with iteration
-- Check `.agentic/logs/` for detailed operation logs
-- Debug files are stored in `.agentic/debug/`
-
-## Requirements
-
-- OpenRouter API key must start with `sk-or-`
-- Generation must follow the pipeline: premise → treatment → chapters → prose
-- Each step builds on the previous one
-
-## Getting Help
-
-- Use `/help` in the REPL for command reference
-- Check documentation in the `docs/` directory
-- Review `ARCHITECTURE.md` for system design details
+1. **Context is King** - Full context from prior stages, quality over token savings
+2. **Quality First** - No artificial constraints on generation
+3. **Git Everything** - Every operation commits for version history
+4. **Natural Language** - Iterate using plain English feedback
 
 ## License
 
