@@ -1,4 +1,8 @@
-# Skill: /generate
+---
+name: generate
+description: Generate content at any stage - premise, treatment, plan, or prose.
+argument-hint: "[stage]"
+---
 
 Generate content at any stage of the book creation process.
 

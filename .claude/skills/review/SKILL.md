@@ -1,4 +1,8 @@
-# Skill: /review
+---
+name: review
+description: Analyze content against quality standards without making changes.
+argument-hint: "[target]"
+---
 
 Analyze content against quality standards without making changes.
 
