@@ -35,8 +35,8 @@ Then ask:
   12. Other (use generic taxonomy)
 
 - Is this a short story or a novel?
-  1. Short story (1-2 chapters, ~5,000-15,000 words)
-  2. Novel (3+ chapters, ~60,000-100,000 words)
+  1. Short story (single file, ~1,500-15,000 words) - generates `story.md`
+  2. Novel (multiple chapters, ~40,000-120,000 words) - generates `chapters/` directory
 
 - What is the working title? (Can be different from project name)
 - Who is the author name to use?
@@ -60,16 +60,34 @@ mkdir -p books/{book-name}           # for short stories
 
 ### Step 3: Create project.yaml
 
-Write the project.yaml file with the gathered information:
+Write the project.yaml file with the gathered information.
+
+**Important:** Store the genre in lowercase with hyphens to match taxonomy filenames:
 
 ```yaml
 name: {book-name}
 title: {working-title}
 author: {author-name}
-genre: {genre}
+genre: {genre-key}  # e.g., fantasy, science-fiction, mystery-thriller
 length: novel  # or: short-story
 created: {today's date in YYYY-MM-DD format}
 ```
+
+**Genre key mapping:**
+| User Selection | genre value in YAML |
+|---------------|---------------------|
+| Fantasy | fantasy |
+| Science Fiction | science-fiction |
+| Romance | romance |
+| Horror | horror |
+| Mystery/Thriller | mystery-thriller |
+| Urban Fantasy | urban-fantasy |
+| Romantasy | romantasy |
+| Contemporary Fiction | contemporary-fiction |
+| Literary Fiction | literary-fiction |
+| Historical Fiction | historical-fiction |
+| Young Adult | young-adult |
+| Other | generic |
 
 ### Step 4: Initialize Git (if needed)
 

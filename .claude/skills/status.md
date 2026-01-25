@@ -108,6 +108,8 @@ cd books && git log --oneline -5 -- {project}/
 cd books && git status --porcelain {project}/
 ```
 
+**Note:** This skill uses visual indicators (checkmarks, circles) for status display to improve readability.
+
 ## Progress Calculation
 
 Calculate completion percentage based on stages:

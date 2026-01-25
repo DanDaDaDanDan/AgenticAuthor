@@ -11,7 +11,7 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 - **Git-Backed Version Control**: Every change is automatically committed
 - **Quality-First Approach**: No artificial word count pressure
 - **Style Cards**: Define and maintain consistent prose style across your book
-- **Genre Taxonomies**: 12 genre-specific taxonomies guide story development
+- **Genre Taxonomies**: 13 taxonomy files (1 base + 12 genre-specific) guide story development
 
 ## Prerequisites
 
@@ -104,14 +104,17 @@ books/
 
 ## Genre Taxonomies
 
-The `taxonomies/` directory contains 12 genre-specific JSON files that guide story development:
+The `taxonomies/` directory contains 13 JSON files that guide story development:
 
+**Base taxonomy:** Universal properties (length, audience, pacing, POV, content rating)
+
+**Genre taxonomies (12):**
 - Fantasy, Science Fiction, Romance, Horror
 - Mystery/Thriller, Urban Fantasy, Romantasy
 - Contemporary Fiction, Literary Fiction
 - Historical Fiction, Young Adult, Generic
 
-Each taxonomy provides subgenres, themes, world types, and other genre-specific elements.
+Each genre taxonomy extends the base and adds subgenres, themes, world types, and genre-specific elements.
 
 ## Style Card
 

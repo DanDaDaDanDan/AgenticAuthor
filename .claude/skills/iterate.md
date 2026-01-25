@@ -34,28 +34,36 @@ If `feedback` not provided, ask the user:
 
 ### Step 3: Read Full Context
 
-**Always read the complete context for the target:**
+**Always read the complete context for the target.**
+
+Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For premise iteration:**
-- Current `premise.md`
-- `taxonomies/{genre}-taxonomy.json`
+- `books/{project}/premise.md` - Current premise
+- `AgenticAuthor/taxonomies/base-taxonomy.json` - Universal properties
+- `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - Genre-specific options
 
 **For treatment iteration:**
-- `premise.md` (full)
-- Current `treatment.md`
+- `books/{project}/premise.md` (full)
+- `books/{project}/treatment.md` - Current treatment
 
 **For plan iteration:**
-- `premise.md` (full)
-- `treatment.md` (full)
-- Current `structure-plan.md`
+- `books/{project}/premise.md` (full)
+- `books/{project}/treatment.md` (full)
+- `books/{project}/structure-plan.md` - Current plan
 
 **For prose iteration:**
-- `premise.md` (full)
-- `treatment.md` (full)
-- `structure-plan.md` (full, if novel)
-- `misc/prose-style-card.md` (full)
-- All chapters (full)
+- `books/{project}/premise.md` (full)
+- `books/{project}/treatment.md` (full)
+- `books/{project}/structure-plan.md` (full, if novel)
+- `AgenticAuthor/misc/prose-style-card.md` (full) - at repo root
+- All chapters from `books/{project}/chapters/` (full)
 - The specific chapter(s) being revised
+
+**Path Notes:**
+- Book files are in `books/{project}/`
+- Prose style card is at `AgenticAuthor/misc/` (repo root)
+- Taxonomies are at `AgenticAuthor/taxonomies/` (repo root)
 
 ### Step 4: Apply Changes
 
@@ -85,10 +93,16 @@ Elements preserved:
 
 ### Step 6: Write and Commit
 
-Write the revised file(s) and commit:
+Write the revised file(s) to `books/{project}/` and commit:
 
 ```bash
-cd books/{project} && git add {file(s)} && git commit -m "Update: Iterate on {target} - {brief feedback summary}"
+cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
+```
+
+Examples:
+```bash
+cd books && git add my-book/premise.md && git commit -m "Iterate: premise - add more conflict"
+cd books && git add my-book/chapters/chapter-03.md && git commit -m "Iterate: chapter 3 - increase tension"
 ```
 
 ## Iteration Guidelines

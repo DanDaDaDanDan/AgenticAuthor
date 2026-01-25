@@ -32,7 +32,7 @@ Run any skill by typing it in Claude Code (e.g., `/new-book my-fantasy`).
 AgenticAuthor/
 ├── CLAUDE.md              # This file
 ├── ARCHITECTURE.md        # Architecture documentation
-├── taxonomies/            # Genre classification (12 JSON files)
+├── taxonomies/            # Genre classification (13 JSON files)
 │   ├── fantasy-taxonomy.json
 │   ├── science-fiction-taxonomy.json
 │   └── ...
@@ -111,8 +111,14 @@ cd AgenticAuthor
 
 ## Taxonomy Files
 
-Located in `taxonomies/`, these provide genre-specific options:
+Located in `taxonomies/`, these provide story classification options:
 
+**Base Taxonomy (universal):**
+| File | Purpose |
+|------|---------|
+| base-taxonomy.json | Universal properties: length, audience, pacing, POV, content rating |
+
+**Genre Taxonomies (12 files):**
 | File | Genre |
 |------|-------|
 | fantasy-taxonomy.json | Fantasy |
@@ -128,7 +134,7 @@ Located in `taxonomies/`, these provide genre-specific options:
 | young-adult-taxonomy.json | Young Adult |
 | generic-taxonomy.json | Generic (fallback) |
 
-Each taxonomy contains subgenres, themes, world types, and other genre-specific elements to guide story development.
+Each genre taxonomy extends the base taxonomy and adds subgenres, themes, world types, and other genre-specific elements.
 
 ## Prose Style Card
 

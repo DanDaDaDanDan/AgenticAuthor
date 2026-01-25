@@ -23,7 +23,7 @@ Read `project.yaml` for metadata.
 
 ### Step 2: Verify Completion
 
-Check that all required files exist:
+Check that all required files exist in `books/{project}/`:
 - `premise.md`
 - `treatment.md`
 - For novels: `chapters/chapter-*.md` files
@@ -152,7 +152,7 @@ Commit export to git? (y/n)
 
 If yes:
 ```bash
-cd books && git add {project}/export/ && git commit -m "Add: Export {project} ({format} format)"
+cd books && git add {project}/export/{project}.md && git commit -m "Add: Export {project} ({format} format)"
 ```
 
 ## Short Story Export

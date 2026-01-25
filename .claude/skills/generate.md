@@ -27,7 +27,24 @@ Read `project.yaml` to get project metadata (genre, length, title, author).
 Generate the core concept and story foundation.
 
 **Context to read:**
-- `taxonomies/{genre}-taxonomy.json` - Genre-specific options and categories
+- `AgenticAuthor/taxonomies/base-taxonomy.json` - Universal story properties (length, audience, pacing, POV)
+- `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - Genre-specific options and categories
+
+**Genre to filename mapping:**
+| Genre in project.yaml | Taxonomy file |
+|----------------------|---------------|
+| fantasy | fantasy-taxonomy.json |
+| science-fiction | science-fiction-taxonomy.json |
+| romance | romance-taxonomy.json |
+| horror | horror-taxonomy.json |
+| mystery-thriller | mystery-thriller-taxonomy.json |
+| urban-fantasy | urban-fantasy-taxonomy.json |
+| romantasy | romantasy-taxonomy.json |
+| contemporary-fiction | contemporary-fiction-taxonomy.json |
+| literary-fiction | literary-fiction-taxonomy.json |
+| historical-fiction | historical-fiction-taxonomy.json |
+| young-adult | young-adult-taxonomy.json |
+| generic | generic-taxonomy.json |
 
 **Output file:** `premise.md`
 
@@ -78,7 +95,7 @@ Based on the {genre} taxonomy, these elements apply:
 
 **After generation:**
 ```bash
-cd books/{project} && git add premise.md && git commit -m "Add: Generate premise for {project}"
+cd books && git add {project}/premise.md && git commit -m "Add: Generate premise for {project}"
 ```
 
 ### Stage: treatment
@@ -86,8 +103,8 @@ cd books/{project} && git add premise.md && git commit -m "Add: Generate premise
 Generate the story outline/treatment.
 
 **Context to read:**
-- `premise.md` - Full premise document
-- `taxonomies/{genre}-taxonomy.json` - For genre-specific structure
+- `books/{project}/premise.md` - Full premise document
+- `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - For genre-specific structure
 
 **Output file:** `treatment.md`
 
@@ -157,7 +174,7 @@ Generate a detailed treatment that expands the premise into a story structure:
 
 **After generation:**
 ```bash
-cd books/{project} && git add treatment.md && git commit -m "Add: Generate treatment for {project}"
+cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
 ```
 
 ### Stage: plan
@@ -165,10 +182,10 @@ cd books/{project} && git add treatment.md && git commit -m "Add: Generate treat
 Generate the chapter structure plan (novels only).
 
 **Context to read:**
-- `premise.md` - Full premise
-- `treatment.md` - Full treatment
+- `books/{project}/premise.md` - Full premise
+- `books/{project}/treatment.md` - Full treatment
 
-**Output file:** `structure-plan.md`
+**Output file:** `books/{project}/structure-plan.md`
 
 **Generation instructions:**
 
@@ -231,7 +248,7 @@ For novels, generate a detailed chapter-by-chapter plan:
 
 **After generation:**
 ```bash
-cd books/{project} && git add structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
+cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
 ```
 
 ### Stage: prose
@@ -239,11 +256,11 @@ cd books/{project} && git add structure-plan.md && git commit -m "Add: Generate 
 Generate the actual story prose.
 
 **Context to read (ALL of these, in full):**
-- `premise.md` - Full premise
-- `treatment.md` - Full treatment
-- `structure-plan.md` - Chapter plan (novels only)
-- `misc/prose-style-card.md` - Style guidelines
-- All previously generated chapters in `chapters/` directory
+- `books/{project}/premise.md` - Full premise
+- `books/{project}/treatment.md` - Full treatment
+- `books/{project}/structure-plan.md` - Chapter plan (novels only)
+- `AgenticAuthor/misc/prose-style-card.md` - Style guidelines (at repo root, not in project)
+- All previously generated chapters in `books/{project}/chapters/` directory
 
 **Output files:**
 - Novels: `chapters/chapter-{NN}.md` (one per chapter)
@@ -283,9 +300,14 @@ For each chapter/story:
 {Complete story prose}
 ```
 
-**After each chapter:**
+**After each chapter (novels):**
 ```bash
-cd books/{project} && git add chapters/chapter-{NN}.md && git commit -m "Add: Generate chapter {N} prose"
+cd books && git add {project}/chapters/chapter-{NN}.md && git commit -m "Add: Generate chapter {N} prose for {project}"
+```
+
+**After story.md (short stories):**
+```bash
+cd books && git add {project}/story.md && git commit -m "Add: Generate prose for {project}"
 ```
 
 ### Stage: all
@@ -303,11 +325,16 @@ For each stage:
 **CRITICAL:** Always include full context from previous stages. Token cost is negligible compared to quality loss from missing context.
 
 For prose generation of chapter N, include:
-- premise.md (100%)
-- treatment.md (100%)
-- structure-plan.md (100%)
-- chapters 1 through N-1 (100% of each)
-- prose-style-card.md (100%)
+- `books/{project}/premise.md` (100%)
+- `books/{project}/treatment.md` (100%)
+- `books/{project}/structure-plan.md` (100%) - novels only
+- Chapters 1 through N-1 from `books/{project}/chapters/` (100% of each)
+- `AgenticAuthor/misc/prose-style-card.md` (100%) - at repo root
+
+**Path Notes:**
+- Book project files are in `books/{project}/`
+- The prose style card is at `AgenticAuthor/misc/` (repo root), NOT inside the book project
+- Taxonomies are at `AgenticAuthor/taxonomies/` (repo root)
 
 Never truncate or summarize context. If the context is too large, ask the user rather than silently truncating.
 

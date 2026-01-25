@@ -15,7 +15,7 @@ AgenticAuthor uses Claude Code skills to generate books. There is no separate ap
 AgenticAuthor/
 ├── CLAUDE.md              # Contributor guidance
 ├── ARCHITECTURE.md        # This file
-├── taxonomies/            # Genre classification (12 JSON files)
+├── taxonomies/            # Genre classification (13 JSON files)
 │   ├── base-taxonomy.json
 │   ├── fantasy-taxonomy.json
 │   ├── science-fiction-taxonomy.json
@@ -222,16 +222,23 @@ created: 2025-01-25
 
 ## Taxonomy System
 
-Taxonomies in `taxonomies/` provide genre-specific elements:
+Taxonomies in `taxonomies/` provide story classification:
 
-- **Subgenres:** Specific story types within the genre
-- **Themes:** Common thematic elements
-- **World types:** Setting classifications
-- **Magic systems:** (Fantasy) Types of supernatural elements
-- **Character archetypes:** Common character types
-- **Plot structures:** Typical narrative patterns
+**Base Taxonomy (`base-taxonomy.json`):**
+- Story length (flash fiction → epic)
+- Target audience (middle grade → adult)
+- Content rating (clean → explicit)
+- Series structure (standalone → serial)
+- Pacing, POV, ending type
 
-Skills read the appropriate taxonomy based on the project's genre to inform generation.
+**Genre Taxonomies (12 files):**
+- Subgenres specific to the genre
+- Thematic elements common to the genre
+- World types and settings
+- Genre-specific tropes and archetypes
+- Plot structures typical of the genre
+
+Skills read both the base taxonomy AND the genre-specific taxonomy to inform generation. The genre taxonomy extends the base with genre-specific options.
 
 ## Prose Style Card
 
