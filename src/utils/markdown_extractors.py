@@ -916,10 +916,10 @@ class MarkdownFormatter:
     @classmethod
     def format_chapters_yaml(cls, chapters_yaml: Dict[str, Any]) -> str:
         """
-        Format complete chapters.yaml structure as markdown.
+        Format complete chapters structure as markdown.
 
-        This formats the FULL structure: metadata + characters + world + chapters.
-        Use this for passing chapters.yaml to LLMs as context.
+        DEPRECATED: This method was used for the old chapter-beats format.
+        New projects use structure-plan.md instead.
 
         Args:
             chapters_yaml: Dict with metadata, characters, world, chapters keys

@@ -196,12 +196,6 @@ class MarkdownExporter:
             parts.append("\n\n")
         else:
             # Long-form: iterate over chapter files
-            chapters_yaml = self.project.get_chapters_yaml()
-            if chapters_yaml:
-                chapters = chapters_yaml.get('chapters', [])
-            else:
-                chapters = self.project.get_chapters() or []
-
             # Choose chapter source based on use_edited flag
             chapter_files = sorted(self.project.list_edited_chapters() if use_edited else self.project.list_chapters())
 
@@ -209,14 +203,8 @@ class MarkdownExporter:
                 chapter_num = self._extract_chapter_number(chapter_file)
                 chapter_text = chapter_file.read_text(encoding='utf-8')
 
-                # Find chapter title
-                chapter_info = next((c for c in chapters if c.get('number') == chapter_num), None)
-                chapter_title = chapter_info.get('title', '') if chapter_info else ''
-
                 # Chapter heading
                 parts.append(f"# Chapter {chapter_num}")
-                if chapter_title:
-                    parts.append(f": {chapter_title}")
                 parts.append("\n\n")
 
                 # Strip markdown heading from chapter text if present

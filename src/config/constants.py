@@ -14,15 +14,12 @@ DEFAULT_CACHE_DIR = Path("./.cache")
 PROJECT_FILE = "project.yaml"
 PREMISE_DIR = "premise"
 TREATMENT_DIR = "treatment"
-CHAPTER_BEATS_DIR = "chapter-beats"
 CHAPTERS_DIR = "chapters"
 ANALYSIS_DIR = "analysis"
 EXPORTS_DIR = "exports"
 
-# Legacy File Names (for backward compatibility)
-PREMISE_FILE = "premise.md"  # Legacy: now in premise/
-TREATMENT_FILE = "treatment.md"  # Legacy: now in treatment/
-CHAPTERS_FILE = "chapters.yaml"  # Deprecated: use chapter-beats/ instead
+# File Names
+STRUCTURE_PLAN_FILE = "structure-plan.md"
 
 # Git Configuration
 DEFAULT_COMMIT_AUTHOR = "AgenticAuthor"

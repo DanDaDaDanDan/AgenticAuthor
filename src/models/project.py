@@ -74,24 +74,9 @@ class Project:
         return self.treatment_dir / "treatment.md"
 
     @property
-    def chapters_file(self) -> Path:
-        """
-        Get path to chapters.yaml file.
-
-        DEPRECATED: chapters.yaml no longer exists on disk with sequential generation.
-        All chapter data is stored in chapter-beats/ directory:
-        - chapter-beats/foundation.yaml (metadata, characters, world)
-        - chapter-beats/chapter-NN.yaml (individual chapter outlines)
-
-        Use get_chapters_yaml() instead, which aggregates from chapter-beats/.
-        This property is kept for backward compatibility only.
-        """
-        return self.path / "chapters.yaml"
-
-    @property
-    def chapter_beats_dir(self) -> Path:
-        """Get path to chapter-beats directory (new format)."""
-        return self.path / "chapter-beats"
+    def structure_plan_file(self) -> Path:
+        """Get path to structure-plan.md file."""
+        return self.path / "structure-plan.md"
 
     @property
     def chapters_dir(self) -> Path:
@@ -273,7 +258,6 @@ class Project:
             # config.yaml has been merged into project.yaml, safe to delete
             self.config_file.unlink()
 
-        # Note: chapter-beats/ and chapters/ already use folder structure, no migration needed
 
     def save_metadata(self):
         """Save project metadata to project.yaml."""
@@ -414,190 +398,18 @@ class Project:
             self.metadata.update_timestamp()
             self.save_metadata()
 
-    def get_chapter_outlines(self) -> Optional[Dict[str, Any]]:
-        """Load chapter outlines from YAML."""
-        if self.chapters_file.exists():
-            with open(self.chapters_file) as f:
-                return yaml.safe_load(f)
+    def get_structure_plan(self) -> Optional[str]:
+        """Load structure plan content."""
+        if self.structure_plan_file.exists():
+            return self.structure_plan_file.read_text(encoding='utf-8')
         return None
 
-    def get_foundation(self) -> Optional[Dict[str, Any]]:
-        """
-        Load foundation (metadata + characters + world) from new format.
-
-        Returns:
-            Dict with metadata, characters, world sections, or None if not found
-        """
-        # Try markdown format first (new format - stores raw LLM output for debugging)
-        foundation_md = self.chapter_beats_dir / "foundation.md"
-        if foundation_md.exists():
-            from ..utils.markdown_extractors import MarkdownExtractor
-            with open(foundation_md, 'r', encoding='utf-8') as f:
-                markdown_text = f.read()
-                return MarkdownExtractor.extract_foundation(markdown_text)
-
-        # Fallback to YAML format (legacy - for backward compatibility)
-        foundation_yaml = self.chapter_beats_dir / "foundation.yaml"
-        if foundation_yaml.exists():
-            with open(foundation_yaml, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
-
-        return None
-
-    def save_foundation_markdown(self, markdown_text: str):
-        """
-        Save foundation as raw markdown (NEW FORMAT - stores LLM output directly).
-
-        Args:
-            markdown_text: Raw markdown text from LLM
-        """
-        self.chapter_beats_dir.mkdir(exist_ok=True)
-        foundation_file = self.chapter_beats_dir / "foundation.md"
-        with open(foundation_file, 'w', encoding='utf-8') as f:
-            f.write(markdown_text)
-
-    def save_foundation(self, data: Dict[str, Any]):
-        """
-        Save foundation as YAML (DEPRECATED - for backward compatibility only).
-
-        NEW CODE SHOULD USE save_foundation_markdown() instead.
-
-        Args:
-            data: Dict with metadata, characters, world sections
-        """
-        import warnings
-        warnings.warn(
-            "save_foundation(dict) is deprecated. Use save_foundation_markdown(markdown_text) instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        self.chapter_beats_dir.mkdir(exist_ok=True)
-        foundation_file = self.chapter_beats_dir / "foundation.yaml"
-        with open(foundation_file, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
-
-    def get_chapter_beat(self, chapter_num: int) -> Optional[Dict[str, Any]]:
-        """
-        Load individual chapter outline from new format.
-
-        Args:
-            chapter_num: Chapter number (1-based)
-
-        Returns:
-            Chapter dict, or None if not found
-        """
-        # Try markdown format first (new format - stores raw LLM output for debugging)
-        chapter_md = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.md"
-        if chapter_md.exists():
-            from ..utils.markdown_extractors import MarkdownExtractor
-            with open(chapter_md, 'r', encoding='utf-8') as f:
-                markdown_text = f.read()
-                chapters = MarkdownExtractor.extract_chapters(markdown_text)
-                # Should only be one chapter in the file
-                return chapters[0] if chapters else None
-
-        # Fallback to YAML format (legacy - for backward compatibility)
-        chapter_yaml = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.yaml"
-        if chapter_yaml.exists():
-            with open(chapter_yaml, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
-
-        return None
-
-    def save_chapter_beat_markdown(self, chapter_num: int, markdown_text: str):
-        """
-        Save chapter beat as raw markdown (NEW FORMAT - stores LLM output directly).
-
-        Args:
-            chapter_num: Chapter number (1-based)
-            markdown_text: Raw markdown text from LLM
-        """
-        self.chapter_beats_dir.mkdir(exist_ok=True)
-        chapter_file = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.md"
-        with open(chapter_file, 'w', encoding='utf-8') as f:
-            f.write(markdown_text)
-
-    def save_chapter_beat(self, chapter_num: int, data: Dict[str, Any]):
-        """
-        Save chapter beat as YAML (DEPRECATED - for backward compatibility only).
-
-        NEW CODE SHOULD USE save_chapter_beat_markdown() instead.
-
-        Args:
-            chapter_num: Chapter number (1-based)
-            data: Chapter dict with outline data
-        """
-        import warnings
-        warnings.warn(
-            "save_chapter_beat(dict) is deprecated. Use save_chapter_beat_markdown(markdown_text) instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        self.chapter_beats_dir.mkdir(exist_ok=True)
-        chapter_file = self.chapter_beats_dir / f"chapter-{chapter_num:02d}.yaml"
-        with open(chapter_file, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
-
-    def list_chapter_beats(self) -> List[Path]:
-        """
-        List all chapter beat files in new format.
-
-        Returns:
-            Sorted list of chapter-NN.md or chapter-NN.yaml file paths
-        """
-        if not self.chapter_beats_dir.exists():
-            return []
-
-        # Collect both .md and .yaml files
-        md_files = set(self.chapter_beats_dir.glob("chapter-*.md"))
-        yaml_files = set(self.chapter_beats_dir.glob("chapter-*.yaml"))
-
-        # Prefer .md over .yaml (remove .yaml if .md exists for same chapter)
-        all_files = set()
-        for md_file in md_files:
-            all_files.add(md_file)
-            # Remove corresponding .yaml if exists
-            yaml_counterpart = md_file.with_suffix('.yaml')
-            yaml_files.discard(yaml_counterpart)
-
-        # Add remaining .yaml files (those without .md counterparts)
-        all_files.update(yaml_files)
-
-        return sorted(all_files)
-
-    def get_chapters(self) -> Optional[List[Dict[str, Any]]]:
-        """
-        Load chapters list from chapter-beats/*.md or *.yaml files.
-
-        Returns:
-            List of chapter dicts sorted by number, or None if not found
-        """
-        if not self.chapter_beats_dir.exists():
-            return None
-
-        from ..utils.markdown_extractors import MarkdownExtractor
-
-        chapters = []
-        for chapter_file in self.list_chapter_beats():
-            if chapter_file.suffix == '.md':
-                # Parse markdown
-                with open(chapter_file, 'r', encoding='utf-8') as f:
-                    markdown_text = f.read()
-                    extracted = MarkdownExtractor.extract_chapters(markdown_text)
-                    if extracted:
-                        chapters.extend(extracted)
-            elif chapter_file.suffix == '.yaml':
-                # Load YAML directly
-                with open(chapter_file, 'r', encoding='utf-8') as f:
-                    chapter_data = yaml.safe_load(f)
-                    if chapter_data:
-                        chapters.append(chapter_data)
-
-        if chapters:
-            # Sort by chapter number
-            return sorted(chapters, key=lambda x: x.get('number', 0))
-
-        return None
+    def save_structure_plan(self, content: str):
+        """Save structure plan content."""
+        self.structure_plan_file.write_text(content, encoding='utf-8')
+        if self.metadata:
+            self.metadata.update_timestamp()
+            self.save_metadata()
 
     def get_taxonomy(self) -> Optional[Dict[str, Any]]:
         """Load taxonomy selections from premise metadata."""
@@ -607,56 +419,6 @@ class Project:
                 if data and isinstance(data, dict):
                     return data.get('selections')
         return None
-
-    def save_chapter_outlines(self, outlines: Dict[str, Any]):
-        """Save chapter outlines to YAML."""
-        with open(self.chapters_file, 'w') as f:
-            yaml.dump(outlines, f, default_flow_style=False, sort_keys=False)
-        if self.metadata:
-            self.metadata.update_timestamp()
-            self.save_metadata()
-
-    def get_chapters_yaml(self) -> Optional[Dict[str, Any]]:
-        """
-        Load complete chapters structure from chapter-beats/ directory.
-
-        Aggregates foundation.yaml + chapter-NN.yaml files into unified structure.
-
-        Returns:
-            Dict with metadata, characters, world, chapters sections, or None if not found
-        """
-        if not self.chapter_beats_dir.exists():
-            return None
-
-        foundation = self.get_foundation()
-        chapters = self.get_chapters()
-
-        if foundation and chapters:
-            return {
-                **foundation,  # metadata, characters, world
-                'chapters': chapters
-            }
-
-        return None
-
-    def save_chapters_yaml(self, data: Dict[str, Any]):
-        """
-        DEPRECATED: This method is no longer used.
-
-        Use save_foundation() and save_chapter_beat() instead to save to chapter-beats/ architecture.
-
-        Args:
-            data: Dict with metadata, characters, world, chapters sections
-
-        Raises:
-            DeprecationWarning: Always raises - method should not be used
-        """
-        raise DeprecationWarning(
-            "save_chapters_yaml() is deprecated. "
-            "Use save_foundation() for metadata/characters/world and "
-            "save_chapter_beat(chapter_num, chapter_data) for individual chapters. "
-            "All data is now saved to chapter-beats/ directory, NOT chapters.yaml."
-        )
 
     def get_chapter(self, chapter_num: int) -> Optional[str]:
         """
@@ -768,21 +530,12 @@ class Project:
         Get target word count using intelligent defaults based on taxonomy.
 
         Priority:
-        1. Stored value in chapters.yaml metadata (from previous generation)
-        2. Calculate from taxonomy (length_scope + genre)
-        3. None (caller should handle)
+        1. Calculate from taxonomy (length_scope + genre)
+        2. None (caller should handle)
 
         Returns:
             Target word count or None if cannot be determined
         """
-        # Try stored value in chapters.yaml first (most reliable)
-        chapters_yaml = self.get_chapters_yaml()
-        if chapters_yaml and isinstance(chapters_yaml, dict):
-            metadata = chapters_yaml.get('metadata', {})
-            target = metadata.get('target_word_count')
-            if target:
-                return int(target)
-
         # Calculate from taxonomy if available
         if self.premise_metadata_file.exists():
             with open(self.premise_metadata_file) as f:
@@ -816,13 +569,13 @@ class Project:
 
     def is_short_form(self) -> bool:
         """
-        Detect if this is a short-form story (≤2 chapters).
+        Detect if this is a short-form story.
 
-        Short-form stories (flash fiction, short story) should use story.md
-        instead of chapters.yaml structure.
+        Short-form stories (flash fiction, short story) use story.md.
+        Long-form stories use chapters/ directory with chapter-NN.md files.
 
         Returns:
-            True if short-form (≤2 chapters), False otherwise
+            True if short-form, False otherwise
         """
         # Check cached story_type in metadata
         if self.metadata and self.metadata.story_type:
@@ -917,7 +670,6 @@ class Project:
         # Create subdirectories
         project.premise_dir.mkdir(exist_ok=True)
         project.treatment_dir.mkdir(exist_ok=True)
-        project.chapter_beats_dir.mkdir(exist_ok=True)
         project.chapters_dir.mkdir(exist_ok=True)
         project.analysis_dir.mkdir(exist_ok=True)
         project.exports_dir.mkdir(exist_ok=True)
@@ -1093,7 +845,7 @@ class Project:
         """Write a combined.md for a specific folder target.
 
         Args:
-            target: One of: 'treatment', 'chapter-beats', 'chapters'
+            target: One of: 'treatment', 'chapters'
             include_prose: When target='chapters', include chapter prose
 
         Returns:
@@ -1134,27 +886,12 @@ class Project:
             lines.append(treatment.strip())
             lines.append("")
 
-        # Foundation (use raw markdown if present)
-        foundation_md_path = self.chapter_beats_dir / "foundation.md"
-        if foundation_md_path.exists():
-            lines.append("## Foundation")
+        # Structure Plan
+        structure_plan = self.get_structure_plan()
+        if structure_plan:
+            lines.append("## Structure Plan")
             lines.append("")
-            try:
-                lines.append(foundation_md_path.read_text(encoding='utf-8').strip())
-            except Exception:
-                pass
-            lines.append("")
-
-        # Chapter Outlines (beat sheets)
-        chapter_md_files = sorted(self.chapter_beats_dir.glob("chapter-*.md"))
-        if chapter_md_files:
-            lines.append("## Chapter Outlines")
-            lines.append("")
-            for ch_path in chapter_md_files:
-                try:
-                    lines.append(f"---\n\n{ch_path.read_text(encoding='utf-8').strip()}\n")
-                except Exception:
-                    continue
+            lines.append(structure_plan.strip())
             lines.append("")
 
         # Prose (optional)
@@ -1173,8 +910,6 @@ class Project:
         # Determine output folder by target
         if target == 'treatment':
             out_dir = self.treatment_dir
-        elif target == 'chapter-beats':
-            out_dir = self.chapter_beats_dir
         elif target == 'chapters':
             out_dir = self.chapters_dir
         else:
@@ -1187,16 +922,15 @@ class Project:
 
     def split_combined_markdown(self, target: str) -> tuple[int, int, int]:
         """
-        Split combined.md back into individual files.
+        Split combined.md back into individual chapter files.
 
-        Reverses the combine operation by parsing combined.md and
-        writing foundation.md and chapter-*.md files.
+        Parses combined.md and writes chapter-*.md files for prose.
 
         IMPORTANT: Deletes existing chapter-*.md files before writing new ones
         to handle cases where the new version has fewer chapters.
 
         Args:
-            target: One of: 'chapters', 'prose'
+            target: Must be 'prose'
 
         Returns:
             Tuple of (files_written, chapters_written, files_deleted)
@@ -1205,16 +939,10 @@ class Project:
             FileNotFoundError: If combined.md doesn't exist
             ValueError: If target is invalid or content can't be parsed
         """
-        # Determine source and destination directories
-        if target == 'chapters':
-            source_dir = self.chapter_beats_dir
-            is_prose = False
-        elif target == 'prose':
-            source_dir = self.chapters_dir
-            is_prose = True
-        else:
-            raise ValueError(f"Invalid target for split: {target}. Use 'chapters' or 'prose'")
+        if target != 'prose':
+            raise ValueError(f"Invalid target for split: {target}. Use 'prose'")
 
+        source_dir = self.chapters_dir
         combined_path = source_dir / "combined.md"
         if not combined_path.exists():
             raise FileNotFoundError(f"No combined.md found in {source_dir}")
@@ -1223,7 +951,6 @@ class Project:
         content = combined_path.read_text(encoding='utf-8')
 
         # Delete existing chapter-*.md files before writing new ones
-        # This ensures we don't have orphaned files if the new version has fewer chapters
         files_deleted = 0
         for old_chapter_file in source_dir.glob('chapter-*.md'):
             old_chapter_file.unlink()
@@ -1232,62 +959,23 @@ class Project:
         files_written = 0
         chapters_written = 0
 
-        # For chapters target, extract both foundation and chapters
-        if target == 'chapters':
-            # Extract foundation from ## Foundation section to ## Chapter Outlines section
-            if "## Foundation" not in content:
-                raise ValueError("Could not find '## Foundation' section in combined.md")
-            if "## Chapter Outlines" not in content:
-                raise ValueError("Could not find '## Chapter Outlines' section in combined.md")
+        # Find ## Prose section and split chapters
+        section_marker = "## Prose (Generated Chapters)"
+        if section_marker not in content:
+            raise ValueError(f"Could not find '{section_marker}' section in combined.md")
 
-            foundation_start = content.index("## Foundation") + len("## Foundation")
-            chapter_outlines_pos = content.index("## Chapter Outlines")
+        section_start = content.index(section_marker) + len(section_marker)
+        section_content = content[section_start:].strip()
 
-            # Extract everything between ## Foundation and ## Chapter Outlines
-            foundation_content = content[foundation_start:chapter_outlines_pos].strip()
+        # Remove leading --- if present
+        if section_content.startswith('---'):
+            section_content = section_content[3:].strip()
 
-            # Write foundation
-            foundation_file = source_dir / "foundation.md"
-            foundation_file.write_text(foundation_content + "\n", encoding='utf-8')
-            files_written += 1
+        # Split by \n---\n pattern
+        chapter_sections = [s.strip() for s in section_content.split('\n---\n') if s.strip()]
 
-            # Extract chapters from ## Chapter Outlines section
-            if "## Chapter Outlines" not in content:
-                raise ValueError("Could not find '## Chapter Outlines' section in combined.md")
-
-            chapter_start = content.index("## Chapter Outlines") + len("## Chapter Outlines")
-            chapter_content = content[chapter_start:].strip()
-
-            # Split by --- markers, removing the leading --- if present
-            # Format is: \n\n---\n\nChapter1\n---\n\nChapter2...
-            if chapter_content.startswith('---'):
-                # Remove leading --- and split
-                chapter_content = chapter_content[3:].strip()  # Remove '---' and whitespace
-
-            # Split by \n---\n pattern
-            chapter_sections = [s.strip() for s in chapter_content.split('\n---\n') if s.strip()]
-
-            if not chapter_sections:
-                raise ValueError("No chapters found in ## Chapter Outlines section")
-
-        else:
-            # For prose, find ## Prose section and split chapters
-            section_marker = "## Prose (Generated Chapters)"
-            if section_marker not in content:
-                raise ValueError(f"Could not find '{section_marker}' section in combined.md")
-
-            section_start = content.index(section_marker) + len(section_marker)
-            section_content = content[section_start:].strip()
-
-            # Remove leading --- if present
-            if section_content.startswith('---'):
-                section_content = section_content[3:].strip()
-
-            # Split by \n---\n pattern
-            chapter_sections = [s.strip() for s in section_content.split('\n---\n') if s.strip()]
-
-            if not chapter_sections:
-                raise ValueError("No prose chapters found")
+        if not chapter_sections:
+            raise ValueError("No prose chapters found")
 
         # Write chapter files
         for i, chapter_content in enumerate(chapter_sections, 1):

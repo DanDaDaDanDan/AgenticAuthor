@@ -287,13 +287,6 @@ class RTFExporter:
             return ''.join(parts)
         else:
             # Long-form: iterate over chapter files
-            # Get chapters list for titles
-            chapters_yaml = self.project.get_chapters_yaml()
-            if chapters_yaml:
-                chapters = chapters_yaml.get('chapters', [])
-            else:
-                chapters = self.project.get_chapters() or []
-
             # Choose chapter source based on use_edited flag
             chapter_files = sorted(self.project.list_edited_chapters() if use_edited else self.project.list_chapters())
 
@@ -302,12 +295,8 @@ class RTFExporter:
                 chapter_num = self._extract_chapter_number(chapter_file)
                 chapter_text = chapter_file.read_text(encoding='utf-8')
 
-                # Find chapter info
-                chapter_info = next((c for c in chapters if c.get('number') == chapter_num), None)
-                chapter_title = chapter_info.get('title', '') if chapter_info else ''
-
-                # Build chapter RTF
-                parts.append(self._build_chapter(chapter_num, chapter_title, chapter_text))
+                # Build chapter RTF (no separate title, just chapter number)
+                parts.append(self._build_chapter(chapter_num, '', chapter_text))
                 parts.append(self._page_break())
 
             return ''.join(parts)

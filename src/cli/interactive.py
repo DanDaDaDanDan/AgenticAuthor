@@ -681,9 +681,8 @@ class InteractiveSession:
         has_treatment = self.project.treatment_file.exists()
         has_story = self.project.story_file.exists()
 
-        # Check chapter beats (new architecture)
-        chapter_beats = list(self.project.chapter_beats_dir.glob("chapter-*.md")) if self.project.chapter_beats_dir.exists() else []
-        has_outlines = len(chapter_beats) > 0 or self.project.chapters_file.exists()
+        # Check structure plan
+        has_plan = self.project.structure_plan_file.exists()
 
         # Count prose chapters
         prose_chapters = self.project.list_chapters()
@@ -704,12 +703,8 @@ class InteractiveSession:
                 except:
                     pass
 
-        # Get total chapters from outlines
-        total_chapters = len(chapter_beats)
-        if not total_chapters:
-            chapters_yaml = self.project.get_chapters_yaml()
-            if chapters_yaml:
-                total_chapters = len(chapters_yaml.get('chapters', []))
+        # Get total chapters from prose files
+        total_chapters = num_prose_chapters
 
         table.add_row("", "")  # Separator
 
@@ -752,20 +747,9 @@ class InteractiveSession:
                 table.add_row("Story", "[red]✗[/red]")
         else:
             # Novel: show structure plan and prose units
-            structure_plan_file = self.project.path / "structure-plan.md"
-            has_plan = structure_plan_file.exists()
-
-            # Check for legacy chapter beats as fallback
+            # Check for structure plan
             if has_plan:
                 table.add_row("Structure Plan", "[green]✓[/green]")
-            elif has_outlines:
-                # Legacy: show old chapter beats info
-                chapters_yaml = self.project.get_chapters_yaml()
-                if chapters_yaml:
-                    chapters = chapters_yaml.get('chapters', [])
-                    table.add_row("Structure Plan", f"[green]✓[/green] (legacy: {len(chapters)} chapters)")
-                else:
-                    table.add_row("Structure Plan", "[green]✓[/green] (legacy)")
             else:
                 table.add_row("Structure Plan", "[red]✗[/red]")
 
@@ -1174,7 +1158,7 @@ class InteractiveSession:
         culler = CullManager(self.project)
 
         self.console.print("[dim]Cleaning up existing premise, treatment, chapters, and prose...[/dim]")
-        culler.cull_premise()  # Deletes premise/, treatment/, chapter-beats/, chapter-beats-variants/, and chapters/
+        culler.cull_premise()  # Deletes premise/, treatment/, structure-plan.md, and chapters/
 
         # Analyze the input to see if it's already a treatment
         analysis = PremiseAnalyzer.analyze(concept)
@@ -1633,7 +1617,7 @@ class InteractiveSession:
         culler = CullManager(self.project)
 
         self.console.print("[dim]Cleaning up existing treatment, chapters, and prose...[/dim]")
-        culler.cull_treatment()  # Deletes treatment/, chapter-beats/, chapter-beats-variants/, and chapters/
+        culler.cull_treatment()  # Deletes treatment/, structure-plan.md, and chapters/
 
         # Parse word count if provided
         target_words = 2500
@@ -1982,14 +1966,14 @@ class InteractiveSession:
             self._print()
             self._print("[dim]Targets:[/dim]")
             self._print("  [bold]/cull prose[/bold]       - Delete all prose files (chapters/*.md)")
-            self._print("  [bold]/cull chapters[/bold]    - Delete chapter-beats/ (foundation + all chapters) + prose")
-            self._print("  [bold]/cull treatment[/bold]   - Delete treatment/ + chapters + prose")
+            self._print("  [bold]/cull plan[/bold]        - Delete structure-plan.md + prose")
+            self._print("  [bold]/cull treatment[/bold]   - Delete treatment/ + plan + prose")
             self._print("  [bold]/cull premise[/bold]     - Delete premise/ + all downstream")
             self._print("  [bold]/cull debug[/bold]       - Delete all .agentic/ files (logs, debug, history)")
             return
 
         target = args.strip().lower()
-        valid_targets = ['prose', 'chapters', 'treatment', 'premise', 'debug']
+        valid_targets = ['prose', 'plan', 'treatment', 'premise', 'debug']
 
         if target not in valid_targets:
             self._print(f"[red]Invalid target:[/red] {target}")
@@ -2018,8 +2002,8 @@ class InteractiveSession:
             # Perform culling based on target
             if target == 'prose':
                 result = cull_manager.cull_prose()
-            elif target == 'chapters':
-                result = cull_manager.cull_chapters()
+            elif target == 'plan':
+                result = cull_manager.cull_plan()
             elif target == 'treatment':
                 result = cull_manager.cull_treatment()
             elif target == 'premise':
@@ -2567,7 +2551,7 @@ class InteractiveSession:
             self.console.print("[red]No project open. Use /open <project> first.[/red]")
             return
 
-        # Check if we have prose files (copyedit operates on prose, not chapters.yaml)
+        # Check if we have prose files
         prose_files = self.project.list_chapters()
         if not prose_files:
             self.console.print("[red]No prose files found. Generate prose first with /generate prose[/red]")
@@ -2685,12 +2669,11 @@ class InteractiveSession:
         """Backfill folder-level combined.md for current context.
 
         Usage:
-            /generate combined [treatment|beats|chapters] [variants] [prose]
+            /generate combined [treatment|chapters] [prose]
 
         - Writes treatment/combined.md (premise, taxonomy, treatment)
-        - Writes chapter-beats/combined.md (premise, taxonomy, treatment, foundation, beats)
-        - Writes chapters/combined.md (premise, taxonomy, treatment, foundation, beats, prose when 'prose')
-        - If 'variants' is passed and chapter-beats-variants/ exists, writes chapter-beats-variants/combined.md
+        - Writes chapters/combined.md (premise, taxonomy, treatment, structure plan, prose when 'prose')
+
         If no specific target is passed, auto-detects the most advanced stage available.
         """
         if not self.project:
@@ -2698,31 +2681,23 @@ class InteractiveSession:
             return
 
         tokens = set(options.split()) if options else set()
-        include_variants = 'variants' in tokens
         include_prose = 'prose' in tokens
 
         # Determine target
         target = None
         if 'treatment' in tokens:
             target = 'treatment'
-        elif 'beats' in tokens:
-            target = 'chapter-beats'
         elif 'chapters' in tokens:
             target = 'chapters'
         else:
             # Auto-detect most advanced stage
             if self.project.chapters_dir.exists() and list(self.project.chapters_dir.glob('chapter-*.md')):
                 target = 'chapters'
-            elif self.project.chapter_beats_dir.exists() and (
-                (self.project.chapter_beats_dir / 'foundation.md').exists() or
-                list(self.project.chapter_beats_dir.glob('chapter-*.md'))
-            ):
-                target = 'chapter-beats'
             elif self.project.treatment_file.exists():
                 target = 'treatment'
 
         if not target:
-            self.console.print("[yellow]Nothing to backfill yet (no treatment/beats/chapters found).[/yellow]")
+            self.console.print("[yellow]Nothing to combine yet (no treatment or chapters found).[/yellow]")
             return
 
         # Write combined per detected/selected target
@@ -2731,10 +2706,6 @@ class InteractiveSession:
             self.console.print(f"[green]✓[/green] Combined written: {dest}")
         except Exception as e:
             self.console.print(f"[yellow]Failed to write {target}/combined.md: {self._escape_markup(e)}[/yellow]")
-
-        # Variants combined.md (deprecated - variant system removed)
-        if include_variants:
-            self.console.print("[yellow]Variant system has been removed. Use /generate all for autonomous generation.[/yellow]")
 
         # Commit
         self._commit(f"Write combined context file: {target}")
@@ -2864,13 +2835,12 @@ class InteractiveSession:
 
     def split_combined(self, args: str):
         """
-        Split combined.md back into individual files.
+        Split combined.md back into individual chapter files.
 
-        Reverses the combine operation by parsing combined.md and writing
-        foundation.md and chapter-*.md files.
+        Reverses the combine operation by parsing chapters/combined.md
+        and writing individual chapter-*.md files.
 
         Usage:
-            /split chapters    # Split chapter-beats/combined.md → foundation.md + chapter-*.md
             /split prose       # Split chapters/combined.md → chapter-*.md
         """
         if not self.project:
@@ -2878,15 +2848,15 @@ class InteractiveSession:
             return
 
         if not args:
-            self.console.print("[yellow]Usage: /split <target>[/yellow]")
-            self.console.print("[dim]Valid targets: chapters, prose[/dim]")
+            self.console.print("[yellow]Usage: /split prose[/yellow]")
+            self.console.print("[dim]Valid target: prose[/dim]")
             return
 
         target = args.strip().lower()
 
-        if target not in ['chapters', 'prose']:
+        if target != 'prose':
             self.console.print(f"[red]Invalid target: {target}[/red]")
-            self.console.print("[dim]Valid targets: chapters, prose[/dim]")
+            self.console.print("[dim]Valid target: prose[/dim]")
             return
 
         try:
@@ -2894,13 +2864,8 @@ class InteractiveSession:
             files_written, chapters_written, files_deleted = self.project.split_combined_markdown(target)
 
             # Success message
-            if target == 'chapters':
-                self.console.print(f"[green]✓[/green] Split {target}/combined.md:")
-                self.console.print(f"  • foundation.md")
-                self.console.print(f"  • {chapters_written} chapter files")
-            else:
-                self.console.print(f"[green]✓[/green] Split {target}/combined.md:")
-                self.console.print(f"  • {chapters_written} chapter files")
+            self.console.print(f"[green]✓[/green] Split chapters/combined.md:")
+            self.console.print(f"  • {chapters_written} chapter files")
 
             if files_deleted > 0:
                 self.console.print(f"[dim]  • Removed {files_deleted} old chapter file(s)[/dim]")
@@ -3238,8 +3203,8 @@ class InteractiveSession:
         if self.project.chapters_dir.exists() and list(self.project.list_chapters()):
             return 'prose'
 
-        if self.project.chapter_beats_dir.exists() and list(self.project.list_chapter_beats()):
-            return 'chapters'
+        if self.project.structure_plan_file.exists():
+            return 'plan'
 
         if self.project.treatment_file.exists():
             return 'treatment'

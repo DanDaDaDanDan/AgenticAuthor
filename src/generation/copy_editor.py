@@ -23,7 +23,7 @@ class CopyEditor:
     Edits prose files (chapters/chapter-XX.md) sequentially, passing ALL
     previously edited chapters as context for maximum consistency.
 
-    Does NOT edit: premise_metadata.json, treatment.md, or chapters.yaml
+    Does NOT edit: premise_metadata.json, treatment.md, or structure-plan.md
     """
 
     def __init__(self, client: OpenRouterClient, project: Project, model: str):
@@ -242,7 +242,7 @@ class CopyEditor:
         Build full READ-ONLY context for current chapter.
 
         Includes:
-        - chapters.yaml (self-contained: metadata, characters, world, chapter outlines)
+        - Structure plan (story structure and chapter outlines)
         - ALL previously edited chapter prose
         - ALL remaining original chapter prose (for forward references)
 
@@ -252,11 +252,8 @@ class CopyEditor:
         Returns:
             Context dict with all reference material
         """
-        # Get chapters.yaml (self-contained structure)
-        chapters_yaml = self.project.get_chapters_yaml()
-        if not chapters_yaml:
-            # Legacy fallback
-            chapters_yaml = {'chapters': self.project.get_chapters()}
+        # Get structure plan
+        structure_plan = self.project.get_structure_plan() or ""
 
         # Get all chapter numbers (extract from paths)
         all_chapter_paths = self.project.list_chapters()
@@ -286,7 +283,7 @@ class CopyEditor:
                 })
 
         return {
-            'chapters_yaml': chapters_yaml,
+            'structure_plan': structure_plan,
             'edited_chapters': edited_chapters,
             'remaining_chapters': remaining_chapters,
             'total_chapters': len(all_chapters),

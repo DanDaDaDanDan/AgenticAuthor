@@ -302,43 +302,15 @@ USE: [suggestion]"""
             parts.append("[...rest omitted to avoid spoilers]")
             parts.append("")
 
-        # Chapters metadata (from chapters.yaml)
-        chapters_yaml = self.project.get_chapters_yaml()
-        if chapters_yaml:
-            # Extract key metadata
-            metadata = chapters_yaml.get('metadata', {})
-            if metadata:
-                parts.append("GENRE & METADATA:")
-                parts.append(f"Genre: {metadata.get('genre', 'Unknown')}")
-                parts.append(f"Subgenre: {metadata.get('subgenre', '')}")
-                parts.append(f"Tone: {metadata.get('tone', '')}")
-                parts.append(f"Themes: {', '.join(metadata.get('themes', []))}")
-                parts.append(f"Tropes: {', '.join(metadata.get('tropes', []))}")
-                parts.append("")
-
-            # Characters summary (initial state only - no arc spoilers)
-            characters = chapters_yaml.get('characters', [])
-            if characters:
-                parts.append("MAIN CHARACTERS (STARTING STATE ONLY):")
-                for char in characters[:3]:  # Top 3 characters
-                    description = char.get('description') or char.get('background', '')
-                    # Handle None values explicitly
-                    description = description[:150] if description else ''
-                    parts.append(f"- {char.get('name', 'Unknown')}: {char.get('role', '')} - {description}")
-                parts.append("")
-
-            # Chapter outlines - ONLY first 2 chapters (Act I setup)
-            # Avoid revealing midpoint, climax, or resolution
-            chapters = chapters_yaml.get('chapters', [])
-            if chapters:
-                parts.append(f"STORY STRUCTURE: {len(chapters)} chapters total")
-                parts.append("ACT I SETUP (First 2 chapters only - no spoilers beyond):")
-                for ch in chapters[:2]:  # ONLY first 2 chapters
-                    summary = ch.get('summary', '') or ''  # Handle explicit None
-                    summary_excerpt = summary[:150] if summary else ''
-                    parts.append(f"- Ch{ch.get('number', '?')}: {ch.get('title', 'Untitled')} - {summary_excerpt}")
-                parts.append(f"[{len(chapters) - 2} more chapters omitted to avoid spoilers]")
-                parts.append("")
+        # Structure plan (markdown format)
+        structure_plan = self.project.get_structure_plan()
+        if structure_plan:
+            # Include beginning of structure plan for context
+            words = structure_plan.split()[:500]  # First 500 words
+            parts.append("STRUCTURE PLAN (excerpt - for story structure and characters):")
+            parts.append(' '.join(words))
+            parts.append("[...rest omitted to avoid spoilers]")
+            parts.append("")
 
         # Sample of actual prose (first chapter opening only - for voice/style)
         chapter_files = list(self.project.list_chapters())

@@ -139,10 +139,8 @@ class Iterator:
             return self.project.premise_metadata_file.exists()
         elif target == 'treatment':
             return self.project.treatment_file.exists()
-        elif target == 'chapters':
-            # Use project method that handles both .md and .yaml formats
-            return self.project.chapter_beats_dir.exists() and \
-                   bool(self.project.list_chapter_beats())
+        elif target == 'plan':
+            return self.project.structure_plan_file.exists()
         elif target == 'prose':
             # Use project method for prose chapters
             return self.project.chapters_dir.exists() and \
@@ -162,7 +160,7 @@ class Iterator:
         context_level_map = {
             'premise': 'premise',
             'treatment': 'treatment',
-            'chapters': 'chapters',
+            'plan': 'plan',
             'prose': 'prose'
         }
         context_level = context_level_map[target]
@@ -187,8 +185,8 @@ class Iterator:
             return self.project.premise_dir / 'iteration_history.json'
         elif target == 'treatment':
             return self.project.treatment_dir / 'iteration_history.json'
-        elif target == 'chapters':
-            return self.project.chapter_beats_dir / 'iteration_history.json'
+        elif target == 'plan':
+            return self.project.path / 'plan_iteration_history.json'
         elif target == 'prose':
             return self.project.chapters_dir / 'iteration_history.json'
         raise ValueError(f"Unknown target: {target}")
@@ -231,16 +229,16 @@ class Iterator:
         if target == 'premise':
             if self.project.treatment_file.exists():
                 downstream_items.append('Treatment')
-            if self.project.chapter_beats_dir.exists():
-                downstream_items.append('Chapters')
+            if self.project.structure_plan_file.exists():
+                downstream_items.append('Structure Plan')
             if self.project.chapters_dir.exists():
                 downstream_items.append('Prose')
         elif target == 'treatment':
-            if self.project.chapter_beats_dir.exists():
-                downstream_items.append('Chapters')
+            if self.project.structure_plan_file.exists():
+                downstream_items.append('Structure Plan')
             if self.project.chapters_dir.exists():
                 downstream_items.append('Prose')
-        elif target == 'chapters':
+        elif target == 'plan':
             if self.project.chapters_dir.exists():
                 chapter_count = len(list(self.project.chapters_dir.glob('chapter-*.md')))
                 downstream_items.append(f'Prose ({chapter_count} chapters)')
@@ -275,25 +273,8 @@ class Iterator:
         elif target == 'treatment':
             return self.project.get_treatment() or ""
 
-        elif target == 'chapters':
-            # Combine foundation + all chapters as text
-            # Read raw content from files (supports both .md and .yaml formats)
-            parts = []
-
-            # Try foundation.md first, then foundation.yaml
-            foundation_md = self.project.chapter_beats_dir / "foundation.md"
-            foundation_yaml = self.project.chapter_beats_dir / "foundation.yaml"
-
-            if foundation_md.exists():
-                parts.append(foundation_md.read_text(encoding='utf-8'))
-            elif foundation_yaml.exists():
-                parts.append(foundation_yaml.read_text(encoding='utf-8'))
-
-            # Read all chapter files (project method handles both formats)
-            for chapter_file in sorted(self.project.list_chapter_beats()):
-                parts.append(chapter_file.read_text(encoding='utf-8'))
-
-            return '\n\n---\n\n'.join(parts)
+        elif target == 'plan':
+            return self.project.get_structure_plan() or ""
 
         elif target == 'prose':
             # Combine all prose chapters
@@ -716,38 +697,9 @@ class Iterator:
             self.project.treatment_dir.mkdir(parents=True, exist_ok=True)
             self.project.treatment_file.write_text(new_content, encoding='utf-8')
 
-        elif target == 'chapters':
-            # Parse chapter beats from content
-            # Content should include foundation + individual chapters
-            # Split by separator and save to chapter-beats/
-            self.project.chapter_beats_dir.mkdir(parents=True, exist_ok=True)
-
-            # Split content by chapter markers
-            # Expected format: foundation.md, then chapter-NN.md sections
-            sections = new_content.split('\n\n---\n\n')
-
-            # Validate split result
-            if len(sections) < 2:
-                raise Exception(
-                    f"Expected foundation + chapters separated by '---', got {len(sections)} section(s).\n\n"
-                    f"LLM may not have followed format. Check debug output:\n"
-                    f"{self.console._file if hasattr(self.console, '_file') else 'N/A'}"
-                )
-
-            # First section is foundation
-            foundation_file = self.project.chapter_beats_dir / "foundation.md"
-            if not sections[0].strip():
-                raise Exception("Foundation section is empty after split")
-            foundation_file.write_text(sections[0].strip(), encoding='utf-8')
-
-            # Remaining sections are chapters
-            chapter_sections = [s.strip() for s in sections[1:] if s.strip()]
-            if not chapter_sections:
-                raise Exception("No chapter sections found after foundation")
-
-            for i, section in enumerate(chapter_sections, 1):
-                chapter_file = self.project.chapter_beats_dir / f"chapter-{i:02d}.md"
-                chapter_file.write_text(section, encoding='utf-8')
+        elif target == 'plan':
+            # Save structure plan as markdown
+            self.project.save_structure_plan(new_content)
 
         elif target == 'prose':
             # Parse prose chapters from content
@@ -786,22 +738,22 @@ class Iterator:
         import shutil
 
         if target == 'premise':
-            # Cull treatment, chapters, prose
+            # Cull treatment, plan, prose
             if self.project.treatment_file.exists():
                 self.project.treatment_file.unlink()
-            if self.project.chapter_beats_dir.exists():
-                shutil.rmtree(self.project.chapter_beats_dir)
+            if self.project.structure_plan_file.exists():
+                self.project.structure_plan_file.unlink()
             if self.project.chapters_dir.exists():
                 shutil.rmtree(self.project.chapters_dir)
 
         elif target == 'treatment':
-            # Cull chapters, prose
-            if self.project.chapter_beats_dir.exists():
-                shutil.rmtree(self.project.chapter_beats_dir)
+            # Cull plan, prose
+            if self.project.structure_plan_file.exists():
+                self.project.structure_plan_file.unlink()
             if self.project.chapters_dir.exists():
                 shutil.rmtree(self.project.chapters_dir)
 
-        elif target == 'chapters':
+        elif target == 'plan':
             # Cull prose
             if self.project.chapters_dir.exists():
                 shutil.rmtree(self.project.chapters_dir)

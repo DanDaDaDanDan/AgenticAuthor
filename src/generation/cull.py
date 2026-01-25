@@ -79,11 +79,9 @@ class CullManager:
             'count': len(deleted_files)
         }
 
-    def cull_chapters(self) -> Dict[str, Any]:
+    def cull_plan(self) -> Dict[str, Any]:
         """
-        Delete chapter-beats/ directory (foundation + all chapters) and cascade to prose.
-
-        Also deletes chapter-beats-variants/ directory if present (multi-variant generation artifacts).
+        Delete structure-plan.md and cascade to prose.
 
         Returns:
             Dict with deleted_files list
@@ -93,78 +91,20 @@ class CullManager:
 
         deleted_files = []
 
-        # Delete entire chapter-beats/ directory (finalized chapters)
-        beats_dir = self.project.chapter_beats_dir
-
-        if logger:
-            logger.debug(f"Cull chapters: checking directory {beats_dir}")
-            logger.debug(f"Directory exists: {beats_dir.exists()}")
-
-        if beats_dir.exists():
+        # Delete structure-plan.md
+        plan_file = self.project.structure_plan_file
+        if plan_file.exists():
             if logger:
-                logger.debug(f"Deep deleting directory: {beats_dir}")
-            deleted_files.extend(self._rmtree(beats_dir))
-
-        # NEW: Delete chapter-beats-variants/ directory (multi-variant artifacts)
-        variants_dir = self.project.path / 'chapter-beats-variants'
-
-        if logger:
-            logger.debug(f"Cull chapters: checking variants directory {variants_dir}")
-            logger.debug(f"Variants directory exists: {variants_dir.exists()}")
-
-        if variants_dir.exists():
-            if logger:
-                logger.debug(f"Deep deleting variants directory: {variants_dir}")
-            deleted_files.extend(self._rmtree(variants_dir))
-
-            # Delete shared foundation (both .md and .yaml for backward compatibility)
-            for foundation_ext in ['.md', '.yaml']:
-                foundation_file = variants_dir / f'foundation{foundation_ext}'
-                if foundation_file.exists():
-                    if logger:
-                        logger.debug(f"Deleting variants foundation: {foundation_file}")
-                    foundation_file.unlink()
-                    deleted_files.append(str(foundation_file.relative_to(self.project.path)))
-
-            # Delete decision.json if present
-            decision_file = variants_dir / 'decision.json'
-            if decision_file.exists():
-                if logger:
-                    logger.debug(f"Deleting decision file: {decision_file}")
-                decision_file.unlink()
-                deleted_files.append(str(decision_file.relative_to(self.project.path)))
-
-            # Delete combined.md if present
-            combined_file = variants_dir / 'combined.md'
-            if combined_file.exists():
-                if logger:
-                    logger.debug(f"Deleting combined file: {combined_file}")
-                combined_file.unlink()
-                deleted_files.append(str(combined_file.relative_to(self.project.path)))
-
-            # Try to remove variants directory
-            try:
-                variants_dir.rmdir()
-                if logger:
-                    logger.debug(f"Removed variants directory: {variants_dir}")
-            except OSError as e:
-                if logger:
-                    logger.debug(f"Could not remove variants directory: {e}")
-
-        # Also delete legacy chapters.yaml if it exists
-        legacy_chapters_file = self.project.path / "chapters.yaml"
-        if legacy_chapters_file.exists():
-            if logger:
-                logger.debug(f"Deleting legacy chapters.yaml")
-            legacy_chapters_file.unlink()
-            deleted_files.append("chapters.yaml")
+                logger.debug(f"Deleting structure plan: {plan_file}")
+            plan_file.unlink()
+            deleted_files.append("structure-plan.md")
 
         # Cascade: delete all prose
         prose_result = self.cull_prose()
         deleted_files.extend(prose_result['deleted_files'])
 
         if logger:
-            logger.debug(f"Cull chapters complete: deleted {len(deleted_files)} files")
+            logger.debug(f"Cull plan complete: deleted {len(deleted_files)} files")
 
         return {
             'deleted_files': deleted_files,
@@ -191,9 +131,9 @@ class CullManager:
             legacy_treatment_file.unlink()
             deleted_files.append("treatment.md")
 
-        # Cascade: delete chapters and prose
-        chapters_result = self.cull_chapters()
-        deleted_files.extend(chapters_result['deleted_files'])
+        # Cascade: delete plan and prose
+        plan_result = self.cull_plan()
+        deleted_files.extend(plan_result['deleted_files'])
 
         return {
             'deleted_files': deleted_files,

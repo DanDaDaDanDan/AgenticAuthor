@@ -273,8 +273,8 @@ class Improver:
             file_path = self.project.premise_file
         elif target == 'treatment':
             file_path = self.project.treatment_file
-        elif target == 'chapters':
-            file_path = self.project.chapters_file
+        elif target == 'plan':
+            file_path = self.project.structure_plan_file
         else:
             return None
 
@@ -290,8 +290,8 @@ class Improver:
             file_path = self.project.premise_file
         elif target == 'treatment':
             file_path = self.project.treatment_file
-        elif target == 'chapters':
-            file_path = self.project.chapters_file
+        elif target == 'plan':
+            file_path = self.project.structure_plan_file
         else:
             raise ValueError(f"Unknown target: {target}")
 

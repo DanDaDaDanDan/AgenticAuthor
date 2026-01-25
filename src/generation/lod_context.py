@@ -16,7 +16,7 @@ The build_markdown_context() method takes a context_level parameter that indicat
 
 Examples:
     - Generating treatment? Use context_level='premise' (premise as input)
-    - Generating chapters? Use context_level='treatment' (premise+treatment as input)
+    - Generating plan? Use context_level='treatment' (premise+treatment as input)
 
 This is intentional: you provide existing content as context, then ask the
 LLM to generate the NEXT level.
@@ -26,18 +26,8 @@ Format Design
 The system uses efficient, purpose-specific formats:
 
 - Treatment: Returns ONLY treatment text (uses premise as markdown input context)
-- Chapters: Returns ONLY chapter outlines as markdown (uses premise+treatment as input)
-- Prose: Returns ONLY prose text (uses chapters.yaml as input)
-
-Self-Contained Chapters Format
-===============================
-Chapters.yaml contains everything prose generation needs:
-    - metadata: genre, pacing, tone, themes, narrative_style
-    - characters: full profiles with backgrounds, motivations, arcs
-    - world: setting, locations, systems, atmosphere
-    - chapters: detailed outlines with events, developments, beats
-
-This allows prose generation to work without accessing premise or treatment.
+- Plan: Returns structure-plan.md (uses premise+treatment as input)
+- Prose: Returns prose text (uses structure-plan.md as input)
 """
 
 import json
@@ -67,7 +57,7 @@ class LODContextBuilder:
         Args:
             project: Current project
             context_level: What level of content to include as context for generation
-                          ('premise' | 'treatment' | 'chapters' | 'prose')
+                          ('premise' | 'treatment' | 'plan' | 'prose')
                           This indicates "include up to this level", not what you're generating.
             include_downstream: If True, include content beyond context_level (for consistency checks)
 
@@ -76,8 +66,8 @@ class LODContextBuilder:
 
         Examples:
             - Generating treatment: context_level='premise', returns {premise: {...}}
-            - Generating chapters: context_level='treatment', returns {premise, treatment}
-            - Iterating chapters: context_level='chapters', returns {premise, treatment, chapters}
+            - Generating plan: context_level='treatment', returns {premise, treatment}
+            - Generating prose: context_level='plan', returns {premise, treatment, plan}
             - Full context check: context_level='prose', include_downstream=True, returns everything
 
         Note: context_level indicates INPUT context, not OUTPUT target.
@@ -85,24 +75,8 @@ class LODContextBuilder:
         """
         context = {}
 
-        # chapters.yaml is self-contained
-        # When iterating chapters, ONLY return chapters.yaml
-        # When generating chapters, return premise + treatment (as input)
-
-        if context_level == 'chapters' and not include_downstream:
-            # Chapter iteration: ONLY chapters.yaml (self-contained)
-            # Return flat structure directly (not nested under 'chapters' key)
-            chapters_yaml = project.get_chapters_yaml()
-            if chapters_yaml:
-                # Return the full chapters.yaml structure at top level
-                # This has: metadata, characters, world, chapters
-                return chapters_yaml
-            return {}
-
-        # For all other cases, use the old logic:
-
         # Include premise if needed
-        if context_level in ['premise', 'treatment'] or include_downstream:
+        if context_level in ['premise', 'treatment', 'plan'] or include_downstream:
             premise = project.get_premise()
             if premise:
                 metadata = self._load_premise_metadata(project)
@@ -112,16 +86,16 @@ class LODContextBuilder:
                 }
 
         # Include treatment if needed
-        if context_level in ['treatment'] or include_downstream:
+        if context_level in ['treatment', 'plan'] or include_downstream:
             treatment = project.get_treatment()
             if treatment:
                 context['treatment'] = {'text': treatment}
 
-        # Include chapters for prose generation (uses chapters.yaml)
-        if context_level == 'prose' or include_downstream:
-            chapters_yaml = project.get_chapters_yaml()
-            if chapters_yaml:
-                context['chapters'] = chapters_yaml
+        # Include structure plan for prose generation
+        if context_level in ['plan', 'prose'] or include_downstream:
+            plan = project.get_structure_plan()
+            if plan:
+                context['plan'] = {'text': plan}
 
         # Include prose if needed
         if context_level == 'prose' or include_downstream:
