@@ -24,9 +24,6 @@ class GenerationPhase(str, Enum):
         try:
             return cls(value.lower())
         except ValueError:
-            # Handle legacy 'chapters' phase -> map to PLAN
-            if value.lower() == 'chapters':
-                return cls.PLAN
             return cls.IDLE
 
     def next_phase(self, is_short_form: bool = False) -> Optional['GenerationPhase']:
@@ -333,8 +330,6 @@ class StateManager:
         """
         Detect current phase by examining project files.
 
-        Handles both new structure plan system and legacy chapter beats.
-
         Args:
             project: Project instance
 
@@ -353,17 +348,10 @@ class StateManager:
             if prose_chapters:
                 return GenerationPhase.PROSE
 
-        # Check for structure plan (new system)
+        # Check for structure plan
         structure_plan = project.path / "structure-plan.md"
         if structure_plan.exists():
             return GenerationPhase.PLAN
-
-        # Check for legacy chapter beats (backward compatibility)
-        chapter_beats = list(project.chapter_beats_dir.glob("chapter-*.md")) if project.chapter_beats_dir.exists() else []
-        if chapter_beats:
-            foundation = project.chapter_beats_dir / "foundation.md"
-            if foundation.exists() or chapter_beats:
-                return GenerationPhase.PLAN  # Map legacy chapters to PLAN phase
 
         if project.treatment_file.exists():
             return GenerationPhase.TREATMENT
