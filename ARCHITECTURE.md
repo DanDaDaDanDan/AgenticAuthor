@@ -31,8 +31,7 @@ AgenticAuthor/
 │   ├── young-adult-taxonomy.json
 │   └── generic-taxonomy.json
 ├── misc/
-│   ├── prose-style-card.md   # Style guidance for prose generation
-│   ├── copy-edit.md          # Copy editing guidelines
+│   ├── prose-style-card.md   # Detailed guidance for Commercial prose style
 │   ├── dedication.md         # Example dedication
 │   └── backmatter-sloane-grey.md
 ├── .claude/

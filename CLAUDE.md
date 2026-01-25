@@ -42,15 +42,15 @@ AgenticAuthor/
 ### Context is King
 
 Always include full context from previous stages when generating prose:
-- premise.md, treatment.md, structure-plan.md (100% each)
+- premise.md (includes prose style selections), treatment.md, structure-plan.md (100% each)
 - All previous chapters (100% each)
-- misc/prose-style-card.md (at repo root)
+- misc/prose-style-card.md only if premise uses Commercial style
 
 Never truncate context. Token costs are negligible vs quality loss.
 
 ### Quality First
 
-- Follow prose-style-card.md strictly
+- Follow the prose style selected in premise.md (Commercial/Literary/Minimalist/Pulp/Lyrical/Conversational)
 - Never generate placeholder content
 - Each generation should be publication-ready
 
