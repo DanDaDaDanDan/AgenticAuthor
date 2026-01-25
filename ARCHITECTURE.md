@@ -13,7 +13,7 @@ AgenticAuthor uses Claude Code skills to generate books. There is no separate ap
 
 ```
 AgenticAuthor/
-├── CLAUDE.md              # Contributor guidance
+├── CLAUDE.md              # Claude Code guidance
 ├── ARCHITECTURE.md        # This file
 ├── taxonomies/            # Genre classification (13 JSON files)
 │   ├── base-taxonomy.json

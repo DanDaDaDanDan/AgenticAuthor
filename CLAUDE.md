@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code when working with AgenticAuthor.
+Guidance for Claude Code when working with AgenticAuthor. See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed file formats and system design.
 
 ## Overview
 

@@ -128,8 +128,8 @@ The prose style card (`misc/prose-style-card.md`) defines writing standards:
 
 ## Documentation
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design
-- **[CLAUDE.md](CLAUDE.md)** - Development guidance
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed architecture, file formats, and system design
+- **[CLAUDE.md](CLAUDE.md)** - Claude Code guidance (for AI assistant)
 
 ## Core Principles
 
