@@ -139,9 +139,36 @@ Generate the story outline/treatment.
 
 **Check project length:** Read `length` from project.yaml.
 
+### Before generating, ask clarifying questions:
+
+After reading the premise, ask the user about key story decisions:
+
+1. **Ending direction:**
+   > How should this story end?
+   > 1. Triumphant - protagonist achieves their goal
+   > 2. Bittersweet - victory with significant cost
+   > 3. Tragic - protagonist fails or is destroyed
+   > 4. Ambiguous - open to interpretation
+   > 5. Let me decide based on the premise
+
+2. **Structure preference:** (novels only)
+   > What story structure fits best?
+   > 1. Three-act (classic setup/confrontation/resolution)
+   > 2. Four-act (extended middle with clear crisis point)
+   > 3. Five-act (epic with distinct falling action)
+   > 4. Episodic (connected adventures/events)
+   > 5. Let me decide based on the premise
+
+3. **Any specific elements?** (optional, free-form)
+   > Are there any specific plot points, scenes, or story beats you definitely want included?
+
+Use the answers to guide the treatment. If the user says "let me decide," make appropriate choices based on genre and premise.
+
+---
+
 ### For Novels (length: novel)
 
-Generate a detailed treatment using a structure appropriate to the story:
+Generate a detailed treatment using the structure the user selected (or chose based on premise):
 
 **Common structures:**
 - **Three-act** (Setup/Confrontation/Resolution) - most commercial fiction
@@ -251,6 +278,35 @@ Generate the chapter structure plan (novels only).
 - `books/{project}/treatment.md` - Full treatment
 
 **Output file:** `books/{project}/structure-plan.md`
+
+### Before generating, ask clarifying questions:
+
+After reading the premise and treatment, ask:
+
+1. **Target length:**
+   > How long should this novel be?
+   > 1. Compact (15-20 chapters, ~50,000 words)
+   > 2. Standard (20-30 chapters, ~80,000 words)
+   > 3. Epic (30-40+ chapters, ~120,000+ words)
+   > 4. Let me decide based on the treatment
+
+2. **Chapter length preference:**
+   > What chapter length feels right?
+   > 1. Short and punchy (2,000-3,000 words) - quick reads, frequent hooks
+   > 2. Standard (3,000-4,500 words) - balanced pacing
+   > 3. Long and immersive (4,500-6,000+ words) - deep scenes
+   > 4. Variable - mix based on content
+
+3. **POV structure:** (if not already clear from premise)
+   > How should POV be handled?
+   > 1. Single POV throughout
+   > 2. Multiple POV - alternating chapters
+   > 3. Multiple POV - within chapters
+   > 4. Already specified in premise
+
+Use answers to guide chapter count, length targets, and POV assignments.
+
+---
 
 **Generation instructions:**
 
