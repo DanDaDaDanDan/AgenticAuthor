@@ -15,8 +15,9 @@ AgenticAuthor uses Claude Code skills to generate books. There is no separate ap
 AgenticAuthor/
 ├── CLAUDE.md              # Claude Code guidance
 ├── ARCHITECTURE.md        # This file
-├── taxonomies/            # Genre classification (13 JSON files)
+├── taxonomies/            # Story classification (14 JSON files)
 │   ├── base-taxonomy.json
+│   ├── style-taxonomy.json
 │   ├── fantasy-taxonomy.json
 │   ├── science-fiction-taxonomy.json
 │   ├── romance-taxonomy.json
@@ -102,13 +103,15 @@ premise.md → treatment.md → structure-plan.md → chapters/
 Each stage receives full context from prior stages:
 
 ```
-premise.md
+premise.md (includes prose style selections)
     ↓
 treatment.md + premise.md
     ↓
 structure-plan.md + treatment.md + premise.md
     ↓
-chapters/*.md + structure-plan.md + treatment.md + premise.md + prose-style-card.md
+chapters/*.md + structure-plan.md + treatment.md + premise.md
+    ↓
+(optional: prose-style-card.md for Commercial style reference)
 ```
 
 ## File Formats
@@ -148,11 +151,18 @@ created: 2025-01-25
 - {Primary theme}
 - {Secondary theme}
 
-## Tone and Style
+## Tone
 
 - **Tone:** {emotional quality}
-- **Pacing:** {story rhythm}
-- **Voice:** {narrative perspective}
+- **Mood:** {atmosphere}
+
+## Prose Style
+
+- **Approach:** {Commercial/Literary/Minimalist/Pulp/Lyrical/Conversational}
+- **Pacing:** {Fast/Measured/Slow-burn}
+- **Dialogue density:** {High/Moderate/Low}
+- **POV:** {narrative perspective}
+- **Custom notes:** {user preferences}
 
 ## Taxonomy Selections
 
@@ -224,7 +234,7 @@ created: 2025-01-25
 
 ## Taxonomy System
 
-Taxonomies in `taxonomies/` provide story classification:
+Taxonomies in `taxonomies/` provide story classification (14 JSON files):
 
 **Base Taxonomy (`base-taxonomy.json`):**
 - Story length (flash fiction → epic)
@@ -240,19 +250,27 @@ Taxonomies in `taxonomies/` provide story classification:
 - Genre-specific tropes and archetypes
 - Plot structures typical of the genre
 
-Skills read both the base taxonomy AND the genre-specific taxonomy to inform generation. The genre taxonomy extends the base with genre-specific options.
+**Style Taxonomy (`style-taxonomy.json`):**
+- Prose approach (Commercial, Literary, Minimalist, Pulp, Lyrical, Conversational)
+- Dialogue density preferences
+- Pacing style options
+- Best-for recommendations per genre
 
-## Prose Style Card
+Skills read taxonomies to present options during premise generation. User selections are recorded in premise.md.
 
-The `misc/prose-style-card.md` defines writing standards:
+## Prose Style
 
-- **Readability:** Flesch Reading Ease 60-80
-- **Sentence length:** 12-16 words average
-- **Dialogue ratio:** 35-50% in character scenes
-- **POV discipline:** Single POV per scene
-- **Pacing (POISE):** Purpose, Obstacle, Interaction, Stakes, End-turn
+Style is **selected per-project** during premise generation, not mandated globally.
 
-All prose generation must follow these guidelines.
+**Style approaches:**
+- **Commercial** - Clear, readable, mass-market. See `misc/prose-style-card.md` for detailed guidance.
+- **Literary** - Denser prose, longer sentences, thematic depth
+- **Minimalist** - Spare, precise, subtext-heavy
+- **Pulp** - Fast, punchy, action-driven
+- **Lyrical** - Poetic, atmospheric, sensory-rich
+- **Conversational** - Strong narrative voice, personality-driven
+
+The selected style is recorded in `premise.md` under "Prose Style" and guides all prose generation for that project. `misc/prose-style-card.md` remains as an optional detailed reference for Commercial style.
 
 ## Git Integration
 

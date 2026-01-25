@@ -31,6 +31,7 @@ Generate the core concept and story foundation.
 **Context to read:**
 - `AgenticAuthor/taxonomies/base-taxonomy.json` - Universal story properties
 - `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - Genre-specific options
+- `AgenticAuthor/taxonomies/style-taxonomy.json` - Prose style options
 
 **Genre to filename mapping:**
 | Genre in project.yaml | Taxonomy file |
@@ -52,15 +53,27 @@ Generate the core concept and story foundation.
 1. Review the genre taxonomy's subgenres and present relevant options to the user
 2. Use the selected subgenre's `key_features`, `themes`, and `tone` to guide the premise
 3. Check base-taxonomy for `target_audience`, `content_rating`, and `pacing` options
-4. Include 2-3 taxonomy-derived tags in the final premise
+4. Review style-taxonomy for prose style options appropriate to the genre
+5. Include 2-3 taxonomy-derived tags in the final premise
 
 **Output file:** `premise.md`
 
 **Generation instructions:**
 
-Ask the user for a brief concept (1-3 sentences describing the story idea).
+1. Ask the user for a brief concept (1-3 sentences describing the story idea).
 
-Then generate a complete premise document:
+2. Ask about prose style preference:
+   > What prose style fits this story?
+   > 1. Commercial/Accessible - clear, readable, mass-market appeal
+   > 2. Literary - denser prose, rewards close reading
+   > 3. Minimalist - spare, precise, subtext-heavy
+   > 4. Pulp/Action - fast, punchy, momentum-driven
+   > 5. Lyrical/Atmospheric - poetic, mood-focused, sensory-rich
+   > 6. Conversational - strong narrative voice, personality-driven
+
+   Note the genre's `best_for` suggestions in style-taxonomy.json but let the user choose freely.
+
+3. Generate a complete premise document:
 
 ```markdown
 # Premise
@@ -85,11 +98,18 @@ Then generate a complete premise document:
 - {Secondary theme}
 - {Optional tertiary theme}
 
-## Tone and Style
+## Tone
 
 - **Tone:** {e.g., Dark and brooding, Light and humorous, Tense and atmospheric}
-- **Pacing:** {e.g., Fast-paced thriller, Slow-burn character study}
-- **Voice:** {e.g., First person intimate, Third person limited, Multiple POV}
+- **Mood:** {The emotional atmosphere - e.g., Melancholic, Hopeful, Ominous}
+
+## Prose Style
+
+- **Approach:** {Commercial/Literary/Minimalist/Pulp/Lyrical/Conversational}
+- **Pacing:** {Fast/Measured/Slow-burn}
+- **Dialogue density:** {High/Moderate/Low}
+- **POV:** {First person, Third limited, Third omniscient, Multiple POV}
+- **Custom notes:** {Any specific style preferences from user - optional}
 
 ## Taxonomy Selections
 
@@ -303,11 +323,11 @@ cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate 
 Generate the actual story prose.
 
 **Context to read (ALL of these, in full):**
-- `books/{project}/premise.md` - Full premise
+- `books/{project}/premise.md` - Full premise (includes prose style selections)
 - `books/{project}/treatment.md` - Full treatment
 - `books/{project}/structure-plan.md` - Chapter plan (novels only)
-- `AgenticAuthor/misc/prose-style-card.md` - Style guidelines (at repo root)
 - All previously generated chapters in `books/{project}/chapters/` directory
+- `AgenticAuthor/misc/prose-style-card.md` - Optional detailed reference (only if premise uses "Commercial" style or you need specific guidance)
 
 ### Continuation Logic
 
@@ -337,25 +357,26 @@ Which would you like?
 
 ### Generation instructions
 
-Read the prose style card for guidance on mass-market accessibility.
+**Use the premise's Prose Style section as your primary guide.** The style selections there (approach, pacing, dialogue density, POV, custom notes) define how this story should be written.
 
-**Style card application:**
-The style card provides targets for readable, engaging prose. Apply its principles while allowing for:
-- **Genre conventions** - Literary fiction may be denser; thrillers sparser
-- **Tonal variation** - Quiet scenes don't need rising stakes or punchy sentences
-- **Authorial voice** - Distinctive styles may deviate from averages
-- **Scene type** - Action scenes differ from introspective passages
-
-The style card serves the story, not the other way around. Deviate when it improves the prose.
+**Style approach meanings:**
+- **Commercial** - Clear, readable, efficient. Reference `misc/prose-style-card.md` for detailed guidance.
+- **Literary** - Denser prose, longer sentences welcome, thematic resonance, deep interiority
+- **Minimalist** - Spare and precise, short declarative sentences, subtext-heavy, Hemingway-esque
+- **Pulp** - Fast and punchy, action verbs, short paragraphs, momentum over contemplation
+- **Lyrical** - Poetic and atmospheric, flowing sentences, rich sensory detail, mood-focused
+- **Conversational** - Strong narrative voice, personality in syntax, feels like being told a story
 
 **For each chapter/story:**
 
-1. Review the full context (premise, treatment, plan, previous chapters)
+1. Review the full context (premise style selections, treatment, plan, previous chapters)
 2. Generate prose that:
-   - Uses style card as guidance (not rigid rules)
+   - Matches the premise's style approach and pacing
+   - Respects dialogue density preference (High/Moderate/Low)
+   - Maintains POV discipline as specified
+   - Honors any custom style notes from the user
    - Maintains consistency with previous chapters
    - Advances the plot according to the plan
-   - Develops characters as outlined
 3. Do NOT include chapter planning notes in the output - only the prose itself
 
 **Word count approach:**

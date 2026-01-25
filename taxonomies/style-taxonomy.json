@@ -1,0 +1,125 @@
+{
+  "taxonomy_version": "1.0",
+  "taxonomy_name": "Prose Style Options",
+  "description": "Prose style profiles that guide narrative voice, pacing, and technique",
+  "categories": {
+    "prose_approach": {
+      "category_name": "Prose Approach",
+      "selection_rule": "select_one",
+      "description": "The overall approach to prose style",
+      "required": true,
+      "options": {
+        "commercial": {
+          "name": "Commercial/Accessible",
+          "description": "Clear, readable prose optimized for mass-market appeal",
+          "sentence_style": "Short to moderate length, varied rhythm, easy to follow",
+          "dialogue_approach": "Frequent, drives pacing, clear tags or action beats",
+          "description_density": "Concrete and sensory, efficient, doesn't slow pace",
+          "pov_approach": "Close third or first person, emotionally accessible",
+          "best_for": ["thriller", "romance", "urban-fantasy", "young-adult", "mystery-thriller"]
+        },
+        "literary": {
+          "name": "Literary",
+          "description": "Denser prose that rewards close reading, prioritizes voice and theme",
+          "sentence_style": "Varied, allows longer flowing sentences, rhythmic",
+          "dialogue_approach": "Meaningful exchanges, subtext, may be sparse",
+          "description_density": "Rich, atmospheric, thematic resonance",
+          "pov_approach": "Deep interiority, may use free indirect discourse",
+          "best_for": ["literary-fiction", "historical-fiction", "contemporary-fiction"]
+        },
+        "minimalist": {
+          "name": "Minimalist",
+          "description": "Spare, precise prose where every word earns its place",
+          "sentence_style": "Short, declarative, subtext-heavy",
+          "dialogue_approach": "Clipped, realistic, what's unsaid matters",
+          "description_density": "Sparse, selective details that resonate",
+          "pov_approach": "Often detached or restrained, iceberg style",
+          "best_for": ["literary-fiction", "noir", "contemporary-fiction"]
+        },
+        "pulp": {
+          "name": "Pulp/Action",
+          "description": "Fast, punchy prose that prioritizes momentum and excitement",
+          "sentence_style": "Short, punchy, action-verb driven",
+          "dialogue_approach": "Snappy, quippy, keeps things moving",
+          "description_density": "Quick strokes, just enough to see the scene",
+          "pov_approach": "Close and visceral, in-the-moment",
+          "best_for": ["thriller", "horror", "science-fiction", "urban-fantasy"]
+        },
+        "lyrical": {
+          "name": "Lyrical/Atmospheric",
+          "description": "Poetic prose that prioritizes mood, beauty, and sensory immersion",
+          "sentence_style": "Flowing, musical, may use repetition and imagery",
+          "dialogue_approach": "Integrated with narrative, may be stylized",
+          "description_density": "Lush, sensory-rich, creates dreamlike atmosphere",
+          "pov_approach": "Immersive, may blend thought and perception",
+          "best_for": ["fantasy", "horror", "romantasy", "literary-fiction"]
+        },
+        "conversational": {
+          "name": "Conversational/Voice-Driven",
+          "description": "Strong narrative voice that feels like someone telling you a story",
+          "sentence_style": "Natural speech rhythms, personality in syntax",
+          "dialogue_approach": "Character voice paramount, distinct speech patterns",
+          "description_density": "Filtered through narrator's personality",
+          "pov_approach": "First person or close third with strong voice",
+          "best_for": ["young-adult", "contemporary-fiction", "romance", "urban-fantasy"]
+        }
+      }
+    },
+    "dialogue_density": {
+      "category_name": "Dialogue Density",
+      "selection_rule": "select_one",
+      "description": "How much of the narrative is dialogue vs prose",
+      "required": false,
+      "options": {
+        "high": {
+          "name": "High (40-60%)",
+          "description": "Dialogue-driven storytelling, scenes play out in conversation",
+          "best_for": "Character-focused stories, drama, romance"
+        },
+        "moderate": {
+          "name": "Moderate (25-40%)",
+          "description": "Balanced mix of dialogue and narrative",
+          "best_for": "Most genres, flexible pacing"
+        },
+        "low": {
+          "name": "Low (<25%)",
+          "description": "Narrative-driven, dialogue used sparingly for impact",
+          "best_for": "Introspective, atmospheric, literary"
+        }
+      }
+    },
+    "pacing_style": {
+      "category_name": "Pacing Style",
+      "selection_rule": "select_one",
+      "description": "The overall rhythm and speed of the narrative",
+      "required": false,
+      "options": {
+        "fast": {
+          "name": "Fast/Propulsive",
+          "description": "Quick scenes, frequent cuts, momentum prioritized",
+          "chapter_length": "Shorter chapters, cliffhanger endings"
+        },
+        "measured": {
+          "name": "Measured/Balanced",
+          "description": "Varies pace by scene needs, breathing room between intensity",
+          "chapter_length": "Variable, follows story rhythm"
+        },
+        "slow_burn": {
+          "name": "Slow Burn",
+          "description": "Patient development, atmosphere and character prioritized",
+          "chapter_length": "Longer chapters, immersive scenes"
+        }
+      }
+    }
+  },
+  "custom_notes": {
+    "description": "Users may add custom style notes to override or supplement these selections",
+    "examples": [
+      "Lean into internal monologue",
+      "Use sentence fragments for tension",
+      "Embrace ambiguity in the ending",
+      "Channel noir voice without pastiche",
+      "Keep description grounded even in fantasy elements"
+    ]
+  }
+}

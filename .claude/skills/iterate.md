@@ -62,6 +62,7 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/premise.md` - Current premise
 - `AgenticAuthor/taxonomies/base-taxonomy.json` - Universal properties
 - `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - Genre-specific options
+- `AgenticAuthor/taxonomies/style-taxonomy.json` - Style options (if changing style)
 
 **For treatment iteration:**
 - `books/{project}/premise.md` (full)
@@ -73,12 +74,12 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/structure-plan.md` - Current plan
 
 **For prose iteration:**
-- `books/{project}/premise.md` (full)
+- `books/{project}/premise.md` (full, includes prose style selections)
 - `books/{project}/treatment.md` (full)
 - `books/{project}/structure-plan.md` (full, if novel)
-- `AgenticAuthor/misc/prose-style-card.md` (full) - at repo root
 - All chapters from `books/{project}/chapters/` (full)
 - The specific chapter(s) being revised
+- `AgenticAuthor/misc/prose-style-card.md` - Optional reference if premise uses Commercial style
 
 ### Step 5: Apply Changes
 

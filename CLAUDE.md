@@ -23,7 +23,7 @@ AgenticAuthor uses Claude Code skills for AI-powered book generation. No separat
 
 ```
 AgenticAuthor/
-├── taxonomies/            # 13 JSON files (1 base + 12 genre)
+├── taxonomies/            # 14 JSON files (base, 12 genre, style)
 ├── misc/
 │   └── prose-style-card.md
 ├── .claude/skills/        # Skill definitions

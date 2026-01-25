@@ -43,10 +43,10 @@ Read `books/{project}/project.yaml` to get the genre.
 - `books/{project}/structure-plan.md`
 
 **For prose review:**
-- All of the above
-- `AgenticAuthor/misc/prose-style-card.md`
-- `AgenticAuthor/misc/copy-edit.md` (detailed quality guidelines)
+- All of the above (premise includes prose style selections)
 - Target chapter(s) from `books/{project}/chapters/`
+- `AgenticAuthor/misc/prose-style-card.md` - Reference if premise uses Commercial style
+- `AgenticAuthor/misc/copy-edit.md` - Detailed quality guidelines
 
 ### Step 3: Analyze Content
 
