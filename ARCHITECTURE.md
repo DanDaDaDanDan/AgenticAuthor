@@ -39,6 +39,7 @@ AgenticAuthor/
 │       ├── new-book.md
 │       ├── generate.md
 │       ├── iterate.md
+│       ├── review.md
 │       ├── status.md
 │       └── export.md
 └── books/                    # Book projects (separate git repo)
@@ -72,6 +73,7 @@ Skills are markdown files in `.claude/skills/` that define operations:
 | `/new-book` | new-book.md | Create a new book project |
 | `/generate` | generate.md | Generate premise, treatment, plan, or prose |
 | `/iterate` | iterate.md | Refine content with feedback |
+| `/review` | review.md | Analyze content against quality standards |
 | `/status` | status.md | Show project progress |
 | `/export` | export.md | Export book to single file |
 

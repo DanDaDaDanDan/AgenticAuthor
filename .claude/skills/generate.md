@@ -22,13 +22,15 @@ Check if the current working directory is inside a book project:
 
 Read `project.yaml` to get project metadata (genre, length, title, author).
 
-### Stage: premise
+---
+
+## Stage: premise
 
 Generate the core concept and story foundation.
 
 **Context to read:**
-- `AgenticAuthor/taxonomies/base-taxonomy.json` - Universal story properties (length, audience, pacing, POV)
-- `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - Genre-specific options and categories
+- `AgenticAuthor/taxonomies/base-taxonomy.json` - Universal story properties
+- `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - Genre-specific options
 
 **Genre to filename mapping:**
 | Genre in project.yaml | Taxonomy file |
@@ -45,6 +47,12 @@ Generate the core concept and story foundation.
 | historical-fiction | historical-fiction-taxonomy.json |
 | young-adult | young-adult-taxonomy.json |
 | generic | generic-taxonomy.json |
+
+**Using taxonomy data:**
+1. Review the genre taxonomy's subgenres and present relevant options to the user
+2. Use the selected subgenre's `key_features`, `themes`, and `tone` to guide the premise
+3. Check base-taxonomy for `target_audience`, `content_rating`, and `pacing` options
+4. Include 2-3 taxonomy-derived tags in the final premise
 
 **Output file:** `premise.md`
 
@@ -85,12 +93,11 @@ Then generate a complete premise document:
 
 ## Taxonomy Selections
 
-Based on the {genre} taxonomy, these elements apply:
-
 - **Subgenre:** {Selected from taxonomy}
 - **Length:** {novel/short-story} ({estimated word count})
 - **Target Audience:** {e.g., Adult, Young Adult}
-- **Additional tags:** {2-4 relevant tags from taxonomy}
+- **Content Rating:** {from base-taxonomy}
+- **Tags:** {2-3 relevant tags from taxonomy}
 ```
 
 **After generation:**
@@ -98,7 +105,9 @@ Based on the {genre} taxonomy, these elements apply:
 cd books && git add {project}/premise.md && git commit -m "Add: Generate premise for {project}"
 ```
 
-### Stage: treatment
+---
+
+## Stage: treatment
 
 Generate the story outline/treatment.
 
@@ -108,9 +117,11 @@ Generate the story outline/treatment.
 
 **Output file:** `treatment.md`
 
-**Generation instructions:**
+**Check project length:** Read `length` from project.yaml.
 
-Generate a detailed treatment that expands the premise into a story structure:
+### For Novels (length: novel)
+
+Generate a detailed treatment:
 
 ```markdown
 # Treatment
@@ -172,14 +183,46 @@ Generate a detailed treatment that expands the premise into a story structure:
 {Any important world-building details needed for the story}
 ```
 
+### For Short Stories (length: short-story)
+
+Generate a simplified treatment:
+
+```markdown
+# Treatment
+
+## Story Arc
+
+{Single paragraph: opening situation → complication → climax → resolution}
+
+## Key Beats
+
+1. **Opening hook:** {How the story grabs attention}
+2. **Complication:** {The central problem or conflict}
+3. **Turning point:** {The moment everything changes}
+4. **Resolution:** {How it ends}
+
+## Character
+
+- **Protagonist:** {Name} — {Starting state → ending state in one sentence}
+- **Other characters:** {Brief notes on any supporting characters}
+
+## Core Scene
+
+{The most important scene - describe in 2-3 sentences}
+```
+
 **After generation:**
 ```bash
 cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
 ```
 
-### Stage: plan
+---
+
+## Stage: plan
 
 Generate the chapter structure plan (novels only).
+
+**If project is a short story, skip this stage.**
 
 **Context to read:**
 - `books/{project}/premise.md` - Full premise
@@ -189,7 +232,7 @@ Generate the chapter structure plan (novels only).
 
 **Generation instructions:**
 
-For novels, generate a detailed chapter-by-chapter plan:
+Generate a detailed chapter-by-chapter plan. Reference treatment scenes in chapter breakdowns.
 
 ```markdown
 # Structure Plan
@@ -207,6 +250,8 @@ For novels, generate a detailed chapter-by-chapter plan:
 **POV:** {Character name}
 **Setting:** {Location and time}
 **Word count target:** {2,500-4,000}
+
+**Treatment reference:** {Which act/scenes from treatment this covers}
 
 **Summary:**
 {2-3 sentences describing what happens in this chapter}
@@ -244,14 +289,14 @@ For novels, generate a detailed chapter-by-chapter plan:
 | {Character arc} | Ch {X} | Ch {Y} |
 ```
 
-**For short stories:** Skip this stage (no chapter plan needed).
-
 **After generation:**
 ```bash
 cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
 ```
 
-### Stage: prose
+---
+
+## Stage: prose
 
 Generate the actual story prose.
 
@@ -259,18 +304,40 @@ Generate the actual story prose.
 - `books/{project}/premise.md` - Full premise
 - `books/{project}/treatment.md` - Full treatment
 - `books/{project}/structure-plan.md` - Chapter plan (novels only)
-- `AgenticAuthor/misc/prose-style-card.md` - Style guidelines (at repo root, not in project)
+- `AgenticAuthor/misc/prose-style-card.md` - Style guidelines (at repo root)
 - All previously generated chapters in `books/{project}/chapters/` directory
 
-**Output files:**
+### Continuation Logic
+
+Before generating, check what already exists:
+
+1. **For novels:** List files in `books/{project}/chapters/`
+2. **For short stories:** Check if `books/{project}/story.md` exists
+
+**If some chapters exist:**
+```
+Chapters 1-3 already exist.
+
+Options:
+1. Generate chapter 4 (continue)
+2. Regenerate a specific chapter
+3. Regenerate all chapters
+
+Which would you like?
+```
+
+**If user specifies a chapter:** `/generate prose 5` → Generate chapter 5
+
+### Output files
+
 - Novels: `chapters/chapter-{NN}.md` (one per chapter)
 - Short stories: `story.md` (single file)
 
-**Generation instructions:**
+### Generation instructions
 
 Read the prose style card carefully and apply all its guidelines.
 
-For each chapter/story:
+**For each chapter/story:**
 
 1. Review the full context (premise, treatment, plan, previous chapters)
 2. Generate prose that:
@@ -279,6 +346,12 @@ For each chapter/story:
    - Advances the plot according to the plan
    - Develops characters as outlined
 3. Do NOT include chapter planning notes in the output - only the prose itself
+
+**Word count approach:**
+- Chapter targets in structure-plan are guidelines, not strict limits
+- Focus on completing scenes properly
+- If significantly over/under target (±30%), note it after generation
+- Quality and completeness over hitting exact numbers
 
 **Chapter format:**
 
@@ -300,6 +373,21 @@ For each chapter/story:
 {Complete story prose}
 ```
 
+### Quality Self-Check
+
+After generating each chapter, verify:
+
+1. **Dialogue ratio:** Approximately 35-50% in character-heavy scenes
+2. **Sentence length:** No sentences over 35 words without rhythmic justification
+3. **Scene endings:** Each scene ends with a turn (POISE structure)
+4. **Sensory details:** At least 2 per 200 words
+5. **POV consistency:** No head-hopping within scenes
+6. **Plot advancement:** Chapter accomplishes its stated goals from the plan
+
+If any check fails, revise before committing.
+
+### After generation
+
 **After each chapter (novels):**
 ```bash
 cd books && git add {project}/chapters/chapter-{NN}.md && git commit -m "Add: Generate chapter {N} prose for {project}"
@@ -310,7 +398,9 @@ cd books && git add {project}/chapters/chapter-{NN}.md && git commit -m "Add: Ge
 cd books && git add {project}/story.md && git commit -m "Add: Generate prose for {project}"
 ```
 
-### Stage: all
+---
+
+## Stage: all
 
 Generate all stages in sequence: premise → treatment → plan → prose
 
@@ -319,6 +409,8 @@ For each stage:
 2. If exists, ask user if they want to regenerate
 3. If not exists or user confirms, generate it
 4. Wait for user to review before proceeding to next stage
+
+---
 
 ## Context Management
 

@@ -30,9 +30,29 @@ For prose, also ask which chapter(s) to revise, or "all" for the entire story.
 
 If `feedback` not provided, ask the user:
 - What changes would you like to make?
-- (User can provide natural language feedback like "make it darker", "add more tension", "develop the romance subplot more")
 
-### Step 3: Read Full Context
+### Step 3: Confirm Understanding
+
+**Before making any changes, restate what you understood:**
+
+```
+I understand you want me to:
+- [Specific change 1]
+- [Specific change 2]
+
+This will affect: [areas/chapters impacted]
+
+Proceed with these changes?
+```
+
+**If feedback is ambiguous, ask clarifying questions first:**
+- "When you say 'darker', do you mean tone, violence, themes, or all three?"
+- "Should this apply to the whole chapter or specific scenes?"
+- "Do you want to keep [element X] or is that part of what should change?"
+
+Do NOT proceed until you're confident you understand the request.
+
+### Step 4: Read Full Context
 
 **Always read the complete context for the target.**
 
@@ -60,49 +80,42 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - All chapters from `books/{project}/chapters/` (full)
 - The specific chapter(s) being revised
 
-**Path Notes:**
-- Book files are in `books/{project}/`
-- Prose style card is at `AgenticAuthor/misc/` (repo root)
-- Taxonomies are at `AgenticAuthor/taxonomies/` (repo root)
-
-### Step 4: Apply Changes
+### Step 5: Apply Changes
 
 Generate the revised content:
 
-1. **Understand the feedback:** Interpret what the user wants changed
-2. **Identify impacts:** Consider what else might need adjustment for consistency
-3. **Generate revision:** Create the updated content maintaining:
-   - All existing elements not mentioned in feedback
-   - Consistency with other parts of the project
-   - Quality standards from the style card (for prose)
+1. **Apply the confirmed changes** - Make the specific changes discussed
+2. **Preserve everything else** - Don't change elements not mentioned in feedback
+3. **Maintain consistency** - Ensure changes align with other project parts
+4. **Follow style card** - For prose, maintain style guidelines
 
-### Step 5: Show Summary of Changes
+**Prose iteration principles:**
+- Preserve the author's distinctive voice and style
+- Keep strong emotional beats and character moments
+- Maintain character-specific dialogue patterns
+- Don't flatten literary prose into generic writing
+- If cutting for pacing, preserve essential story information
 
-Before writing, briefly summarize what changed:
+### Step 6: Show Summary of Changes
+
+Briefly summarize what changed:
 
 ```
 Changes applied:
 - {Change 1}
 - {Change 2}
-- {Change 3}
 
-Elements preserved:
-- {Maintained element 1}
-- {Maintained element 2}
+Preserved:
+- {Key element kept intact}
+- {Another preserved element}
 ```
 
-### Step 6: Write and Commit
+### Step 7: Write and Commit
 
 Write the revised file(s) to `books/{project}/` and commit:
 
 ```bash
 cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
-```
-
-Examples:
-```bash
-cd books && git add my-book/premise.md && git commit -m "Iterate: premise - add more conflict"
-cd books && git add my-book/chapters/chapter-03.md && git commit -m "Iterate: chapter 3 - increase tension"
 ```
 
 ## Iteration Guidelines
@@ -127,25 +140,34 @@ cd books && git add my-book/chapters/chapter-03.md && git commit -m "Iterate: ch
 
 ### Prose Iteration
 
-- **Most common iteration target**
-- Apply feedback while maintaining:
-  - Style card guidelines
-  - Character voice consistency
-  - Plot thread continuity
-  - Established world details
-- For chapter-specific feedback, only revise that chapter
-- For global feedback ("make everything darker"), revise all chapters
+**Most common iteration target.** Apply feedback while maintaining:
+- Style card guidelines (sentence length, dialogue ratio, POISE structure)
+- Character voice consistency
+- Plot thread continuity
+- Established world details
+
+**What to preserve during prose iteration:**
+- Distinctive atmosphere and world-building
+- Strong emotional beats
+- Character-specific dialogue patterns
+- Effective metaphors and imagery
+
+**What to improve when asked:**
+- Overly complex sentences that slow reading
+- Redundant descriptions or repetitive imagery
+- Pacing issues (too slow/fast for the scene type)
+- Unclear plot points or confusing passages
+
+For chapter-specific feedback, only revise that chapter.
+For global feedback ("make everything darker"), revise all chapters.
 
 ## Natural Language Feedback Examples
-
-The feedback can be conversational:
 
 - "Make the protagonist more conflicted about their decision"
 - "Add more sensory details to the forest scenes"
 - "The pacing feels slow in chapter 3, tighten it up"
 - "I want the antagonist to be more sympathetic"
 - "Add more romantic tension between the leads"
-- "Make the magic system feel more mysterious"
 - "The dialogue feels stilted, make it more natural"
 - "This chapter needs a stronger hook at the end"
 
@@ -165,20 +187,13 @@ When iteration on one stage affects others:
 **Plan changes → May require:**
 - Prose revision for affected chapters
 
-After completing the iteration, inform the user if downstream stages may need updating:
-
-```
-Iteration complete. Note: Since the treatment changed significantly,
-you may want to:
-- Review the structure plan for alignment
-- Consider regenerating affected chapters
-```
+After completing the iteration, inform the user if downstream stages may need updating.
 
 ## Version History
 
-Each iteration creates a git commit, so the user can:
-- View history with `git log --oneline`
-- Compare versions with `git diff HEAD~1`
-- Revert changes with `git checkout HEAD~1 -- {file}`
+Each iteration creates a git commit. Users can:
+- View history: `git log --oneline`
+- Compare versions: `git diff HEAD~1`
+- Revert changes: `git checkout HEAD~1 -- {file}`
 
 Remind users of these options when they express uncertainty about changes.

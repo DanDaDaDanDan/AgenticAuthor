@@ -54,6 +54,7 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 | `/new-book` | Create a new book project |
 | `/generate` | Generate premise, treatment, plan, or prose |
 | `/iterate` | Refine content with natural language feedback |
+| `/review` | Analyze content against quality standards |
 | `/status` | Show project progress |
 | `/export` | Export book to single file |
 
