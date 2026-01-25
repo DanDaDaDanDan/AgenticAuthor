@@ -141,10 +141,12 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 ### Prose Iteration
 
 **Most common iteration target.** Apply feedback while maintaining:
-- Style card guidelines (sentence length, dialogue ratio, POISE structure)
+- The story's established voice and tone
 - Character voice consistency
 - Plot thread continuity
 - Established world details
+
+Use the style card as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it.
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building

@@ -142,48 +142,48 @@ Generate a review report. **Do NOT make any changes to files.**
 ```markdown
 # Prose Review: {project} - {Chapter/All}
 
-## Style Card Compliance
+## Style Observations
+
+{Note: These are observations, not pass/fail criteria. Deviations may be intentional and effective.}
 
 ### Readability
-- **Flesch Reading Ease:** {Estimated range}
-- **Average sentence length:** {Estimate - target 12-16 words}
-- **Long sentences (>35 words):** {Count and locations}
+- **Sentence length feel:** {Flows well? Any passages that drag or rush?}
+- **Dense passages:** {Any sections that might lose readers? Are they justified?}
 
 ### Dialogue
-- **Ratio:** {Estimated % - target 35-50% in character scenes}
+- **Balance:** {Feels right for the scene types? Too sparse/heavy anywhere?}
 - **Voice distinction:** {Do characters sound different?}
-- **Tag variety:** {Appropriate mix?}
+- **Tag usage:** {Clean and unobtrusive?}
 
-### Structure (POISE)
-- [ ] Purpose - Each scene has clear purpose
-- [ ] Obstacle - Conflicts present and engaging
-- [ ] Interaction - Characters actively engaged
-- [ ] Stakes - Tension maintained
-- [ ] End-turn - Scenes end with momentum
+### Scene Structure
+- **Purpose:** {Does each scene earn its place?}
+- **Momentum:** {Do scenes end with energy? Note: quiet endings are valid for reflective scenes}
+- **Pacing variety:** {Good mix of tension and breathing room?}
 
 ### POV Discipline
 - **Consistency:** {Single POV per scene?}
-- **Head-hopping:** {Any violations?}
+- **Any drift:** {Unintentional perspective shifts?}
 
-## Copy-Edit Observations
+## Strengths to Preserve
 
-### Preserve (Strengths)
-- {Strong element to keep}
-- {Another strength}
+- {What's working well - voice, atmosphere, moments}
+- {Strong passages or techniques}
+- {Effective character work}
 
-### Consider Revising
-- {Issue and location}
-- {Another issue}
+## Areas to Consider
+
+- {Potential issue and location - frame as observation, not error}
+- {Another area that might benefit from revision}
 
 ## Plot/Continuity
 - **Plan alignment:** {Does prose follow structure plan?}
-- **Consistency issues:** {Any contradictions?}
+- **Consistency notes:** {Any contradictions or continuity gaps?}
 
 ## Suggestions
-1. {Specific improvement with location}
+1. {Specific improvement idea with location}
 2. {Another suggestion}
 
-**Overall:** {Assessment and priority areas for iteration}
+**Overall:** {Assessment noting both strengths and priority areas. Acknowledge intentional style choices.}
 ```
 
 ### Full Project Review
@@ -216,9 +216,11 @@ When reviewing `all`, generate a combined report:
 ## Output Guidelines
 
 - **Be specific:** Reference exact locations (chapter, paragraph, line when possible)
-- **Be constructive:** Frame issues as opportunities, not failures
-- **Be balanced:** Note strengths alongside areas for improvement
+- **Be constructive:** Frame observations as opportunities, not failures
+- **Be balanced:** Note strengths first, then areas for consideration
 - **Be actionable:** Suggestions should be clear enough to implement via `/iterate`
+- **Respect intentional choices:** If something deviates from guidelines but works, acknowledge it as a valid stylistic choice rather than an error
+- **Avoid mechanical judgments:** Don't reduce prose quality to ratios and word counts—assess how it *reads*
 
 ## After Review
 

@@ -121,7 +121,16 @@ Generate the story outline/treatment.
 
 ### For Novels (length: novel)
 
-Generate a detailed treatment:
+Generate a detailed treatment using a structure appropriate to the story:
+
+**Common structures:**
+- **Three-act** (Setup/Confrontation/Resolution) - most commercial fiction
+- **Four-act** (Setup/Complication/Crisis/Resolution) - longer novels
+- **Five-act** (Exposition/Rising Action/Climax/Falling Action/Denouement) - epic or literary
+- **Episodic** - connected adventures or vignettes
+- **Non-linear** - if the premise suggests it
+
+Default to three-act for most stories, but adapt based on genre and premise.
 
 ```markdown
 # Treatment
@@ -132,35 +141,28 @@ Generate a detailed treatment:
 
 ## Act Structure
 
+{Use the structure that best fits the story. The three-act example below is a starting point, not a requirement.}
+
 ### Act I: {Title} (Setup)
 
 {Describe the opening situation, character introductions, inciting incident, and first plot point}
 
 **Key scenes:**
-1. {Opening scene description}
-2. {Character establishment}
-3. {Inciting incident}
-4. {First plot point / point of no return}
+{List the essential scenes - may be 3-6 depending on story needs}
 
 ### Act II: {Title} (Confrontation)
 
 {Describe the rising action, complications, midpoint, and escalating conflict}
 
 **Key scenes:**
-1. {First major complication}
-2. {Midpoint reversal or revelation}
-3. {Protagonist's darkest moment}
-4. {Second plot point}
+{List essential scenes - this act is often longest}
 
 ### Act III: {Title} (Resolution)
 
 {Describe the climax, resolution, and ending}
 
 **Key scenes:**
-1. {Final approach to climax}
-2. {Climax scene}
-3. {Resolution and aftermath}
-4. {Final image/closing}
+{List essential scenes}
 
 ## Character Arcs
 
@@ -335,13 +337,22 @@ Which would you like?
 
 ### Generation instructions
 
-Read the prose style card carefully and apply all its guidelines.
+Read the prose style card for guidance on mass-market accessibility.
+
+**Style card application:**
+The style card provides targets for readable, engaging prose. Apply its principles while allowing for:
+- **Genre conventions** - Literary fiction may be denser; thrillers sparser
+- **Tonal variation** - Quiet scenes don't need rising stakes or punchy sentences
+- **Authorial voice** - Distinctive styles may deviate from averages
+- **Scene type** - Action scenes differ from introspective passages
+
+The style card serves the story, not the other way around. Deviate when it improves the prose.
 
 **For each chapter/story:**
 
 1. Review the full context (premise, treatment, plan, previous chapters)
 2. Generate prose that:
-   - Follows the style card guidelines (sentence length, dialogue ratio, etc.)
+   - Uses style card as guidance (not rigid rules)
    - Maintains consistency with previous chapters
    - Advances the plot according to the plan
    - Develops characters as outlined
@@ -373,18 +384,20 @@ Read the prose style card carefully and apply all its guidelines.
 {Complete story prose}
 ```
 
-### Quality Self-Check
+### Quality Considerations
 
-After generating each chapter, verify:
+After generating, consider these guidelines (not rigid requirements):
 
-1. **Dialogue ratio:** Approximately 35-50% in character-heavy scenes
-2. **Sentence length:** No sentences over 35 words without rhythmic justification
-3. **Scene endings:** Each scene ends with a turn (POISE structure)
-4. **Sensory details:** At least 2 per 200 words
-5. **POV consistency:** No head-hopping within scenes
+1. **Dialogue balance:** Appropriate for the scene type? (More in confrontations, less in introspection)
+2. **Sentence variety:** Good mix of lengths? Any that lose the reader?
+3. **Scene momentum:** Does each scene end with forward energy? (Quiet scenes may end softly)
+4. **Sensory grounding:** Can the reader see/hear/feel the scene?
+5. **POV discipline:** Staying in one head per scene?
 6. **Plot advancement:** Chapter accomplishes its stated goals from the plan
 
-If any check fails, revise before committing.
+**Deviation is allowed.** Literary fiction, atmospheric scenes, and distinctive authorial voices may warrant different approaches than the style card suggests. The guidelines serve the story, not the other way around.
+
+If something feels wrong, revise. If deliberate choices deviate from guidelines, that's fine.
 
 ### After generation
 

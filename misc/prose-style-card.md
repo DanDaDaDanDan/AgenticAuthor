@@ -56,13 +56,17 @@ Use single-sentence paragraphs for emphasis or emotional beats.
 
 ## 7. Pacing Structure (POISE)
 
-Each scene should follow this micro-arc:
+A useful micro-arc for plot-driving scenes:
 
-**P** – POV character’s clear **Objective**  
-**O** – An **Obstacle** or new friction appears  
-**I** – Character **Interacts / acts** toward the goal  
-**S** – **Stakes rise** (tension or emotional risk increases)  
+**P** – POV character's clear **Objective**
+**O** – An **Obstacle** or new friction appears
+**I** – Character **Interacts / acts** toward the goal
+**S** – **Stakes rise** (tension or emotional risk increases)
 **E** – Scene **Ends with a turn** (reveal, question, decision, or new goal)
+
+**POISE works well for:** Action sequences, confrontations, plot-advancing scenes.
+
+**POISE may be relaxed for:** Reflective moments, atmospheric interludes, character-building scenes, denouement. Not every scene needs escalating stakes—some need breathing room.
 
 ## 8. Sentence & Paragraph Self-Checks
 
@@ -95,8 +99,17 @@ Before completing, review:
 
 ## 11. Meta-Instruction
 
-- **You must apply this style card to all narrative output.**  
-- Before finalizing any output, perform the **Sentence & Paragraph Self-Checks**.  
+- **Use this style card as guidance for mass-market accessibility.**
+- The metrics are targets, not rigid requirements—deviate when it serves the story.
+- Before finalizing, consider the **Sentence & Paragraph Self-Checks** as guidelines.
 - If conflicts arise, **clarity and flow take priority** over ornamentation.
+
+**When to deviate:**
+- Literary fiction may use longer sentences, denser prose, fewer dialogue tags
+- Atmospheric scenes may prioritize mood over momentum
+- Distinctive character voices may break readability rules deliberately
+- Genre conventions may call for different pacing (thriller vs literary vs romance)
+
+The goal is engaging, readable prose—not mechanical conformity.
 
 **End of Style Card**
