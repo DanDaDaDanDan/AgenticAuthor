@@ -62,118 +62,48 @@ class QualityGateManager:
         self.project = project
         self.prompt_loader = get_prompt_loader()
 
-    async def check_structure_gate(self) -> QualityGate:
+    async def check_continuity_gate(self, unit_num: int) -> QualityGate:
         """
-        STRUCTURE_GATE: Validate chapter structure after outline generation.
-
-        Checks:
-        - Arc coherence (beginning, middle, end)
-        - No duplicate events across chapters
-        - Balanced pacing (no chapter too short/long)
-        - Character arcs have setup and payoff
-        """
-        # Load chapter outlines
-        chapters_yaml = self.project.get_chapters_yaml()
-        if not chapters_yaml:
-            return QualityGate(
-                result=QualityGateResult.BLOCKED,
-                reasoning="No chapter outlines found",
-                issues=["chapters.yaml or chapter-beats/ not found"],
-                suggestions=["Generate chapters with /generate chapters"]
-            )
-
-        chapters = chapters_yaml.get('chapters', [])
-        if not chapters:
-            return QualityGate(
-                result=QualityGateResult.BLOCKED,
-                reasoning="Empty chapter list",
-                issues=["No chapters defined in outline"],
-                suggestions=["Regenerate chapters"]
-            )
-
-        # Build context for judge
-        foundation = chapters_yaml.get('metadata', {})
-        characters = chapters_yaml.get('characters', [])
-
-        context = {
-            'total_chapters': len(chapters),
-            'foundation': foundation,
-            'character_count': len(characters),
-            'chapters': chapters,
-        }
-
-        # Use prompt template for structure validation
-        prompts = self.prompt_loader.render(
-            "validation/structure_gate",
-            chapters=chapters,
-            foundation=foundation,
-            characters=characters,
-            total_chapters=len(chapters),
-        )
-
-        # Get temperature from config
-        temperature = self.prompt_loader.get_temperature("validation/structure_gate", default=0.1)
-
-        # Call LLM judge
-        result = await self.client.streaming_completion(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": prompts['system']},
-                {"role": "user", "content": prompts['user']}
-            ],
-            temperature=temperature,
-            stream=False,
-            display=False,
-            response_format={"type": "json_object"}
-        )
-
-        return self._parse_gate_response(result)
-
-    async def check_continuity_gate(self, chapter_num: int) -> QualityGate:
-        """
-        CONTINUITY_GATE: Validate prose chapter against prior chapters.
+        CONTINUITY_GATE: Validate prose unit against prior units.
 
         Checks:
         - Character consistency (traits, speech patterns)
-        - Plot coherence with previous chapters
+        - Plot coherence with previous units
         - No contradictions with established facts
         - Setting continuity
         """
-        # Load current chapter prose
-        prose = self.project.get_chapter(chapter_num)
+        # Load current unit prose
+        prose = self.project.get_chapter(unit_num)
         if not prose:
             return QualityGate(
                 result=QualityGateResult.BLOCKED,
-                reasoning=f"Chapter {chapter_num} prose not found",
-                issues=[f"No prose file for chapter {chapter_num}"],
+                reasoning=f"Unit {unit_num} prose not found",
+                issues=[f"No prose file for unit {unit_num}"],
                 suggestions=["Generate prose first"]
             )
 
-        # Load prior chapters
+        # Load prior units (full content - Context is King)
         prior_prose = []
-        for i in range(1, chapter_num):
-            ch_prose = self.project.get_chapter(i)
-            if ch_prose:
+        for i in range(1, unit_num):
+            unit_prose = self.project.get_chapter(i)
+            if unit_prose:
                 prior_prose.append({
                     'number': i,
-                    'content': ch_prose[:5000]  # Truncate for context
+                    'content': unit_prose
                 })
 
-        # Load chapter outline for reference
-        chapters_yaml = self.project.get_chapters_yaml()
-        current_outline = None
-        if chapters_yaml:
-            for ch in chapters_yaml.get('chapters', []):
-                if ch.get('number') == chapter_num:
-                    current_outline = ch
-                    break
+        # Load structure plan for reference
+        structure_plan = None
+        plan_file = self.project.path / "structure-plan.md"
+        if plan_file.exists():
+            structure_plan = plan_file.read_text(encoding='utf-8')
 
         # Use prompt template
         prompts = self.prompt_loader.render(
             "validation/continuity_gate",
-            chapter_num=chapter_num,
+            chapter_num=unit_num,
             current_prose=prose,
-            current_outline=current_outline,
+            current_outline=structure_plan,
             prior_chapters=prior_prose,
         )
 
@@ -204,48 +134,61 @@ class QualityGateManager:
         - Thematic consistency
         - Satisfying conclusion
         """
-        # Load all prose chapters
+        # Check for story.md (short stories) or chapters/ (novels)
+        story_file = self.project.story_file
         chapters_list = self.project.list_chapters()
-        if not chapters_list:
+
+        if story_file.exists():
+            # Short story - single file
+            content = story_file.read_text(encoding='utf-8')
+            total_words = len(content.split())
+            chapter_summaries = [{
+                'number': 1,
+                'word_count': total_words,
+                'opening': content[:1000],
+                'closing': content[-1000:] if len(content) > 1000 else content,
+            }]
+            total_chapters = 1
+        elif chapters_list:
+            # Novel - multiple chapters
+            chapter_summaries = []
+            total_words = 0
+
+            for ch_path in chapters_list:
+                content = ch_path.read_text(encoding='utf-8')
+                words = len(content.split())
+                total_words += words
+
+                # Take first and last paragraphs for summary
+                paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
+                summary = {
+                    'number': int(ch_path.stem.split('-')[1]),
+                    'word_count': words,
+                    'opening': paragraphs[0][:500] if paragraphs else "",
+                    'closing': paragraphs[-1][:500] if len(paragraphs) > 1 else "",
+                }
+                chapter_summaries.append(summary)
+            total_chapters = len(chapters_list)
+        else:
             return QualityGate(
                 result=QualityGateResult.BLOCKED,
-                reasoning="No prose chapters found",
-                issues=["No prose generated"],
-                suggestions=["Generate prose with /generate prose all"]
+                reasoning="No prose found",
+                issues=["No story.md or chapter files found"],
+                suggestions=["Generate prose first"]
             )
 
-        # Build summary of all chapters (abbreviated for context)
-        chapter_summaries = []
-        total_words = 0
-
-        for ch_path in chapters_list:
-            content = ch_path.read_text(encoding='utf-8')
-            words = len(content.split())
-            total_words += words
-
-            # Take first and last paragraphs for summary
-            paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
-            summary = {
-                'number': int(ch_path.stem.split('-')[1]),
-                'word_count': words,
-                'opening': paragraphs[0][:500] if paragraphs else "",
-                'closing': paragraphs[-1][:500] if len(paragraphs) > 1 else "",
-            }
-            chapter_summaries.append(summary)
-
-        # Load foundation for reference
-        chapters_yaml = self.project.get_chapters_yaml()
-        foundation = chapters_yaml.get('metadata', {}) if chapters_yaml else {}
-        characters = chapters_yaml.get('characters', []) if chapters_yaml else []
+        # Load premise and treatment for reference
+        premise = self.project.get_premise() or ""
+        treatment = self.project.get_treatment() or ""
 
         # Use prompt template
         prompts = self.prompt_loader.render(
             "validation/completion_gate",
             chapter_summaries=chapter_summaries,
-            total_chapters=len(chapters_list),
+            total_chapters=total_chapters,
             total_words=total_words,
-            foundation=foundation,
-            characters=characters,
+            foundation={'premise': premise, 'treatment': treatment},
+            characters=[],
         )
 
         temperature = self.prompt_loader.get_temperature("validation/completion_gate", default=0.1)

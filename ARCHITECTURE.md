@@ -70,11 +70,8 @@ This document is a self-contained overview of AgenticAuthor's architecture: how 
   - __init__.py — Generation package marker.
   - premise.py — Premise generation and taxonomy integration.
   - treatment.py — Treatment (LOD2) generation from premise.
-  - chapters.py — Foundation extraction and single-shot chapter outline generation; saves `chapter-beats/`.
-  - variants.py — Multi-variant chapter generation (temperature fan-out).
-  - judging.py — LLM judging across variants to pick the winner.
-  - prose.py — Sequential prose generation with fidelity validation and surgical iteration.
-  - short_story.py — Short-form flow (≤2 chapters).
+  - structure_planner.py — Model-driven structure planning for novels.
+  - flexible_prose.py — Flexible prose generation (direct for short stories, from-plan for novels).
   - depth_calculator.py — Structural sizing (acts, chapter count, targets).
   - lod_context.py — Context assembly for LOD prompts.
   - copy_editor.py — Copy-editing pass utilities.
@@ -101,22 +98,20 @@ This document is a self-contained overview of AgenticAuthor's architecture: how 
 - src/prompts/
   - __init__.py — `PromptLoader` (Jinja environment, [SYSTEM]/[USER] parsing, metadata access).
   - config.yaml — Prompt metadata (format, temperature, token hints).
-  - generation/ — Core LOD generation prompts:
+  - generation/ — Core generation prompts:
     - premise_main.j2, premise_with_taxonomy.j2 — Premise generation.
     - treatment_generation.j2 — Treatment expansion from premise.
-    - chapter_foundation.j2 — Extract structured foundation (metadata/characters/world) from treatment.
-    - chapter_single_shot.j2 — Plan all chapters in one pass (anti-redundancy guardrails, act anchors).
-    - prose_generation.j2 — Write chapters as dramatized scenes from beats with prior prose context.
-    - prose_iteration.j2 — Surgical rewrite for validation fixes (legacy/validation-focused).
+    - structure_plan.j2 — Model-driven structure planning (novels).
+    - prose_direct.j2 — Direct prose generation (short stories).
+    - prose_from_plan.j2 — Prose from structure plan (novels).
     - dedication_generation.j2 — Book dedication generation.
-    - premise_iteration.j2, treatment_iteration.j2, chapter_iteration.j2 — Full LOD level regeneration with feedback and history context.
-    - prose_full_iteration.j2 — Full prose regeneration with feedback (distinct from surgical prose_iteration.j2).
+    - premise_iteration.j2, treatment_iteration.j2 — LOD level regeneration with feedback.
+    - prose_full_iteration.j2 — Full prose regeneration with feedback.
   - editing/ — Editing prompts:
     - copy_edit.j2 — Copy editing pass.
   - kdp/ — Publishing metadata prompts:
     - author_bio.j2, description.j2, keywords.j2 — KDP publishing assets.
   - analysis/ — Analysis and evaluation prompts:
-    - chapter_judging.j2 — Multi-variant chapter evaluation.
     - semantic_diff.j2 — Human-readable change summary generation.
     - unified_analysis.j2 — Editorial analysis (duplicates, strengths, next steps).
     - treatment_deviation.j2 — Foundation vs treatment consistency check.
@@ -124,8 +119,9 @@ This document is a self-contained overview of AgenticAuthor's architecture: how 
     - taxonomy_extraction.j2 — Extract taxonomy from existing content.
   - validation/ — Validation prompts:
     - iteration_fidelity.j2 — Judge validation for iteration system.
-    - prose_fidelity.j2 — Prose validation against beats.
     - treatment_fidelity.j2 — Treatment validation against premise.
+    - continuity_gate.j2 — Per-unit continuity validation.
+    - completion_gate.j2 — Final quality validation.
   - iteration/ — Iteration-specific utility prompts:
     - premise_revision.j2 — Premise revision utilities.
     - taxonomy_update.j2 — Taxonomy update utilities.
@@ -153,17 +149,8 @@ This document is a self-contained overview of AgenticAuthor's architecture: how 
   - treatment_metadata.json — Treatment metadata.
   - iteration_history.json — Treatment iteration history.
   - combined.md — Snapshot (when requested).
-- chapter-beats/ — Chapter structure directory:
-  - foundation.yaml — Structured foundation (metadata, characters, world).
-  - foundation.md — Foundation in markdown format.
-  - chapter-NN.md — Per-chapter beat sheets (markdown).
-  - iteration_history.json — Chapter structure iteration history.
-  - combined.md — Snapshot of foundation + all chapter beats.
-- chapter-beats-variants/ — Multi-variant generation artifacts:
-  - foundation.yaml, foundation.md — Shared foundation.
-  - variant-N/ — Per-variant chapter structures.
-  - decision.json — Variant selection decision.
-  - combined.md — Snapshot of all variants with foundation.
+- structure-plan.md — Model-driven structure plan (novels only).
+- story.md — Complete short story prose (short form only).
 - chapters/ — Final prose chapters:
   - chapter-NN.md — Individual chapter prose files.
   - iteration_history.json — Prose iteration history.
@@ -174,40 +161,43 @@ This document is a self-contained overview of AgenticAuthor's architecture: how 
 NOTE: Iteration debug storage is at repository root: `.agentic/debug/<project-name>/iteration/` (all attempts, judge verdicts).
 
 ## Runtime Flow (New Book → Finished Book)
-1. Initialize
+
+### Autonomous Mode (Recommended)
+```bash
+/new my-book           # Create project
+/model                 # Select model
+/generate all          # Full autonomous: premise → prose
+```
+
+The system automatically:
+1. Generates premise with taxonomy
+2. Generates treatment from premise
+3. For novels: Creates model-driven structure plan
+4. Generates prose (direct for short stories, from-plan for novels)
+5. Runs quality gates at each checkpoint
+
+### Manual Mode
+1. **Initialize**
    - Set `OPENROUTER_API_KEY` (must start with `sk-or-`).
-   - Run `agentic` and `/new <name>` to create `books/<name>/` (shared Git initialized at `books/` if needed).
-2. Premise & Taxonomy
-   - Generate or select a premise; choose taxonomy options (genre, length scope, tone). Persist to `premise/premise_metadata.json`.
-3. Treatment (LOD2)
-   - Expand premise into a structured treatment prose document (`treatment/treatment.md`).
-4. Foundation
-   - Extract structured foundation (metadata, characters, world) from treatment (`chapter-beats/foundation.yaml` or `foundation.md`).
-5. Chapters (Global Plan)
-   - Generate all chapter outlines in one call (`chapter_single_shot.j2`) with act anchors and anti-redundancy guardrails; save per-chapter beats to `chapter-beats/chapter-NN.md`.
-   - `--auto` mode lets the LLM pick an appropriate chapter count (act weights passed); no target word counts shown.
-   - Optionally generate multiple variants; `chapter-beats-variants/combined.md` consolidates foundation and all variant beats.
-6. Prose (Sequential, strict)
-   - Write chapters in order using prior chapters' FULL prose as authoritative context.
-   - Prompt includes fenced sections and requires current/future beat files; missing beats or files are treated as errors (no silent fallbacks).
-   - Save `chapters/chapter-NN.md` and update `chapters/combined.md` when requested.
-7. Copy Edit & Polish
-   - Run copy editing and generate KDP metadata as needed.
-8. Export & Deliver
-   - Export to Markdown/RTF; assemble publishing metadata.
-9. Analyze & Iterate
-   - Use unified/treatment-deviation analysis to identify issues and guide targeted revisions.
+   - Run `agentic` and `/new <name>` to create `books/<name>/`.
+2. **Premise & Taxonomy**
+   - `/generate premise` — Generate premise with taxonomy options.
+3. **Treatment**
+   - `/generate treatment` — Expand premise into treatment.
+4. **Structure Plan (Novels only)**
+   - `/generate plan` — Model proposes how to structure the story.
+5. **Prose**
+   - `/generate prose` — Generate full prose (direct for short stories, from plan for novels).
+6. **Copy Edit & Export**
+   - Copy editing and publishing metadata as needed.
 10. Natural Language Iteration (v0.4.0)
-    - Set iteration target (`/iterate premise|treatment|chapters|prose`) or auto-set after generation.
-    - Provide natural language feedback (no `/` prefix): "make it darker", "add more dialogue in chapter 3".
-    - System regenerates content holistically with full context (premise, treatment, existing chapters/prose).
-    - LLM judge validates changes match feedback (up to 3 attempts with retry logic).
-    - Human-readable semantic diff displayed for approval (not raw git diff).
-    - Auto-commit to git on approval with project-prefixed message: `[project-name] Iterate target: feedback`.
-    - Iteration history tracked per LOD level (`iteration_history.json`) for cumulative context.
-    - Downstream cascade handling: editing premise prompts to cull or keep treatment/chapters/prose.
-    - Debug storage: all attempts saved to `.agentic/debug/<project-name>/iteration/` with judge verdicts.
-    - Safety warning on first iteration (test on cloned projects only).
+    - Set iteration target (`/iterate premise|treatment|prose`) or auto-set after generation.
+    - Provide natural language feedback (no `/` prefix): "make it darker", "add more dialogue".
+    - System regenerates content holistically with full context.
+    - LLM judge validates changes match feedback (up to 3 attempts).
+    - Human-readable semantic diff displayed for approval.
+    - Auto-commit to git on approval.
+    - Iteration history tracked per LOD level for cumulative context.
 
 ## How Components Fit Together
 - CLI orchestrates flows, displays streaming output, and records logs.

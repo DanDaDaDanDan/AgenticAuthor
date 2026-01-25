@@ -21,7 +21,7 @@ from ..models import Project
 from ..storage.git_manager import GitManager
 from .command_completer import SlashCommandCompleter, create_command_descriptions
 from .auto_suggest import SlashCommandAutoSuggest
-from ..generation import PremiseGenerator, TreatmentGenerator, ChapterGenerator, ProseGenerator
+from ..generation import PremiseGenerator, TreatmentGenerator, StructurePlanner, FlexibleProseGenerator
 from ..generation.taxonomies import TaxonomyLoader, PremiseAnalyzer, PremiseHistory
 from ..generation.analysis import AnalysisCoordinator
 from ..utils.logging import setup_logging, get_logger
@@ -1048,198 +1048,63 @@ class InteractiveSession:
         try:
             if gen_type == "premise":
                 await self._generate_premise(options)
-                # Auto-set iteration target
                 self.iteration_target = "premise"
                 self._print(f"[dim]Iteration target set to: premise[/dim]")
             elif gen_type == "premises":
-                # Batch premise generation
                 await self._generate_premises_batch(options)
-                # Auto-set iteration target
                 self.iteration_target = "premise"
                 self._print(f"[dim]Iteration target set to: premise[/dim]")
             elif gen_type == "treatment":
                 await self._generate_treatment(options)
-                # Auto-set iteration target
                 self.iteration_target = "treatment"
                 self._print(f"[dim]Iteration target set to: treatment[/dim]")
-            elif gen_type == "chapters":
-                # Check if short-form story
+            elif gen_type == "chapters" or gen_type == "plan":
+                # Generate structure plan (for novels) using StructurePlanner
                 if self.project.is_short_form():
-                    self.console.print("[yellow]⚠  Short stories don't use chapters.yaml[/yellow]")
-                    self.console.print("[dim]Use /generate prose to write the complete story[/dim]")
-                    # Check if --force flag is present
-                    if "--force" in options:
-                        self.console.print("[dim]--force flag detected: proceeding with chapter generation[/dim]")
-                        await self._generate_chapters(options.replace("--force", "").strip())
-                        # Auto-set iteration target
-                        self.iteration_target = "chapters"
-                        self._print(f"[dim]Iteration target set to: chapters[/dim]")
+                    self.console.print("[yellow]Short stories don't need a structure plan.[/yellow]")
+                    self.console.print("[dim]Use /generate prose to write directly, or /generate all for autonomous flow.[/dim]")
                 else:
-                    await self._generate_chapters(options)
-                    # Auto-set iteration target
-                    self.iteration_target = "chapters"
-                    self._print(f"[dim]Iteration target set to: chapters[/dim]")
+                    await self._generate_structure_plan(options)
             elif gen_type == "prose":
-                # Check for "resume" subcommand
-                if options.strip().startswith("resume"):
-                    # Extract remaining options after "resume"
-                    resume_options = options.strip()[6:].strip()  # Remove "resume" prefix
-                    await self._generate_prose_resume(resume_options)
-                    # Auto-set iteration target
-                    self.iteration_target = "prose"
-                    self._print(f"[dim]Iteration target set to: prose[/dim]")
-                # Route based on story type
-                elif self.project.is_short_form():
-                    await self._generate_short_story_prose(options)
-                else:
-                    await self._generate_prose(options)
-                    # Auto-set iteration target
-                    self.iteration_target = "prose"
-                    self._print(f"[dim]Iteration target set to: prose[/dim]")
+                await self._generate_prose_flexible(options)
+                self.iteration_target = "prose"
+                self._print(f"[dim]Iteration target set to: prose[/dim]")
             elif gen_type == "marketing":
                 await self._generate_marketing(options)
-                # No iteration target for marketing
             elif gen_type == "dedication":
                 await self._generate_dedication(options)
-                # No iteration target for dedication
             elif gen_type == "combined":
                 await self._generate_combined(options)
-                # No iteration target for combined
             elif gen_type == "all":
                 # Full autonomous generation: premise → prose
                 await self._generate_all_autonomous(options)
             else:
                 self.console.print(f"[red]Unknown generation type: {gen_type}[/red]")
-                self.console.print("[dim]Valid types: premise, premises, treatment, chapters, prose, marketing, dedication, combined, all[/dim]")
+                self.console.print("[dim]Valid types: premise, treatment, plan, prose, marketing, dedication, combined, all[/dim]")
         except Exception as e:
             self.console.print(f"[red]Generation failed: {self._escape_markup(e)}[/red]")
 
     async def finalize_content(self, args: str):
         """
-        Finalize chapter variants by judging and selecting winner.
+        DEPRECATED: Chapter variant finalization is no longer used.
 
-        Usage: /finalize chapters
+        The new workflow uses model-driven structure planning:
+        - /generate plan    : Generate structure plan
+        - /generate prose   : Generate prose from plan
+        - /generate all     : Full autonomous generation
         """
-        if not self.project:
-            self.console.print("[yellow]No project loaded. Use /new or /open first.[/yellow]")
-            return
-
-        if not self.client:
-            self.console.print("[red]API client not initialized[/red]")
-            return
-
-        # Ensure git repo exists
-        self._ensure_git_repo()
-
-        # Parse finalize type
-        parts = args.strip().split(None, 1)
-        if not parts:
-            self.console.print("[yellow]Usage: /finalize chapters[/yellow]")
-            return
-
-        finalize_type = parts[0].lower()
-
-        if finalize_type != "chapters":
-            self.console.print(f"[red]Unknown finalize type: {finalize_type}[/red]")
-            self.console.print("[dim]Valid types: chapters[/dim]")
-            return
-
-        try:
-            await self._finalize_chapters()
-        except Exception as e:
-            self.console.print(f"[red]Finalization failed: {self._escape_markup(e)}[/red]")
-            from ..utils.logging import get_logger
-            logger = get_logger()
-            if logger:
-                logger.error(f"Finalization error: {e}")
+        self.console.print("[yellow]The /finalize command is deprecated.[/yellow]")
+        self.console.print()
+        self.console.print("The new workflow uses autonomous generation:")
+        self.console.print("  [cyan]/generate all[/cyan]     - Full autonomous: premise → prose")
+        self.console.print("  [cyan]/generate plan[/cyan]    - Generate structure plan (novels)")
+        self.console.print("  [cyan]/generate prose[/cyan]   - Generate prose from plan")
+        self.console.print()
+        self.console.print("[dim]Use /generate all to start a new autonomous generation.[/dim]")
 
     async def _finalize_chapters(self):
-        """
-        Judge chapter variants and finalize winner to chapter-beats/.
-
-        This method:
-        1. Loads all variants from chapter-beats-variants/
-        2. Calls LLM judge to evaluate and select best variant
-        3. Copies winning variant to chapter-beats/ directory
-        4. Saves decision record to decision.json
-        """
-        from ..generation.variants import VariantManager
-        from ..generation.judging import JudgingCoordinator
-
-        # Check for variants directory
-        variants_dir = self.project.path / 'chapter-beats-variants'
-        if not variants_dir.exists():
-            self.console.print("[yellow]No variants found. Generate chapter variants first with /generate chapters[/yellow]")
-            return
-
-        # Load variant manager and judging coordinator
-        # Note: We need a ChapterGenerator instance for VariantManager, but we're only using it for reading variants
-        from ..generation.chapters import ChapterGenerator
-        generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
-
-        variant_manager = VariantManager(generator, self.project)
-        judging_coordinator = JudgingCoordinator(self.client, self.project, model=self.settings.active_model)
-
-        # Load foundation
-        foundation = variant_manager.get_foundation()
-        if not foundation:
-            self.console.print("[red]Foundation not found in variants directory[/red]")
-            self.console.print("[dim]Expected: chapter-beats-variants/foundation.yaml[/dim]")
-            return
-
-        # Load all variant data
-        variants_data = variant_manager.get_all_variants_data()
-
-        if not variants_data:
-            self.console.print("[yellow]No variant chapter data found[/yellow]")
-            self.console.print("[dim]Expected: chapter-beats-variants/variant-1/, variant-2/, etc.[/dim]")
-            return
-
-        if len(variants_data) < 2:
-            self.console.print(f"[yellow]Only {len(variants_data)} variant(s) found. Need at least 2 to judge.[/yellow]")
-            return
-
-        self.console.rule(style="dim")
-        self.console.print(f"[cyan]Loaded {len(variants_data)} variants for judging[/cyan]\n")
-
-        # Display variant summary
-        for variant_num in sorted(variants_data.keys()):
-            chapters = variants_data[variant_num]
-            chapter_count = len(chapters)
-
-            # Get variant config label
-            from ..generation.variants import VARIANT_CONFIGS
-            config = next((c for c in VARIANT_CONFIGS if c['variant'] == variant_num), None)
-            label = config['label'] if config else f"Temperature {config['temperature']}" if config else ""
-
-            self.console.print(f"  • Variant {variant_num} ({label}): {chapter_count} chapters")
-
-        self.console.print()
-
-        # Judge and finalize
-        try:
-            winner = await judging_coordinator.judge_and_finalize(
-                foundation=foundation,
-                variants_data=variants_data
-            )
-
-            # Update chapter-beats combined (premise + taxonomy + treatment + foundation + beats)
-            try:
-                self.project.write_combined_markdown(target='chapter-beats', include_prose=False)
-            except Exception:
-                pass
-
-            # Success - commit changes
-            self._commit(f"Finalize chapters: selected Variant {winner}")
-
-            self.console.print(f"[green]✓ Chapter finalization complete[/green]")
-            self.console.print(f"\n[yellow]→ Next step: /generate prose (generate full prose from finalized chapters)[/yellow]")
-
-        except KeyboardInterrupt:
-            self.console.print("\n[yellow]Finalization cancelled by user[/yellow]")
-        except Exception as e:
-            self.console.print(f"\n[red]Finalization error: {self._escape_markup(e)}[/red]")
-            raise
+        """DEPRECATED: Chapter variant finalization is no longer used."""
+        pass
 
     async def _generate_premise(self, user_input: str = ""):
         """Generate story premise with enhanced genre and taxonomy support.
@@ -1828,34 +1693,176 @@ class InteractiveSession:
         else:
             self.console.print("[red]Failed to generate treatment[/red]")
 
+    async def _generate_structure_plan(self, options: str = ""):
+        """
+        Generate model-driven structure plan for novels.
+
+        The model decides how to structure the story (chapters, scenes, etc.)
+        based on the premise and treatment.
+
+        Usage:
+            /generate plan              # Generate structure plan
+            /generate chapters          # Alias for /generate plan
+        """
+        self._ensure_git_repo()
+
+        # Check prerequisites
+        if not self.project.get_premise():
+            self.console.print("[yellow]No premise found. Generate with /generate premise first.[/yellow]")
+            return
+
+        if not self.project.get_treatment():
+            self.console.print("[yellow]No treatment found. Generate with /generate treatment first.[/yellow]")
+            return
+
+        # Check if plan already exists
+        plan_file = self.project.path / "structure-plan.md"
+        if plan_file.exists() and "--force" not in options:
+            self.console.print("[yellow]Structure plan already exists.[/yellow]")
+            self.console.print("[dim]Use --force to regenerate, or proceed to /generate prose[/dim]")
+            return
+
+        # Generate plan using StructurePlanner
+        planner = StructurePlanner(self.client, self.project, model=self.settings.active_model)
+
+        self.console.print()
+        self.console.rule("[bold]Structure Plan[/bold]", style="cyan")
+        self.console.print()
+
+        plan = await planner.generate_plan()
+
+        if plan:
+            word_count = len(plan.split())
+            self.console.print()
+            self.console.rule(style="dim")
+            self.console.print(f"[green]✓ Structure plan generated: {word_count} words[/green]")
+            self.console.print("[dim]Saved to structure-plan.md[/dim]")
+            self.console.print("[dim]Next: /generate prose to write the full story[/dim]")
+
+            self._commit(f"Generate structure plan: {word_count} words")
+        else:
+            self.console.print("[red]Failed to generate structure plan[/red]")
+
+    async def _generate_prose_flexible(self, options: str = ""):
+        """
+        Generate prose using the flexible prose generator.
+
+        For short stories: Direct generation from treatment
+        For novels: Sequential generation following structure plan
+
+        Usage:
+            /generate prose              # Generate all prose
+            /generate prose --force      # Regenerate even if exists
+        """
+        self._ensure_git_repo()
+
+        # Check prerequisites
+        if not self.project.get_premise():
+            self.console.print("[yellow]No premise found. Generate with /generate premise first.[/yellow]")
+            return
+
+        if not self.project.get_treatment():
+            self.console.print("[yellow]No treatment found. Generate with /generate treatment first.[/yellow]")
+            return
+
+        is_short = self.project.is_short_form()
+
+        # For novels, check if structure plan exists
+        if not is_short:
+            plan_file = self.project.path / "structure-plan.md"
+            if not plan_file.exists():
+                self.console.print("[yellow]No structure plan found for novel.[/yellow]")
+                self.console.print("[dim]Generating structure plan first...[/dim]")
+                await self._generate_structure_plan(options)
+                # Check if plan was generated
+                if not plan_file.exists():
+                    return
+
+        # Create generator
+        generator = FlexibleProseGenerator(self.client, self.project, model=self.settings.active_model)
+
+        # Load style card if available
+        style_card = None
+        style_card_path = self.project.path / "misc" / "prose-style-card.md"
+        if style_card_path.exists() and "--no-style-card" not in options:
+            style_card = style_card_path.read_text(encoding='utf-8')
+            self.console.print("[dim]Using prose style card[/dim]")
+
+        self.console.print()
+        self.console.rule("[bold]Prose Generation[/bold]", style="cyan")
+        self.console.print()
+
+        if is_short:
+            # Direct generation for short stories
+            prose = await generator.generate_direct(style_card=style_card)
+            if prose:
+                word_count = len(prose.split())
+                self.console.print()
+                self.console.rule(style="dim")
+                self.console.print(f"[green]✓ Story generated: {word_count:,} words[/green]")
+                self.console.print("[dim]Saved to story.md[/dim]")
+                self._commit(f"Generate short story: {word_count:,} words")
+        else:
+            # Sequential generation from plan for novels
+            plan = generator.get_structure_plan()
+            units = generator.parse_plan_units(plan)
+
+            if not units:
+                self.console.print("[yellow]Could not parse structure plan into units.[/yellow]")
+                self.console.print("[dim]Falling back to direct generation...[/dim]")
+                prose = await generator.generate_direct(style_card=style_card)
+                if prose:
+                    word_count = len(prose.split())
+                    self._commit(f"Generate prose: {word_count:,} words")
+                return
+
+            total_units = len(units)
+            total_words = 0
+
+            self.console.print(f"[cyan]Generating {total_units} units from structure plan...[/cyan]")
+
+            for i, unit_desc in enumerate(units, 1):
+                # Check if unit already exists
+                unit_file = self.project.chapters_dir / f"chapter-{i:02d}.md"
+                if unit_file.exists() and "--force" not in options:
+                    content = unit_file.read_text(encoding='utf-8')
+                    words = len(content.split())
+                    total_words += words
+                    self.console.print(f"[dim]Unit {i} exists ({words:,} words), skipping[/dim]")
+                    continue
+
+                self.console.print(f"\n[cyan]Generating Unit {i}/{total_units}...[/cyan]")
+
+                prose = await generator.generate_unit(
+                    unit_number=i,
+                    unit_description=unit_desc,
+                    total_units=total_units,
+                    style_card=style_card
+                )
+
+                if prose:
+                    words = len(prose.split())
+                    total_words += words
+                    self._commit(f"Generate unit {i}: {words:,} words")
+
+            self.console.print()
+            self.console.rule(style="dim")
+            self.console.print(f"[green]✓ Prose generation complete: {total_words:,} words total[/green]")
+
+    # =========================================================================
+    # DEPRECATED: Old chapter generation methods (kept for reference)
+    # =========================================================================
+
     async def _generate_chapters(self, options: str = ""):
-        """
-        Generate chapter outlines using multi-variant or single-temperature generation.
+        """DEPRECATED: Use _generate_structure_plan instead."""
+        self.console.print("[yellow]This method is deprecated. Use /generate plan instead.[/yellow]")
+        await self._generate_structure_plan(options)
+        return
 
-        Default mode: Creates 4 variants with different temperatures (0.55, 0.60, 0.65, 0.70)
-        saved to chapter-beats-variants/ for judging with /finalize chapters.
+        # =========================================================================
+        # OLD CODE BELOW (not executed)
+        # =========================================================================
 
-        Single-temperature mode (--temperature/-t): Generates one variant at specified temperature,
-        saving directly to chapter-beats/ (auto-finalized, ready for /generate prose).
-
-        Options:
-            --temperature X.X, -t X.X : Single variant mode at specified temperature (auto-finalized)
-            --temperature=X.X, -t=X.X : Also supports equals format
-            --reuse-foundation, -r    : Reuse existing foundation (skip generation/validation)
-            --auto, -a                : Let LLM decide chapter count
-            --file PATH, --file=PATH  : Use external treatment file (skips premise requirement)
-            --chapters N, --chapters=N: Explicit chapter count (for use with --file)
-            N (number)                : Chapter count (if < 50) or total word count (if >= 50)
-
-        Examples:
-            /generate chapters                                # 4 variants (requires /finalize)
-            /generate chapters --temperature 0.65             # Single variant (auto-finalized)
-            /generate chapters -t=0.65                        # Same, short form with equals
-            /generate chapters 15 -t 0.65                     # 15 chapters at temp 0.65
-            /generate chapters --reuse-foundation             # Reuse existing foundation
-            /generate chapters --reuse -t=0.70                # Reuse foundation, new chapters at 0.70
-            /generate chapters --file=treatment.txt --chapters=9  # Use external treatment file
-        """
         # Ensure git repo exists
         self._ensure_git_repo()
 
@@ -2466,6 +2473,13 @@ Regenerate the foundation addressing the issues above.
                     return
 
     async def _generate_prose(self, options: str = ""):
+        """DEPRECATED: Use _generate_prose_flexible instead."""
+        await self._generate_prose_flexible(options)
+        return
+
+        # =========================================================================
+        # OLD CODE BELOW (not executed)
+        # =========================================================================
         """Generate prose for chapters with full sequential context.
 
         WARNING: Deletes ALL existing prose before regenerating (ensures consistency).
@@ -2911,8 +2925,13 @@ Regenerate the foundation addressing the issues above.
             self.console.print(f"[red]Error generating chapters: {self._escape_markup(e)}[/red]")
 
     async def _generate_short_story_prose(self, options: str = ""):
-        """Generate complete short-form story prose."""
-        from ..generation import ShortStoryGenerator
+        """DEPRECATED: Use _generate_prose_flexible instead."""
+        await self._generate_prose_flexible(options)
+        return
+
+        # =========================================================================
+        # OLD CODE BELOW (not executed)
+        # =========================================================================
 
         # Ensure git repo exists
         self._ensure_git_repo()
@@ -3918,17 +3937,9 @@ Regenerate the foundation addressing the issues above.
         except Exception as e:
             self.console.print(f"[yellow]Failed to write {target}/combined.md: {self._escape_markup(e)}[/yellow]")
 
-        # Variants combined.md
+        # Variants combined.md (deprecated - variant system removed)
         if include_variants:
-            try:
-                from ..generation.variants import VariantManager
-                from ..generation.chapters import ChapterGenerator
-                generator = ChapterGenerator(self.client, self.project, model=self.settings.active_model)
-                variant_manager = VariantManager(generator, self.project)
-                v_combined = variant_manager.write_variants_combined_markdown()
-                self.console.print(f"[green]✓[/green] Variants combined: {v_combined}")
-            except Exception as e:
-                self.console.print(f"[yellow]Failed to write variants combined.md: {self._escape_markup(e)}[/yellow]")
+            self.console.print("[yellow]Variant system has been removed. Use /generate all for autonomous generation.[/yellow]")
 
         # Commit
         self._commit(f"Write combined context file: {target}")

@@ -2,16 +2,14 @@
 
 from .premise import PremiseGenerator
 from .treatment import TreatmentGenerator
-from .chapters import ChapterGenerator
-from .prose import ProseGenerator
-from .short_story import ShortStoryGenerator
+from .structure_planner import StructurePlanner
+from .flexible_prose import FlexibleProseGenerator
 from .copy_editor import CopyEditor
 
 __all__ = [
     'PremiseGenerator',
     'TreatmentGenerator',
-    'ChapterGenerator',
-    'ProseGenerator',
-    'ShortStoryGenerator',
+    'StructurePlanner',
+    'FlexibleProseGenerator',
     'CopyEditor',
 ]

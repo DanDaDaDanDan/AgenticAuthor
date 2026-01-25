@@ -86,7 +86,6 @@ class GenerationState:
     error: Optional[str] = None
 
     # Quality gate statuses
-    structure_gate: Optional[QualityGateStatus] = None
     continuity_gates: List[QualityGateStatus] = field(default_factory=list)
     completion_gate: Optional[QualityGateStatus] = None
 
@@ -103,8 +102,6 @@ class GenerationState:
             'error': self.error,
         }
 
-        if self.structure_gate:
-            data['structure_gate'] = self.structure_gate.to_dict()
         if self.continuity_gates:
             data['continuity_gates'] = [g.to_dict() for g in self.continuity_gates]
         if self.completion_gate:
@@ -126,8 +123,6 @@ class GenerationState:
             error=data.get('error'),
         )
 
-        if 'structure_gate' in data and data['structure_gate']:
-            state.structure_gate = QualityGateStatus.from_dict(data['structure_gate'])
         if 'continuity_gates' in data:
             state.continuity_gates = [
                 QualityGateStatus.from_dict(g) for g in data['continuity_gates']
@@ -155,11 +150,11 @@ class GenerationState:
         if self.phase == GenerationPhase.IDLE:
             return 0
 
-        # Weight: premise=10%, treatment=20%, chapters=20%, prose=50%
+        # Weight: premise=10%, treatment=20%, plan=20%, prose=50%
         base_progress = {
             GenerationPhase.PREMISE: 0,
             GenerationPhase.TREATMENT: 10,
-            GenerationPhase.CHAPTERS: 30,
+            GenerationPhase.PLAN: 30,
             GenerationPhase.PROSE: 50,
         }
 
@@ -175,16 +170,9 @@ class GenerationState:
     def get_quality_gates_summary(self) -> Dict[str, Any]:
         """Get summary of all quality gates."""
         summary = {
-            'structure': 'pending',
             'continuity': '0/0',
             'completion': 'pending',
         }
-
-        if self.structure_gate:
-            if self.structure_gate.passed is True:
-                summary['structure'] = 'PASS'
-            elif self.structure_gate.passed is False:
-                summary['structure'] = 'FAIL'
 
         if self.continuity_gates:
             passed = sum(1 for g in self.continuity_gates if g.passed is True)
@@ -302,7 +290,7 @@ class StateManager:
         Update a quality gate status.
 
         Args:
-            gate_type: 'structure', 'continuity', or 'completion'
+            gate_type: 'continuity' or 'completion'
             passed: Whether the gate passed
             message: Optional message/reason
             chapter_num: For continuity gates, which chapter
@@ -310,14 +298,7 @@ class StateManager:
         state = self.get_state()
         now = datetime.now(timezone.utc).isoformat()
 
-        if gate_type == 'structure':
-            state.structure_gate = QualityGateStatus(
-                name='STRUCTURE_GATE',
-                passed=passed,
-                message=message,
-                checked_at=now
-            )
-        elif gate_type == 'continuity':
+        if gate_type == 'continuity':
             gate = QualityGateStatus(
                 name=f'CONTINUITY_GATE_CH{chapter_num}' if chapter_num else 'CONTINUITY_GATE',
                 passed=passed,
