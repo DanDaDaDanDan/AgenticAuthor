@@ -116,6 +116,7 @@ Bracketed steps `[...]` are implicit — generated automatically and presented f
 
 **Principle:** Each stage reads only the immediately prior stage. Each stage's output is self-contained, carrying forward all information needed by downstream stages.
 
+**For novels:**
 ```
 premise.md (seed document)
     ↓ reads premise
@@ -348,6 +349,19 @@ Brief reference for continuity:
 ---
 
 {Continue for each chapter}
+
+## Pacing Notes
+
+- **Action chapters:** {List chapter numbers}
+- **Character/Reflection chapters:** {List chapter numbers}
+- **Climax chapters:** {List chapter numbers}
+
+## Continuity Tracking
+
+| Element | Introduced | Resolved |
+|---------|-----------|----------|
+| {Plot thread} | Ch {X} | Ch {Y} |
+| {Character arc} | Ch {X} | Ch {Y} |
 ```
 
 ### structure-plan.md (Short Stories/Novelettes)
@@ -401,10 +415,14 @@ Brief reference for continuity:
 
 ## Story Arc Mapping
 
-- **Opening hook:** Scene {X}
-- **Complication:** Scene {X}
-- **Climax:** Scene {X}
-- **Resolution:** Scene {X}
+- **Opening hook:** Scene {X} — {how it grabs the reader}
+- **Complication:** Scene {X} — {where tension rises}
+- **Climax:** Scene {X} — {the peak moment}
+- **Resolution:** Scene {X} — {how it ends}
+
+## Continuity Notes
+
+{Brief notes on any details that must remain consistent across scenes}
 ```
 
 ### summaries.md
