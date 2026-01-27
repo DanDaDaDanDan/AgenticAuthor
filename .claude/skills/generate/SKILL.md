@@ -514,28 +514,33 @@ cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate 
 
 ### Continuation Check
 
-After structure-plan exists, check what prose already exists and automatically continue from where things left off:
+After structure-plan exists, check what prose already exists and determine what to generate next:
 
 **For novels:**
 1. List files in `books/{project}/chapters/` and `books/{project}/chapter-plans/`
-2. Find the next chapter that needs work:
+2. Determine the next chapter that needs work:
    - If a chapter plan exists but no prose → generate prose for that chapter
-   - If no plan exists for the next chapter → generate plan, then prose
-3. Continue generating chapters sequentially until complete
+   - If no plan exists for the next chapter → generate plan first
+3. Generate ONE chapter per `/generate prose` invocation (plan → review → prose → review)
+4. User runs `/generate prose` again to continue to the next chapter
 
 **For short stories:**
 1. Check if `books/{project}/short-story-plan.md` exists
 2. Check if `books/{project}/short-story.md` exists
-3. Generate what's missing:
-   - No plan → generate plan first, then prose
-   - Plan exists but no prose → generate prose
+3. Generate what's missing (plan → review → prose)
 
-**Always inform the user what will be generated next:**
+**Inform the user of current state:**
 ```
-Chapter 3 complete. Generating chapter 4...
+Chapters 1-3 complete. Generating chapter 4 plan...
 ```
 
-The system automatically does the right thing — no user choices needed.
+or
+
+```
+Chapter 4 plan approved. Generating chapter 4 prose...
+```
+
+The system determines what's next — user just runs `/generate prose` to continue.
 
 ### Output files
 
