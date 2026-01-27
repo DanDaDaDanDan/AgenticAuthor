@@ -6,7 +6,9 @@ Guidance for Claude Code when working with AgenticAuthor. See [ARCHITECTURE.md](
 
 AgenticAuthor uses Claude Code skills for AI-powered book generation. No separate application - Claude Code is the orchestrator.
 
-**Workflow:** premise → treatment approach → treatment → structure plan → generation plan → prose (all project types)
+**User commands:** `/generate premise` → `/generate treatment` → `/generate plan` → `/generate prose`
+
+Planning steps (treatment-approach, chapter-plans) are implicit — the AI generates them automatically before the main output.
 
 ## Skills
 
@@ -56,19 +58,19 @@ Never truncate context. Token costs are negligible vs quality loss.
 
 ### Plan Before Writing
 
-Before generating significant content, create an external plan document:
+Automatically generate planning documents before major outputs:
 
-**Before treatment:** `treatment-approach.md`
+**`/generate treatment`** creates `treatment-approach.md` first:
 - Analyzes premise systematically (conflict, arcs, themes)
 - Proposes structure and identifies potential challenges
-- Lightweight planning that guides treatment generation
+- User reviews before treatment generation proceeds
 
-**Before prose:** `chapter-plans/` (novels) or `short-story-plan.md` (short stories)
-- Analyzes plan requirements, continuity, character states, style
-- Detailed scene-by-scene breakdown
-- Presented to user for review before prose generation
+**`/generate prose`** creates chapter/story plans first:
+- `chapter-plans/` (novels) or `short-story-plan.md` (short stories)
+- Analyzes continuity, character states, style
+- User reviews before prose generation proceeds
 
-External plans improve quality, enable iteration, and make debugging easier.
+These implicit planning steps improve quality and enable iteration before committing to the main output.
 
 ### Quality First
 

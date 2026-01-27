@@ -86,29 +86,34 @@ Skills are defined in `.claude/skills/{skill}/SKILL.md`:
 
 ## Generation Flow
 
+Four user commands with implicit planning steps:
+
+| Command | Implicit Step | Output |
+|---------|---------------|--------|
+| `/generate premise` | — | premise.md |
+| `/generate treatment` | treatment-approach.md | treatment.md |
+| `/generate plan` | — | structure-plan.md |
+| `/generate prose` | chapter-plan or short-story-plan | chapters/ or short-story.md |
+
 ### Short Stories (≤15,000 words)
 
 ```
-premise.md → treatment-approach.md → treatment.md → structure-plan.md → short-story-plan.md → short-story.md
+/generate premise    → premise.md
+/generate treatment  → [treatment-approach.md] → treatment.md
+/generate plan       → structure-plan.md
+/generate prose      → [short-story-plan.md] → short-story.md
 ```
-
-- Scene-by-scene structure plan
-- External generation plan before prose
-- Single prose file output
-- Summary generated after prose
 
 ### Novels (>15,000 words)
 
 ```
-premise.md → treatment-approach.md → treatment.md → structure-plan.md → [chapter-plan.md → chapter.md] × N
+/generate premise    → premise.md
+/generate treatment  → [treatment-approach.md] → treatment.md
+/generate plan       → structure-plan.md
+/generate prose      → [chapter-NN-plan.md → chapter-NN.md] × N
 ```
 
-- Chapter-by-chapter structure plan
-- External generation plan per chapter (in `chapter-plans/`)
-- Individual chapter files (in `chapters/`)
-- Summary appended after each chapter
-
-**Note:** All project types require planning. External generation plans are saved to files for review, iteration, and debugging. Research shows explicit reasoning/planning before prose generation significantly improves quality (Gurung & Lapata, 2025).
+Bracketed steps `[...]` are implicit — generated automatically and presented for review before proceeding to the main output. Research shows explicit planning before prose generation significantly improves quality (Gurung & Lapata, 2025).
 
 ## Context Flow
 

@@ -29,12 +29,12 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
    /new-book my-fantasy
    ```
 
-3. **Generate your book step by step:**
+3. **Generate your book:**
    ```
    /generate premise
    /generate treatment
-   /generate plan        # Structure plan (all project types)
-   /generate prose       # Includes chapter plan step
+   /generate plan
+   /generate prose
    ```
 
 4. **Iterate with natural language:**
@@ -60,20 +60,16 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 
 ## Core Workflow
 
-### 1. Premise Generation
-The starting point - a high-level concept for your book including protagonist, antagonist, conflict, stakes, and themes.
+Four user commands, with planning handled automatically:
 
-### 2. Treatment
-Expands the premise into a detailed outline with character arcs and plot structure (Act I, II, III).
+| Command | Output | Implicit Steps |
+|---------|--------|----------------|
+| `/generate premise` | premise.md | — |
+| `/generate treatment` | treatment.md | Generates treatment-approach.md first |
+| `/generate plan` | structure-plan.md | — |
+| `/generate prose` | chapters/ or short-story.md | Generates chapter/story plan first |
 
-### 3. Structure Plan
-A chapter-by-chapter breakdown (novels) or scene-by-scene plan (short stories) with POV, settings, and goals.
-
-### 4. Chapter/Story Plan
-An external generation plan for each chapter (or the story), analyzing continuity, character states, and style before writing.
-
-### 5. Prose Generation
-Writes the actual prose following the style selected in premise.md. For novels, generates chapter-by-chapter. For short stories, generates a single short-story.md file.
+Each stage builds on the previous. The AI handles planning dependencies so you focus on reviewing and iterating the outputs that matter.
 
 ## Natural Language Iteration
 
@@ -98,6 +94,7 @@ books/
 └── my-book/
     ├── project.yaml           # Metadata
     ├── premise.md             # Book premise
+    ├── treatment-approach.md  # Treatment planning (auto-generated)
     ├── treatment.md           # Detailed treatment
     ├── structure-plan.md      # Scene/chapter plan
     ├── summaries.md           # Prose summaries
