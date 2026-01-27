@@ -128,7 +128,7 @@ chapter-plan.md (self-contained for that chapter)
 prose
 ```
 
-**What each stage reads:**
+**What each stage reads (novels):**
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
@@ -136,6 +136,8 @@ prose
 | structure-plan | treatment only | premise |
 | chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
 | prose | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
+
+**For short stories/novelettes:** Same principle, but simpler — story-plan reads structure-plan, prose reads story-plan only.
 
 **Why this matters for iteration:** If you iterate on treatment and change the ending, structure-plan only reads treatment—it sees the updated version. Premise becomes "historical" (the seed that started things), not the contract. No conflicts between stages.
 

@@ -49,12 +49,16 @@ AgenticAuthor/
 
 Each stage's output contains everything the next stage needs. Read only one step back, never two.
 
+**For novels:**
+
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
 | treatment | premise + taxonomies | — |
 | structure-plan | treatment only | premise |
 | chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
 | prose | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
+
+**For short stories/novelettes:** Same principle, but simpler — story-plan reads structure-plan, prose reads story-plan only.
 
 **Why:** This prevents conflicts when iterating. If you change treatment, structure-plan sees the update automatically. Premise becomes "historical" (the seed), not the contract.
 

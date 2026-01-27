@@ -377,12 +377,17 @@ Generate the actual story prose.
 - `books/{project}/chapter-plans/` - All previous chapter plans (for continuity)
 - Do NOT read premise.md or treatment.md — structure-plan is the authoritative source
 
-**Context for prose generation:**
+**Context for prose generation (novels):**
 - `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The current chapter's plan
 - `books/{project}/summaries.md` - For continuity reference
 - All previously generated chapters in `books/{project}/chapters/`
 - `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is "Commercial"
 - Do NOT read premise.md, treatment.md, or structure-plan.md — the chapter-plan contains everything needed
+
+**Context for prose generation (short stories/novelettes):**
+- `books/{project}/short-story-plan.md` - The story plan
+- `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is "Commercial"
+- Do NOT read premise.md, treatment.md, or structure-plan.md — the story-plan contains everything needed
 
 ---
 
@@ -912,12 +917,17 @@ cd books && git add {project}/short-story-plan.md {project}/short-story.md {proj
 
 **Using summaries and plans during generation:**
 
-When generating chapter N, read:
+**For novels** — when generating chapter N, read:
 - The chapter-plan for chapter N (contains style notes, scene breakdown)
 - `summaries.md` — for continuity reference
 - All previous chapters — authoritative detail for what happened
 
 Do NOT read premise.md, treatment.md, structure-plan.md, or other chapter-plans during prose generation. The current chapter-plan is self-contained.
+
+**For short stories/novelettes** — when generating prose, read:
+- The short-story-plan.md (contains style notes, scene breakdown)
+
+Do NOT read premise.md, treatment.md, or structure-plan.md. The story-plan is self-contained.
 
 ---
 
@@ -925,12 +935,16 @@ Do NOT read premise.md, treatment.md, structure-plan.md, or other chapter-plans 
 
 **Self-contained stages principle:** Each stage reads only the immediately prior stage. This prevents conflicts when earlier stages are iterated.
 
+**For novels:**
+
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
 | treatment | premise + taxonomies | — |
 | structure-plan | treatment only | premise |
 | chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
 | prose | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
+
+**For short stories/novelettes:** Same principle, but simpler — story-plan reads structure-plan, prose reads story-plan only.
 
 **Why this matters:** If you iterate on treatment (changing the ending, for example), structure-plan only reads treatment—it sees the updated version automatically. No conflicts between stages.
 
