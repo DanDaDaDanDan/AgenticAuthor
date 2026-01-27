@@ -915,10 +915,9 @@ cd books && git add {project}/short-story-plan.md {project}/short-story.md {proj
 When generating chapter N, read:
 - The chapter-plan for chapter N (contains style notes, scene breakdown)
 - `summaries.md` — for continuity reference
-- `chapter-plans/` — previous chapter plans (for continuity)
 - All previous chapters — authoritative detail for what happened
 
-Do NOT read premise.md, treatment.md, or structure-plan.md during prose generation. The chapter-plan is self-contained.
+Do NOT read premise.md, treatment.md, structure-plan.md, or other chapter-plans during prose generation. The current chapter-plan is self-contained.
 
 ---
 

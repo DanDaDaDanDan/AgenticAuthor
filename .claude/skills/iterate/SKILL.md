@@ -101,7 +101,7 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - Do NOT read premise.md or treatment.md
 
 **For prose iteration:**
-- `books/{project}/chapter-plans/` - Relevant chapter plans (contain style notes)
+- `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised (contains style notes)
 - `books/{project}/summaries.md` (if exists) - For continuity
 - For novels: all chapters from `books/{project}/chapters/`
 - For short stories: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
