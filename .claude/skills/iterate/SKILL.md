@@ -92,20 +92,28 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/structure-plan.md` - Current plan (already contains Story Configuration + Characters)
 - Do NOT read premise.md or treatment.md — structure-plan is self-contained
 
-**For chapter plan iteration:**
+**For chapter plan iteration (novels):**
 - `books/{project}/structure-plan.md` - For Story Configuration and character reference
 - `books/{project}/summaries.md` (if exists) - For continuity
 - Previous chapter plans from `books/{project}/chapter-plans/`
 - The specific chapter plan being revised
-- For short stories/novelettes: `books/{project}/short-story-plan.md`
 - Do NOT read premise.md or treatment.md
 
-**For prose iteration:**
-- `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised (contains style notes)
+**For story plan iteration (short stories/novelettes):**
+- `books/{project}/structure-plan.md` - For Story Configuration and character reference
+- `books/{project}/short-story-plan.md` - The plan being revised
+- Do NOT read premise.md or treatment.md
+
+**For prose iteration (novels):**
+- `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
 - `books/{project}/summaries.md` (if exists) - For continuity
-- For novels: all chapters from `books/{project}/chapters/`
-- For short stories/novelettes: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
-- The specific content being revised
+- All chapters from `books/{project}/chapters/`
+- `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is Commercial
+- Do NOT read premise.md, treatment.md, or structure-plan.md
+
+**For prose iteration (short stories/novelettes):**
+- `books/{project}/short-story-plan.md` - The story plan
+- `books/{project}/short-story.md` - The story being revised
 - `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is Commercial
 - Do NOT read premise.md, treatment.md, or structure-plan.md
 
