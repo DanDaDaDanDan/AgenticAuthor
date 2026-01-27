@@ -234,7 +234,13 @@ created: 2025-01-25
 **Setting:** {location/time}
 **Word count target:** {estimate}
 
+**Treatment reference:** {which act/scenes from treatment this covers}
+
 **Summary:** {what happens}
+
+**Scene breakdown:**
+1. {Scene 1 - brief description}
+2. {Scene 2 - brief description}
 
 **Chapter goals:**
 - {plot advancement}
@@ -336,12 +342,14 @@ External generation plan created before each chapter's prose. Saved for review, 
 - {Open threads and their status}
 - {Character emotional states entering this chapter}
 - {Key established details}
+- Promises to readers: {things set up that need payoff}
 
 ## Character States
 ### {POV Character}
 - Emotional state: {current mental/emotional state}
 - Goal this chapter: {what they want}
 - Internal conflict: {tension}
+- Voice notes: {how their mental state affects prose voice}
 
 ## Scene-by-Scene Breakdown
 ### Scene 1: {Description}
@@ -354,6 +362,11 @@ External generation plan created before each chapter's prose. Saved for review, 
 - Pacing: {fast/slow/mixed}
 - Tone: {emotional quality}
 - Dialogue vs narration: {balance}
+- Sensory focus: {what senses to emphasize}
+
+## Potential Pitfalls
+- {Thing to avoid or be careful about}
+- {Continuity risk}
 ```
 
 ### short-story-plan.md
@@ -373,6 +386,7 @@ External generation plan for short stories. Similar to chapter plans but covers 
 - Starting emotional state: {where they begin}
 - Goal: {what they want}
 - Internal conflict: {tension}
+- Voice notes: {how to render their perspective}
 
 ## Scene-by-Scene Breakdown
 ### Scene 1: {Description}
@@ -385,6 +399,11 @@ External generation plan for short stories. Similar to chapter plans but covers 
 - Pacing: {rhythm}
 - Tone: {quality}
 - Dialogue vs narration: {balance}
+- Sensory focus: {what senses to emphasize}
+
+## Potential Pitfalls
+- {Thing to avoid}
+- {Risk to watch for}
 ```
 
 ## Taxonomy System

@@ -10,7 +10,7 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 - **Natural Language Iteration**: Give feedback in plain English to refine your content
 - **Git-Backed Version Control**: Every change is automatically committed
 - **Quality-First Approach**: No artificial word count pressure
-- **Style Cards**: Define and maintain consistent prose style across your book
+- **Per-Project Prose Styles**: Six style options selected during premise generation
 - **Taxonomies**: 14 taxonomy files (base, 12 genre-specific, and style) guide story development
 
 ## Prerequisites
@@ -73,7 +73,7 @@ A chapter-by-chapter breakdown (novels) or scene-by-scene plan (short stories) w
 An external generation plan for each chapter (or the story), analyzing continuity, character states, and style before writing.
 
 ### 5. Prose Generation
-Writes the actual prose following the style card guidelines. For novels, generates chapter-by-chapter. For short stories, generates a single short-story.md file.
+Writes the actual prose following the style selected in premise.md. For novels, generates chapter-by-chapter. For short stories, generates a single short-story.md file.
 
 ## Natural Language Iteration
 
