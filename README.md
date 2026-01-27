@@ -6,7 +6,7 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 
 ## Features
 
-- **Structured Generation Pipeline**: premise → treatment → structure plan → prose
+- **Structured Generation Pipeline**: premise → treatment → structure plan → generation plan → prose
 - **Natural Language Iteration**: Give feedback in plain English to refine your content
 - **Git-Backed Version Control**: Every change is automatically committed
 - **Quality-First Approach**: No artificial word count pressure

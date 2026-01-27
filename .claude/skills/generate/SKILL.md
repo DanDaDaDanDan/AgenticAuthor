@@ -752,7 +752,7 @@ After generating each chapter (or the complete story for short stories), immedia
 
 3. Git commit both files together:
 ```bash
-cd books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
+mkdir -p books/{project}/chapters && cd books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
 ```
 
 **For short stories — after short-story.md:**

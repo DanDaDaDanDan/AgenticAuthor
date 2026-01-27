@@ -36,12 +36,12 @@ AgenticAuthor/
 │   └── backmatter-sloane-grey.md
 ├── .claude/
 │   └── skills/               # Claude Code skill definitions
-│       ├── new-book.md
-│       ├── generate.md
-│       ├── iterate.md
-│       ├── review.md
-│       ├── status.md
-│       └── export.md
+│       ├── new-book/SKILL.md
+│       ├── generate/SKILL.md
+│       ├── iterate/SKILL.md
+│       ├── review/SKILL.md
+│       ├── status/SKILL.md
+│       └── export/SKILL.md
 └── books/                    # Book projects (separate git repo)
     └── .git/
 ```
@@ -72,16 +72,16 @@ books/{project}/
 
 ## Skills
 
-Skills are markdown files in `.claude/skills/` that define operations:
+Skills are defined in `.claude/skills/{skill}/SKILL.md`:
 
-| Skill | File | Purpose |
-|-------|------|---------|
-| `/new-book` | new-book.md | Create a new book project |
-| `/generate` | generate.md | Generate premise, treatment, plan, or prose |
-| `/iterate` | iterate.md | Refine content with feedback |
-| `/review` | review.md | Analyze content against quality standards |
-| `/status` | status.md | Show project progress |
-| `/export` | export.md | Export book to single file |
+| Skill | Directory | Purpose |
+|-------|-----------|---------|
+| `/new-book` | new-book/ | Create a new book project |
+| `/generate` | generate/ | Generate premise, treatment, plan, or prose |
+| `/iterate` | iterate/ | Refine content with feedback |
+| `/review` | review/ | Analyze content against quality standards |
+| `/status` | status/ | Show project progress |
+| `/export` | export/ | Export book to single file |
 
 ## Generation Flow
 
@@ -438,9 +438,10 @@ The selected style is recorded in `premise.md` under "Prose Style" and guides al
 
 ### Adding a New Skill
 
-1. Create `.claude/skills/your-skill.md`
-2. Define the skill's purpose, arguments, and instructions
-3. Document in this file and CLAUDE.md
+1. Create `.claude/skills/your-skill/SKILL.md`
+2. Add YAML frontmatter with name, description, and argument-hint
+3. Define the skill's purpose, arguments, and instructions
+4. Document in this file and CLAUDE.md
 
 ### Adding a New Taxonomy
 
