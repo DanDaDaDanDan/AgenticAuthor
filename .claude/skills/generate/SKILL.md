@@ -649,6 +649,16 @@ Before writing prose, generate an external plan document. This is saved to a fil
 - **Dialogue vs narration:** {balance for this chapter}
 - **Sensory focus:** {what senses to emphasize}
 
+## Length Strategy
+
+Think through how this chapter will achieve its target word count. Consider:
+- How do the scenes in this chapter relate to the target length? Is there enough happening, or will moments need deeper development?
+- Which moments in this chapter deserve room to breathe? Where should the prose linger?
+- What aspects of this chapter naturally invite expansion — character interiority, dialogue exchanges, setting details, tension building?
+- Where might you be tempted to rush or summarize, and why should you resist that?
+
+{Write 2-4 sentences of genuine analysis about how this specific chapter will achieve its length target.}
+
 ## Potential Pitfalls
 
 - {Thing to avoid or be careful about}
@@ -694,6 +704,16 @@ Before writing prose, generate an external plan document. This is saved to a fil
 - **Tone:** {emotional quality}
 - **Dialogue vs narration:** {balance}
 - **Sensory focus:** {what senses to emphasize}
+
+## Length Strategy
+
+Think through how this story will achieve its target word count. Consider:
+- How does the scene count relate to the target length? Is there enough story to fill the space, or will scenes need to be developed more deeply?
+- Which moments in this story deserve room to breathe? Where should the prose linger rather than move quickly?
+- What aspects of this particular story naturally invite expansion — interiority, dialogue, sensory detail, tension, atmosphere?
+- Where might you be tempted to rush or summarize, and why should you resist that?
+
+{Write 2-4 sentences of genuine analysis about how this specific story will achieve its length target. This is not a formula — think about what this story needs.}
 
 ## Potential Pitfalls
 

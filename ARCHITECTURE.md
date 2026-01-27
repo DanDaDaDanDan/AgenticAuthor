@@ -413,6 +413,9 @@ External generation plan created before each chapter's prose. Saved for review, 
 - Dialogue vs narration: {balance}
 - Sensory focus: {what senses to emphasize}
 
+## Length Strategy
+{2-4 sentences analyzing how this chapter will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
+
 ## Potential Pitfalls
 - {Thing to avoid or be careful about}
 - {Continuity risk}
@@ -449,6 +452,9 @@ External generation plan for short stories. Similar to chapter plans but covers 
 - Tone: {quality}
 - Dialogue vs narration: {balance}
 - Sensory focus: {what senses to emphasize}
+
+## Length Strategy
+{2-4 sentences analyzing how this story will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
 
 ## Potential Pitfalls
 - {Thing to avoid}
