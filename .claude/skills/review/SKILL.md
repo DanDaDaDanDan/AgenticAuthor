@@ -33,6 +33,8 @@ If `target` not provided, ask the user:
 
 Read `books/{project}/project.yaml` to get the genre.
 
+**Note:** Unlike generation (which uses the self-contained model), review intentionally reads multiple stages to check alignment and consistency between them.
+
 **For premise review:**
 - `books/{project}/premise.md`
 - `AgenticAuthor/taxonomies/base-taxonomy.json`
@@ -173,7 +175,7 @@ For novels, review specific chapter plans. For short stories, review the story p
 
 ## Style Notes Assessment
 - **Appropriate for content:** {Pacing/tone fit?}
-- **Consistent with premise style:** {Matches selected prose approach?}
+- **Consistent with story style:** {Matches the style in structure-plan's Story Configuration?}
 
 ## Suggestions
 1. {Specific improvement suggestion}

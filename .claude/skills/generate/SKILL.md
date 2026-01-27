@@ -118,7 +118,7 @@ Generate the core concept and story foundation.
 ## Taxonomy Selections
 
 - **Subgenre:** {Selected from taxonomy}
-- **Length:** {novel/short-story} ({estimated word count})
+- **Length:** {novel/novelette/short-story} ({estimated word count})
 - **Target Audience:** {e.g., Adult, Young Adult}
 - **Content Rating:** {from base-taxonomy}
 - **Tags:** {2-3 relevant tags from taxonomy}
@@ -410,12 +410,12 @@ Check if `books/{project}/structure-plan.md` exists. If not, generate it before 
    > 3. Long and immersive (4,500-6,000+ words) - deep scenes
    > 4. Variable - mix based on content
 
-3. **POV structure:** (if not already clear from premise)
+3. **POV structure:** (if not already clear from treatment's Story Configuration)
    > How should POV be handled?
    > 1. Single POV throughout
    > 2. Multiple POV - alternating chapters
    > 3. Multiple POV - within chapters
-   > 4. Already specified in premise
+   > 4. Already specified in treatment
 
 #### For Short Stories — ask clarifying questions:
 
@@ -624,7 +624,7 @@ The system continues until the book is finished.
 
 ### Generation instructions
 
-**Use the premise's Prose Style section as your primary guide.** The style selections there (approach, pacing, dialogue density, POV, custom notes) define how this story should be written.
+**Use the chapter-plan's Style Notes as your primary guide.** The style configuration flows from premise → treatment → structure-plan → chapter-plan. The chapter-plan's Style Notes section defines how this chapter should be written.
 
 **Style approach meanings:**
 - **Commercial** - Clear, readable, efficient. Reference `misc/prose-style-card.md` for detailed guidance.
@@ -791,12 +791,12 @@ cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story p
 
 After the plan is approved, generate prose that:
 - Follows the chapter plan's scene breakdown
-- Matches the premise's style approach and pacing
+- Matches the chapter plan's Style Notes (pacing, tone, dialogue balance)
 - Respects dialogue density preference (High/Moderate/Low)
 - Maintains POV discipline as specified
-- Honors any custom style notes from the user
+- Honors any custom style notes
 - Maintains consistency with previous chapters
-- Advances the plot according to the structure plan
+- Advances the plot according to the chapter plan's goals
 
 The chapter plan guides generation but prose can deviate if better ideas emerge — note significant deviations.
 

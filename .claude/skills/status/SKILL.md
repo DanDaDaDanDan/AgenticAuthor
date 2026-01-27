@@ -61,7 +61,7 @@ Output a formatted status report:
 📚 Project: {title}
    Author: {author}
    Genre: {genre}
-   Type: {novel/short-story}
+   Type: {novel/novelette/short-story}
    Created: {date}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

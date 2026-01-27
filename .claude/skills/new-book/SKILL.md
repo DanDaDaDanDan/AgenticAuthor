@@ -38,9 +38,10 @@ Then ask:
   11. Young Adult
   12. Other (use generic taxonomy)
 
-- Is this a short story or a novel?
-  1. Short story (single file, ~1,500-15,000 words) - generates `short-story.md`
-  2. Novel (multiple chapters, ~40,000-120,000 words) - generates `chapters/` directory
+- What length is this project?
+  1. Short story (single file, ~1,500-7,500 words) - generates `short-story.md`
+  2. Novelette (single file, ~7,500-17,500 words) - generates `short-story.md`
+  3. Novel (multiple chapters, ~40,000-120,000 words) - generates `chapters/` directory
 
 - What is the working title? (Can be different from project name)
 - Who is the author name to use?
@@ -73,7 +74,7 @@ name: {book-name}
 title: {working-title}
 author: {author-name}
 genre: {genre-key}  # e.g., fantasy, science-fiction, mystery-thriller
-length: novel  # or: short-story
+length: novel  # or: novelette, short-story
 created: {today's date in YYYY-MM-DD format}
 ```
 

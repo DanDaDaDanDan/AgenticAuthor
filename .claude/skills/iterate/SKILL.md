@@ -222,7 +222,7 @@ Because each stage only reads the immediately prior stage, iteration automatical
 - If structure-plan already exists: inform user the ending/arc changed and they may want to regenerate structure-plan
 - Premise becomes "historical" — it's the seed, not the contract
 
-**Structure plan changes → May require:
+**Structure plan changes → May require:**
 - Chapter plan revisions for affected chapters
 - Prose revision for affected chapters
 
