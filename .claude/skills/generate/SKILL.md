@@ -371,10 +371,14 @@ Generate the actual story prose.
 - `books/{project}/treatment.md` - Full treatment (includes Story Configuration)
 - Do NOT read premise.md — treatment is the authoritative source
 
-**Context for chapter-plan generation:**
+**Context for chapter-plan generation (novels):**
 - `books/{project}/structure-plan.md` - Full structure plan (includes style config + characters)
 - `books/{project}/summaries.md` - If exists, for continuity reference
 - `books/{project}/chapter-plans/` - All previous chapter plans (for continuity)
+- Do NOT read premise.md or treatment.md — structure-plan is the authoritative source
+
+**Context for story-plan generation (short stories/novelettes):**
+- `books/{project}/structure-plan.md` - Full structure plan (includes style config + characters)
 - Do NOT read premise.md or treatment.md — structure-plan is the authoritative source
 
 **Context for prose generation (novels):**
