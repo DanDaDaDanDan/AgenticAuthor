@@ -5,7 +5,7 @@ AgenticAuthor uses Claude Code skills to generate books. There is no separate ap
 ## Design Philosophy
 
 - **Context is King:** Provide complete context from all previous stages. Quality over token thrift.
-- **Quality First:** Follow the prose style card strictly. Never generate placeholder content.
+- **Quality First:** Follow the prose style selected in premise.md. Never generate placeholder content.
 - **Git Everything:** Every operation commits to git for version history and iteration.
 - **Natural Language Iteration:** Users refine content with plain English feedback.
 

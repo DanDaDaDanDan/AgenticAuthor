@@ -127,15 +127,18 @@ The `taxonomies/` directory contains 14 JSON files that guide story development:
 
 Genre and style selections are recorded in the project's `premise.md` and guide all subsequent generation.
 
-## Style Card
+## Prose Styles
 
-The prose style card (`misc/prose-style-card.md`) defines writing standards:
+Style is selected per-project during premise generation. Six approaches are available:
 
-- Readability: Flesch Reading Ease 60-80
-- Sentence length: 12-16 words average
-- Dialogue ratio: 35-50% in character scenes
-- POV: Single POV per scene
-- Pacing: POISE structure (Purpose, Obstacle, Interaction, Stakes, End-turn)
+- **Commercial** - Clear, readable, mass-market appeal (see `misc/prose-style-card.md` for detailed guidance)
+- **Literary** - Denser prose, rewards close reading, thematic depth
+- **Minimalist** - Spare, precise, subtext-heavy
+- **Pulp** - Fast, punchy, momentum-driven
+- **Lyrical** - Poetic, atmospheric, sensory-rich
+- **Conversational** - Strong narrative voice, personality-driven
+
+The selected style is recorded in `premise.md` and guides all prose generation for that project.
 
 ## Documentation
 
