@@ -94,7 +94,7 @@ Three user commands with implicit planning steps:
 | `/generate treatment` | treatment-approach.md | treatment.md |
 | `/generate prose` | structure-plan.md, chapter/story plans | chapters/ or short-story.md |
 
-### Short Stories (≤15,000 words)
+### Short Stories & Novelettes (single file)
 
 ```
 /generate premise    → premise.md
@@ -102,7 +102,7 @@ Three user commands with implicit planning steps:
 /generate prose      → [structure-plan.md] → [short-story-plan.md] → short-story.md
 ```
 
-### Novels (>15,000 words)
+### Novels (chapters)
 
 ```
 /generate premise    → premise.md
@@ -194,7 +194,7 @@ created: 2025-01-25
 ## Taxonomy Selections
 
 - **Subgenre:** {from taxonomy}
-- **Length:** {word count}
+- **Length:** {novel/novelette/short-story} ({estimated word count})
 - **Target Audience:** {demographic}
 ```
 

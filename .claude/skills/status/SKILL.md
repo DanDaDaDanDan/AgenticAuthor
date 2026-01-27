@@ -42,8 +42,8 @@ books/{project}/
 ├── chapters/            (novels only)
 │   ├── chapter-01.md    ✓/✗
 │   └── ...
-├── short-story-plan.md  ✓/✗ (short stories only)
-└── short-story.md       ✓/✗ (short stories only)
+├── short-story-plan.md  ✓/✗ (short stories/novelettes only)
+└── short-story.md       ✓/✗ (short stories/novelettes only)
 ```
 
 ### Step 3: Calculate Statistics

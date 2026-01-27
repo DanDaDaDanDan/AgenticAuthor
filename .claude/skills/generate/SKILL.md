@@ -417,14 +417,14 @@ Check if `books/{project}/structure-plan.md` exists. If not, generate it before 
    > 3. Multiple POV - within chapters
    > 4. Already specified in treatment
 
-#### For Short Stories — ask clarifying questions:
+#### For Short Stories/Novelettes — ask clarifying questions:
 
 1. **Target length:**
    > How long should this story be?
    > 1. Flash fiction (under 1,500 words)
    > 2. Short-short (1,500-3,000 words)
    > 3. Standard short (3,000-7,500 words)
-   > 4. Long short story (7,500-15,000 words)
+   > 4. Long short story / Novelette (7,500-17,500 words)
    > 5. Let me decide based on the treatment
 
 2. **Scene structure:**

@@ -31,7 +31,7 @@ Check that all required files exist in `books/{project}/`:
 - `premise.md`
 - `treatment.md`
 - For novels: `chapters/chapter-*.md` files
-- For short stories: `short-story.md`
+- For short stories/novelettes: `short-story.md`
 
 If prose is incomplete, warn the user:
 
@@ -159,9 +159,9 @@ If yes:
 cd books && git add {project}/export/{project}.md && git commit -m "Add: Export {project} ({format} format)"
 ```
 
-## Short Story Export
+## Short Story/Novelette Export
 
-For short stories, the export is simpler since there's only one prose file:
+For short stories and novelettes, the export is simpler since there's only one prose file:
 
 **MD Format:**
 ```markdown
