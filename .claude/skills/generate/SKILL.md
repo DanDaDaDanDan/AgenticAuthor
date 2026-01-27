@@ -170,6 +170,68 @@ Use the answers to guide the treatment. If the user says "let me decide," make a
 
 ---
 
+### Step 1: Generate Treatment Approach (REQUIRED)
+
+Before writing the full treatment, generate a lightweight planning document. This analyzes the premise systematically and outlines the intended approach.
+
+**Output file:** `books/{project}/treatment-approach.md`
+
+```markdown
+# Treatment Approach
+
+## Premise Analysis
+
+**Core conflict:** {How the central conflict will drive the story structure}
+**Protagonist arc:** {Starting state → transformation → ending state}
+**Antagonist role:** {How the opposing force will be deployed across the narrative}
+**Stakes escalation:** {How stakes will build throughout the story}
+
+## Theme Integration
+
+- **{Primary theme}:** {How it will manifest in plot/character choices}
+- **{Secondary theme}:** {Where it will appear}
+
+## Proposed Structure
+
+**Structure type:** {Three-act / Four-act / Five-act / Episodic / Other}
+**Reasoning:** {Why this structure fits the premise}
+
+**Act overview:**
+- Act I: {One sentence on setup approach}
+- Act II: {One sentence on confrontation/complication approach}
+- Act III: {One sentence on resolution approach}
+{Add acts if using four/five-act structure}
+
+## Subplots
+
+- **{Subplot 1}:** {Brief description and connection to main plot}
+- **{Subplot 2}:** {Brief description}
+
+## Potential Challenges
+
+- {Any gaps in the premise that need resolution}
+- {Structural tensions to navigate}
+- {Pacing considerations}
+
+## Style Considerations
+
+**Prose approach impact:** {How the selected style affects treatment choices}
+**Pacing implications:** {How pacing preference shapes scene density}
+```
+
+**After generating:**
+```bash
+cd books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"
+```
+
+**Present the approach to the user for review.** Wait for approval or iteration requests before proceeding to the full treatment.
+
+---
+
+### Step 2: Generate Full Treatment
+
+After the approach is approved, generate the treatment following the approach document.
+
 ### For Novels (length: novel)
 
 Generate a detailed treatment using the structure the user selected (or chose based on premise):
@@ -268,6 +330,8 @@ Generate a simplified treatment:
 ```bash
 cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
 ```
+
+**Note:** The treatment-approach.md file remains as a record of the planning rationale. It can be referenced during iteration or if the treatment needs regeneration.
 
 ---
 

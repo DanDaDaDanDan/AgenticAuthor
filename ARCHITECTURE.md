@@ -54,6 +54,7 @@ Each book project lives in `books/{project}/`:
 books/{project}/
 ├── project.yaml         # Metadata (name, title, author, genre, length)
 ├── premise.md           # Core concept and story foundation
+├── treatment-approach.md # Planning rationale for treatment
 ├── treatment.md         # Story outline with act structure
 ├── structure-plan.md    # Scene/chapter plan (all project types)
 ├── summaries.md         # Prose summaries (generated after prose)
@@ -88,7 +89,7 @@ Skills are defined in `.claude/skills/{skill}/SKILL.md`:
 ### Short Stories (≤15,000 words)
 
 ```
-premise.md → treatment.md → structure-plan.md → short-story-plan.md → short-story.md
+premise.md → treatment-approach.md → treatment.md → structure-plan.md → short-story-plan.md → short-story.md
 ```
 
 - Scene-by-scene structure plan
@@ -99,7 +100,7 @@ premise.md → treatment.md → structure-plan.md → short-story-plan.md → sh
 ### Novels (>15,000 words)
 
 ```
-premise.md → treatment.md → structure-plan.md → [chapter-plan.md → chapter.md] × N
+premise.md → treatment-approach.md → treatment.md → structure-plan.md → [chapter-plan.md → chapter.md] × N
 ```
 
 - Chapter-by-chapter structure plan
@@ -116,7 +117,9 @@ Each stage receives full context from prior stages:
 ```
 premise.md (includes prose style selections)
     ↓
-treatment.md + premise.md
+treatment-approach.md + premise.md
+    ↓
+treatment.md + treatment-approach.md + premise.md
     ↓
 structure-plan.md + treatment.md + premise.md
     ↓
@@ -184,6 +187,52 @@ created: 2025-01-25
 - **Subgenre:** {from taxonomy}
 - **Length:** {word count}
 - **Target Audience:** {demographic}
+```
+
+### treatment-approach.md
+
+Lightweight planning document generated before the full treatment. Analyzes the premise and outlines the intended approach.
+
+```markdown
+# Treatment Approach
+
+## Premise Analysis
+
+**Core conflict:** {How the central conflict will drive the story structure}
+**Protagonist arc:** {Starting state → transformation → ending state}
+**Antagonist role:** {How the opposing force will be deployed across the narrative}
+**Stakes escalation:** {How stakes will build throughout the story}
+
+## Theme Integration
+
+- **{Primary theme}:** {How it will manifest in plot/character choices}
+- **{Secondary theme}:** {Where it will appear}
+
+## Proposed Structure
+
+**Structure type:** {Three-act / Four-act / Five-act / Episodic / Other}
+**Reasoning:** {Why this structure fits the premise}
+
+**Act overview:**
+- Act I: {One sentence on setup approach}
+- Act II: {One sentence on confrontation/complication approach}
+- Act III: {One sentence on resolution approach}
+
+## Subplots
+
+- **{Subplot 1}:** {Brief description and connection to main plot}
+- **{Subplot 2}:** {Brief description}
+
+## Potential Challenges
+
+- {Any gaps in the premise that need resolution}
+- {Structural tensions to navigate}
+- {Pacing considerations}
+
+## Style Considerations
+
+**Prose approach impact:** {How the selected style affects treatment choices}
+**Pacing implications:** {How pacing preference shapes scene density}
 ```
 
 ### treatment.md
