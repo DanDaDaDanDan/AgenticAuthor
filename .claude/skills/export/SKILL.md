@@ -1,4 +1,8 @@
-# Skill: /export
+---
+name: export
+description: Export the book to a single combined file.
+argument-hint: "[format] [output-path]"
+---
 
 Export the book to a single combined file.
 

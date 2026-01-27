@@ -1,4 +1,8 @@
-# Skill: /new-book
+---
+name: new-book
+description: Create a new book project. Use when starting a new novel or short story.
+argument-hint: "[book-name]"
+---
 
 Create a new book project with metadata.
 

@@ -1,4 +1,8 @@
-# Skill: /iterate
+---
+name: iterate
+description: Refine content with natural language feedback.
+argument-hint: "[target] [feedback]"
+---
 
 Refine content with feedback, maintaining consistency and quality.
 

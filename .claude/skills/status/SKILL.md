@@ -1,4 +1,8 @@
-# Skill: /status
+---
+name: status
+description: Show project progress and statistics.
+argument-hint: "[project-name]"
+---
 
 Show the current project progress and statistics.
 
