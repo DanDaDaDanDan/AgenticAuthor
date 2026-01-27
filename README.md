@@ -142,7 +142,7 @@ The selected style is recorded in `premise.md` and guides all prose generation f
 
 ## Core Principles
 
-1. **Context is King** - Full context from prior stages, quality over token savings
+1. **Self-Contained Stages** - Each stage's output contains everything the next stage needs
 2. **Quality First** - No artificial constraints on generation
 3. **Git Everything** - Every operation commits for version history
 4. **Natural Language** - Iterate using plain English feedback
