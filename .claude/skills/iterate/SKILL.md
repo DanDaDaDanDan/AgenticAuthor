@@ -109,7 +109,7 @@ Generate the revised content:
 1. **Apply the confirmed changes** - Make the specific changes discussed
 2. **Preserve everything else** - Don't change elements not mentioned in feedback
 3. **Maintain consistency** - Ensure changes align with other project parts
-4. **Follow style card** - For prose, maintain style guidelines
+4. **Follow premise style** - For prose, maintain the style selected in premise.md
 
 **Prose iteration principles:**
 - Preserve the author's distinctive voice and style
@@ -175,7 +175,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Plot thread continuity
 - Established world details
 
-Use the style card as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it.
+Use the premise's style selections as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. (For Commercial style, `misc/prose-style-card.md` provides detailed reference.)
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building
