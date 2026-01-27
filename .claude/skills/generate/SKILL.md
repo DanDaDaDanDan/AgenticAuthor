@@ -512,9 +512,9 @@ cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate 
 
 ---
 
-### Step 2: Continuation Logic
+### Continuation Check
 
-Before generating, check what already exists:
+After structure-plan exists, check what prose already exists:
 
 1. **For novels:** List files in `books/{project}/chapters/` and `books/{project}/chapter-plans/`
 2. **For short stories:** Check if `books/{project}/short-story-plan.md` and `books/{project}/short-story.md` exist
@@ -567,7 +567,7 @@ Options:
 
 **For each chapter/story:**
 
-#### Step 3: Generate Chapter/Story Plan (REQUIRED)
+#### Step 2: Generate Chapter/Story Plan (REQUIRED)
 
 Before writing prose, generate an external plan document. This is saved to a file and can be reviewed/iterated before prose generation. Research shows explicit planning significantly improves long-form content quality.
 
@@ -718,7 +718,7 @@ cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story p
 
 ---
 
-#### Step 4: Generate Prose
+#### Step 3: Generate Prose
 
 After the plan is approved, generate prose that:
 - Follows the chapter plan's scene breakdown

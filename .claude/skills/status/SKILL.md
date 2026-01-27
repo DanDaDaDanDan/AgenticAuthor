@@ -185,8 +185,7 @@ Suggest next action based on current state:
 |--------------|---------------------|
 | No premise | `/generate premise` |
 | Premise only | `/generate treatment` |
-| Treatment, no structure plan | `/generate plan` |
-| Structure plan complete, no prose | `/generate prose` |
+| Treatment complete | `/generate prose` (creates structure plan automatically) |
 | Some chapters done (novels) | `/generate prose` to continue |
 | All complete | `/export` to create final document |
 | Recent iteration | Review changes, continue writing |

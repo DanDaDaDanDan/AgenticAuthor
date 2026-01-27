@@ -78,7 +78,7 @@ Skills are defined in `.claude/skills/{skill}/SKILL.md`:
 | Skill | Directory | Purpose |
 |-------|-----------|---------|
 | `/new-book` | new-book/ | Create a new book project |
-| `/generate` | generate/ | Generate premise, treatment, plan, or prose |
+| `/generate` | generate/ | Generate premise, treatment, or prose |
 | `/iterate` | iterate/ | Refine content with feedback |
 | `/review` | review/ | Analyze content against quality standards |
 | `/status` | status/ | Show project progress |
