@@ -33,8 +33,8 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
    ```
    /generate premise
    /generate treatment
-   /generate plan        # For novels only
-   /generate prose
+   /generate plan        # Structure plan (all project types)
+   /generate prose       # Includes chapter plan step
    ```
 
 4. **Iterate with natural language:**
@@ -66,11 +66,14 @@ The starting point - a high-level concept for your book including protagonist, a
 ### 2. Treatment
 Expands the premise into a detailed outline with character arcs and plot structure (Act I, II, III).
 
-### 3. Structure Plan (Novels only)
-A chapter-by-chapter breakdown with POV, settings, and goals for each chapter.
+### 3. Structure Plan
+A chapter-by-chapter breakdown (novels) or scene-by-scene plan (short stories) with POV, settings, and goals.
 
-### 4. Prose Generation
-Writes the actual prose following the style card guidelines. For novels, generates chapter-by-chapter. For short stories, generates a single story.md file.
+### 4. Chapter/Story Plan
+An external generation plan for each chapter (or the story), analyzing continuity, character states, and style before writing.
+
+### 5. Prose Generation
+Writes the actual prose following the style card guidelines. For novels, generates chapter-by-chapter. For short stories, generates a single short-story.md file.
 
 ## Natural Language Iteration
 
@@ -96,11 +99,16 @@ books/
     ├── project.yaml           # Metadata
     ├── premise.md             # Book premise
     ├── treatment.md           # Detailed treatment
-    ├── structure-plan.md      # Chapter plan (novels)
+    ├── structure-plan.md      # Scene/chapter plan
+    ├── summaries.md           # Prose summaries
+    ├── chapter-plans/         # Generation plans (novels)
+    │   ├── chapter-01-plan.md
+    │   └── ...
     ├── chapters/              # Prose chapters (novels)
     │   ├── chapter-01.md
     │   └── ...
-    └── story.md               # Complete story (short stories)
+    ├── short-story-plan.md    # Generation plan (short stories)
+    └── short-story.md         # Complete story (short stories)
 ```
 
 ## Taxonomies

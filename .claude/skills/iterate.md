@@ -10,7 +10,7 @@ Refine content with feedback, maintaining consistency and quality.
 
 ## Arguments
 
-- `target` (optional): What to iterate on - `premise`, `treatment`, `plan`, or `prose`
+- `target` (optional): What to iterate on - `premise`, `treatment`, `plan`, `chapter-plan`, or `prose`
 - `feedback` (optional): Natural language description of desired changes
 
 ## Instructions
@@ -21,8 +21,13 @@ If `target` not provided, ask the user:
 - What would you like to iterate on?
   1. Premise - refine the core concept
   2. Treatment - adjust the story outline
-  3. Plan - modify chapter structure (novels only)
-  4. Prose - revise generated chapters
+  3. Plan - modify structure plan (scene/chapter breakdown)
+  4. Chapter/story plan - adjust a generation plan (novels: specific chapter, short stories: story plan)
+  5. Prose - revise generated prose
+
+For chapter/story plan:
+- Novels: ask which chapter plan to revise
+- Short stories: there's only one plan (`short-story-plan.md`)
 
 For prose, also ask which chapter(s) to revise, or "all" for the entire story.
 
@@ -68,17 +73,29 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/premise.md` (full)
 - `books/{project}/treatment.md` - Current treatment
 
-**For plan iteration:**
+**For plan iteration (structure-plan.md):**
 - `books/{project}/premise.md` (full)
 - `books/{project}/treatment.md` (full)
 - `books/{project}/structure-plan.md` - Current plan
 
+**For chapter plan iteration:**
+- `books/{project}/premise.md` (full)
+- `books/{project}/treatment.md` (full)
+- `books/{project}/structure-plan.md` (full)
+- `books/{project}/summaries.md` (if exists)
+- Previous chapter plans from `books/{project}/chapter-plans/`
+- The specific chapter plan being revised
+- For short stories: `books/{project}/short-story-plan.md`
+
 **For prose iteration:**
 - `books/{project}/premise.md` (full, includes prose style selections)
 - `books/{project}/treatment.md` (full)
-- `books/{project}/structure-plan.md` (full, if novel)
-- All chapters from `books/{project}/chapters/` (full)
-- The specific chapter(s) being revised
+- `books/{project}/structure-plan.md` (full)
+- `books/{project}/summaries.md` (if exists)
+- For novels: all chapter plans from `books/{project}/chapter-plans/`
+- For novels: all chapters from `books/{project}/chapters/`
+- For short stories: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
+- The specific content being revised
 - `AgenticAuthor/misc/prose-style-card.md` - Optional reference if premise uses Commercial style
 
 ### Step 5: Apply Changes
@@ -133,11 +150,18 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Ensure changes cascade properly (if Act I changes, Act II/III may need adjustment)
 - Maintain character arc consistency
 
-### Plan Iteration
+### Plan Iteration (structure-plan.md)
 
-- Preserve chapter count unless explicitly asked to add/remove
-- Adjust pacing notes if chapter content changes significantly
+- Preserve chapter/scene count unless explicitly asked to add/remove
+- Adjust pacing notes if content changes significantly
 - Update continuity tracking table
+
+### Chapter Plan Iteration
+
+- Iterate on chapter plans **before** generating prose for that chapter
+- Adjust scene breakdowns, character states, or style notes as needed
+- If the chapter's prose already exists, note that prose may need regeneration
+- For short stories, iterate on `short-story-plan.md`
 
 ### Prose Iteration
 
@@ -184,11 +208,16 @@ When iteration on one stage affects others:
 - Prose revision for new themes/tone
 
 **Treatment changes → May require:**
-- Plan revision for chapter structure
+- Structure plan revision for chapter/scene breakdown
+- Chapter plan revisions for affected chapters
 - Prose revision for plot changes
 
-**Plan changes → May require:**
+**Structure plan changes → May require:**
+- Chapter plan revisions for affected chapters
 - Prose revision for affected chapters
+
+**Chapter plan changes → May require:**
+- Prose regeneration for that chapter (if prose exists)
 
 After completing the iteration, inform the user if downstream stages may need updating.
 

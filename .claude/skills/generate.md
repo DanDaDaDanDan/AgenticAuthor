@@ -269,9 +269,9 @@ cd books && git add {project}/treatment.md && git commit -m "Add: Generate treat
 
 ## Stage: plan
 
-Generate the chapter structure plan (novels only).
+Generate the structure plan. **Planning is required for ALL projects** — novels get chapter-by-chapter plans, short stories get scene-by-scene plans.
 
-**If project is a short story, skip this stage.**
+Research shows that explicit planning before prose generation significantly improves quality, even for short-form content (Gurung & Lapata, 2025).
 
 **Context to read:**
 - `books/{project}/premise.md` - Full premise
@@ -279,7 +279,11 @@ Generate the chapter structure plan (novels only).
 
 **Output file:** `books/{project}/structure-plan.md`
 
-### Before generating, ask clarifying questions:
+---
+
+### For Novels
+
+#### Before generating, ask clarifying questions:
 
 After reading the premise and treatment, ask:
 
@@ -306,9 +310,7 @@ After reading the premise and treatment, ask:
 
 Use answers to guide chapter count, length targets, and POV assignments.
 
----
-
-**Generation instructions:**
+#### Generation instructions (Novels):
 
 Generate a detailed chapter-by-chapter plan. Reference treatment scenes in chapter breakdowns.
 
@@ -367,7 +369,82 @@ Generate a detailed chapter-by-chapter plan. Reference treatment scenes in chapt
 | {Character arc} | Ch {X} | Ch {Y} |
 ```
 
-**After generation:**
+---
+
+### For Short Stories
+
+Short stories also require a structure plan, but in a lighter format focused on scenes rather than chapters.
+
+#### Before generating, ask clarifying questions:
+
+1. **Target length:**
+   > How long should this story be?
+   > 1. Flash fiction (under 1,500 words)
+   > 2. Short-short (1,500-3,000 words)
+   > 3. Standard short (3,000-7,500 words)
+   > 4. Long short story (7,500-15,000 words)
+   > 5. Let me decide based on the treatment
+
+2. **Scene structure:**
+   > How should the story flow?
+   > 1. Single continuous scene
+   > 2. 2-3 scenes with clear breaks
+   > 3. Multiple short scenes
+   > 4. Let me decide based on the treatment
+
+#### Generation instructions (Short Stories):
+
+Generate a scene-by-scene plan. Even short stories benefit from explicit planning.
+
+```markdown
+# Structure Plan
+
+## Overview
+
+- **Target word count:** {estimate}
+- **Number of scenes:** {count}
+- **POV:** {narrative perspective}
+- **Timespan:** {how much time the story covers}
+
+## Scene Breakdown
+
+### Scene 1: {Title/Description}
+
+**Setting:** {Where and when}
+**Word count target:** {estimate}
+
+**Purpose:** {What this scene accomplishes}
+
+**Beat-by-beat:**
+1. {Opening beat - how scene starts}
+2. {Development - what happens}
+3. {Turn/Hook - how scene ends or transitions}
+
+**Character state:** {Where the protagonist is emotionally at scene end}
+
+---
+
+### Scene 2: {Title/Description}
+
+{Repeat structure for each scene}
+
+---
+
+## Story Arc Mapping
+
+- **Opening hook:** Scene {X} — {how it grabs the reader}
+- **Complication:** Scene {X} — {where tension rises}
+- **Climax:** Scene {X} — {the peak moment}
+- **Resolution:** Scene {X} — {how it ends}
+
+## Continuity Notes
+
+{Brief notes on any details that must remain consistent across scenes}
+```
+
+---
+
+**After generation (all project types):**
 ```bash
 cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
 ```
@@ -381,35 +458,52 @@ Generate the actual story prose.
 **Context to read (ALL of these, in full):**
 - `books/{project}/premise.md` - Full premise (includes prose style selections)
 - `books/{project}/treatment.md` - Full treatment
-- `books/{project}/structure-plan.md` - Chapter plan (novels only)
-- All previously generated chapters in `books/{project}/chapters/` directory
+- `books/{project}/structure-plan.md` - Scene/chapter plan (required for all project types)
+- `books/{project}/summaries.md` - Chapter/scene summaries (if exists, for quick reference)
+- `books/{project}/chapter-plans/` - All previous chapter plans (novels)
+- All previously generated chapters in `books/{project}/chapters/` directory (novels)
 - `AgenticAuthor/misc/prose-style-card.md` - Optional detailed reference (only if premise uses "Commercial" style or you need specific guidance)
 
 ### Continuation Logic
 
 Before generating, check what already exists:
 
-1. **For novels:** List files in `books/{project}/chapters/`
-2. **For short stories:** Check if `books/{project}/story.md` exists
+1. **For novels:** List files in `books/{project}/chapters/` and `books/{project}/chapter-plans/`
+2. **For short stories:** Check if `books/{project}/short-story-plan.md` and `books/{project}/short-story.md` exist
 
-**If some chapters exist:**
+**If some chapters exist (novels):**
 ```
-Chapters 1-3 already exist.
+Chapters 1-3 already exist (with plans).
+Chapter 4 plan exists but no prose yet.
 
 Options:
-1. Generate chapter 4 (continue)
-2. Regenerate a specific chapter
-3. Regenerate all chapters
+1. Generate chapter 4 prose (plan exists)
+2. Generate chapter 5 (plan + prose)
+3. Regenerate a specific chapter
+4. Regenerate all chapters
 
 Which would you like?
 ```
 
-**If user specifies a chapter:** `/generate prose 5` → Generate chapter 5
+**If short story plan exists but no prose (short stories):**
+```
+Story plan exists. Ready to generate prose.
+
+Options:
+1. Generate prose from existing plan
+2. Regenerate plan first
+```
+
+**If user specifies a chapter:** `/generate prose 5` → Generate chapter 5 (plan first, then prose)
 
 ### Output files
 
-- Novels: `chapters/chapter-{NN}.md` (one per chapter)
-- Short stories: `story.md` (single file)
+- **Novels:**
+  - Plans: `chapter-plans/chapter-{NN}-plan.md` (one per chapter)
+  - Prose: `chapters/chapter-{NN}.md` (one per chapter)
+- **Short stories:**
+  - Plan: `short-story-plan.md`
+  - Prose: `short-story.md`
 
 ### Generation instructions
 
@@ -425,15 +519,149 @@ Which would you like?
 
 **For each chapter/story:**
 
-1. Review the full context (premise style selections, treatment, plan, previous chapters)
-2. Generate prose that:
-   - Matches the premise's style approach and pacing
-   - Respects dialogue density preference (High/Moderate/Low)
-   - Maintains POV discipline as specified
-   - Honors any custom style notes from the user
-   - Maintains consistency with previous chapters
-   - Advances the plot according to the plan
-3. Do NOT include chapter planning notes in the output - only the prose itself
+#### Step 1: Generate Chapter/Story Plan (REQUIRED)
+
+Before writing prose, generate an external plan document. This is saved to a file and can be reviewed/iterated before prose generation. Research shows explicit planning significantly improves long-form content quality.
+
+**Plan file location:**
+- Novels: `books/{project}/chapter-plans/chapter-{NN}-plan.md`
+- Short stories: `books/{project}/short-story-plan.md`
+
+**Plan format for NOVELS:**
+
+```markdown
+# Chapter {N} Plan: {Title}
+
+## Structure Plan Reference
+
+**From structure-plan.md:**
+- Treatment reference: {which act/scenes this covers}
+- Summary: {the planned summary}
+- Chapter goals: {from structure plan}
+- Ends with: {the planned hook/turn}
+
+## Continuity Check
+
+**Carrying forward from previous chapters:**
+- {Open thread 1 - status}
+- {Open thread 2 - status}
+- {Character emotional state entering this chapter}
+- {Key setting/world details established}
+
+**Promises to readers:** {things set up that need payoff}
+
+(For Chapter 1, note "First chapter - establishing baseline" for continuity)
+
+## Character States
+
+### {POV Character}
+- **Emotional state:** {where they are mentally/emotionally}
+- **Goal this chapter:** {what they want}
+- **Internal conflict:** {what's pulling them in different directions}
+- **Voice notes:** {how their mental state affects prose voice}
+
+### {Other Key Characters}
+- **{Name}:** {state and role this chapter}
+
+## Scene-by-Scene Breakdown
+
+### Scene 1: {Description}
+- **Purpose:** {why this scene exists}
+- **Conflict/Tension:** {what drives the scene}
+- **Key beats:** {1-3 specific moments}
+- **Ends with:** {transition to next scene}
+
+### Scene 2: {Description}
+{Repeat for each scene}
+
+## Style Notes
+
+- **Pacing:** {fast/slow/mixed for this chapter}
+- **Tone:** {emotional quality}
+- **Dialogue vs narration:** {balance for this chapter}
+- **Sensory focus:** {what senses to emphasize}
+
+## Potential Pitfalls
+
+- {Thing to avoid or be careful about}
+- {Continuity risk}
+```
+
+**Plan format for SHORT STORIES:**
+
+```markdown
+# Story Plan: {Title}
+
+## Structure Plan Reference
+
+**From structure-plan.md:**
+- Story arc: {the planned arc}
+- Scene count: {number of scenes}
+- Target word count: {estimate}
+
+## Character States
+
+### {Protagonist}
+- **Starting emotional state:** {where they begin}
+- **Goal:** {what they want}
+- **Internal conflict:** {tension driving them}
+- **Voice notes:** {how to render their perspective}
+
+### {Other Characters}
+- **{Name}:** {role and function}
+
+## Scene-by-Scene Breakdown
+
+### Scene 1: {Description}
+- **Purpose:** {why this scene exists}
+- **Conflict/Tension:** {what drives the scene}
+- **Key beats:** {1-3 specific moments}
+- **Ends with:** {transition or turn}
+
+{Repeat for each scene from structure-plan.md}
+
+## Style Notes
+
+- **Pacing:** {overall rhythm}
+- **Tone:** {emotional quality}
+- **Dialogue vs narration:** {balance}
+- **Sensory focus:** {what senses to emphasize}
+
+## Potential Pitfalls
+
+- {Thing to avoid}
+- {Risk to watch for}
+```
+
+**After generating plan:**
+
+For novels (create directory if first chapter):
+```bash
+mkdir -p books/{project}/chapter-plans
+cd books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"
+```
+
+For short stories:
+```bash
+cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"
+```
+
+**Present plan to user for review.** Wait for approval or iteration requests before proceeding to prose.
+
+---
+
+#### Step 2: Generate Prose
+
+After the plan is approved, generate prose that:
+- Follows the chapter plan's scene breakdown
+- Matches the premise's style approach and pacing
+- Respects dialogue density preference (High/Moderate/Low)
+- Maintains POV discipline as specified
+- Honors any custom style notes from the user
+- Maintains consistency with previous chapters
+- Advances the plot according to the structure plan
+
+The chapter plan guides generation but prose can deviate if better ideas emerge — note significant deviations.
 
 **Word count approach:**
 - Chapter targets in structure-plan are guidelines, not strict limits
@@ -453,7 +681,7 @@ Which would you like?
 {Continue prose...}
 ```
 
-**Short story format:**
+**Short story format** (saved to `short-story.md`):
 
 ```markdown
 # {Story Title}
@@ -476,17 +704,84 @@ After generating, consider these guidelines (not rigid requirements):
 
 If something feels wrong, revise. If deliberate choices deviate from guidelines, that's fine.
 
-### After generation
+### After generation: Chapter Summary (REQUIRED)
 
-**After each chapter (novels):**
-```bash
-cd books && git add {project}/chapters/chapter-{NN}.md && git commit -m "Add: Generate chapter {N} prose for {project}"
+After generating each chapter (or the complete story for short stories), immediately generate a summary and append it to `summaries.md`.
+
+**Purpose:** Summaries provide compressed context for later chapters. The paper "Learning to Reason for Long-Form Story Generation" (Gurung & Lapata, 2025) shows that having both full chapters AND compressed summaries improves generation quality.
+
+**For novels — after each chapter:**
+
+1. Generate a 2-4 sentence summary capturing:
+   - Key plot events
+   - Character developments/emotional shifts
+   - Any important reveals or changes
+   - How it connects to the overall arc
+
+2. For the **first chapter**, create `books/{project}/summaries.md` with header:
+
+```markdown
+# Chapter Summaries
+
+### Chapter 1: {Title}
+
+{2-4 sentence summary}
+
+**Key events:** {bullet list of 2-3 major events}
+**Character states:** {brief note on where main characters end emotionally}
+
+---
 ```
 
-**After story.md (short stories):**
-```bash
-cd books && git add {project}/story.md && git commit -m "Add: Generate prose for {project}"
+   For **subsequent chapters**, append to existing `summaries.md`:
+
+```markdown
+### Chapter {N}: {Title}
+
+{2-4 sentence summary}
+
+**Key events:** {bullet list of 2-3 major events}
+**Character states:** {brief note on where main characters end emotionally}
+
+---
 ```
+
+3. Git commit both files together:
+```bash
+cd books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
+```
+
+**For short stories — after short-story.md:**
+
+1. Generate a brief summary capturing the complete arc
+2. Create `books/{project}/summaries.md`:
+
+```markdown
+# Story Summary
+
+{3-5 sentence summary of the complete story}
+
+**Key beats:**
+- Opening: {1 sentence}
+- Complication: {1 sentence}
+- Climax: {1 sentence}
+- Resolution: {1 sentence}
+```
+
+3. Git commit (include plan file if not already committed):
+```bash
+cd books && git add {project}/short-story-plan.md {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"
+```
+
+**Using summaries and plans during generation:**
+
+When generating chapter N, read:
+- Full context (premise, treatment, structure-plan) — 100%
+- `summaries.md` — 100% (quick reference)
+- `chapter-plans/` — all previous chapter plans (shows reasoning)
+- All previous chapters — 100% (authoritative detail)
+
+The summaries and chapter plans help with continuity; full chapters remain the source of truth for prose.
 
 ---
 
@@ -506,12 +801,15 @@ For each stage:
 
 **CRITICAL:** Always include full context from previous stages. Token cost is negligible compared to quality loss from missing context.
 
-For prose generation of chapter N, include:
+For prose generation, include:
 - `books/{project}/premise.md` (100%)
 - `books/{project}/treatment.md` (100%)
-- `books/{project}/structure-plan.md` (100%) - novels only
-- Chapters 1 through N-1 from `books/{project}/chapters/` (100% of each)
-- `AgenticAuthor/misc/prose-style-card.md` (100%) - at repo root
+- `books/{project}/structure-plan.md` (100%) - all project types
+- `books/{project}/summaries.md` (100%) - if exists, quick reference
+- `books/{project}/chapter-plans/` (100%) - all chapter plans (novels)
+- `books/{project}/short-story-plan.md` (100%) - story plan (short stories)
+- Previous prose: chapters 1 through N-1 (novels) or n/a (short stories)
+- `AgenticAuthor/misc/prose-style-card.md` (100%) - at repo root, for Commercial style
 
 **Path Notes:**
 - Book project files are in `books/{project}/`

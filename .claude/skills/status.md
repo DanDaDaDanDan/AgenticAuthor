@@ -27,15 +27,19 @@ For the target project, check which files exist:
 
 ```
 books/{project}/
-├── project.yaml      ✓/✗
-├── premise.md        ✓/✗
-├── treatment.md      ✓/✗
-├── structure-plan.md ✓/✗ (novels only)
-├── chapters/
-│   ├── chapter-01.md ✓/✗
-│   ├── chapter-02.md ✓/✗
+├── project.yaml         ✓/✗
+├── premise.md           ✓/✗
+├── treatment.md         ✓/✗
+├── structure-plan.md    ✓/✗ (all project types)
+├── summaries.md         ✓/✗ (generated after prose)
+├── chapter-plans/       (novels only)
+│   ├── chapter-01-plan.md ✓/✗
 │   └── ...
-└── story.md          ✓/✗ (short stories only)
+├── chapters/            (novels only)
+│   ├── chapter-01.md    ✓/✗
+│   └── ...
+├── short-story-plan.md  ✓/✗ (short stories only)
+└── short-story.md       ✓/✗ (short stories only)
 ```
 
 ### Step 3: Calculate Statistics
@@ -61,16 +65,22 @@ Output a formatted status report:
 Progress:
   [✓] Premise          {word count} words
   [✓] Treatment        {word count} words
-  [✓] Structure Plan   {chapter count} chapters planned
-  [ ] Prose            {X}/{Y} chapters complete
+  [✓] Structure Plan   {chapter/scene count} planned
+  [✓] Generation Plans {X}/{Y} plans (novels) or ✓/✗ story plan (short stories)
+  [ ] Prose            {X}/{Y} chapters (novels) or ✓/✗ (short stories)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Chapters:
-  Ch 1: {title}        ✓ {word count} words
-  Ch 2: {title}        ✓ {word count} words
-  Ch 3: {title}        ○ Not started
+Chapters (novels):
+  Ch 1: {title}        Plan ✓  Prose ✓  {word count} words
+  Ch 2: {title}        Plan ✓  Prose ✓  {word count} words
+  Ch 3: {title}        Plan ✓  Prose ○  (ready to write)
+  Ch 4: {title}        Plan ○  Prose ○  (not started)
   ...
+
+Short Story:
+  Story Plan: ✓/✗
+  Prose: ✓/✗  {word count} words
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -116,14 +126,21 @@ Calculate completion percentage based on stages:
 
 | Stage | Weight (Novel) | Weight (Short Story) |
 |-------|---------------|---------------------|
-| Premise | 10% | 15% |
-| Treatment | 20% | 25% |
-| Structure Plan | 10% | N/A |
-| Prose | 60% | 60% |
+| Premise | 10% | 10% |
+| Treatment | 15% | 15% |
+| Structure Plan | 10% | 10% |
+| Generation Plans | 10% | 10% |
+| Prose | 55% | 55% |
 
-For prose, weight is distributed across chapters:
-- Novel: 60% / number of chapters
-- Short story: 60% for story.md
+**Weight distribution within stages:**
+
+For **novels**, generation plans and prose weights are distributed across chapters:
+- Generation Plans: 10% × (completed plans / total chapters)
+- Prose: 55% × (completed chapters / total chapters)
+
+For **short stories**, each stage is binary (complete or not):
+- Generation Plan: 10% if `short-story-plan.md` exists
+- Prose: 55% if `short-story.md` exists
 
 ## Multi-Project Summary
 
@@ -164,8 +181,8 @@ Suggest next action based on current state:
 |--------------|---------------------|
 | No premise | `/generate premise` |
 | Premise only | `/generate treatment` |
-| Treatment, no plan (novel) | `/generate plan` |
-| Plan complete, no prose | `/generate prose` |
-| Some chapters done | `/generate prose` to continue |
+| Treatment, no structure plan | `/generate plan` |
+| Structure plan complete, no prose | `/generate prose` |
+| Some chapters done (novels) | `/generate prose` to continue |
 | All complete | `/export` to create final document |
 | Recent iteration | Review changes, continue writing |

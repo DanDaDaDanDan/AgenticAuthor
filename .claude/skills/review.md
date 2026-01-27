@@ -10,7 +10,7 @@ Analyze content against quality standards without making changes.
 
 ## Arguments
 
-- `target` (optional): What to review - `premise`, `treatment`, `plan`, `prose`, or `all`
+- `target` (optional): What to review - `premise`, `treatment`, `plan`, `chapter-plan`, `prose`, or `all`
 
 ## Instructions
 
@@ -20,9 +20,10 @@ If `target` not provided, ask the user:
 - What would you like to review?
   1. Premise
   2. Treatment
-  3. Plan (novels only)
-  4. Prose (specific chapter or all)
-  5. All - complete project review
+  3. Plan (structure plan - all project types)
+  4. Chapter/story plan (novels: specific chapter plan, short stories: story plan)
+  5. Prose (specific chapter or all)
+  6. All - complete project review
 
 ### Step 2: Read Context
 
@@ -37,14 +38,23 @@ Read `books/{project}/project.yaml` to get the genre.
 - `books/{project}/premise.md`
 - `books/{project}/treatment.md`
 
-**For plan review:**
+**For plan review (structure-plan.md):**
 - `books/{project}/premise.md`
 - `books/{project}/treatment.md`
 - `books/{project}/structure-plan.md`
 
+**For chapter plan review:**
+- `books/{project}/premise.md`
+- `books/{project}/treatment.md`
+- `books/{project}/structure-plan.md`
+- Target chapter plan from `books/{project}/chapter-plans/` or `books/{project}/short-story-plan.md`
+- `books/{project}/summaries.md` (if exists)
+
 **For prose review:**
 - All of the above (premise includes prose style selections)
-- Target chapter(s) from `books/{project}/chapters/`
+- For novels: `books/{project}/chapter-plans/` (relevant chapter plans)
+- For novels: target chapter(s) from `books/{project}/chapters/`
+- For short stories: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
 - `AgenticAuthor/misc/prose-style-card.md` - Reference if premise uses Commercial style
 
 ### Step 3: Analyze Content
@@ -110,30 +120,62 @@ Generate a review report. **Do NOT make any changes to files.**
 **Overall:** {Ready for plan/prose, or needs iteration}
 ```
 
-### Plan Review (Novels)
+### Plan Review (Structure Plan)
 
 ```markdown
 # Structure Plan Review: {project}
 
 ## Treatment Alignment
 - **Coverage:** {Does plan cover all treatment beats?}
-- **Gaps:** {Any treatment elements missing from chapters?}
+- **Gaps:** {Any treatment elements missing from chapters/scenes?}
 
-## Chapter Balance
-- **Word count distribution:** {Are chapters balanced?}
+## Chapter/Scene Balance
+- **Word count distribution:** {Are chapters/scenes balanced?}
 - **POV consistency:** {POV structure working?}
 - **Pacing flow:** {Action vs reflection balance}
 
 ## Continuity Check
 | Element | Introduced | Resolved | Status |
 |---------|-----------|----------|--------|
-| {Plot thread} | Ch {X} | Ch {Y} | ✓/⚠️ |
+| {Plot thread} | Ch/Scene {X} | Ch/Scene {Y} | ✓/⚠️ |
 
 ## Suggestions
 1. {Specific improvement suggestion}
 2. {Another suggestion}
 
 **Overall:** {Ready for prose, or needs adjustment}
+```
+
+### Chapter/Story Plan Review
+
+For novels, review specific chapter plans. For short stories, review the story plan.
+
+```markdown
+# Plan Review: {project} - {Chapter N / Story Plan}
+
+## Structure Plan Alignment
+- **Matches structure-plan:** {Does plan align with structure-plan.md?}
+- **Goals addressed:** {Will this plan achieve the stated goals?}
+
+## Continuity Check
+- **Previous content threads:** {Properly picked up? (N/A for first chapter or short stories)}
+- **Character states:** {Consistent with where they should be?}
+- **World details:** {No contradictions?}
+
+## Scene Breakdown Quality
+- **Scene purposes clear:** {Each scene has a reason?}
+- **Conflict/tension present:** {Scenes have drivers?}
+- **Transitions logical:** {Scenes connect well?}
+
+## Style Notes Assessment
+- **Appropriate for content:** {Pacing/tone fit?}
+- **Consistent with premise style:** {Matches selected prose approach?}
+
+## Suggestions
+1. {Specific improvement suggestion}
+2. {Another suggestion}
+
+**Overall:** {Ready for prose generation, or iterate first}
 ```
 
 ### Prose Review
@@ -175,7 +217,8 @@ Generate a review report. **Do NOT make any changes to files.**
 - {Another area that might benefit from revision}
 
 ## Plot/Continuity
-- **Plan alignment:** {Does prose follow structure plan?}
+- **Structure plan alignment:** {Does prose follow structure plan?}
+- **Chapter plan alignment:** {Does prose follow the chapter plan's scene breakdown?}
 - **Consistency notes:** {Any contradictions or continuity gaps?}
 
 ## Suggestions

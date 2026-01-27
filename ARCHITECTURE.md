@@ -55,12 +55,18 @@ books/{project}/
 ├── project.yaml         # Metadata (name, title, author, genre, length)
 ├── premise.md           # Core concept and story foundation
 ├── treatment.md         # Story outline with act structure
-├── structure-plan.md    # Chapter plan (novels only)
+├── structure-plan.md    # Scene/chapter plan (all project types)
+├── summaries.md         # Prose summaries (generated after prose)
+├── chapter-plans/       # Chapter generation plans (novels only)
+│   ├── chapter-01-plan.md
+│   ├── chapter-02-plan.md
+│   └── ...
 ├── chapters/            # Prose chapters (novels only)
 │   ├── chapter-01.md
 │   ├── chapter-02.md
 │   └── ...
-├── story.md             # Complete story (short stories only)
+├── short-story-plan.md  # Story generation plan (short stories only)
+├── short-story.md       # Complete story (short stories only)
 └── export/              # Exported files
 ```
 
@@ -82,20 +88,26 @@ Skills are markdown files in `.claude/skills/` that define operations:
 ### Short Stories (≤15,000 words)
 
 ```
-premise.md → treatment.md → story.md
+premise.md → treatment.md → structure-plan.md → short-story-plan.md → short-story.md
 ```
 
-- No structure plan needed
+- Scene-by-scene structure plan
+- External generation plan before prose
 - Single prose file output
+- Summary generated after prose
 
 ### Novels (>15,000 words)
 
 ```
-premise.md → treatment.md → structure-plan.md → chapters/
+premise.md → treatment.md → structure-plan.md → [chapter-plan.md → chapter.md] × N
 ```
 
-- Structure plan defines chapter breakdown
-- Individual chapter files
+- Chapter-by-chapter structure plan
+- External generation plan per chapter (in `chapter-plans/`)
+- Individual chapter files (in `chapters/`)
+- Summary appended after each chapter
+
+**Note:** All project types require planning. External generation plans are saved to files for review, iteration, and debugging. Research shows explicit reasoning/planning before prose generation significantly improves quality (Gurung & Lapata, 2025).
 
 ## Context Flow
 
@@ -108,10 +120,14 @@ treatment.md + premise.md
     ↓
 structure-plan.md + treatment.md + premise.md
     ↓
-chapters/*.md + structure-plan.md + treatment.md + premise.md
+generation plan + all prior context
+    ↓
+prose + summaries.md + chapter-plans/ + structure-plan.md + treatment.md + premise.md
     ↓
 (optional: prose-style-card.md for Commercial style reference)
 ```
+
+**Prose generation uses external plans:** Before writing each chapter/story, a plan document is generated, saved, and reviewed. This plan analyzes requirements, continuity, character states, and style. The plan is a checkpoint for user review before prose generation.
 
 ## File Formats
 
@@ -229,6 +245,146 @@ created: 2025-01-25
 ---
 
 {Continue for each chapter}
+```
+
+### structure-plan.md (Short Stories)
+
+```markdown
+# Structure Plan
+
+## Overview
+
+- **Target word count:** {estimate}
+- **Number of scenes:** {count}
+- **POV:** {narrative perspective}
+- **Timespan:** {how much time the story covers}
+
+## Scene Breakdown
+
+### Scene 1: {Title/Description}
+
+**Setting:** {where and when}
+**Word count target:** {estimate}
+**Purpose:** {what this scene accomplishes}
+
+**Beat-by-beat:**
+1. {Opening beat}
+2. {Development}
+3. {Turn/Hook}
+
+**Character state:** {emotional state at scene end}
+
+---
+
+{Continue for each scene}
+
+## Story Arc Mapping
+
+- **Opening hook:** Scene {X}
+- **Complication:** Scene {X}
+- **Climax:** Scene {X}
+- **Resolution:** Scene {X}
+```
+
+### summaries.md
+
+Generated after prose. Provides compressed context for continuity.
+
+**For novels:**
+```markdown
+# Chapter Summaries
+
+### Chapter 1: {Title}
+
+{2-4 sentence summary}
+
+**Key events:** {bullet list}
+**Character states:** {where main characters end emotionally}
+
+---
+
+{Continue for each chapter}
+```
+
+**For short stories:**
+```markdown
+# Story Summary
+
+{3-5 sentence summary of the complete story}
+
+**Key beats:**
+- Opening: {1 sentence}
+- Complication: {1 sentence}
+- Climax: {1 sentence}
+- Resolution: {1 sentence}
+```
+
+### chapter-plans/chapter-{NN}-plan.md
+
+External generation plan created before each chapter's prose. Saved for review, iteration, and debugging.
+
+```markdown
+# Chapter {N} Plan: {Title}
+
+## Structure Plan Reference
+- Treatment reference: {which act/scenes this covers}
+- Summary: {planned summary from structure-plan}
+- Chapter goals: {from structure-plan}
+- Ends with: {planned hook/turn}
+
+## Continuity Check
+- {Open threads and their status}
+- {Character emotional states entering this chapter}
+- {Key established details}
+
+## Character States
+### {POV Character}
+- Emotional state: {current mental/emotional state}
+- Goal this chapter: {what they want}
+- Internal conflict: {tension}
+
+## Scene-by-Scene Breakdown
+### Scene 1: {Description}
+- Purpose: {why this scene exists}
+- Conflict/Tension: {driver}
+- Key beats: {specific moments}
+- Ends with: {transition}
+
+## Style Notes
+- Pacing: {fast/slow/mixed}
+- Tone: {emotional quality}
+- Dialogue vs narration: {balance}
+```
+
+### short-story-plan.md
+
+External generation plan for short stories. Similar to chapter plans but covers the entire story.
+
+```markdown
+# Story Plan: {Title}
+
+## Structure Plan Reference
+- Story arc: {the planned arc from structure-plan}
+- Scene count: {number}
+- Target word count: {estimate}
+
+## Character States
+### {Protagonist}
+- Starting emotional state: {where they begin}
+- Goal: {what they want}
+- Internal conflict: {tension}
+
+## Scene-by-Scene Breakdown
+### Scene 1: {Description}
+- Purpose: {why this scene exists}
+- Conflict/Tension: {driver}
+- Key beats: {specific moments}
+- Ends with: {transition}
+
+## Style Notes
+- Pacing: {rhythm}
+- Tone: {quality}
+- Dialogue vs narration: {balance}
 ```
 
 ## Taxonomy System

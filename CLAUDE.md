@@ -6,7 +6,7 @@ Guidance for Claude Code when working with AgenticAuthor. See [ARCHITECTURE.md](
 
 AgenticAuthor uses Claude Code skills for AI-powered book generation. No separate application - Claude Code is the orchestrator.
 
-**Workflow:** premise → treatment → structure plan → prose
+**Workflow:** premise → treatment → structure plan → generation plan → prose (all project types)
 
 ## Skills
 
@@ -32,9 +32,12 @@ AgenticAuthor/
         ├── project.yaml
         ├── premise.md
         ├── treatment.md
-        ├── structure-plan.md  # Novels only
-        ├── chapters/          # Novels only
-        └── story.md           # Short stories only
+        ├── structure-plan.md    # All project types
+        ├── summaries.md         # Generated after prose
+        ├── chapter-plans/       # Generation plans (novels)
+        ├── chapters/            # Prose chapters (novels)
+        ├── short-story-plan.md  # Generation plan (short stories)
+        └── short-story.md       # Complete story (short stories)
 ```
 
 ## Core Principles
@@ -43,10 +46,22 @@ AgenticAuthor/
 
 Always include full context from previous stages when generating prose:
 - premise.md (includes prose style selections), treatment.md, structure-plan.md (100% each)
+- chapter-plans/ or short-story-plan.md (generation plans)
+- summaries.md (quick reference for continuity)
 - All previous chapters (100% each)
 - misc/prose-style-card.md only if premise uses Commercial style
 
 Never truncate context. Token costs are negligible vs quality loss.
+
+### Plan Before Writing
+
+Before generating prose, create an external generation plan file:
+- Saved to `chapter-plans/` (novels) or `short-story-plan.md` (short stories)
+- Analyzes plan requirements, continuity, character states, style
+- Presented to user for review before prose generation
+- Enables iteration on approach before committing to prose
+
+External plans improve quality and make debugging easier.
 
 ### Quality First
 

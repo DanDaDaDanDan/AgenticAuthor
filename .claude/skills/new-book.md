@@ -35,7 +35,7 @@ Then ask:
   12. Other (use generic taxonomy)
 
 - Is this a short story or a novel?
-  1. Short story (single file, ~1,500-15,000 words) - generates `story.md`
+  1. Short story (single file, ~1,500-15,000 words) - generates `short-story.md`
   2. Novel (multiple chapters, ~40,000-120,000 words) - generates `chapters/` directory
 
 - What is the working title? (Can be different from project name)

@@ -27,7 +27,7 @@ Check that all required files exist in `books/{project}/`:
 - `premise.md`
 - `treatment.md`
 - For novels: `chapters/chapter-*.md` files
-- For short stories: `story.md`
+- For short stories: `short-story.md`
 
 If prose is incomplete, warn the user:
 
@@ -167,7 +167,7 @@ by {Author}
 
 ---
 
-{story.md content}
+{short-story.md content}
 
 ---
 
@@ -182,7 +182,7 @@ Calculate and display word counts:
 # Count words in prose files
 wc -w books/{project}/chapters/*.md
 # or
-wc -w books/{project}/story.md
+wc -w books/{project}/short-story.md
 ```
 
 Report:
