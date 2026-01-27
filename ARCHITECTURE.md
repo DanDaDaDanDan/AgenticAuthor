@@ -150,7 +150,7 @@ name: my-book
 title: The Dragon's Wake
 author: Jane Doe
 genre: fantasy
-length: novel
+length: novel  # or: novelette, short-story
 created: 2025-01-25
 ```
 

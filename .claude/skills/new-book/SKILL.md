@@ -121,7 +121,7 @@ Created new book project: {book-name}
   Title: {working-title}
   Author: {author-name}
   Genre: {genre}
-  Length: {novel/short-story}
+  Length: {novel/novelette/short-story}
 
 Next steps:
   1. cd books/{book-name}
