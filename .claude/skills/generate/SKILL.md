@@ -248,6 +248,19 @@ Default to three-act for most stories, but adapt based on genre and premise.
 ```markdown
 # Treatment
 
+## Story Configuration
+
+Carried forward from premise (authoritative for all downstream stages):
+
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Length:** {novel/novelette/short-story} (~{target word count} words)
+- **Genre:** {genre/subgenre from premise}
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
+- **Tone:** {emotional quality}
+- **Themes:** {primary theme}, {secondary theme}
+
 ## Story Overview
 
 {2-3 paragraph summary of the complete story arc}
@@ -298,12 +311,25 @@ Default to three-act for most stories, but adapt based on genre and premise.
 {Any important world-building details needed for the story}
 ```
 
-### For Short Stories (length: short-story)
+### For Short Stories/Novelettes (length: short-story or novelette)
 
 Generate a simplified treatment:
 
 ```markdown
 # Treatment
+
+## Story Configuration
+
+Carried forward from premise (authoritative for all downstream stages):
+
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Length:** {short-story/novelette} (~{target word count} words)
+- **Genre:** {genre/subgenre from premise}
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
+- **Tone:** {emotional quality}
+- **Themes:** {primary theme}, {secondary theme}
 
 ## Story Arc
 
@@ -339,14 +365,24 @@ cd books && git add {project}/treatment.md && git commit -m "Add: Generate treat
 
 Generate the actual story prose.
 
-**Context to read (ALL of these, in full):**
-- `books/{project}/premise.md` - Full premise (includes prose style selections)
-- `books/{project}/treatment.md` - Full treatment
-- `books/{project}/structure-plan.md` - Scene/chapter plan (generated if missing)
-- `books/{project}/summaries.md` - Chapter/scene summaries (if exists, for quick reference)
-- `books/{project}/chapter-plans/` - All previous chapter plans (novels)
-- All previously generated chapters in `books/{project}/chapters/` directory (novels)
-- `AgenticAuthor/misc/prose-style-card.md` - Optional detailed reference (only if premise uses "Commercial" style or you need specific guidance)
+**Self-contained context model:** Each stage reads only the immediately prior stage plus continuity files. This prevents conflicts when earlier stages are iterated.
+
+**Context for structure-plan generation:**
+- `books/{project}/treatment.md` - Full treatment (includes Story Configuration)
+- Do NOT read premise.md — treatment is the authoritative source
+
+**Context for chapter-plan generation:**
+- `books/{project}/structure-plan.md` - Full structure plan (includes style config + characters)
+- `books/{project}/summaries.md` - If exists, for continuity reference
+- `books/{project}/chapter-plans/` - All previous chapter plans (for continuity)
+- Do NOT read premise.md or treatment.md — structure-plan is the authoritative source
+
+**Context for prose generation:**
+- `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The current chapter's plan
+- `books/{project}/summaries.md` - For continuity reference
+- All previously generated chapters in `books/{project}/chapters/`
+- `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is "Commercial"
+- Do NOT read premise.md, treatment.md, or structure-plan.md — the chapter-plan contains everything needed
 
 ---
 
@@ -355,8 +391,8 @@ Generate the actual story prose.
 Check if `books/{project}/structure-plan.md` exists. If not, generate it before proceeding.
 
 **Context to read:**
-- `books/{project}/premise.md` - Full premise
-- `books/{project}/treatment.md` - Full treatment
+- `books/{project}/treatment.md` - Full treatment (includes Story Configuration)
+- Do NOT read premise.md — treatment is the authoritative source now
 
 #### For Novels — ask clarifying questions:
 
@@ -403,11 +439,28 @@ Check if `books/{project}/structure-plan.md` exists. If not, generate it before 
 ```markdown
 # Structure Plan
 
+## Story Configuration
+
+Carried forward from treatment:
+
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tone:** {emotional quality}
+- **Content Rating:** {rating}
+
 ## Overview
 
 - **Total chapters:** {number}
 - **Estimated word count:** {total}
 - **POV structure:** {Single POV / Multiple POV / Alternating}
+
+## Characters
+
+Brief reference for continuity (from treatment):
+
+- **{Protagonist}:** {one-line arc summary: starting state → ending state}
+- **{Antagonist/Key character}:** {one-line role summary}
+- **{Other key characters}:** {brief notes}
 
 ## Chapter Breakdown
 
@@ -455,10 +508,19 @@ Check if `books/{project}/structure-plan.md` exists. If not, generate it before 
 | {Character arc} | Ch {X} | Ch {Y} |
 ```
 
-#### Structure Plan Format (Short Stories):
+#### Structure Plan Format (Short Stories/Novelettes):
 
 ```markdown
 # Structure Plan
+
+## Story Configuration
+
+Carried forward from treatment:
+
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tone:** {emotional quality}
+- **Content Rating:** {rating}
 
 ## Overview
 
@@ -466,6 +528,13 @@ Check if `books/{project}/structure-plan.md` exists. If not, generate it before 
 - **Number of scenes:** {count}
 - **POV:** {narrative perspective}
 - **Timespan:** {how much time the story covers}
+
+## Characters
+
+Brief reference for continuity (from treatment):
+
+- **{Protagonist}:** {one-line arc summary: starting state → ending state}
+- **{Other key characters}:** {brief role notes}
 
 ## Scene Breakdown
 
@@ -844,35 +913,34 @@ cd books && git add {project}/short-story-plan.md {project}/short-story.md {proj
 **Using summaries and plans during generation:**
 
 When generating chapter N, read:
-- Full context (premise, treatment, structure-plan) — 100%
-- `summaries.md` — 100% (quick reference)
-- `chapter-plans/` — all previous chapter plans (shows reasoning)
-- All previous chapters — 100% (authoritative detail)
+- The chapter-plan for chapter N (contains style notes, scene breakdown)
+- `summaries.md` — for continuity reference
+- `chapter-plans/` — previous chapter plans (for continuity)
+- All previous chapters — authoritative detail for what happened
 
-The summaries and chapter plans help with continuity; full chapters remain the source of truth for prose.
+Do NOT read premise.md, treatment.md, or structure-plan.md during prose generation. The chapter-plan is self-contained.
 
 ---
 
 ## Context Management
 
-**CRITICAL:** Always include full context from previous stages. Token cost is negligible compared to quality loss from missing context.
+**Self-contained stages principle:** Each stage reads only the immediately prior stage. This prevents conflicts when earlier stages are iterated.
 
-For prose generation, include:
-- `books/{project}/premise.md` (100%)
-- `books/{project}/treatment.md` (100%)
-- `books/{project}/structure-plan.md` (100%) - all project types
-- `books/{project}/summaries.md` (100%) - if exists, quick reference
-- `books/{project}/chapter-plans/` (100%) - all chapter plans (novels)
-- `books/{project}/short-story-plan.md` (100%) - story plan (short stories)
-- Previous prose: chapters 1 through N-1 (novels) or n/a (short stories)
-- `AgenticAuthor/misc/prose-style-card.md` (100%) - at repo root, for Commercial style
+| Generating | Reads | Does NOT Read |
+|------------|-------|---------------|
+| treatment | premise + taxonomies | — |
+| structure-plan | treatment only | premise |
+| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
+| prose | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
+
+**Why this matters:** If you iterate on treatment (changing the ending, for example), structure-plan only reads treatment—it sees the updated version automatically. No conflicts between stages.
 
 **Path Notes:**
 - Book project files are in `books/{project}/`
 - The prose style card is at `AgenticAuthor/misc/` (repo root), NOT inside the book project
 - Taxonomies are at `AgenticAuthor/taxonomies/` (repo root)
 
-Never truncate or summarize context. If the context is too large, ask the user rather than silently truncating.
+Never truncate or summarize context within a stage. If context is too large, ask the user.
 
 ## Error Handling
 

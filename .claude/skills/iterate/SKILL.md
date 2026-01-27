@@ -6,6 +6,16 @@ argument-hint: "[target] [feedback]"
 
 Refine content with feedback, maintaining consistency and quality.
 
+## Self-Contained Stages Model
+
+Each stage's output is self-contained — it carries forward all information needed by downstream stages. When you iterate on stage N:
+
+- Stage N becomes the new source of truth for downstream stages
+- Stage N-1 becomes "historical" (the seed that started things, not the contract)
+- Downstream stages (N+1, N+2...) automatically see the changes because they only read stage N
+
+**Example:** If you iterate on treatment to change the ending, you don't need to update premise. Structure-plan reads only treatment, so it sees the new ending automatically. No conflicts.
+
 ## Usage
 
 ```
@@ -61,9 +71,9 @@ Proceed with these changes?
 
 Do NOT proceed until you're confident you understand the request.
 
-### Step 4: Read Full Context
+### Step 4: Read Context
 
-**Always read the complete context for the target.**
+**Read only the immediately prior stage plus the target being iterated.**
 
 Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
@@ -74,33 +84,30 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `AgenticAuthor/taxonomies/style-taxonomy.json` - Style options (if changing style)
 
 **For treatment iteration:**
-- `books/{project}/premise.md` (full)
-- `books/{project}/treatment.md` - Current treatment
+- `books/{project}/treatment.md` - Current treatment (already self-contained with Story Configuration)
+- Do NOT read premise.md — treatment is the authoritative document now
+- Note: If iterating on treatment, ensure Story Configuration section stays accurate
 
 **For plan iteration (structure-plan.md):**
-- `books/{project}/premise.md` (full)
-- `books/{project}/treatment.md` (full)
-- `books/{project}/structure-plan.md` - Current plan
+- `books/{project}/structure-plan.md` - Current plan (already contains Story Configuration + Characters)
+- Do NOT read premise.md or treatment.md — structure-plan is self-contained
 
 **For chapter plan iteration:**
-- `books/{project}/premise.md` (full)
-- `books/{project}/treatment.md` (full)
-- `books/{project}/structure-plan.md` (full)
-- `books/{project}/summaries.md` (if exists)
+- `books/{project}/structure-plan.md` - For Story Configuration and character reference
+- `books/{project}/summaries.md` (if exists) - For continuity
 - Previous chapter plans from `books/{project}/chapter-plans/`
 - The specific chapter plan being revised
 - For short stories: `books/{project}/short-story-plan.md`
+- Do NOT read premise.md or treatment.md
 
 **For prose iteration:**
-- `books/{project}/premise.md` (full, includes prose style selections)
-- `books/{project}/treatment.md` (full)
-- `books/{project}/structure-plan.md` (full)
-- `books/{project}/summaries.md` (if exists)
-- For novels: all chapter plans from `books/{project}/chapter-plans/`
+- `books/{project}/chapter-plans/` - Relevant chapter plans (contain style notes)
+- `books/{project}/summaries.md` (if exists) - For continuity
 - For novels: all chapters from `books/{project}/chapters/`
 - For short stories: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
 - The specific content being revised
-- `AgenticAuthor/misc/prose-style-card.md` - Optional reference if premise uses Commercial style
+- `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is Commercial
+- Do NOT read premise.md, treatment.md, or structure-plan.md
 
 ### Step 5: Apply Changes
 
@@ -108,8 +115,8 @@ Generate the revised content:
 
 1. **Apply the confirmed changes** - Make the specific changes discussed
 2. **Preserve everything else** - Don't change elements not mentioned in feedback
-3. **Maintain consistency** - Ensure changes align with other project parts
-4. **Follow premise style** - For prose, maintain the style selected in premise.md
+3. **Maintain consistency** - Ensure changes align with the current stage's context
+4. **Follow style config** - For prose, use the style from chapter-plan's Style Notes (originally from premise → treatment → structure-plan)
 
 **Prose iteration principles:**
 - Preserve the author's distinctive voice and style
@@ -175,7 +182,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Plot thread continuity
 - Established world details
 
-Use the premise's style selections as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. (For Commercial style, `misc/prose-style-card.md` provides detailed reference.)
+Use the chapter-plan's Style Notes as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. (For Commercial style, `misc/prose-style-card.md` provides detailed reference.)
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building
@@ -202,21 +209,20 @@ For global feedback ("make everything darker"), revise all chapters.
 - "The dialogue feels stilted, make it more natural"
 - "This chapter needs a stronger hook at the end"
 
-## Cascading Changes
+## Cascading Changes and the Self-Contained Model
 
-When iteration on one stage affects others:
+Because each stage only reads the immediately prior stage, iteration automatically propagates forward:
 
-**Premise changes → May require:**
-- Treatment revision to align with new premise
-- Plan adjustment for structural changes
-- Prose revision for new themes/tone
+**Premise changes:**
+- If downstream stages don't exist yet: no action needed — they'll read the updated premise
+- If treatment already exists: treatment's Story Configuration may be stale. Inform user they may want to regenerate treatment or update its Story Configuration section.
 
-**Treatment changes → May require:**
-- Structure plan revision for chapter/scene breakdown
-- Chapter plan revisions for affected chapters
-- Prose revision for plot changes
+**Treatment changes:**
+- Structure-plan reads only treatment, so it automatically sees changes when regenerated
+- If structure-plan already exists: inform user the ending/arc changed and they may want to regenerate structure-plan
+- Premise becomes "historical" — it's the seed, not the contract
 
-**Structure plan changes → May require:**
+**Structure plan changes → May require:
 - Chapter plan revisions for affected chapters
 - Prose revision for affected chapters
 

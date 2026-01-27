@@ -4,8 +4,8 @@ AgenticAuthor uses Claude Code skills to generate books. There is no separate ap
 
 ## Design Philosophy
 
-- **Context is King:** Provide complete context from all previous stages. Quality over token thrift.
-- **Quality First:** Follow the prose style selected in premise.md. Never generate placeholder content.
+- **Self-Contained Stages:** Each stage's output contains everything the next stage needs. You only read one step back, never two. This ensures iteration on any stage doesn't create conflicts with earlier stages.
+- **Quality First:** Follow the prose style in the current stage's configuration. Never generate placeholder content.
 - **Git Everything:** Every operation commits to git for version history and iteration.
 - **Natural Language Iteration:** Users refine content with plain English feedback.
 
@@ -114,25 +114,32 @@ Bracketed steps `[...]` are implicit — generated automatically and presented f
 
 ## Context Flow
 
-Each stage receives full context from prior stages:
+**Principle:** Each stage reads only the immediately prior stage. Each stage's output is self-contained, carrying forward all information needed by downstream stages.
 
 ```
-premise.md (includes prose style selections)
-    ↓
-treatment-approach.md + premise.md
-    ↓
-treatment.md + premise.md
-    ↓
-structure-plan.md + treatment.md + premise.md
-    ↓
-chapter/story plan + all prior context
-    ↓
-prose + summaries.md + all prior context
-    ↓
-(optional: prose-style-card.md for Commercial style reference)
+premise.md (seed document)
+    ↓ reads premise
+treatment.md (self-contained: includes Story Configuration from premise)
+    ↓ reads treatment only
+structure-plan.md (self-contained: includes style config + characters)
+    ↓ reads structure-plan + summaries + previous chapter-plans
+chapter-plan.md (self-contained for that chapter)
+    ↓ reads chapter-plan + summaries + previous chapters
+prose
 ```
 
-**Prose generation uses implicit planning:** Before writing, the AI generates structure-plan.md (if missing) and chapter/story plans. Each is presented for review before proceeding. This ensures quality while keeping the user workflow simple.
+**What each stage reads:**
+
+| Generating | Reads | Does NOT Read |
+|------------|-------|---------------|
+| treatment | premise + taxonomies | — |
+| structure-plan | treatment only | premise |
+| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
+| prose | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
+
+**Why this matters for iteration:** If you iterate on treatment and change the ending, structure-plan only reads treatment—it sees the updated version. Premise becomes "historical" (the seed that started things), not the contract. No conflicts between stages.
+
+**Prose generation uses implicit planning:** Before writing, the AI generates structure-plan.md (if missing) and chapter/story plans. Each is presented for review before proceeding.
 
 ## File Formats
 
@@ -239,8 +246,23 @@ Lightweight planning document generated before the full treatment. Analyzes the 
 
 ### treatment.md
 
+The treatment is **self-contained** — it includes all story configuration from premise so downstream stages don't need to read premise.
+
 ```markdown
 # Treatment
+
+## Story Configuration
+
+Carried forward from premise (authoritative for all downstream stages):
+
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Length:** {novel/novelette/short-story} (~{word count} words)
+- **Genre:** {genre/subgenre}
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
+- **Tone:** {emotional quality}
+- **Themes:** {primary}, {secondary}
 
 ## Story Overview
 
@@ -264,18 +286,40 @@ Lightweight planning document generated before the full treatment. Analyzes the 
 ## Subplots
 
 {Secondary storylines}
+
+## World Elements
+
+{Setting and world-building details carried forward from premise}
 ```
 
 ### structure-plan.md (Novels)
 
+The structure plan is **self-contained** — it includes story configuration from treatment so chapter-plans don't need to read treatment.
+
 ```markdown
 # Structure Plan
+
+## Story Configuration
+
+Carried forward from treatment:
+
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tone:** {emotional quality}
+- **Content Rating:** {rating}
 
 ## Overview
 
 - **Total chapters:** {number}
 - **Estimated word count:** {total}
 - **POV structure:** {perspective approach}
+
+## Characters
+
+Brief reference for continuity:
+
+- **{Protagonist}:** {one-line arc summary}
+- **{Antagonist/Key character}:** {one-line role summary}
 
 ## Chapter Breakdown
 
@@ -306,8 +350,19 @@ Lightweight planning document generated before the full treatment. Analyzes the 
 
 ### structure-plan.md (Short Stories)
 
+The structure plan is **self-contained** — it includes story configuration from treatment so story-plans don't need to read treatment.
+
 ```markdown
 # Structure Plan
+
+## Story Configuration
+
+Carried forward from treatment:
+
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tone:** {emotional quality}
+- **Content Rating:** {rating}
 
 ## Overview
 
@@ -315,6 +370,13 @@ Lightweight planning document generated before the full treatment. Analyzes the 
 - **Number of scenes:** {count}
 - **POV:** {narrative perspective}
 - **Timespan:** {how much time the story covers}
+
+## Characters
+
+Brief reference for continuity:
+
+- **{Protagonist}:** {one-line arc summary}
+- **{Other key characters}:** {one-line role summary}
 
 ## Scene Breakdown
 
@@ -491,7 +553,7 @@ Skills read taxonomies to present options during premise generation. User select
 
 ## Prose Style
 
-Style is **selected per-project** during premise generation, not mandated globally.
+Style is **selected per-project** during premise generation, then **carried forward** into treatment's Story Configuration section.
 
 **Style approaches:**
 - **Commercial** - Clear, readable, mass-market. See `misc/prose-style-card.md` for detailed guidance.
@@ -501,7 +563,7 @@ Style is **selected per-project** during premise generation, not mandated global
 - **Lyrical** - Poetic, atmospheric, sensory-rich
 - **Conversational** - Strong narrative voice, personality-driven
 
-The selected style is recorded in `premise.md` under "Prose Style" and guides all prose generation for that project. `misc/prose-style-card.md` remains as an optional detailed reference for Commercial style.
+The style flows through the pipeline: premise → treatment (Story Configuration) → structure-plan → chapter-plan (Style Notes). Each stage carries the configuration forward so downstream stages don't need to look backward.
 
 ## Git Integration
 
