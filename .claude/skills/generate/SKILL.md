@@ -548,16 +548,6 @@ Generate complete prose for the {project} novelette/short story.
 1. `D:\Personal\AgenticAuthor\books\{project}\short-story.md` — Complete prose
 2. `D:\Personal\AgenticAuthor\books\{project}\summaries.md` — Story summary
 
-**CRITICAL — Word Count:**
-The target is {X} words. This is NOT optional.
-
-To hit the target:
-- Each scene has a word count target in the story-plan. Hit those targets.
-- Do NOT summarize or compress. Write full scenes with proper development.
-- Include: dialogue exchanges (not just single lines), character interiority, sensory details, tension building, scene transitions.
-- If a scene feels "done" but is under target, you haven't developed it enough. Add beats, deepen moments, expand exchanges.
-- The Length Strategy section in the story-plan explains how to achieve length for THIS specific story. Follow it.
-
 **Style guidance:**
 Follow the Style Notes section in the story-plan. Key elements:
 - POV and voice characteristics
@@ -593,7 +583,7 @@ Follow the Style Notes section in the story-plan. Key elements:
 cd /d/Personal/AgenticAuthor/books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"
 ```
 
-Generate publication-ready prose at the target word count. Do not ask for approval. Do not stop early.
+Generate publication-ready prose. Do not ask for approval.
 ```
 
 ---
@@ -654,9 +644,6 @@ Generate prose for Chapter {N} of {project}.
 **Output files:**
 1. `D:\Personal\AgenticAuthor\books\{project}\chapters\chapter-{NN}.md` — Chapter prose
 2. Append to `D:\Personal\AgenticAuthor\books\{project}\summaries.md` — Chapter summary
-
-**CRITICAL — Word Count:**
-Target is ~{X} words. Hit the target. Do not compress or summarize.
 
 **After generating:**
 ```bash
