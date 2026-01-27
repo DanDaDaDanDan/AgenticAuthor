@@ -76,6 +76,25 @@ Automatically generate planning documents before major outputs:
 - Never generate placeholder content
 - Each generation should be publication-ready
 
+### Sub-Agent Execution
+
+Generation work runs in sub-agents with isolated context:
+
+1. **Main agent** asks clarifying questions upfront, then spawns sub-agents
+2. **Sub-agents** receive ONLY the files they need (per self-contained stages)
+3. Sub-agents run autonomously to completion — no approval steps
+4. Each sub-agent commits its work before returning
+
+**Why sub-agents?**
+- Context isolation prevents contamination from earlier stages
+- Token efficiency — each generation uses minimal context
+- Autonomy — `/generate prose` runs start-to-finish without interruption
+
+**Main agent does NOT:**
+- Ask for approval between generation steps
+- Read files that sub-agents will read (wastes context)
+- Generate content directly (except premise, which is interactive)
+
 ### Git Everything
 
 Every skill operation commits to the books/ git repo. This enables iteration and rollback.
