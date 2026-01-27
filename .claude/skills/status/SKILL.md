@@ -142,7 +142,7 @@ For **novels**, generation plans and prose weights are distributed across chapte
 - Generation Plans: 10% × (completed plans / total chapters)
 - Prose: 55% × (completed chapters / total chapters)
 
-For **short stories**, each stage is binary (complete or not):
+For **short stories/novelettes**, each stage is binary (complete or not):
 - Generation Plan: 10% if `short-story-plan.md` exists
 - Prose: 55% if `short-story.md` exists
 

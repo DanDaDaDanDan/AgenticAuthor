@@ -36,12 +36,12 @@ If `target` not provided, ask the user:
   1. Premise - refine the core concept
   2. Treatment - adjust the story outline
   3. Plan - modify structure plan (scene/chapter breakdown)
-  4. Chapter/story plan - adjust a generation plan (novels: specific chapter, short stories: story plan)
+  4. Chapter/story plan - adjust a generation plan (novels: specific chapter, short stories/novelettes: story plan)
   5. Prose - revise generated prose
 
 For chapter/story plan:
 - Novels: ask which chapter plan to revise
-- Short stories: there's only one plan (`short-story-plan.md`)
+- Short stories/novelettes: there's only one plan (`short-story-plan.md`)
 
 For prose, also ask which chapter(s) to revise, or "all" for the entire story.
 
@@ -97,14 +97,14 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/summaries.md` (if exists) - For continuity
 - Previous chapter plans from `books/{project}/chapter-plans/`
 - The specific chapter plan being revised
-- For short stories: `books/{project}/short-story-plan.md`
+- For short stories/novelettes: `books/{project}/short-story-plan.md`
 - Do NOT read premise.md or treatment.md
 
 **For prose iteration:**
 - `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised (contains style notes)
 - `books/{project}/summaries.md` (if exists) - For continuity
 - For novels: all chapters from `books/{project}/chapters/`
-- For short stories: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
+- For short stories/novelettes: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
 - The specific content being revised
 - `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is Commercial
 - Do NOT read premise.md, treatment.md, or structure-plan.md
@@ -172,7 +172,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Iterate on chapter plans **before** generating prose for that chapter
 - Adjust scene breakdowns, character states, or style notes as needed
 - If the chapter's prose already exists, note that prose may need regeneration
-- For short stories, iterate on `short-story-plan.md`
+- For short stories/novelettes, iterate on `short-story-plan.md`
 
 ### Prose Iteration
 

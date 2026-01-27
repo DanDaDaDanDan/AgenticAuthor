@@ -102,8 +102,8 @@ books/
     ├── chapters/              # Prose chapters (novels)
     │   ├── chapter-01.md
     │   └── ...
-    ├── short-story-plan.md    # Generation plan (short stories)
-    └── short-story.md         # Complete story (short stories)
+    ├── short-story-plan.md    # Generation plan (short stories/novelettes)
+    └── short-story.md         # Complete story (short stories/novelettes)
 ```
 
 ## Taxonomies

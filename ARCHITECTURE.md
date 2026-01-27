@@ -66,8 +66,8 @@ books/{project}/
 │   ├── chapter-01.md
 │   ├── chapter-02.md
 │   └── ...
-├── short-story-plan.md  # Story generation plan (short stories only)
-├── short-story.md       # Complete story (short stories only)
+├── short-story-plan.md  # Story generation plan (short stories/novelettes)
+├── short-story.md       # Complete story (short stories/novelettes)
 └── export/              # Exported files
 ```
 
@@ -348,7 +348,7 @@ Brief reference for continuity:
 {Continue for each chapter}
 ```
 
-### structure-plan.md (Short Stories)
+### structure-plan.md (Short Stories/Novelettes)
 
 The structure plan is **self-contained** — it includes story configuration from treatment so story-plans don't need to read treatment.
 
@@ -425,7 +425,7 @@ Generated after prose. Provides compressed context for continuity.
 {Continue for each chapter}
 ```
 
-**For short stories:**
+**For short stories/novelettes:**
 ```markdown
 # Story Summary
 
@@ -487,7 +487,7 @@ External generation plan created before each chapter's prose. Saved for review, 
 
 ### short-story-plan.md
 
-External generation plan for short stories. Similar to chapter plans but covers the entire story.
+External generation plan for short stories and novelettes. Similar to chapter plans but covers the entire story.
 
 ```markdown
 # Story Plan: {Title}

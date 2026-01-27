@@ -25,7 +25,7 @@ If `target` not provided, ask the user:
   1. Premise
   2. Treatment
   3. Plan (structure plan - all project types)
-  4. Chapter/story plan (novels: specific chapter plan, short stories: story plan)
+  4. Chapter/story plan (novels: specific chapter plan, short stories/novelettes: story plan)
   5. Prose (specific chapter or all)
   6. All - complete project review
 
@@ -60,7 +60,7 @@ Read `books/{project}/project.yaml` to get the genre.
 - All of the above (premise includes prose style selections)
 - For novels: `books/{project}/chapter-plans/` (relevant chapter plans)
 - For novels: target chapter(s) from `books/{project}/chapters/`
-- For short stories: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
+- For short stories/novelettes: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
 - `AgenticAuthor/misc/prose-style-card.md` - Reference if premise uses Commercial style
 
 ### Step 3: Analyze Content
@@ -154,7 +154,7 @@ Generate a review report. **Do NOT make any changes to files.**
 
 ### Chapter/Story Plan Review
 
-For novels, review specific chapter plans. For short stories, review the story plan.
+For novels, review specific chapter plans. For short stories/novelettes, review the story plan.
 
 ```markdown
 # Plan Review: {project} - {Chapter N / Story Plan}

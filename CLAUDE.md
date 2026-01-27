@@ -39,8 +39,8 @@ AgenticAuthor/
         ├── summaries.md         # Generated after prose
         ├── chapter-plans/       # Generation plans (novels)
         ├── chapters/            # Prose chapters (novels)
-        ├── short-story-plan.md  # Generation plan (short stories)
-        └── short-story.md       # Complete story (short stories)
+        ├── short-story-plan.md  # Generation plan (short stories/novelettes)
+        └── short-story.md       # Complete story (short stories/novelettes)
 ```
 
 ## Core Principles

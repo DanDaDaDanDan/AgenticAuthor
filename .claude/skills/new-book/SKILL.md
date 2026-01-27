@@ -1,6 +1,6 @@
 ---
 name: new-book
-description: Create a new book project. Use when starting a new novel or short story.
+description: Create a new book project. Use when starting a new novel, novelette, or short story.
 argument-hint: "[book-name]"
 ---
 
