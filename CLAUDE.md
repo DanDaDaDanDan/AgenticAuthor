@@ -45,36 +45,30 @@ AgenticAuthor/
 
 ## Core Principles
 
-### Context is King
+### Self-Contained Stages
 
-Always include full context from previous stages when generating prose:
-- premise.md (includes prose style selections), treatment.md, structure-plan.md (100% each)
-- chapter-plans/ or short-story-plan.md (generation plans)
-- summaries.md (quick reference for continuity)
-- All previous chapters (100% each)
-- misc/prose-style-card.md only if premise uses Commercial style
+Each stage's output contains everything the next stage needs. Read only one step back, never two.
 
-Never truncate context. Token costs are negligible vs quality loss.
+| Generating | Reads | Does NOT Read |
+|------------|-------|---------------|
+| treatment | premise + taxonomies | — |
+| structure-plan | treatment only | premise |
+| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
+| prose | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
+
+**Why:** This prevents conflicts when iterating. If you change treatment, structure-plan sees the update automatically. Premise becomes "historical" (the seed), not the contract.
 
 ### Plan Before Writing
 
 Automatically generate planning documents before major outputs:
 
-**`/generate treatment`** creates `treatment-approach.md` first:
-- Analyzes premise systematically (conflict, arcs, themes)
-- Proposes structure and identifies potential challenges
-- User reviews before treatment generation proceeds
+**`/generate treatment`** creates `treatment-approach.md` first, then `treatment.md` with Story Configuration section (carries forward style, tone, themes from premise).
 
-**`/generate prose`** creates structure-plan and chapter/story plans first:
-- `structure-plan.md` (if missing) — chapter/scene breakdown
-- `chapter-plans/` (novels) or `short-story-plan.md` (short stories)
-- User reviews each before proceeding
-
-These implicit planning steps improve quality and enable iteration before committing to the main output.
+**`/generate prose`** creates structure-plan and chapter/story plans first. Each includes Story Configuration so downstream stages are self-contained.
 
 ### Quality First
 
-- Follow the prose style selected in premise.md (Commercial/Literary/Minimalist/Pulp/Lyrical/Conversational)
+- Follow the prose style in the current stage's Story Configuration
 - Never generate placeholder content
 - Each generation should be publication-ready
 
