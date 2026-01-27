@@ -15,6 +15,7 @@ Generate content at any stage of the book creation process.
 ## Arguments
 
 - `stage`: One of `premise`, `treatment`, `prose`, or `all`
+- `chapter` (optional, prose only): Chapter number to generate (e.g., `/generate prose 5`)
 
 ## Instructions
 
