@@ -1,6 +1,6 @@
 ---
 name: generate
-description: Generate content at any stage - premise, treatment, plan, or prose.
+description: Generate content at any stage - premise, treatment, or prose.
 argument-hint: "[stage]"
 ---
 
@@ -14,7 +14,7 @@ Generate content at any stage of the book creation process.
 
 ## Arguments
 
-- `stage`: One of `premise`, `treatment`, `plan`, `prose`, or `all`
+- `stage`: One of `premise`, `treatment`, `prose`, or `all`
 
 ## Instructions
 
@@ -335,25 +335,30 @@ cd books && git add {project}/treatment.md && git commit -m "Add: Generate treat
 
 ---
 
-## Stage: plan
+## Stage: prose
 
-Generate the structure plan. **Planning is required for ALL projects** — novels get chapter-by-chapter plans, short stories get scene-by-scene plans.
+Generate the actual story prose.
 
-Research shows that explicit planning before prose generation significantly improves quality, even for short-form content (Gurung & Lapata, 2025).
+**Context to read (ALL of these, in full):**
+- `books/{project}/premise.md` - Full premise (includes prose style selections)
+- `books/{project}/treatment.md` - Full treatment
+- `books/{project}/structure-plan.md` - Scene/chapter plan (generated if missing)
+- `books/{project}/summaries.md` - Chapter/scene summaries (if exists, for quick reference)
+- `books/{project}/chapter-plans/` - All previous chapter plans (novels)
+- All previously generated chapters in `books/{project}/chapters/` directory (novels)
+- `AgenticAuthor/misc/prose-style-card.md` - Optional detailed reference (only if premise uses "Commercial" style or you need specific guidance)
+
+---
+
+### Step 1: Generate Structure Plan (if missing)
+
+Check if `books/{project}/structure-plan.md` exists. If not, generate it before proceeding.
 
 **Context to read:**
 - `books/{project}/premise.md` - Full premise
 - `books/{project}/treatment.md` - Full treatment
 
-**Output file:** `books/{project}/structure-plan.md`
-
----
-
-### For Novels
-
-#### Before generating, ask clarifying questions:
-
-After reading the premise and treatment, ask:
+#### For Novels — ask clarifying questions:
 
 1. **Target length:**
    > How long should this novel be?
@@ -376,11 +381,24 @@ After reading the premise and treatment, ask:
    > 3. Multiple POV - within chapters
    > 4. Already specified in premise
 
-Use answers to guide chapter count, length targets, and POV assignments.
+#### For Short Stories — ask clarifying questions:
 
-#### Generation instructions (Novels):
+1. **Target length:**
+   > How long should this story be?
+   > 1. Flash fiction (under 1,500 words)
+   > 2. Short-short (1,500-3,000 words)
+   > 3. Standard short (3,000-7,500 words)
+   > 4. Long short story (7,500-15,000 words)
+   > 5. Let me decide based on the treatment
 
-Generate a detailed chapter-by-chapter plan. Reference treatment scenes in chapter breakdowns.
+2. **Scene structure:**
+   > How should the story flow?
+   > 1. Single continuous scene
+   > 2. 2-3 scenes with clear breaks
+   > 3. Multiple short scenes
+   > 4. Let me decide based on the treatment
+
+#### Structure Plan Format (Novels):
 
 ```markdown
 # Structure Plan
@@ -437,32 +455,7 @@ Generate a detailed chapter-by-chapter plan. Reference treatment scenes in chapt
 | {Character arc} | Ch {X} | Ch {Y} |
 ```
 
----
-
-### For Short Stories
-
-Short stories also require a structure plan, but in a lighter format focused on scenes rather than chapters.
-
-#### Before generating, ask clarifying questions:
-
-1. **Target length:**
-   > How long should this story be?
-   > 1. Flash fiction (under 1,500 words)
-   > 2. Short-short (1,500-3,000 words)
-   > 3. Standard short (3,000-7,500 words)
-   > 4. Long short story (7,500-15,000 words)
-   > 5. Let me decide based on the treatment
-
-2. **Scene structure:**
-   > How should the story flow?
-   > 1. Single continuous scene
-   > 2. 2-3 scenes with clear breaks
-   > 3. Multiple short scenes
-   > 4. Let me decide based on the treatment
-
-#### Generation instructions (Short Stories):
-
-Generate a scene-by-scene plan. Even short stories benefit from explicit planning.
+#### Structure Plan Format (Short Stories):
 
 ```markdown
 # Structure Plan
@@ -510,29 +503,16 @@ Generate a scene-by-scene plan. Even short stories benefit from explicit plannin
 {Brief notes on any details that must remain consistent across scenes}
 ```
 
----
-
-**After generation (all project types):**
+**After generating structure-plan:**
 ```bash
 cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
 ```
 
+**Present the structure plan to the user for review.** Wait for approval or iteration requests before proceeding.
+
 ---
 
-## Stage: prose
-
-Generate the actual story prose.
-
-**Context to read (ALL of these, in full):**
-- `books/{project}/premise.md` - Full premise (includes prose style selections)
-- `books/{project}/treatment.md` - Full treatment
-- `books/{project}/structure-plan.md` - Scene/chapter plan (required for all project types)
-- `books/{project}/summaries.md` - Chapter/scene summaries (if exists, for quick reference)
-- `books/{project}/chapter-plans/` - All previous chapter plans (novels)
-- All previously generated chapters in `books/{project}/chapters/` directory (novels)
-- `AgenticAuthor/misc/prose-style-card.md` - Optional detailed reference (only if premise uses "Commercial" style or you need specific guidance)
-
-### Continuation Logic
+### Step 2: Continuation Logic
 
 Before generating, check what already exists:
 
@@ -587,7 +567,7 @@ Options:
 
 **For each chapter/story:**
 
-#### Step 1: Generate Chapter/Story Plan (REQUIRED)
+#### Step 3: Generate Chapter/Story Plan (REQUIRED)
 
 Before writing prose, generate an external plan document. This is saved to a file and can be reviewed/iterated before prose generation. Research shows explicit planning significantly improves long-form content quality.
 
@@ -738,7 +718,7 @@ cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story p
 
 ---
 
-#### Step 2: Generate Prose
+#### Step 4: Generate Prose
 
 After the plan is approved, generate prose that:
 - Follows the chapter plan's scene breakdown
@@ -875,13 +855,15 @@ The summaries and chapter plans help with continuity; full chapters remain the s
 
 ## Stage: all
 
-Generate all stages in sequence: premise → treatment → plan → prose
+Generate all stages in sequence: premise → treatment → prose
 
 For each stage:
 1. Check if it already exists
 2. If exists, ask user if they want to regenerate
 3. If not exists or user confirms, generate it
 4. Wait for user to review before proceeding to next stage
+
+Note: Structure-plan is generated implicitly as part of the prose stage.
 
 ---
 

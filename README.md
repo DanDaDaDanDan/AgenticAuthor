@@ -6,7 +6,7 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 
 ## Features
 
-- **Structured Generation Pipeline**: premise → treatment → structure plan → generation plan → prose
+- **Structured Generation Pipeline**: premise → treatment → prose (with automatic planning)
 - **Natural Language Iteration**: Give feedback in plain English to refine your content
 - **Git-Backed Version Control**: Every change is automatically committed
 - **Quality-First Approach**: No artificial word count pressure
@@ -33,7 +33,6 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
    ```
    /generate premise
    /generate treatment
-   /generate plan
    /generate prose
    ```
 
@@ -52,7 +51,7 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 | Skill | Purpose |
 |-------|---------|
 | `/new-book` | Create a new book project |
-| `/generate` | Generate premise, treatment, plan, or prose |
+| `/generate` | Generate premise, treatment, or prose |
 | `/iterate` | Refine content with natural language feedback |
 | `/review` | Analyze content against quality standards |
 | `/status` | Show project progress |
@@ -60,14 +59,13 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 
 ## Core Workflow
 
-Four user commands, with planning handled automatically:
+Three user commands, with planning handled automatically:
 
 | Command | Output | Implicit Steps |
 |---------|--------|----------------|
 | `/generate premise` | premise.md | — |
 | `/generate treatment` | treatment.md | Generates treatment-approach.md first |
-| `/generate plan` | structure-plan.md | — |
-| `/generate prose` | chapters/ or short-story.md | Generates chapter/story plan first |
+| `/generate prose` | chapters/ or short-story.md | Generates structure-plan.md and chapter/story plans first |
 
 Each stage builds on the previous. The AI handles planning dependencies so you focus on reviewing and iterating the outputs that matter.
 

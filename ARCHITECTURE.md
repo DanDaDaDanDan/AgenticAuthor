@@ -86,22 +86,20 @@ Skills are defined in `.claude/skills/{skill}/SKILL.md`:
 
 ## Generation Flow
 
-Four user commands with implicit planning steps:
+Three user commands with implicit planning steps:
 
-| Command | Implicit Step | Output |
-|---------|---------------|--------|
+| Command | Implicit Steps | Output |
+|---------|----------------|--------|
 | `/generate premise` | — | premise.md |
 | `/generate treatment` | treatment-approach.md | treatment.md |
-| `/generate plan` | — | structure-plan.md |
-| `/generate prose` | chapter-plan or short-story-plan | chapters/ or short-story.md |
+| `/generate prose` | structure-plan.md, chapter/story plans | chapters/ or short-story.md |
 
 ### Short Stories (≤15,000 words)
 
 ```
 /generate premise    → premise.md
 /generate treatment  → [treatment-approach.md] → treatment.md
-/generate plan       → structure-plan.md
-/generate prose      → [short-story-plan.md] → short-story.md
+/generate prose      → [structure-plan.md] → [short-story-plan.md] → short-story.md
 ```
 
 ### Novels (>15,000 words)
@@ -109,11 +107,10 @@ Four user commands with implicit planning steps:
 ```
 /generate premise    → premise.md
 /generate treatment  → [treatment-approach.md] → treatment.md
-/generate plan       → structure-plan.md
-/generate prose      → [chapter-NN-plan.md → chapter-NN.md] × N
+/generate prose      → [structure-plan.md] → [chapter-NN-plan.md → chapter-NN.md] × N
 ```
 
-Bracketed steps `[...]` are implicit — generated automatically and presented for review before proceeding to the main output. Research shows explicit planning before prose generation significantly improves quality (Gurung & Lapata, 2025).
+Bracketed steps `[...]` are implicit — generated automatically and presented for review before proceeding. Research shows explicit planning before prose generation significantly improves quality (Gurung & Lapata, 2025).
 
 ## Context Flow
 
@@ -124,18 +121,18 @@ premise.md (includes prose style selections)
     ↓
 treatment-approach.md + premise.md
     ↓
-treatment.md + treatment-approach.md + premise.md
+treatment.md + premise.md
     ↓
 structure-plan.md + treatment.md + premise.md
     ↓
-generation plan + all prior context
+chapter/story plan + all prior context
     ↓
-prose + summaries.md + chapter-plans/ + structure-plan.md + treatment.md + premise.md
+prose + summaries.md + all prior context
     ↓
 (optional: prose-style-card.md for Commercial style reference)
 ```
 
-**Prose generation uses external plans:** Before writing each chapter/story, a plan document is generated, saved, and reviewed. This plan analyzes requirements, continuity, character states, and style. The plan is a checkpoint for user review before prose generation.
+**Prose generation uses implicit planning:** Before writing, the AI generates structure-plan.md (if missing) and chapter/story plans. Each is presented for review before proceeding. This ensures quality while keeping the user workflow simple.
 
 ## File Formats
 
