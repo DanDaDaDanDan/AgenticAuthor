@@ -14,8 +14,7 @@ Generate content at any stage of the book creation process.
 
 ## Arguments
 
-- `stage`: One of `premise`, `treatment`, `prose`, or `all`
-- `chapter` (optional, prose only): Chapter number to generate (e.g., `/generate prose 5`)
+- `stage`: One of `premise`, `treatment`, or `prose`
 
 ## Instructions
 
@@ -515,35 +514,28 @@ cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate 
 
 ### Continuation Check
 
-After structure-plan exists, check what prose already exists:
+After structure-plan exists, check what prose already exists and automatically continue from where things left off:
 
-1. **For novels:** List files in `books/{project}/chapters/` and `books/{project}/chapter-plans/`
-2. **For short stories:** Check if `books/{project}/short-story-plan.md` and `books/{project}/short-story.md` exist
+**For novels:**
+1. List files in `books/{project}/chapters/` and `books/{project}/chapter-plans/`
+2. Find the next chapter that needs work:
+   - If a chapter plan exists but no prose → generate prose for that chapter
+   - If no plan exists for the next chapter → generate plan, then prose
+3. Continue generating chapters sequentially until complete
 
-**If some chapters exist (novels):**
+**For short stories:**
+1. Check if `books/{project}/short-story-plan.md` exists
+2. Check if `books/{project}/short-story.md` exists
+3. Generate what's missing:
+   - No plan → generate plan first, then prose
+   - Plan exists but no prose → generate prose
+
+**Always inform the user what will be generated next:**
 ```
-Chapters 1-3 already exist (with plans).
-Chapter 4 plan exists but no prose yet.
-
-Options:
-1. Generate chapter 4 prose (plan exists)
-2. Generate chapter 5 (plan + prose)
-3. Regenerate a specific chapter
-4. Regenerate all chapters
-
-Which would you like?
-```
-
-**If short story plan exists but no prose (short stories):**
-```
-Story plan exists. Ready to generate prose.
-
-Options:
-1. Generate prose from existing plan
-2. Regenerate plan first
+Chapter 3 complete. Generating chapter 4...
 ```
 
-**If user specifies a chapter:** `/generate prose 5` → Generate chapter 5 (plan first, then prose)
+The system automatically does the right thing — no user choices needed.
 
 ### Output files
 
@@ -851,20 +843,6 @@ When generating chapter N, read:
 - All previous chapters — 100% (authoritative detail)
 
 The summaries and chapter plans help with continuity; full chapters remain the source of truth for prose.
-
----
-
-## Stage: all
-
-Generate all stages in sequence: premise → treatment → prose
-
-For each stage:
-1. Check if it already exists
-2. If exists, ask user if they want to regenerate
-3. If not exists or user confirms, generate it
-4. Wait for user to review before proceeding to next stage
-
-Note: Structure-plan is generated implicitly as part of the prose stage.
 
 ---
 
