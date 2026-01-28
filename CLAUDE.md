@@ -31,16 +31,16 @@ AgenticAuthor/
 ├── .claude/skills/        # Skill definitions
 └── books/                 # Book projects (separate git repo)
     └── {project}/
-        ├── project.yaml
-        ├── premise.md
+        ├── project.yaml         # Includes length, series_structure as taxonomy keys
+        ├── premise.md           # YAML frontmatter with all taxonomy keys + display names
         ├── treatment-approach.md
         ├── treatment.md
         ├── structure-plan.md    # All project types
         ├── summaries.md         # Generated after prose
-        ├── chapter-plans/       # Generation plans (novels)
-        ├── chapters/            # Prose chapters (novels)
-        ├── short-story-plan.md  # Generation plan (short stories/novelettes)
-        └── short-story.md       # Complete story (short stories/novelettes)
+        ├── chapter-plans/       # Generation plans (novella/novel/epic)
+        ├── chapters/            # Prose chapters (novella/novel/epic)
+        ├── short-story-plan.md  # Generation plan (flash/short/novelette)
+        └── short-story.md       # Complete story (flash/short/novelette)
 ```
 
 ## Core Principles
@@ -95,6 +95,28 @@ Generation work runs in sub-agents with isolated context:
 - Ask for approval between generation steps
 - Read files that sub-agents will read (wastes context)
 - Generate content directly (except premise, which is interactive)
+
+### Taxonomy Keys + Display Names
+
+All YAML frontmatter stores **both** taxonomy keys (for tooling) and display names (for readability):
+
+```yaml
+# Keys enable deterministic tooling
+target_audience_key: adult
+content_rating_key: mature
+prose_style_key: pulp
+
+# Display names are human-readable
+target_audience: "Adult"
+content_rating: "Mature/R"
+prose_style: "Pulp/Action"
+```
+
+**Required taxonomy categories** (from base-taxonomy.json):
+- `length_scope` — collected by `/new-book`
+- `series_structure` — collected by `/new-book`
+- `target_audience` — collected by `/generate premise`
+- `content_rating` — collected by `/generate premise`
 
 ### Git Everything
 

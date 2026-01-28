@@ -87,9 +87,11 @@ Generate the core concept and story foundation.
 **Using taxonomy data:**
 1. Review the genre taxonomy's subgenres and present relevant options to the user
 2. Use the selected subgenre's `key_features`, `themes`, and `tone` to guide the premise
-3. Check base-taxonomy for `target_audience`, `content_rating`, and `pacing` options
-4. Review style-taxonomy for prose style options appropriate to the genre
-5. Include 2-3 taxonomy-derived tags in the final premise
+3. Read `length` and `series_structure` from project.yaml (already collected by /new-book)
+4. Ask the user about `target_audience` and `content_rating` from base-taxonomy options
+5. Review style-taxonomy for prose style options appropriate to the genre
+6. Include 2-3 taxonomy-derived tags in the final premise
+7. Store both taxonomy keys and display names in the frontmatter for downstream tooling
 
 **Output file:** `premise.md`
 
@@ -108,9 +110,47 @@ Generate the core concept and story foundation.
 
    Note the genre's `best_for` suggestions in style-taxonomy.json but let the user choose freely.
 
-3. Generate a complete premise document:
+3. Generate a complete premise document with YAML frontmatter:
 
 ```markdown
+---
+project: {project-name}
+stage: premise
+# Genre taxonomy (keys for tooling, names for readability)
+genre_key: {genre-key from project.yaml}
+subgenre_key: {taxonomy key, e.g., social_issue, workplace_drama}
+subgenre: "{Display Name, e.g., Social Issue Fiction / Workplace Drama}"
+# Base taxonomy - required categories (store both key and display name)
+length_key: {from project.yaml: flash_fiction|short_story|novelette|novella|novel|epic}
+length_target_words: {number}
+series_structure_key: {from project.yaml: standalone|duology|trilogy|series|serial}
+series_structure: "{Display Name, e.g., Standalone}"
+target_audience_key: {middle_grade|young_adult|new_adult|adult}
+target_audience: "{Display Name, e.g., Adult}"
+content_rating_key: {clean|mild|moderate|mature|explicit}
+content_rating: "{Display Name, e.g., Mature/R}"
+# Style taxonomy (keys for tooling)
+prose_style_key: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_style: "{Display Name, e.g., Pulp/Action}"
+prose_pacing_key: {fast|measured|slow-burn}
+prose_pacing: "{Display Name, e.g., Fast}"
+dialogue_density_key: {high|moderate|low}
+dialogue_density: "{Display Name, e.g., High}"
+pov_key: {first_person|third_limited|third_multiple|third_omniscient|second_person}
+pov: "{Display Name, e.g., First Person}"
+tense: {past|present}
+# Themes and tone
+tone: "{free-form description}"
+mood: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+tags:
+  - {tag1}
+  - {tag2}
+custom_style_notes: "{any specific guidance from user - optional}"
+---
+
 # Premise
 
 {Expand the concept into 2-3 paragraphs that capture the essence of the story}
@@ -140,21 +180,15 @@ Generate the core concept and story foundation.
 
 ## Prose Style
 
-- **Approach:** {Commercial/Literary/Minimalist/Pulp/Lyrical/Conversational}
-- **Pacing:** {Fast/Measured/Slow-burn}
-- **Dialogue density:** {High/Moderate/Low}
-- **POV:** {First person, Third limited, Third omniscient, Multiple POV}
-- **Tense:** {Past/Present}
+- **Approach:** {Display name from frontmatter}
+- **Pacing:** {Display name from frontmatter}
+- **Dialogue density:** {Display name from frontmatter}
+- **POV:** {Display name from frontmatter}
+- **Tense:** {from frontmatter}
 - **Custom notes:** {Any specific style preferences from user - optional}
-
-## Taxonomy Selections
-
-- **Subgenre:** {Selected from taxonomy}
-- **Length:** {novel/novelette/short-story} ({estimated word count})
-- **Target Audience:** {e.g., Adult, Young Adult}
-- **Content Rating:** {from base-taxonomy}
-- **Tags:** {2-3 relevant tags from taxonomy}
 ```
+
+**Important:** The YAML frontmatter stores both taxonomy keys (for tooling/determinism) and display names (for readability). Downstream stages copy this frontmatter, ensuring consistent taxonomy data flows through the pipeline.
 
 **After generation:**
 ```bash
@@ -335,21 +369,35 @@ Generate complete, publication-ready content. Do not ask for approval.
 ---
 project: {project-name}
 stage: treatment
-genre: {genre/subgenre}
-length_type: novel
+# Copy all taxonomy keys and display names from premise frontmatter
+genre_key: {from premise}
+subgenre_key: {from premise}
+subgenre: "{from premise}"
+length_key: novel
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from premise}
+series_structure: "{from premise}"
+target_audience_key: {from premise}
+target_audience: "{from premise}"
+content_rating_key: {from premise}
+content_rating: "{from premise}"
+prose_style_key: {from premise}
+prose_style: "{from premise}"
+prose_pacing_key: {from premise}
+prose_pacing: "{from premise}"
+dialogue_density_key: {from premise}
+dialogue_density: "{from premise}"
+pov_key: {from premise}
+pov: "{from premise}"
+tense: {from premise}
+tone: "{from premise}"
+mood: "{from premise}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance from premise}"
+  - {from premise}
+  - {from premise}
+tags:
+  - {from premise}
+custom_style_notes: "{from premise}"
 ---
 
 # Treatment
@@ -410,21 +458,35 @@ custom_style_notes: "{any specific guidance from premise}"
 ---
 project: {project-name}
 stage: treatment
-genre: {genre/subgenre}
-length_type: {novelette|short-story}
+# Copy all taxonomy keys and display names from premise frontmatter
+genre_key: {from premise}
+subgenre_key: {from premise}
+subgenre: "{from premise}"
+length_key: {from premise: flash_fiction|short_story|novelette}
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from premise}
+series_structure: "{from premise}"
+target_audience_key: {from premise}
+target_audience: "{from premise}"
+content_rating_key: {from premise}
+content_rating: "{from premise}"
+prose_style_key: {from premise}
+prose_style: "{from premise}"
+prose_pacing_key: {from premise}
+prose_pacing: "{from premise}"
+dialogue_density_key: {from premise}
+dialogue_density: "{from premise}"
+pov_key: {from premise}
+pov: "{from premise}"
+tense: {from premise}
+tone: "{from premise}"
+mood: "{from premise}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance from premise}"
+  - {from premise}
+  - {from premise}
+tags:
+  - {from premise}
+custom_style_notes: "{from premise}"
 ---
 
 # Treatment
@@ -764,21 +826,35 @@ Do NOT stop between chapters. Generate the entire novel in one `/generate prose`
 ---
 project: {project-name}
 stage: structure-plan
-genre: {genre/subgenre}
-length_type: novel
+# Copy all taxonomy keys and display names from treatment frontmatter
+genre_key: {from treatment}
+subgenre_key: {from treatment}
+subgenre: "{from treatment}"
+length_key: novel
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from treatment}
+series_structure: "{from treatment}"
+target_audience_key: {from treatment}
+target_audience: "{from treatment}"
+content_rating_key: {from treatment}
+content_rating: "{from treatment}"
+prose_style_key: {from treatment}
+prose_style: "{from treatment}"
+prose_pacing_key: {from treatment}
+prose_pacing: "{from treatment}"
+dialogue_density_key: {from treatment}
+dialogue_density: "{from treatment}"
+pov_key: {from treatment}
+pov: "{from treatment}"
+tense: {from treatment}
+tone: "{from treatment}"
+mood: "{from treatment}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance}"
+  - {from treatment}
+  - {from treatment}
+tags:
+  - {from treatment}
+custom_style_notes: "{from treatment}"
 ---
 
 Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
@@ -849,21 +925,35 @@ Brief reference for continuity (from treatment):
 ---
 project: {project-name}
 stage: structure-plan
-genre: {genre/subgenre}
-length_type: {novelette|short-story}
+# Copy all taxonomy keys and display names from treatment frontmatter
+genre_key: {from treatment}
+subgenre_key: {from treatment}
+subgenre: "{from treatment}"
+length_key: {from treatment: flash_fiction|short_story|novelette}
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from treatment}
+series_structure: "{from treatment}"
+target_audience_key: {from treatment}
+target_audience: "{from treatment}"
+content_rating_key: {from treatment}
+content_rating: "{from treatment}"
+prose_style_key: {from treatment}
+prose_style: "{from treatment}"
+prose_pacing_key: {from treatment}
+prose_pacing: "{from treatment}"
+dialogue_density_key: {from treatment}
+dialogue_density: "{from treatment}"
+pov_key: {from treatment}
+pov: "{from treatment}"
+tense: {from treatment}
+tone: "{from treatment}"
+mood: "{from treatment}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance}"
+  - {from treatment}
+  - {from treatment}
+tags:
+  - {from treatment}
+custom_style_notes: "{from treatment}"
 ---
 
 Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
@@ -929,21 +1019,35 @@ Brief reference for continuity (from treatment):
 project: {project-name}
 stage: chapter-plan
 chapter: {N}
-genre: {genre/subgenre}
-length_type: novel
+# Copy all taxonomy keys and display names from structure-plan frontmatter
+genre_key: {from structure-plan}
+subgenre_key: {from structure-plan}
+subgenre: "{from structure-plan}"
+length_key: novel
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from structure-plan}
+series_structure: "{from structure-plan}"
+target_audience_key: {from structure-plan}
+target_audience: "{from structure-plan}"
+content_rating_key: {from structure-plan}
+content_rating: "{from structure-plan}"
+prose_style_key: {from structure-plan}
+prose_style: "{from structure-plan}"
+prose_pacing_key: {from structure-plan}
+prose_pacing: "{from structure-plan}"
+dialogue_density_key: {from structure-plan}
+dialogue_density: "{from structure-plan}"
+pov_key: {from structure-plan}
+pov: "{from structure-plan}"
+tense: {from structure-plan}
+tone: "{from structure-plan}"
+mood: "{from structure-plan}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance}"
+  - {from structure-plan}
+  - {from structure-plan}
+tags:
+  - {from structure-plan}
+custom_style_notes: "{from structure-plan}"
 ---
 
 Copy all frontmatter values from structure-plan. Do not modify.
@@ -1019,21 +1123,35 @@ Copy all frontmatter values from structure-plan. Do not modify.
 ---
 project: {project-name}
 stage: story-plan
-genre: {genre/subgenre}
-length_type: {novelette|short-story}
+# Copy all taxonomy keys and display names from structure-plan frontmatter
+genre_key: {from structure-plan}
+subgenre_key: {from structure-plan}
+subgenre: "{from structure-plan}"
+length_key: {from structure-plan: flash_fiction|short_story|novelette}
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from structure-plan}
+series_structure: "{from structure-plan}"
+target_audience_key: {from structure-plan}
+target_audience: "{from structure-plan}"
+content_rating_key: {from structure-plan}
+content_rating: "{from structure-plan}"
+prose_style_key: {from structure-plan}
+prose_style: "{from structure-plan}"
+prose_pacing_key: {from structure-plan}
+prose_pacing: "{from structure-plan}"
+dialogue_density_key: {from structure-plan}
+dialogue_density: "{from structure-plan}"
+pov_key: {from structure-plan}
+pov: "{from structure-plan}"
+tense: {from structure-plan}
+tone: "{from structure-plan}"
+mood: "{from structure-plan}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance}"
+  - {from structure-plan}
+  - {from structure-plan}
+tags:
+  - {from structure-plan}
+custom_style_notes: "{from structure-plan}"
 ---
 
 Copy all frontmatter values from structure-plan. Do not modify.
@@ -1101,21 +1219,35 @@ Append after each chapter is generated. This provides continuity context for sub
 ---
 project: {project-name}
 stage: summaries
-genre: {genre/subgenre}
-length_type: novel
+# Copy all taxonomy keys and display names from structure-plan frontmatter
+genre_key: {from structure-plan}
+subgenre_key: {from structure-plan}
+subgenre: "{from structure-plan}"
+length_key: novel
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from structure-plan}
+series_structure: "{from structure-plan}"
+target_audience_key: {from structure-plan}
+target_audience: "{from structure-plan}"
+content_rating_key: {from structure-plan}
+content_rating: "{from structure-plan}"
+prose_style_key: {from structure-plan}
+prose_style: "{from structure-plan}"
+prose_pacing_key: {from structure-plan}
+prose_pacing: "{from structure-plan}"
+dialogue_density_key: {from structure-plan}
+dialogue_density: "{from structure-plan}"
+pov_key: {from structure-plan}
+pov: "{from structure-plan}"
+tense: {from structure-plan}
+tone: "{from structure-plan}"
+mood: "{from structure-plan}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance}"
+  - {from structure-plan}
+  - {from structure-plan}
+tags:
+  - {from structure-plan}
+custom_style_notes: "{from structure-plan}"
 ---
 
 Copy all frontmatter values from structure-plan. Do not modify.
@@ -1154,21 +1286,35 @@ Generated once after prose is complete.
 ---
 project: {project-name}
 stage: summaries
-genre: {genre/subgenre}
-length_type: {novelette|short-story}
+# Copy all taxonomy keys and display names from structure-plan frontmatter
+genre_key: {from structure-plan}
+subgenre_key: {from structure-plan}
+subgenre: "{from structure-plan}"
+length_key: {from structure-plan: flash_fiction|short_story|novelette}
 length_target_words: {number}
-target_audience: {adult|young-adult|middle-grade}
-content_rating: {clean|mature|explicit}
-prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
-prose_pacing: {fast|measured|slow-burn}
-dialogue_density: {high|moderate|low}
-pov: {first-person|third-limited|third-omniscient|multiple}
-tense: {past|present}
-tone: "{free-form description}"
+series_structure_key: {from structure-plan}
+series_structure: "{from structure-plan}"
+target_audience_key: {from structure-plan}
+target_audience: "{from structure-plan}"
+content_rating_key: {from structure-plan}
+content_rating: "{from structure-plan}"
+prose_style_key: {from structure-plan}
+prose_style: "{from structure-plan}"
+prose_pacing_key: {from structure-plan}
+prose_pacing: "{from structure-plan}"
+dialogue_density_key: {from structure-plan}
+dialogue_density: "{from structure-plan}"
+pov_key: {from structure-plan}
+pov: "{from structure-plan}"
+tense: {from structure-plan}
+tone: "{from structure-plan}"
+mood: "{from structure-plan}"
 themes:
-  - {primary theme}
-  - {secondary theme}
-custom_style_notes: "{any specific guidance}"
+  - {from structure-plan}
+  - {from structure-plan}
+tags:
+  - {from structure-plan}
+custom_style_notes: "{from structure-plan}"
 ---
 
 Copy all frontmatter values from structure-plan. Do not modify.

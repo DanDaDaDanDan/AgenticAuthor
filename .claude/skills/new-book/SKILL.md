@@ -1,6 +1,6 @@
 ---
 name: new-book
-description: Create a new book project. Use when starting a new novel, novelette, or short story.
+description: Create a new book project. Use when starting any length from flash fiction to epic novels.
 argument-hint: "[book-name]"
 ---
 
@@ -39,9 +39,19 @@ Then ask:
   12. Other (use generic taxonomy)
 
 - What length is this project?
-  1. Short story (single file, ~1,500-7,500 words) - generates `short-story.md`
-  2. Novelette (single file, ~7,500-17,500 words) - generates `short-story.md`
-  3. Novel (multiple chapters, ~40,000-120,000 words) - generates `chapters/` directory
+  1. Flash fiction (single file, ~500-1,500 words) - generates `short-story.md`
+  2. Short story (single file, ~1,500-7,500 words) - generates `short-story.md`
+  3. Novelette (single file, ~7,500-17,500 words) - generates `short-story.md`
+  4. Novella (chaptered, ~17,500-40,000 words) - generates `chapters/` directory
+  5. Novel (chaptered, ~40,000-120,000 words) - generates `chapters/` directory
+  6. Epic (chaptered, ~120,000+ words) - generates `chapters/` directory
+
+- Is this a standalone or part of a series?
+  1. Standalone (complete story in one book)
+  2. Duology (book 1 or 2 of two-book arc)
+  3. Trilogy (book 1, 2, or 3 of three-book arc)
+  4. Series (part of 4+ book series)
+  5. Serial/Episodic (ongoing episodes)
 
 - What is the working title? (Can be different from project name)
 - Who is the author name to use?
@@ -53,28 +63,29 @@ Create the directory structure:
 ```
 books/{book-name}/
 ├── project.yaml
-└── chapters/        (only for novels)
+└── chapters/        (only for novella, novel, epic)
 ```
 
 Use the Bash tool to create the directories:
 ```bash
-mkdir -p books/{book-name}/chapters  # for novels
+mkdir -p books/{book-name}/chapters  # for novella, novel, epic
 # OR
-mkdir -p books/{book-name}           # for short stories/novelettes
+mkdir -p books/{book-name}           # for flash fiction, short stories, novelettes
 ```
 
 ### Step 3: Create project.yaml
 
 Write the project.yaml file with the gathered information.
 
-**Important:** Store the genre in lowercase with hyphens to match taxonomy filenames:
+**Important:** Store genre, length, and series_structure as taxonomy keys (lowercase with underscores) to enable downstream tooling:
 
 ```yaml
 name: {book-name}
 title: {working-title}
 author: {author-name}
 genre: {genre-key}  # e.g., fantasy, science-fiction, mystery-thriller
-length: novel  # or: novelette, short-story
+length: novel  # taxonomy key: flash_fiction, short_story, novelette, novella, novel, epic
+series_structure: standalone  # taxonomy key: standalone, duology, trilogy, series, serial
 created: {today's date in YYYY-MM-DD format}
 ```
 
@@ -93,6 +104,25 @@ created: {today's date in YYYY-MM-DD format}
 | Historical Fiction | historical-fiction |
 | Young Adult | young-adult |
 | Other | generic |
+
+**Length key mapping:**
+| User Selection | length value in YAML |
+|---------------|----------------------|
+| Flash fiction | flash_fiction |
+| Short story | short_story |
+| Novelette | novelette |
+| Novella | novella |
+| Novel | novel |
+| Epic | epic |
+
+**Series structure key mapping:**
+| User Selection | series_structure value in YAML |
+|---------------|-------------------------------|
+| Standalone | standalone |
+| Duology | duology |
+| Trilogy | trilogy |
+| Series | series |
+| Serial/Episodic | serial |
 
 ### Step 4: Initialize Git (if needed)
 
@@ -121,7 +151,8 @@ Created new book project: {book-name}
   Title: {working-title}
   Author: {author-name}
   Genre: {genre}
-  Length: {novel/novelette/short-story}
+  Length: {length}
+  Series: {series_structure}
 
 Next steps:
   1. cd books/{book-name}
