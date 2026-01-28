@@ -514,8 +514,8 @@ Generate short-story-plan.md for the {project} project.
 **Format:**
 [Include story plan template]
 
-**CRITICAL — Length Strategy section:**
-The structure-plan specifies a target word count. Your Length Strategy must genuinely analyze how each scene will achieve its portion of that target. Do not write generic advice — think specifically about THIS story's scenes and what they need.
+**Per-scene word counts:**
+The structure-plan includes word count targets for each scene. Carry these forward into the story-plan — they guide prose generation. The prose sub-agent won't have access to structure-plan, so the story-plan must be self-contained.
 
 **After generating:**
 ```bash
@@ -555,6 +555,9 @@ Follow the Style Notes section in the story-plan. Key elements:
 - Dialogue vs narration balance
 - Sensory focus
 - Tone
+
+**Scene length guidance:**
+The story-plan includes per-scene word count targets. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development — a scene targeted at 1,200 words needs more beats, dialogue, and interiority than one targeted at 600 words.
 
 **Prose format:**
 ```markdown
@@ -766,6 +769,8 @@ Carried forward from treatment:
 - **POV:** {narrative perspective}
 - **Timespan:** {how much time the story covers}
 
+Note: Per-scene word count targets below should approximately sum to the overall target.
+
 ## Characters
 
 Brief reference for continuity (from treatment):
@@ -847,6 +852,8 @@ Brief reference for continuity (from treatment):
 
 ## Scene-by-Scene Breakdown
 
+**Chapter word count target:** {from structure-plan, e.g., ~3,500 words}
+
 ### Scene 1: {Description}
 - **Purpose:** {why this scene exists}
 - **Conflict/Tension:** {what drives the scene}
@@ -862,16 +869,6 @@ Brief reference for continuity (from treatment):
 - **Tone:** {emotional quality}
 - **Dialogue vs narration:** {balance for this chapter}
 - **Sensory focus:** {what senses to emphasize}
-
-## Length Strategy
-
-Think through how this chapter will achieve its target word count (~{X} words). Consider:
-- How do the scenes in this chapter relate to the target length?
-- Which moments deserve room to breathe?
-- What aspects naturally invite expansion?
-- Where might you be tempted to rush?
-
-{Write 2-4 sentences of genuine analysis about how this specific chapter will achieve its length target.}
 
 ## Potential Pitfalls
 
@@ -904,14 +901,16 @@ Think through how this chapter will achieve its target word count (~{X} words). 
 
 ## Scene-by-Scene Breakdown
 
+Copy per-scene word count targets from structure-plan. These guide prose generation.
+
 ### Scene 1: {Description}
+- **Word count target:** {from structure-plan, e.g., ~900 words}
 - **Purpose:** {why this scene exists}
 - **Conflict/Tension:** {what drives the scene}
 - **Key beats:** {1-3 specific moments}
 - **Ends with:** {transition or turn}
-- **Word count target:** {estimate}
 
-{Repeat for each scene from structure-plan.md}
+{Repeat for each scene, carrying forward word count targets from structure-plan}
 
 ## Style Notes
 
@@ -919,16 +918,6 @@ Think through how this chapter will achieve its target word count (~{X} words). 
 - **Tone:** {emotional quality}
 - **Dialogue vs narration:** {balance}
 - **Sensory focus:** {what senses to emphasize}
-
-## Length Strategy
-
-Think through how this story will achieve its target word count (~{X} words). Consider:
-- How does the scene count relate to the target length?
-- Which moments deserve room to breathe?
-- What aspects naturally invite expansion?
-- Where might you be tempted to rush?
-
-{Write 2-4 sentences of genuine analysis about how this specific story will achieve its length target.}
 
 ## Potential Pitfalls
 
