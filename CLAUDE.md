@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code when working with AgenticAuthor. See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed file formats and system design.
+Guidance for Claude Code when working with AgenticAuthor. See [ARCHITECTURE.md](ARCHITECTURE.md) for system overview.
 
 ## Overview
 
@@ -103,7 +103,7 @@ Every skill operation commits to the books/ git repo. This enables iteration and
 ## Key Paths
 
 - **Book files:** `books/{project}/`
-- **Style card:** `AgenticAuthor/misc/prose-style-card.md` (repo root)
-- **Taxonomies:** `AgenticAuthor/taxonomies/` (repo root)
+- **Style card:** `misc/prose-style-card.md`
+- **Taxonomies:** `taxonomies/`
 
 The prose style card and taxonomies are at the repo root, NOT inside book projects.
