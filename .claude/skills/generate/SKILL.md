@@ -483,6 +483,16 @@ Generate structure-plan.md for the {project} project.
 **Format for {novels/short stories}:**
 [Include appropriate structure-plan template]
 
+**Word count allocation:**
+The overall target is {X} words across {N} scenes/chapters. Before writing the structure-plan, reason through how to allocate this budget:
+
+- Which scenes carry the most narrative weight? (These need more words)
+- Which scenes are transitional or momentum-focused? (These can be leaner)
+- Where does the story need room to breathe — emotional beats, character development, world-building?
+- Where should pacing be tight — action sequences, tension, reveals?
+
+Distribute word counts so they sum to the overall target. A heist scene might need 1,200 words; a quick transition might need 600. The distribution should reflect the story's needs, not be uniform.
+
 **After generating:**
 ```bash
 cd /d/Personal/AgenticAuthor/books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
@@ -516,6 +526,15 @@ Generate short-story-plan.md for the {project} project.
 
 **Per-scene word counts:**
 The structure-plan includes word count targets for each scene. Carry these forward into the story-plan — they guide prose generation. The prose sub-agent won't have access to structure-plan, so the story-plan must be self-contained.
+
+**Planning for length:**
+For each scene, think through how the prose will achieve its word count target:
+
+- A 900-word scene might have 3-4 beats with modest development
+- A 1,200-word scene needs more: extended dialogue exchanges, deeper interiority, richer sensory detail, or more beats
+- Consider what THIS scene specifically offers for development — character moments? tension building? atmosphere? dialogue?
+
+Add a "Development notes" field to each scene in your plan, briefly noting what elements will fill the space (e.g., "Extended dialogue between Dex and Throttle; Dex's internal justification monologue; sensory details of the base").
 
 **After generating:**
 ```bash
@@ -613,6 +632,16 @@ Generate chapter plan for Chapter {N} of {project}.
 
 **Format:**
 [Include chapter plan template]
+
+**Planning for length:**
+This chapter targets ~{X} words. Think through how the prose will achieve this:
+
+- How many scenes does this chapter contain? How should word count distribute across them?
+- Which moments in this chapter need room to breathe — emotional beats, reveals, confrontations?
+- Where should pacing be tight — action, transitions, momentum?
+- What specific elements will develop each scene — dialogue, interiority, description, tension-building?
+
+Include these considerations in the chapter plan so the prose sub-agent has concrete guidance.
 
 **After generating:**
 ```bash
@@ -855,13 +884,15 @@ Brief reference for continuity (from treatment):
 **Chapter word count target:** {from structure-plan, e.g., ~3,500 words}
 
 ### Scene 1: {Description}
+- **Word count:** {portion of chapter target, e.g., ~1,200 words}
 - **Purpose:** {why this scene exists}
 - **Conflict/Tension:** {what drives the scene}
 - **Key beats:** {1-3 specific moments}
 - **Ends with:** {transition to next scene}
+- **Development notes:** {what fills the space — dialogue, interiority, description, tension}
 
 ### Scene 2: {Description}
-{Repeat for each scene}
+{Repeat for each scene, with word counts summing to chapter target}
 
 ## Style Notes
 
@@ -909,6 +940,7 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 - **Conflict/Tension:** {what drives the scene}
 - **Key beats:** {1-3 specific moments}
 - **Ends with:** {transition or turn}
+- **Development notes:** {what will fill the space — e.g., "dialogue exchange + internal monologue + setting details"}
 
 {Repeat for each scene, carrying forward word count targets from structure-plan}
 
