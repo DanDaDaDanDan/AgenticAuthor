@@ -20,7 +20,7 @@ Generate content at any stage of the book creation process.
 
 ## Execution Model
 
-**CRITICAL: Use sub-agents for all generation work.**
+**Use sub-agents for all generation work.**
 
 This skill orchestrates generation by spawning sub-agents with carefully managed context. Each sub-agent:
 - Receives ONLY the files it needs (per the self-contained stages principle)
@@ -157,7 +157,7 @@ Generate the core concept and story foundation.
 
 **After generation:**
 ```bash
-cd books && git add {project}/premise.md && git commit -m "Add: Generate premise for {project}"
+cd /d/Personal/AgenticAuthor/books && git add {project}/premise.md && git commit -m "Add: Generate premise for {project}"
 ```
 
 ---
@@ -170,9 +170,8 @@ Generate the story outline/treatment.
 
 1. **Read premise** to understand the story (main context)
 2. **Ask clarifying questions** about ending, structure, specific elements
-3. **Spawn sub-agent** to generate treatment-approach.md
-4. **Spawn sub-agent** to generate treatment.md
-5. Report completion
+3. **Spawn sub-agent** to generate both treatment-approach.md and treatment.md
+4. Report completion
 
 ### Clarifying Questions (ask BEFORE spawning)
 
@@ -410,7 +409,7 @@ Generate the actual story prose.
    - Prose sub-agent(s)
 4. Report completion
 
-### Context Rules (CRITICAL)
+### Context Rules
 
 **Self-contained stages principle:** Each sub-agent reads ONLY its immediate predecessor.
 
@@ -677,6 +676,9 @@ Generate prose for Chapter {N} of {project}.
 1. `D:\Personal\AgenticAuthor\books\{project}\chapters\chapter-{NN}.md` — Chapter prose
 2. Append to `D:\Personal\AgenticAuthor\books\{project}\summaries.md` — Chapter summary
 
+**Scene length guidance:**
+The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
+
 **After generating:**
 ```bash
 mkdir -p /d/Personal/AgenticAuthor/books/{project}/chapters
@@ -726,6 +728,8 @@ Carried forward from treatment:
 - **Total chapters:** {number}
 - **Estimated word count:** {total}
 - **POV structure:** {Single POV / Multiple POV / Alternating}
+
+Note: Per-chapter word count targets below should approximately sum to the overall target.
 
 ## Characters
 
@@ -969,8 +973,8 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 | structure-plan | treatment only | premise |
 | chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
 | story-plan | structure-plan only | premise, treatment |
-| prose (novel) | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
-| prose (short) | story-plan only | premise, treatment, structure-plan |
+| prose (novel) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment, structure-plan |
+| prose (short) | short-story-plan + prose-style-card | premise, treatment, structure-plan |
 
 **Path Notes:**
 - Book project files are in `books/{project}/`
