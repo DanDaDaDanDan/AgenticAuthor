@@ -20,13 +20,18 @@ Select a book project to work on. All subsequent `/generate`, `/iterate`, `/stat
 
 ### Step 1: List Available Books
 
-Read the `books/` directory to find available projects:
+Read the `books/` directory to find available projects. List subdirectories that contain a `project.yaml` file (this automatically excludes `.git` and other non-project directories):
 
 ```bash
-ls -d books/*/ 2>/dev/null | xargs -I{} basename {}
+for dir in books/*/; do
+  [ -f "$dir/project.yaml" ] && basename "$dir"
+done
 ```
 
-Filter out system directories (like `.git`).
+Alternatively, just list directories and filter out `.git`:
+```bash
+ls -d books/*/ 2>/dev/null | xargs -I{} basename {} | grep -v "^\.git$"
+```
 
 ### Step 2: Select Book
 

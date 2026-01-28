@@ -142,7 +142,7 @@ cd books && git add {book-name}/ && git commit -m "Add: Initialize {book-name} p
 
 ### Step 6: Set as Active Book
 
-Update `books/active-book.md` to set the new project as active. The file format is:
+Create or update `books/active-book.md` to set the new project as active. The file format is:
 
 ```
 # Active Book
