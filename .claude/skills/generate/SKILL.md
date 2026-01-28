@@ -458,11 +458,11 @@ Generate the actual story prose.
 
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
-| structure-plan | treatment.md only | premise.md |
-| story-plan (short) | structure-plan.md only | premise.md, treatment.md |
-| chapter-plan (novel) | structure-plan.md + summaries.md + prev chapter-plans | premise.md, treatment.md |
-| prose (short) | short-story-plan.md + prose-style-card.md | premise.md, treatment.md, structure-plan.md |
-| prose (novel) | chapter-plan + summaries.md + prev chapters + prose-style-card.md | premise.md, treatment.md, structure-plan.md |
+| structure-plan | treatment.md only | premise.md, treatment-approach.md |
+| story-plan (short) | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
+| chapter-plan (novel) | structure-plan.md + summaries.md + prev chapter-plans | premise.md, treatment-approach.md, treatment.md |
+| prose (short) | short-story-plan.md + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| prose (novel) | chapter-plan + summaries.md + prev chapters + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
 
 ### Clarifying Questions
 
@@ -1015,10 +1015,10 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 | treatment-approach | premise + taxonomies | — |
 | treatment | treatment-approach + premise | — |
 | structure-plan | treatment only | premise, treatment-approach |
-| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
-| story-plan | structure-plan only | premise, treatment |
-| prose (novel) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment, structure-plan |
-| prose (short) | short-story-plan + prose-style-card | premise, treatment, structure-plan |
+| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
+| story-plan | structure-plan only | premise, treatment-approach, treatment |
+| prose (novel) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment-approach, treatment, structure-plan |
+| prose (short) | short-story-plan + prose-style-card | premise, treatment-approach, treatment, structure-plan |
 
 **Path Notes:**
 - Book project files are in `books/{project}/`
