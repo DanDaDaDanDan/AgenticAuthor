@@ -67,21 +67,27 @@ Set as active anyway? (y/n)
 
 ### Step 4: Update Active Book File
 
-Edit `books/active-book.md` to set the selected project:
+Edit `books/active-book.md` to set the selected project. The file format is:
 
-```markdown
+```
 # Active Book
 
 The currently selected book project.
 
-```yaml
-project: {book-name}
-```
+[yaml code block with: project: {book-name}]
 
 To change the active book, use `/select-book`.
 ```
 
-### Step 5: Show Confirmation
+Replace the `project:` value in the YAML block with the selected book name.
+
+### Step 5: Commit the Change
+
+```bash
+cd books && git add active-book.md && git commit -m "Update: Set {book-name} as active book"
+```
+
+### Step 6: Show Confirmation
 
 Display confirmation with project details:
 
@@ -99,9 +105,9 @@ To see project status: /status
 To switch projects: /select-book
 ```
 
-### Step 6: Show Current Active Book (No Args, Already Set)
+## Showing Current Status (No Args)
 
-If called with no arguments and there's already an active book, show:
+When called with no arguments, first check if there's already an active book. If so, show current status before listing options:
 
 ```
 Current active book: {book-name}
@@ -112,12 +118,14 @@ Current active book: {book-name}
   Length: {length}
 
 Available projects:
-  1. {book-name-1} {" (active)" if current}
+  1. {book-name-1} (active)
   2. {book-name-2}
   3. {book-name-3}
 
-Select a different project?
+Select a different project? (Enter number or name, or press Enter to keep current)
 ```
+
+If no active book is set, just show the list without the "current" section.
 
 ## Clearing Active Book
 

@@ -30,8 +30,8 @@ All skills operate on the **active book** stored in `books/active-book.md`. This
 - `/select-book` switches to a different project
 - All other commands use the active book (with fallback to current directory)
 
-```yaml
-# books/active-book.md contains:
+The file contains a YAML code block with the project name:
+```
 project: my-fantasy-novel
 ```
 
