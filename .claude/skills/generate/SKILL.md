@@ -170,8 +170,9 @@ Generate the story outline/treatment.
 
 1. **Read premise** to understand the story (main context)
 2. **Ask clarifying questions** about ending, structure, specific elements
-3. **Spawn sub-agent** to generate both treatment-approach.md and treatment.md
-4. Report completion
+3. **Spawn sub-agent** to generate treatment-approach.md (planning document)
+4. **Spawn sub-agent** to generate treatment.md (reads treatment-approach for guidance)
+5. Report completion
 
 ### Clarifying Questions (ask BEFORE spawning)
 
@@ -196,14 +197,14 @@ After reading the premise, ask the user about key story decisions:
 3. **Any specific elements?** (optional, free-form)
    > Are there any specific plot points, scenes, or story beats you definitely want included?
 
-### Sub-Agent: Treatment Generation
+### Sub-Agent: Treatment Approach
 
-After collecting user preferences, spawn a single sub-agent to generate both treatment-approach.md and treatment.md.
+**Spawn first.** This planning document reasons through how to structure the treatment.
 
 **Sub-agent prompt template:**
 
 ```
-Generate treatment documents for the {project} project.
+Generate treatment-approach.md for the {project} project.
 
 **Project type:** {novel/novelette/short-story}
 **User preferences:**
@@ -217,22 +218,64 @@ Generate treatment documents for the {project} project.
 
 **Do NOT read:** Any other files. Premise is the authoritative source.
 
-**Output files:**
-1. `D:\Personal\AgenticAuthor\books\{project}\treatment-approach.md` — Planning document
-2. `D:\Personal\AgenticAuthor\books\{project}\treatment.md` — Full treatment
+**Output file:** `D:\Personal\AgenticAuthor\books\{project}\treatment-approach.md`
 
-**Treatment-approach format:**
+**Format:**
 [Include the treatment-approach template from this skill]
 
-**Treatment format (novels):**
-[Include the novel treatment template from this skill]
-
-**Treatment format (short stories/novelettes):**
-[Include the short story treatment template from this skill]
+**Purpose:**
+This document analyzes the premise and plans the treatment structure. Think through:
+- How the central conflict drives story structure
+- The protagonist's arc (starting state → transformation → ending state)
+- How to deploy the antagonist across the narrative
+- Which structure type fits best and why
+- Potential challenges to navigate
 
 **After generating:**
 ```bash
-cd /d/Personal/AgenticAuthor/books && git add {project}/treatment-approach.md {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
+cd /d/Personal/AgenticAuthor/books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"
+```
+
+Generate complete content. Do not ask for approval.
+```
+
+---
+
+### Sub-Agent: Treatment
+
+**Spawn after treatment-approach exists.** This generates the full treatment using the approach as guidance.
+
+**Sub-agent prompt template:**
+
+```
+Generate treatment.md for the {project} project.
+
+**Project type:** {novel/novelette/short-story}
+
+**Context to read:**
+1. `D:\Personal\AgenticAuthor\books\{project}\treatment-approach.md` — Planning document with structure decisions
+2. `D:\Personal\AgenticAuthor\books\{project}\premise.md` — Original premise for Story Configuration details
+
+**Do NOT read:** Any other files.
+
+**Output file:** `D:\Personal\AgenticAuthor\books\{project}\treatment.md`
+
+**Format (novels):**
+[Include the novel treatment template from this skill]
+
+**Format (short stories/novelettes):**
+[Include the short story treatment template from this skill]
+
+**Guidance:**
+Follow the decisions made in treatment-approach.md:
+- Use the structure type it selected
+- Follow the act overview it outlined
+- Address the potential challenges it identified
+- Carry forward Story Configuration from premise (this section is authoritative for downstream stages)
+
+**After generating:**
+```bash
+cd /d/Personal/AgenticAuthor/books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
 ```
 
 Generate complete, publication-ready content. Do not ask for approval.
@@ -969,8 +1012,9 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
-| treatment | premise + taxonomies | — |
-| structure-plan | treatment only | premise |
+| treatment-approach | premise + taxonomies | — |
+| treatment | treatment-approach + premise | — |
+| structure-plan | treatment only | premise, treatment-approach |
 | chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
 | story-plan | structure-plan only | premise, treatment |
 | prose (novel) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment, structure-plan |
