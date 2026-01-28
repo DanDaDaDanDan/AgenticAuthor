@@ -120,7 +120,7 @@ Bracketed steps `[...]` are implicit — generated automatically before the main
 ```
 premise.md (seed document)
     ↓ reads premise
-treatment.md (self-contained: includes Story Configuration from premise)
+treatment.md (self-contained: includes frontmatter from premise)
     ↓ reads treatment only
 structure-plan.md (self-contained: includes style config + characters)
     ↓ reads structure-plan + summaries + previous chapter-plans
@@ -254,22 +254,27 @@ Lightweight planning document generated before the full treatment. Analyzes the 
 The treatment is **self-contained** — it includes all story configuration from premise so downstream stages don't need to read premise.
 
 ```markdown
+---
+project: {project-name}
+stage: treatment
+genre: {genre/subgenre}
+length_type: {novel|novelette|short-story}
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance from premise}"
+---
+
 # Treatment
-
-## Story Configuration
-
-Carried forward from premise (authoritative for all downstream stages):
-
-- **Genre:** {genre/subgenre}
-- **Length:** {novel/novelette/short-story} (~{word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary}, {secondary}
-- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Story Overview
 
@@ -304,22 +309,29 @@ Carried forward from premise (authoritative for all downstream stages):
 The structure plan is **self-contained** — it includes story configuration from treatment so chapter-plans don't need to read treatment.
 
 ```markdown
+---
+project: {project-name}
+stage: structure-plan
+genre: {genre/subgenre}
+length_type: novel
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
+
 # Structure Plan
-
-## Story Configuration (Canonical)
-
-Copy verbatim from treatment. Only edit if user explicitly requested changes.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {novel} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -379,22 +391,29 @@ Brief reference for continuity:
 The structure plan is **self-contained** — it includes story configuration from treatment so story-plans don't need to read treatment.
 
 ```markdown
+---
+project: {project-name}
+stage: structure-plan
+genre: {genre/subgenre}
+length_type: {novelette|short-story}
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
+
 # Structure Plan
-
-## Story Configuration (Canonical)
-
-Copy verbatim from treatment. Only edit if user explicitly requested changes.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {short-story/novelette} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -447,24 +466,29 @@ Generated after prose. Provides compressed context for continuity.
 
 **For novels:**
 ```markdown
-# Chapter Summaries
-
-## Story Configuration (Canonical)
-
-Copy verbatim from structure-plan header. Do not modify.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {novel} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance}
-
 ---
+project: {project-name}
+stage: summaries
+genre: {genre/subgenre}
+length_type: novel
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from structure-plan. Do not modify.
+
+# Chapter Summaries
 
 ### Chapter 1: {Title}
 
@@ -513,22 +537,30 @@ Copy verbatim from structure-plan header. Do not modify.
 External generation plan created before each chapter's prose. Saved for review, iteration, and debugging.
 
 ```markdown
+---
+project: {project-name}
+stage: chapter-plan
+chapter: {N}
+genre: {genre/subgenre}
+length_type: novel
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from structure-plan. Do not modify.
+
 # Chapter {N} Plan: {Title}
-
-## Story Configuration (Canonical)
-
-Copy verbatim from structure-plan. Do not modify.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {novel} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance}
 
 ## Structure Plan Reference
 - Treatment reference: {which act/scenes this covers}
@@ -577,22 +609,29 @@ Copy verbatim from structure-plan. Do not modify.
 External generation plan for short stories and novelettes. Similar to chapter plans but covers the entire story.
 
 ```markdown
+---
+project: {project-name}
+stage: story-plan
+genre: {genre/subgenre}
+length_type: {novelette|short-story}
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from structure-plan. Do not modify.
+
 # Story Plan: {Title}
-
-## Story Configuration (Canonical)
-
-Copy verbatim from structure-plan. Do not modify.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {short-story/novelette} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance}
 
 ## Structure Plan Reference
 - Story arc: {the planned arc from structure-plan}
@@ -657,7 +696,7 @@ Skills read taxonomies to present options during premise generation. User select
 
 ## Prose Style
 
-Style is **selected per-project** during premise generation, then **carried forward** into treatment's Story Configuration section.
+Style is **selected per-project** during premise generation, then **carried forward** into treatment's frontmatter.
 
 **Style approaches:**
 - **Commercial** - Clear, readable, mass-market. See `misc/prose-style-card.md` for detailed guidance.
@@ -667,7 +706,7 @@ Style is **selected per-project** during premise generation, then **carried forw
 - **Lyrical** - Poetic, atmospheric, sensory-rich
 - **Conversational** - Strong narrative voice, personality-driven
 
-The style flows through the pipeline: premise → treatment (Story Configuration) → structure-plan → chapter-plan (Style Notes). Each stage carries the configuration forward so downstream stages don't need to look backward.
+The style flows through the pipeline: premise → treatment (frontmatter) → structure-plan → chapter-plan (Style Notes). Each stage carries the configuration forward so downstream stages don't need to look backward.
 
 ## Git Integration
 

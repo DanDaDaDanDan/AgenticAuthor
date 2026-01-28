@@ -71,6 +71,22 @@ Proceed with these changes?
 
 Do NOT proceed until you're confident you understand the request.
 
+### Step 3.5: Enumerate Planned Changes
+
+Before making any edits, list exactly what you will modify:
+
+```
+Planned modifications:
+- [Section/paragraph 1] — [what will change]
+- [Section/paragraph 2] — [what will change]
+
+Sections preserved unchanged:
+- [Section A]
+- [Section B]
+```
+
+This ensures precision and allows the user to catch unintended changes before they happen.
+
 ### Step 4: Read Context
 
 **Read only the immediately prior stage plus the target being iterated.**
@@ -84,23 +100,23 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `AgenticAuthor/taxonomies/style-taxonomy.json` - Style options (if changing style)
 
 **For treatment iteration:**
-- `books/{project}/treatment.md` - Current treatment (already self-contained with Story Configuration)
+- `books/{project}/treatment.md` - Current treatment (already self-contained with frontmatter)
 - Do NOT read premise.md — treatment is the authoritative document now
-- Note: If iterating on treatment, ensure Story Configuration section stays accurate
+- Note: If iterating on treatment, ensure frontmatter stays accurate
 
 **For plan iteration (structure-plan.md):**
-- `books/{project}/structure-plan.md` - Current plan (already contains Story Configuration + Characters)
+- `books/{project}/structure-plan.md` - Current plan (already contains frontmatter + Characters)
 - Do NOT read premise.md or treatment.md — structure-plan is self-contained
 
 **For chapter plan iteration (novels):**
-- `books/{project}/structure-plan.md` - For Story Configuration and character reference
+- `books/{project}/structure-plan.md` - For frontmatter and character reference
 - `books/{project}/summaries.md` (if exists) - For continuity
 - Previous chapter plans from `books/{project}/chapter-plans/`
 - The specific chapter plan being revised
 - Do NOT read premise.md or treatment.md
 
 **For story plan iteration (short stories/novelettes):**
-- `books/{project}/structure-plan.md` - For Story Configuration and character reference
+- `books/{project}/structure-plan.md` - For frontmatter and character reference
 - `books/{project}/short-story-plan.md` - The plan being revised
 - Do NOT read premise.md or treatment.md
 
@@ -156,6 +172,13 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 ```
 
 ## Iteration Guidelines
+
+### Minimal Edits Principle
+
+- Prefer targeted changes over wholesale rewrites
+- If feedback affects one paragraph, edit that paragraph—not the entire section
+- If feedback is broad ("make it darker"), still identify the smallest set of changes that achieves the goal
+- Only rewrite entire documents when explicitly requested ("rewrite this from scratch")
 
 ### Premise Iteration
 
@@ -219,11 +242,30 @@ For global feedback ("make everything darker"), revise all chapters.
 
 ## Cascading Changes and the Self-Contained Model
 
-Because each stage only reads the immediately prior stage, iteration automatically propagates forward:
+Because each stage only reads the immediately prior stage, iteration automatically propagates forward.
+
+### Before Making Changes
+
+If the requested change will force cascading edits to other files or sections:
+
+1. **Enumerate the cascade first:**
+   ```
+   This change will affect:
+   - treatment.md: frontmatter (field X)
+   - structure-plan.md: frontmatter would become stale (currently copies from treatment)
+   - chapter-plans/: may need regeneration if structure changes significantly
+   ```
+
+2. **Ask user how to proceed:**
+   - Proceed with change + inform about downstream staleness?
+   - Proceed and cascade updates to downstream files?
+   - Abort and reconsider?
+
+### Cascade Rules by Stage
 
 **Premise changes:**
 - If downstream stages don't exist yet: no action needed — they'll read the updated premise
-- If treatment already exists: treatment's Story Configuration may be stale. Inform user they may want to regenerate treatment or update its Story Configuration section.
+- If treatment already exists: treatment's frontmatter may be stale. Inform user they may want to regenerate treatment or update its frontmatter.
 
 **Treatment changes:**
 - Structure-plan reads only treatment, so it automatically sees changes when regenerated

@@ -255,7 +255,7 @@ Generate treatment.md for the {project} project.
 
 **Context to read:**
 1. `books/{project}/treatment-approach.md` — Planning document with structure decisions
-2. `books/{project}/premise.md` — Original premise for Story Configuration details
+2. `books/{project}/premise.md` — Original premise for frontmatter values
 
 **Do NOT read:** Any other files.
 
@@ -272,7 +272,7 @@ Follow the decisions made in treatment-approach.md:
 - Use the structure type it selected
 - Follow the act overview it outlined
 - Address the potential challenges it identified
-- Carry forward Story Configuration from premise (this section is authoritative for downstream stages)
+- Carry forward frontmatter from premise (the frontmatter is authoritative for downstream stages)
 
 **After generating:**
 ```bash
@@ -332,22 +332,27 @@ Generate complete, publication-ready content. Do not ask for approval.
 #### Treatment Format (Novels)
 
 ```markdown
+---
+project: {project-name}
+stage: treatment
+genre: {genre/subgenre}
+length_type: novel
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance from premise}"
+---
+
 # Treatment
-
-## Story Configuration
-
-Carried forward from premise (authoritative for all downstream stages):
-
-- **Genre:** {genre/subgenre from premise}
-- **Length:** {novel/novelette/short-story} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Story Overview
 
@@ -402,22 +407,27 @@ Carried forward from premise (authoritative for all downstream stages):
 #### Treatment Format (Short Stories/Novelettes)
 
 ```markdown
+---
+project: {project-name}
+stage: treatment
+genre: {genre/subgenre}
+length_type: {novelette|short-story}
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance from premise}"
+---
+
 # Treatment
-
-## Story Configuration
-
-Carried forward from premise (authoritative for all downstream stages):
-
-- **Genre:** {genre/subgenre from premise}
-- **Length:** {short-story/novelette} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Story Arc
 
@@ -521,7 +531,7 @@ Generate structure-plan.md for the {project} project.
 - Chapter/scene structure: {user's choice}
 
 **Context to read:**
-1. `books/{project}/treatment.md` — Full treatment with Story Configuration
+1. `books/{project}/treatment.md` — Full treatment with frontmatter
 
 **Do NOT read:** premise.md or any other files. Treatment is the authoritative source.
 
@@ -615,7 +625,7 @@ Generate complete prose for the {project} novelette/short story.
 2. `books/{project}/summaries.md` — Story summary
 
 **Style guidance:**
-Follow the Story Configuration (Canonical) section for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for scene-specific guidance on:
+Follow the frontmatter for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for scene-specific guidance on:
 - Pacing (fast/slow/mixed)
 - Dialogue vs narration balance
 - Sensory focus
@@ -713,7 +723,7 @@ Generate prose for Chapter {N} of {project}.
 2. Append to `books/{project}/summaries.md` — Chapter summary
 
 **Style guidance:**
-Follow the Story Configuration (Canonical) section in the chapter-plan for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for chapter-specific guidance on pacing, dialogue balance, and sensory focus.
+Follow the frontmatter in the chapter-plan for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for chapter-specific guidance on pacing, dialogue balance, and sensory focus.
 
 **Scene length guidance:**
 The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
@@ -751,22 +761,29 @@ Do NOT stop between chapters. Generate the entire novel in one `/generate prose`
 ### Structure Plan Format (Novels)
 
 ```markdown
+---
+project: {project-name}
+stage: structure-plan
+genre: {genre/subgenre}
+length_type: novel
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
+
 # Structure Plan
-
-## Story Configuration (Canonical)
-
-Copy verbatim from treatment. Only edit if user explicitly requested changes.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {novel} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -829,22 +846,29 @@ Brief reference for continuity (from treatment):
 ### Structure Plan Format (Short Stories/Novelettes)
 
 ```markdown
+---
+project: {project-name}
+stage: structure-plan
+genre: {genre/subgenre}
+length_type: {novelette|short-story}
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
+
 # Structure Plan
-
-## Story Configuration (Canonical)
-
-Copy verbatim from treatment. Only edit if user explicitly requested changes.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {short-story/novelette} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -901,22 +925,30 @@ Brief reference for continuity (from treatment):
 ### Chapter Plan Format (Novels)
 
 ```markdown
+---
+project: {project-name}
+stage: chapter-plan
+chapter: {N}
+genre: {genre/subgenre}
+length_type: novel
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from structure-plan. Do not modify.
+
 # Chapter {N} Plan: {Title}
-
-## Story Configuration (Canonical)
-
-Copy verbatim from structure-plan. Do not modify.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {novel} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance}
 
 ## Structure Plan Reference
 
@@ -980,22 +1012,29 @@ Copy verbatim from structure-plan. Do not modify.
 ### Story Plan Format (Short Stories/Novelettes)
 
 ```markdown
+---
+project: {project-name}
+stage: story-plan
+genre: {genre/subgenre}
+length_type: {novelette|short-story}
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from structure-plan. Do not modify.
+
 # Story Plan: {Title}
-
-## Story Configuration (Canonical)
-
-Copy verbatim from structure-plan. Do not modify.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {short-story/novelette} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance}
 
 ## Structure Plan Reference
 
@@ -1051,24 +1090,29 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 Append after each chapter is generated. This provides continuity context for subsequent chapters.
 
 ```markdown
-# Chapter Summaries
-
-## Story Configuration (Canonical)
-
-Copy verbatim from structure-plan header. Do not modify.
-
-- **Genre:** {genre/subgenre}
-- **Length:** {novel} (~{target word count} words)
-- **Target Audience:** {demographic}
-- **Content Rating:** {rating}
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Tense:** {past/present}
-- **Tone:** {emotional quality}
-- **Themes:** {primary theme}, {secondary theme}
-- **Custom Style Notes:** {any specific guidance}
-
 ---
+project: {project-name}
+stage: summaries
+genre: {genre/subgenre}
+length_type: novel
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from structure-plan. Do not modify.
+
+# Chapter Summaries
 
 ### Chapter 1: {Title}
 
