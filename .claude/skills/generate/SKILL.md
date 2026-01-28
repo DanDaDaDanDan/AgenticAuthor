@@ -346,35 +346,22 @@ After reading the premise, ask the user about key story decisions:
 **Sub-agent prompt template:**
 
 ```
-Generate treatment-approach.md for the {project} project.
+Write `books/{project}/treatment-approach.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
-**User preferences:**
-- Ending: {user's choice}
-- Structure: {user's choice, if novella/novel/epic}
-- Specific elements: {user's input, if any}
+**User preferences:** Ending={...}; Structure={... if applicable}; Specific elements={... if any}
 
-**Context to read:**
-1. `books/{project}/premise.md` — Full premise
-2. `taxonomies/{genre}-taxonomy.json` — Genre structure
+**Read only:**
+1. `books/{project}/premise.md`
+2. `taxonomies/{genre}-taxonomy.json`
 
-**Do NOT read:** Any other files. Premise is the authoritative source.
+Premise is the authoritative source. Do NOT read any other files.
 
-**Output file:** `books/{project}/treatment-approach.md`
+**Output:** `books/{project}/treatment-approach.md` (use the Treatment Approach template from this skill)
 
-**Format:**
-[Include the treatment-approach template from this skill]
+**Goal:** Analyze the premise and decide the best treatment structure + risks (conflict, arc, antagonist deployment, pacing challenges).
 
-**Purpose:**
-This document analyzes the premise and plans the treatment structure. Think through:
-- How the central conflict drives story structure
-- The protagonist's arc (starting state → transformation → ending state)
-- How to deploy the antagonist across the narrative
-- Which structure type fits best and why
-- Potential challenges to navigate
-
-**After generating:**
-Run: cd books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"
+**After:** `cd books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -388,33 +375,24 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate treatment.md for the {project} project.
+Write `books/{project}/treatment.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 
-**Context to read:**
+**Read only:**
 1. `books/{project}/treatment-approach.md` — Planning document with structure decisions
 2. `books/{project}/premise.md` — Original premise for frontmatter values
 
-**Do NOT read:** Any other files.
+Do NOT read any other files.
 
-**Output file:** `books/{project}/treatment.md`
+**Output:** `books/{project}/treatment.md` (use the appropriate Treatment template from this skill)
 
-**Format (novella/novel/epic):**
-[Include the Novella/Novel/Epic treatment template from this skill]
+**Requirements:**
+- Follow the decisions in `treatment-approach.md` (structure type, act logic, risks).
+- Copy frontmatter values from `premise.md` (frontmatter is authoritative downstream).
+- Include the **Downstream Contract** section from the template.
 
-**Format (flash/short/novelette):**
-[Include the Flash/Short/Novelette treatment template from this skill]
-
-**Guidance:**
-Follow the decisions made in treatment-approach.md:
-- Use the structure type it selected
-- Follow the act overview it outlined
-- Address the potential challenges it identified
-- Carry forward frontmatter from premise (the frontmatter is authoritative for downstream stages)
-
-**After generating:**
-Run: cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
+**After:** `cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"`
 
 Generate complete, publication-ready content. Do not ask for approval.
 ```
@@ -514,6 +492,12 @@ custom_style_notes: "{from premise}"
 ---
 
 # Treatment
+
+## Downstream Contract
+
+- **Authoritative for:** `structure-plan.md`
+- **Must preserve downstream:** ending, major beats/reveals, character arcs, and frontmatter constraints (POV/tense/tone/content rating)
+- **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
 
 ## Story Overview
 
@@ -615,6 +599,12 @@ custom_style_notes: "{from premise}"
 
 # Treatment
 
+## Downstream Contract
+
+- **Authoritative for:** `structure-plan.md`
+- **Must preserve downstream:** ending, key beats, and frontmatter constraints (POV/tense/tone/content rating)
+- **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
+
 ## Story Arc
 
 {Single paragraph: opening situation → complication → climax → resolution}
@@ -655,15 +645,15 @@ Generate the actual story prose.
 
 ### Context Rules
 
-**Self-contained stages principle:** Each sub-agent reads ONLY its immediate predecessor.
+**Context minimization principle:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`summaries.md`) and, for chaptered formats, at most one immediately prior sibling artifact (previous chapter plan/prose) when needed for local continuity/voice. Do not load full history.
 
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
 | structure-plan | treatment.md only | premise.md, treatment-approach.md |
 | short-story-plan | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
-| chapter-plan (novella/novel/epic) | structure-plan.md + summaries.md + prev chapter-plans | premise.md, treatment-approach.md, treatment.md |
+| chapter-plan (novella/novel/epic) | structure-plan.md + summaries.md (+ previous chapter plan, if exists) | premise.md, treatment-approach.md, treatment.md |
 | prose (flash/short/novelette) | short-story-plan.md + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
-| prose (novella/novel/epic) | chapter-plan + summaries.md + prev chapters + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| prose (novella/novel/epic) | chapter-plan + summaries.md (+ previous chapter prose, if exists) + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
 
 ### Clarifying Questions
 
@@ -725,35 +715,22 @@ Generate the actual story prose.
 **Sub-agent prompt template:**
 
 ```
-Generate structure-plan.md for the {project} project.
+Write `books/{project}/structure-plan.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
-**User preferences:**
-- Target length: {user's choice}
-- Chapter/scene structure: {user's choice}
+**User preferences:** Target length={...}; Chapter/scene structure={...}
 
-**Context to read:**
-1. `books/{project}/treatment.md` — Full treatment with frontmatter
+**Read only:** `books/{project}/treatment.md` (treatment is authoritative)
 
-**Do NOT read:** premise.md or any other files. Treatment is the authoritative source.
+Do NOT read premise.md or any other files.
 
-**Output file:** `books/{project}/structure-plan.md`
+**Output:** `books/{project}/structure-plan.md` (use the appropriate Structure Plan template from this skill)
 
-**Format:**
-[Include appropriate structure-plan template based on project type]
+**Requirements:**
+- Copy frontmatter from `treatment.md` and include the template’s **Downstream Contract** section.
+- Allocate per scene/chapter word targets deliberately (not uniform) and ensure they approximately sum to the overall target.
 
-**Word count allocation:**
-The overall target is {X} words across {N} scenes/chapters. Before writing the structure-plan, reason through how to allocate this budget:
-
-- Which scenes carry the most narrative weight? (These need more words)
-- Which scenes are transitional or momentum-focused? (These can be leaner)
-- Where does the story need room to breathe — emotional beats, character development, world-building?
-- Where should pacing be tight — action sequences, tension, reveals?
-
-Distribute word counts so they sum to the overall target. A heist scene might need 1,200 words; a quick transition might need 600. The distribution should reflect the story's needs, not be uniform.
-
-**After generating:**
-Run: cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
+**After:** `cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -767,34 +744,22 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate short-story-plan.md for the {project} project.
+Write `books/{project}/short-story-plan.md` for `{project}`.
 
 **Target word count:** {from structure-plan, e.g., ~14,000 words}
 
-**Context to read:**
-1. `books/{project}/structure-plan.md` — Full structure plan with scenes and frontmatter
+**Read only:** `books/{project}/structure-plan.md` (structure-plan is authoritative)
 
-**Do NOT read:** premise.md, treatment.md, or any other files. Structure-plan is self-contained.
+Do NOT read premise.md, treatment.md, or any other files.
 
-**Output file:** `books/{project}/short-story-plan.md`
+**Output:** `books/{project}/short-story-plan.md` (use the Story Plan template from this skill)
 
-**Format:**
-[Include story plan template]
+**Requirements:**
+- Carry forward per-scene word count targets (the prose agent will NOT see structure-plan).
+- Include “Development notes” for each scene so the prose can hit the intended depth/length.
+- Include the template’s **Downstream Contract** section (this plan is authoritative for prose).
 
-**Per-scene word counts:**
-The structure-plan includes word count targets for each scene. Carry these forward into the story-plan — they guide prose generation. The prose sub-agent won't have access to structure-plan, so the story-plan must be self-contained.
-
-**Planning for length:**
-For each scene, think through how the prose will achieve its word count target:
-
-- A 900-word scene might have 3-4 beats with modest development
-- A 1,200-word scene needs more: extended dialogue exchanges, deeper interiority, richer sensory detail, or more beats
-- Consider what THIS scene specifically offers for development — character moments? tension building? atmosphere? dialogue?
-
-Add a "Development notes" field to each scene in your plan, briefly noting what elements will fill the space (e.g., "Extended dialogue between Dex and Throttle; Dex's internal justification monologue; sensory details of the base").
-
-**After generating:**
-Run: cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"
+**After:** `cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -808,28 +773,21 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate complete prose for the {project} flash fiction/short story/novelette.
+Write complete prose for `{project}`.
 
 **Target word count:** {from story-plan, e.g., ~14,000 words}
 
-**Context to read:**
+**Read only:**
 1. `books/{project}/short-story-plan.md` — Complete story plan with scene breakdowns and style notes
 2. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
-**Do NOT read:** premise.md, treatment.md, structure-plan.md, or any other files. The story-plan is self-contained.
+Do NOT read premise.md, treatment.md, structure-plan.md, or any other files.
 
 **Output files:**
 1. `books/{project}/short-story.md` — Complete prose
-2. `books/{project}/summaries.md` — Story summary
+2. `books/{project}/summaries.md` — Story summary + Canon Facts + Open Threads Ledger
 
-**Style guidance:**
-Follow the frontmatter for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for scene-specific guidance on:
-- Pacing (fast/slow/mixed)
-- Dialogue vs narration balance
-- Sensory focus
-
-**Scene length guidance:**
-The story-plan includes per-scene word count targets. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development — a scene targeted at 1,200 words needs more beats, dialogue, and interiority than one targeted at 600 words.
+**Guidance:** Follow the story plan as the authoritative contract. Use the style card for technique. Keep prose publication-ready.
 
 **Prose format:**
 - Start with: # {Story Title}
@@ -837,11 +795,9 @@ The story-plan includes per-scene word count targets. Use these as guidance for 
 - Use: * * * (asterisks with spaces) for scene breaks
 - No frontmatter in prose files
 
-**Summary format:**
-Use the summaries.md (Flash/Short/Novelette) format from the Summaries Schema section below.
+**Summary format:** Use the `summaries.md` (Flash/Short/Novelette) schema from this skill (includes Canon Facts + Open Threads Ledger).
 
-**After generating:**
-Run: cd books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"
+**After:** `cd books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"`
 
 Generate publication-ready prose. Do not ask for approval.
 ```
@@ -855,35 +811,29 @@ Generate publication-ready prose. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate chapter plan for Chapter {N} of {project}.
+Generate `books/{project}/chapter-plans/chapter-{NN}-plan.md` for Chapter {N} of `{project}`.
 
 **Chapter target:** ~{X} words
 
-**Context to read:**
+**Read only these files:**
 1. `books/{project}/structure-plan.md` — Full structure plan
-2. `books/{project}/summaries.md` — If exists, for continuity
-3. `books/{project}/chapter-plans/chapter-*.md` — All previous chapter plans
+2. `books/{project}/summaries.md` — If it exists (canon + open threads)
+3. `books/{project}/chapter-plans/chapter-{PP}-plan.md` — Previous chapter plan (if it exists)
 
 **Do NOT read:** premise.md, treatment.md, or prose files.
 
-**Output file:** `books/{project}/chapter-plans/chapter-{NN}-plan.md`
+**Output:** `books/{project}/chapter-plans/chapter-{NN}-plan.md`
 
-**Format:**
-[Include chapter plan template]
+**Format:** Use the Chapter Plan template from this skill.
 
-**Planning for length:**
-This chapter targets ~{X} words. Think through how the prose will achieve this:
+**Requirements:**
+- Use `summaries.md` as the source of canon for names/facts/open threads (if it exists).
+- Include per-scene word targets and brief development notes (what fills the space: dialogue/interiority/action/description).
+- Include a short **Downstream Contract** section stating what the prose must preserve from this plan.
 
-- How many scenes does this chapter contain? How should word count distribute across them?
-- Which moments in this chapter need room to breathe — emotional beats, reveals, confrontations?
-- Where should pacing be tight — action, transitions, momentum?
-- What specific elements will develop each scene — dialogue, interiority, description, tension-building?
-
-Include these considerations in the chapter plan so the prose sub-agent has concrete guidance.
-
-**After generating:**
-Run: mkdir -p books/{project}/chapter-plans
-Then: cd books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"
+**After:**
+Run: `mkdir -p books/{project}/chapter-plans`
+Then: `cd books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -897,27 +847,23 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate prose for Chapter {N} of {project}.
+Generate `books/{project}/chapters/chapter-{NN}.md` (Chapter {N}) for `{project}`.
 
 **Chapter target:** ~{X} words
 
-**Context to read:**
+**Read only these files:**
 1. `books/{project}/chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
-2. `books/{project}/summaries.md` — For continuity
-3. `books/{project}/chapters/chapter-*.md` — All previous chapters
+2. `books/{project}/summaries.md` — Canon + open threads (if it exists)
+3. `books/{project}/chapters/chapter-{PP}.md` — Previous chapter prose (if it exists; for voice + immediate handoff)
 4. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or other chapter-plans.
 
 **Output files:**
 1. `books/{project}/chapters/chapter-{NN}.md` — Chapter prose
-2. Append to `books/{project}/summaries.md` — Chapter summary
+2. Update `books/{project}/summaries.md` — Canon Facts, Open Threads, and this chapter's summary (create the file if missing)
 
-**Style guidance:**
-Follow the frontmatter in the chapter-plan for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for chapter-specific guidance on pacing, dialogue balance, and sensory focus.
-
-**Scene length guidance:**
-The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
+**Guidance:** Follow the chapter plan as the authoritative contract. Use `summaries.md` (if present) as the canon source. Keep prose publication-ready.
 
 **Chapter prose format:**
 
@@ -1047,6 +993,13 @@ Copy ALL frontmatter values from treatment, including multi-select arrays and ob
 
 Note: Per-chapter word count targets below should approximately sum to the overall target.
 
+## Downstream Contract
+
+This file is the authoritative plan for all chapter plans.
+
+- **Must preserve downstream:** chapter order, POV assignments, required reveals/turns, and chapter goals
+- **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
+
 ## Characters
 
 Brief reference for continuity (from treatment):
@@ -1158,6 +1111,13 @@ Copy ALL frontmatter values from treatment, including multi-select arrays and ob
 
 Note: Per-scene word count targets below should approximately sum to the overall target.
 
+## Downstream Contract
+
+This file is the authoritative plan for the story plan.
+
+- **Must preserve downstream:** scene order, required reveals/turns, and scene purposes
+- **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
+
 ## Characters
 
 Brief reference for continuity (from treatment):
@@ -1261,6 +1221,13 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 - Summary: {the planned summary}
 - Chapter goals: {from structure plan}
 - Ends with: {the planned hook/turn}
+
+## Downstream Contract
+
+This plan is authoritative for the prose of Chapter {N}.
+
+- **Prose must preserve:** POV, scene order, key beats/reveals, and the planned hook/turn (unless the user explicitly requests changes)
+- **Canon source:** use `summaries.md` as the continuity anchor for names/facts/open threads
 
 ## Continuity Check
 
@@ -1376,6 +1343,13 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 - Scene count: {number of scenes}
 - Target word count: {estimate}
 
+## Downstream Contract
+
+This plan is authoritative for the prose in `short-story.md`.
+
+- **Prose must preserve:** scene order, key beats/turns, and style notes (unless the user explicitly requests changes)
+- **Canon source:** if `summaries.md` exists, treat it as the continuity anchor for names/facts
+
 ## Character States
 
 ### {Protagonist}
@@ -1474,6 +1448,24 @@ custom_style_notes: "{from structure-plan}"
 
 Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
 
+# Canon Facts (Continuity Anchor)
+
+Update this section after each chapter. Keep it concise, concrete, and canonical (spellings, relationships, rules).
+
+- **Characters:** {names, roles, relationships, signature details}
+- **Locations:** {place names, geography, key features}
+- **World/System Rules:** {rules that must remain consistent}
+- **Timeline:** {relative/absolute time markers}
+- **Objects/Terms:** {important items, organizations, jargon}
+
+# Open Threads Ledger
+
+Update this table after each chapter. This is the main “what must be paid off” index downstream agents should rely on.
+
+| Thread | Introduced | Last Touched | Status | Notes/Payoff |
+|--------|------------|--------------|--------|--------------|
+| {Question/setup} | Ch {X} | Ch {Y} | open/advancing/resolved | {optional} |
+
 # Chapter Summaries
 
 ### Chapter 1: {Title}
@@ -1484,11 +1476,11 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 - **{Protagonist}:** {emotional/mental state}
 - **{Other key characters}:** {state if relevant}
 
-**Open Threads:**
-- {Thread introduced or advanced} — Status: {open/advancing/resolved}
+**Threads Updated (this chapter):**
+- {Thread introduced/advanced/resolved} — Status: {open/advancing/resolved}
 
-**Continuity Facts Introduced:**
-- {Names, locations, rules, objects, relationships established}
+**Canon Facts Added (this chapter):**
+- {Names, locations, rules, objects, relationships established (add to Canon Facts above)}
 
 **Promises to Reader:**
 - {Setups that need payoff — foreshadowing, questions raised, tensions unresolved}
@@ -1552,6 +1544,23 @@ custom_style_notes: "{from structure-plan}"
 
 Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
 
+# Canon Facts (Continuity Anchor)
+
+Keep this concise and canonical (spellings, relationships, rules).
+
+- **Characters:** {names, roles, relationships}
+- **Locations:** {place names}
+- **World/System Rules:** {rules that must remain consistent}
+- **Objects/Terms:** {important items/orgs/jargon}
+
+# Open Threads Ledger (Post-Story)
+
+Most stories should end with no open threads; if any remain, list them explicitly (and consider revising the prose).
+
+| Thread | Introduced | Resolved | Status | Notes |
+|--------|------------|----------|--------|------|
+| {Question/setup} | Scene {X} | Scene {Y} | resolved/open | {optional} |
+
 # Story Summary
 
 **Summary:** {3-5 sentences covering the complete story arc}
@@ -1574,16 +1583,16 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 
 ## Context Management Summary
 
-**Self-contained stages principle:** Each stage reads only the immediately prior stage. This prevents conflicts when earlier stages are iterated.
+**Context minimization principle:** Each stage reads its immediate predecessor. For chaptered formats, use `summaries.md` as the continuity anchor and (optionally) the immediately previous chapter plan/prose for local continuity/voice. Avoid loading full history.
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
 | treatment-approach | premise + taxonomies | — |
 | treatment | treatment-approach + premise | — |
 | structure-plan | treatment only | premise, treatment-approach |
-| chapter-plan (novella/novel/epic) | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
+| chapter-plan (novella/novel/epic) | structure-plan + summaries (+ previous chapter plan, if exists) | premise, treatment-approach, treatment |
 | short-story-plan (flash/short/novelette) | structure-plan only | premise, treatment-approach, treatment |
-| prose (novella/novel/epic) | chapter-plan + summaries + prev chapters + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
+| prose (novella/novel/epic) | chapter-plan + summaries (+ previous chapter prose, if exists) + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 | prose (flash/short/novelette) | short-story-plan + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 
 **Path Notes:**

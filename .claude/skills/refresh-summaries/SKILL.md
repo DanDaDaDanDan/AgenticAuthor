@@ -76,6 +76,23 @@ stage: summaries
 {...copy all frontmatter from structure-plan...}
 ---
 
+# Canon Facts (Continuity Anchor)
+
+Keep this concise and canonical (spellings, relationships, rules).
+
+- **Characters:** {names, roles, relationships}
+- **Locations:** {place names}
+- **World/System Rules:** {rules that must remain consistent}
+- **Objects/Terms:** {important items/orgs/jargon}
+
+# Open Threads Ledger (Post-Story)
+
+Most stories should end with no open threads; if any remain, list them explicitly (and consider revising the prose).
+
+| Thread | Introduced | Resolved | Status | Notes |
+|--------|------------|----------|--------|------|
+| {Question/setup} | Scene {X} | Scene {Y} | resolved/open | {optional} |
+
 # Story Summary
 
 **Summary:** {3-5 sentences covering the complete story arc — derived from actual prose}
@@ -107,6 +124,24 @@ stage: summaries
 {...copy all frontmatter from structure-plan...}
 ---
 
+# Canon Facts (Continuity Anchor)
+
+Update this section after each chapter. Keep it concise, concrete, and canonical (spellings, relationships, rules).
+
+- **Characters:** {names, roles, relationships, signature details}
+- **Locations:** {place names, geography, key features}
+- **World/System Rules:** {rules that must remain consistent}
+- **Timeline:** {relative/absolute time markers}
+- **Objects/Terms:** {important items, organizations, jargon}
+
+# Open Threads Ledger
+
+Update this table after each chapter. This is the main “what must be paid off” index downstream agents should rely on.
+
+| Thread | Introduced | Last Touched | Status | Notes/Payoff |
+|--------|------------|--------------|--------|--------------|
+| {Question/setup} | Ch {X} | Ch {Y} | open/advancing/resolved | {optional} |
+
 # Chapter Summaries
 
 ### Chapter 1: {Title from chapter heading}
@@ -117,11 +152,11 @@ stage: summaries
 - **{Protagonist}:** {emotional/mental state at chapter's end}
 - **{Other key characters}:** {state if relevant}
 
-**Open Threads:**
-- {Thread introduced or advanced} — Status: {open/advancing/resolved}
+**Threads Updated (this chapter):**
+- {Thread introduced/advanced/resolved} — Status: {open/advancing/resolved}
 
-**Continuity Facts Introduced:**
-- {Names, locations, rules, objects, relationships established in this chapter}
+**Canon Facts Added (this chapter):**
+- {Names, locations, rules, objects, relationships established in this chapter (add to Canon Facts above)}
 
 **Promises to Reader:**
 - {Setups that need payoff — foreshadowing, questions raised, tensions unresolved}
@@ -147,7 +182,7 @@ When reading prose to extract summaries:
 
 **The following apply to chaptered format only:**
 
-**Open Threads:** Track:
+**Open Threads Ledger:** Track:
 - Questions raised but not answered
 - Conflicts introduced but not resolved
 - Characters mentioned who haven't appeared yet
@@ -158,7 +193,7 @@ Mark threads as:
 - `advancing` — Progressed but not resolved
 - `resolved` — Paid off in this chapter
 
-**Continuity Facts:** Extract specifics that must stay consistent:
+**Canon Facts:** Extract specifics that must stay consistent:
 - Character names (including minor characters)
 - Place names and geography
 - Rules of magic/technology/world

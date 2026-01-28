@@ -72,8 +72,8 @@ Each stage's output contains everything the next stage needs. Read only one step
 | treatment-approach | premise + taxonomies | — |
 | treatment | treatment-approach + premise | — |
 | structure-plan | treatment only | premise, treatment-approach |
-| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
-| prose | chapter-plan + summaries + prev chapters + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
+| chapter-plan | structure-plan + summaries (+ previous chapter plan, if exists) | premise, treatment-approach, treatment |
+| prose | chapter-plan + summaries (+ previous chapter prose, if exists) + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 
 **For flash/short/novelette (single-file formats):** Same principle — short-story-plan reads structure-plan, prose reads short-story-plan only.
 

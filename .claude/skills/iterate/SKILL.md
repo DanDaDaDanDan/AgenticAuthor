@@ -121,8 +121,8 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 **For chapter plan iteration (novella/novel/epic):**
 - `books/{project}/structure-plan.md` - For frontmatter and character reference
 - `books/{project}/summaries.md` (if exists) - For continuity
-- Previous chapter plans from `books/{project}/chapter-plans/`
 - The specific chapter plan being revised
+- `books/{project}/chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan (local continuity only)
 - Do NOT read premise.md or treatment.md
 
 **For story plan iteration (flash/short/novelette):**
@@ -132,10 +132,13 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For prose iteration (novella/novel/epic):**
 - `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
-- `books/{project}/summaries.md` (if exists) - For continuity
-- All chapters from `books/{project}/chapters/`
+- `books/{project}/summaries.md` (if exists) - Canon facts + open threads continuity anchor
+- `books/{project}/chapters/chapter-{NN}.md` - The chapter being revised
+- `books/{project}/chapters/chapter-{PP}.md` (if exists) - Previous chapter prose (voice + immediate handoff)
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read premise.md, treatment.md, or structure-plan.md
+- Do NOT read premise.md, treatment.md, or structure-plan.md (and do not load full chapter history by default)
+
+If revising multiple chapters, do it sequentially (one chapter at a time) using the minimal context above per chapter. Update `summaries.md` as you go.
 
 **For prose iteration (flash/short/novelette):**
 - `books/{project}/short-story-plan.md` - The story plan
@@ -181,7 +184,7 @@ Write the revised file(s) to `books/{project}/` and commit:
 cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
 ```
 
-**For prose iteration:** Also update and commit `summaries.md` with any changes to chapter summaries, open threads, or facts.
+**For prose iteration:** Also update and commit `summaries.md` (Chapter Summaries + Canon Facts + Open Threads Ledger) to reflect any changes you made.
 
 ## Iteration Guidelines
 
