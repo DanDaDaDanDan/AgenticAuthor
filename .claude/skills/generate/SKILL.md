@@ -645,12 +645,11 @@ Generate the actual story prose.
 
 ### Context Rules
 
-**Context scaling principle:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`summaries.md`). For chaptered formats, load previous chapters based on project length to balance voice continuity against context limits.
+**Context loading:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`summaries.md`). For chaptered formats, load previous chapters for voice and narrative continuity.
 
-**Previous chapter loading by length:**
-- **Novella:** all previous chapters (typically 8-15 chapters, fits comfortably)
-- **Novel:** last 3 chapters + summaries.md (summaries provide older context)
-- **Epic:** last 2 chapters + summaries.md (summaries are critical for long works)
+**Previous chapter loading:**
+- **Novella/Novel:** all previous chapters
+- **Epic:** last 20 chapters + summaries.md (summaries provide continuity for older content)
 
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
@@ -658,7 +657,7 @@ Generate the actual story prose.
 | short-story-plan | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
 | chapter-plan (novella/novel/epic) | structure-plan.md + summaries.md + previous chapter plan (if exists) | premise.md, treatment-approach.md, treatment.md |
 | prose (flash/short/novelette) | short-story-plan.md + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
-| prose (novella/novel/epic) | chapter-plan + summaries.md + previous chapters (scaled by length) + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| prose (novella/novel/epic) | chapter-plan + summaries.md + all previous chapters (epic: last 20) + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
 
 ### Clarifying Questions
 
@@ -860,10 +859,8 @@ Generate `books/{project}/chapters/chapter-{NN}.md` (Chapter {N}) for `{project}
 **Read only these files:**
 1. `books/{project}/chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
 2. `books/{project}/summaries.md` — Canon Facts + Open Threads (if it exists)
-3. Previous chapter prose for voice continuity (scaled by length):
-   - Novella: all previous chapters in `books/{project}/chapters/`
-   - Novel: last 3 chapters (chapter-{NN-3} through chapter-{NN-1})
-   - Epic: last 2 chapters (chapter-{NN-2} through chapter-{NN-1})
+3. All previous chapter prose in `books/{project}/chapters/` for voice continuity
+   - For epic only: limit to last 20 chapters if more exist
 4. `misc/prose-style-{prose_style_key}.md` — Style card (read `prose_style_key` from frontmatter)
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or other chapter-plans.
@@ -1592,7 +1589,7 @@ Most stories should end with no open threads; if any remain, list them explicitl
 
 ## Context Management Summary
 
-**Context scaling principle:** Each stage reads its immediate predecessor. For chaptered formats, use `summaries.md` as the continuity anchor and load previous chapters scaled by project length (novella: all, novel: last 3, epic: last 2).
+**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, use `summaries.md` as the continuity anchor and load all previous chapters (epic: last 20).
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
@@ -1601,7 +1598,7 @@ Most stories should end with no open threads; if any remain, list them explicitl
 | structure-plan | treatment only | premise, treatment-approach |
 | chapter-plan (novella/novel/epic) | structure-plan + summaries + previous chapter plan (if exists) | premise, treatment-approach, treatment |
 | short-story-plan (flash/short/novelette) | structure-plan only | premise, treatment-approach, treatment |
-| prose (novella/novel/epic) | chapter-plan + summaries + previous chapters (scaled by length) + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
+| prose (novella/novel/epic) | chapter-plan + summaries + all previous chapters (epic: last 20) + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 | prose (flash/short/novelette) | short-story-plan + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 
 **Path Notes:**
