@@ -192,6 +192,7 @@ created: 2025-01-25
 - **Pacing:** {Fast/Measured/Slow-burn}
 - **Dialogue density:** {High/Moderate/Low}
 - **POV:** {narrative perspective}
+- **Tense:** {Past/Present}
 - **Custom notes:** {user preferences}
 
 ## Taxonomy Selections

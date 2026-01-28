@@ -144,6 +144,7 @@ Generate the core concept and story foundation.
 - **Pacing:** {Fast/Measured/Slow-burn}
 - **Dialogue density:** {High/Moderate/Low}
 - **POV:** {First person, Third limited, Third omniscient, Multiple POV}
+- **Tense:** {Past/Present}
 - **Custom notes:** {Any specific style preferences from user - optional}
 
 ## Taxonomy Selections
@@ -463,7 +464,7 @@ Generate the actual story prose.
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
 | structure-plan | treatment.md only | premise.md, treatment-approach.md |
-| story-plan (short) | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
+| short-story-plan | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
 | chapter-plan (novel) | structure-plan.md + summaries.md + prev chapter-plans | premise.md, treatment-approach.md, treatment.md |
 | prose (short) | short-story-plan.md + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
 | prose (novel) | chapter-plan + summaries.md + prev chapters + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
@@ -634,17 +635,7 @@ The story-plan includes per-scene word count targets. Use these as guidance for 
 ```
 
 **Summary format:**
-```markdown
-# Story Summary
-
-{3-5 sentence summary of the complete story}
-
-**Key beats:**
-- Opening: {1 sentence}
-- Complication: {1 sentence}
-- Climax: {1 sentence}
-- Resolution: {1 sentence}
-```
+Use the summaries.md (Short Stories/Novelettes) format from the Summaries Schema section below.
 
 **After generating:**
 ```bash
@@ -1137,7 +1128,7 @@ Generated once after prose is complete.
 | treatment | treatment-approach + premise | — |
 | structure-plan | treatment only | premise, treatment-approach |
 | chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
-| story-plan | structure-plan only | premise, treatment-approach, treatment |
+| short-story-plan | structure-plan only | premise, treatment-approach, treatment |
 | prose (novel) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment-approach, treatment, structure-plan |
 | prose (short) | short-story-plan + prose-style-card | premise, treatment-approach, treatment, structure-plan |
 
