@@ -251,7 +251,7 @@ Lightweight planning document generated before the full treatment. Analyzes the 
 
 ### treatment.md
 
-The treatment is **self-contained** — it includes all story configuration from premise so downstream stages don't need to read premise.
+The treatment is **self-contained** — it includes all frontmatter from premise so downstream stages don't need to read premise.
 
 ```markdown
 ---
@@ -306,7 +306,7 @@ custom_style_notes: "{any specific guidance from premise}"
 
 ### structure-plan.md (Novels)
 
-The structure plan is **self-contained** — it includes story configuration from treatment so chapter-plans don't need to read treatment.
+The structure plan is **self-contained** — it includes frontmatter from treatment so chapter-plans don't need to read treatment.
 
 ```markdown
 ---
@@ -388,7 +388,7 @@ Brief reference for continuity:
 
 ### structure-plan.md (Short Stories/Novelettes)
 
-The structure plan is **self-contained** — it includes story configuration from treatment so story-plans don't need to read treatment.
+The structure plan is **self-contained** — it includes frontmatter from treatment so story-plans don't need to read treatment.
 
 ```markdown
 ---
@@ -728,7 +728,7 @@ Style is **selected per-project** during premise generation, then **carried forw
 - **Lyrical** - Poetic, atmospheric, sensory-rich
 - **Conversational** - Strong narrative voice, personality-driven
 
-The style flows through the pipeline: premise → treatment (frontmatter) → structure-plan → chapter-plan (Style Notes). Each stage carries the configuration forward so downstream stages don't need to look backward.
+The style flows through the pipeline: premise → treatment (frontmatter) → structure-plan → chapter-plan (Style Notes). Each stage carries the frontmatter forward so downstream stages don't need to look backward.
 
 ## Git Integration
 

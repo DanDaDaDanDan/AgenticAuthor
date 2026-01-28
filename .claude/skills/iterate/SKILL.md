@@ -140,7 +140,7 @@ Generate the revised content:
 1. **Apply the confirmed changes** - Make the specific changes discussed
 2. **Preserve everything else** - Don't change elements not mentioned in feedback
 3. **Maintain consistency** - Ensure changes align with the current stage's context
-4. **Follow style config** - For prose, use the style from chapter-plan's Style Notes (originally from premise → treatment → structure-plan)
+4. **Follow frontmatter** - For prose, use the style from chapter-plan's frontmatter and Style Notes (originally from premise → treatment → structure-plan)
 
 **Prose iteration principles:**
 - Preserve the author's distinctive voice and style
