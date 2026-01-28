@@ -256,10 +256,10 @@ After reading the premise, ask the user about key story decisions:
 ```
 Generate treatment-approach.md for the {project} project.
 
-**Project type:** {novel/novelette/short-story}
+**Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 **User preferences:**
 - Ending: {user's choice}
-- Structure: {user's choice, if novel}
+- Structure: {user's choice, if novella/novel/epic}
 - Specific elements: {user's input, if any}
 
 **Context to read:**
@@ -300,7 +300,7 @@ Generate complete content. Do not ask for approval.
 ```
 Generate treatment.md for the {project} project.
 
-**Project type:** {novel/novelette/short-story}
+**Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 
 **Context to read:**
 1. `books/{project}/treatment-approach.md` — Planning document with structure decisions
@@ -310,11 +310,11 @@ Generate treatment.md for the {project} project.
 
 **Output file:** `books/{project}/treatment.md`
 
-**Format (novels):**
-[Include the novel treatment template from this skill]
+**Format (novella/novel/epic):**
+[Include the Novella/Novel/Epic treatment template from this skill]
 
-**Format (short stories/novelettes):**
-[Include the short story treatment template from this skill]
+**Format (flash/short/novelette):**
+[Include the Flash/Short/Novelette treatment template from this skill]
 
 **Guidance:**
 Follow the decisions made in treatment-approach.md:
@@ -539,8 +539,8 @@ Generate the actual story prose.
 2. **Ask clarifying questions** UPFRONT for any missing planning documents
 3. **Spawn sub-agents** sequentially for each missing piece:
    - Structure-plan sub-agent (if missing)
-   - Short-story-plan sub-agent (if missing, for short stories)
-   - Chapter-plan sub-agents (if missing, for novels)
+   - Short-story-plan sub-agent (if missing, for flash/short/novelette)
+   - Chapter-plan sub-agents (if missing, for novella/novel/epic)
    - Prose sub-agent(s)
 4. Report completion
 
@@ -618,7 +618,7 @@ Generate the actual story prose.
 ```
 Generate structure-plan.md for the {project} project.
 
-**Project type:** {novel/novelette/short-story}
+**Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 **User preferences:**
 - Target length: {user's choice}
 - Chapter/scene structure: {user's choice}
@@ -630,8 +630,8 @@ Generate structure-plan.md for the {project} project.
 
 **Output file:** `books/{project}/structure-plan.md`
 
-**Format for {novels/short stories}:**
-[Include appropriate structure-plan template]
+**Format:**
+[Include appropriate structure-plan template based on project type]
 
 **Word count allocation:**
 The overall target is {X} words across {N} scenes/chapters. Before writing the structure-plan, reason through how to allocate this budget:
