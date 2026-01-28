@@ -164,7 +164,7 @@ For novella/novel/epic, review specific chapter plans. For flash/short/novelette
 - **Goals addressed:** {Will this plan achieve the stated goals?}
 
 ## Continuity Check
-- **Previous content threads:** {Properly picked up? (N/A for first chapter or short stories)}
+- **Previous content threads:** {Properly picked up? (N/A for first chapter, or N/A for flash/short/novelette)}
 - **Character states:** {Consistent with where they should be?}
 - **World details:** {No contradictions?}
 

@@ -61,7 +61,7 @@ Output a formatted status report:
 📚 Project: {title}
    Author: {author}
    Genre: {genre}
-   Type: {flash_fiction/short_story/novelette/novella/novel/epic}
+   Type: {Flash Fiction/Short Story/Novelette/Novella/Novel/Epic}
    Created: {date}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

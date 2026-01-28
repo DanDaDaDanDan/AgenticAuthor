@@ -703,7 +703,7 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate complete prose for the {project} novelette/short story.
+Generate complete prose for the {project} flash fiction/short story/novelette.
 
 **Target word count:** {from story-plan, e.g., ~14,000 words}
 
