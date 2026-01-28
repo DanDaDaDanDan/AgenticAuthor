@@ -99,7 +99,22 @@ Generate the core concept and story foundation.
 
 1. Ask the user for a brief concept (1-3 sentences describing the story idea).
 
-2. Ask about prose style preference:
+2. Ask about target audience:
+   > Who is the target audience?
+   > 1. Middle Grade (ages 8-12) - age-appropriate themes, no explicit content
+   > 2. Young Adult (ages 13-17) - coming-of-age themes, limited mature content
+   > 3. New Adult (ages 18-25) - mature themes, identity exploration
+   > 4. Adult (ages 18+) - no restrictions, complex narratives
+
+3. Ask about content rating:
+   > What content rating fits this story?
+   > 1. Clean/All Ages - no profanity, violence, or sexual content
+   > 2. Mild/PG - minimal mature content, mild profanity, non-graphic violence
+   > 3. Moderate/PG-13 - some mature content, action violence, suggestive content
+   > 4. Mature/R - adult content, strong language, violence, sexual content
+   > 5. Explicit/NC-17 - graphic adult content, no limits
+
+4. Ask about prose style preference:
    > What prose style fits this story?
    > 1. Commercial/Accessible - clear, readable, mass-market appeal
    > 2. Literary - denser prose, rewards close reading
@@ -110,7 +125,7 @@ Generate the core concept and story foundation.
 
    Note the genre's `best_for` suggestions in style-taxonomy.json but let the user choose freely.
 
-3. Generate a complete premise document with YAML frontmatter:
+5. Generate a complete premise document with YAML frontmatter:
 
 ```markdown
 ---
@@ -221,7 +236,7 @@ After reading the premise, ask the user about key story decisions:
    > 4. Ambiguous - open to interpretation
    > 5. Let me decide based on the premise
 
-2. **Structure preference:** (novels only)
+2. **Structure preference:** (novella/novel/epic only)
    > What story structure fits best?
    > 1. Three-act (classic setup/confrontation/resolution)
    > 2. Four-act (extended middle with clear crisis point)
@@ -363,7 +378,7 @@ Generate complete, publication-ready content. Do not ask for approval.
 **Pacing implications:** {How pacing preference shapes scene density}
 ```
 
-#### Treatment Format (Novels)
+#### Treatment Format (Novella/Novel/Epic)
 
 ```markdown
 ---
@@ -373,7 +388,7 @@ stage: treatment
 genre_key: {from premise}
 subgenre_key: {from premise}
 subgenre: "{from premise}"
-length_key: novel
+length_key: {from premise: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from premise}
 series_structure: "{from premise}"
@@ -452,7 +467,7 @@ custom_style_notes: "{from premise}"
 {Any important world-building details needed for the story}
 ```
 
-#### Treatment Format (Short Stories/Novelettes)
+#### Treatment Format (Flash/Short/Novelette)
 
 ```markdown
 ---
@@ -537,19 +552,35 @@ Generate the actual story prose.
 |------------|-----------------|-------------------------|
 | structure-plan | treatment.md only | premise.md, treatment-approach.md |
 | short-story-plan | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
-| chapter-plan (novel) | structure-plan.md + summaries.md + prev chapter-plans | premise.md, treatment-approach.md, treatment.md |
-| prose (short) | short-story-plan.md + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
-| prose (novel) | chapter-plan + summaries.md + prev chapters + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| chapter-plan (novella/novel/epic) | structure-plan.md + summaries.md + prev chapter-plans | premise.md, treatment-approach.md, treatment.md |
+| prose (flash/short/novelette) | short-story-plan.md + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| prose (novella/novel/epic) | chapter-plan + summaries.md + prev chapters + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
 
 ### Clarifying Questions
 
-**For Novels — ask BEFORE spawning:**
+**For Novella/Novel/Epic (chaptered formats) — ask BEFORE spawning:**
 
-1. **Target length:**
+1. **Target length:** (adjust options based on length_key from treatment)
+
+   For novella:
+   > How long should this novella be?
+   > 1. Short novella (8-10 chapters, ~20,000 words)
+   > 2. Standard novella (10-12 chapters, ~30,000 words)
+   > 3. Long novella (12-15 chapters, ~40,000 words)
+   > 4. Let me decide based on the treatment
+
+   For novel:
    > How long should this novel be?
    > 1. Compact (15-20 chapters, ~50,000 words)
    > 2. Standard (20-30 chapters, ~80,000 words)
-   > 3. Epic (30-40+ chapters, ~120,000+ words)
+   > 3. Long (30-40 chapters, ~100,000 words)
+   > 4. Let me decide based on the treatment
+
+   For epic:
+   > How long should this epic be?
+   > 1. Standard epic (35-45 chapters, ~120,000 words)
+   > 2. Extended epic (45-60 chapters, ~150,000 words)
+   > 3. Massive (60+ chapters, ~200,000+ words)
    > 4. Let me decide based on the treatment
 
 2. **Chapter length preference:**
@@ -559,7 +590,7 @@ Generate the actual story prose.
    > 3. Long and immersive (4,500-6,000+ words) - deep scenes
    > 4. Variable - mix based on content
 
-**For Short Stories/Novelettes — ask BEFORE spawning:**
+**For Flash Fiction/Short Story/Novelette (single-file formats) — ask BEFORE spawning:**
 
 1. **Target length:**
    > How long should this story be?
@@ -622,7 +653,7 @@ Generate complete content. Do not ask for approval.
 
 ---
 
-### Sub-Agent: Story Plan (Short Stories/Novelettes)
+### Sub-Agent: Story Plan (Flash/Short/Novelette)
 
 **Spawn when:** `short-story-plan.md` doesn't exist (and structure-plan exists)
 
@@ -665,7 +696,7 @@ Generate complete content. Do not ask for approval.
 
 ---
 
-### Sub-Agent: Prose Generation (Short Stories/Novelettes)
+### Sub-Agent: Prose Generation (Flash/Short/Novelette)
 
 **Spawn when:** `short-story.md` doesn't exist (and short-story-plan exists)
 
@@ -705,7 +736,7 @@ The story-plan includes per-scene word count targets. Use these as guidance for 
 ```
 
 **Summary format:**
-Use the summaries.md (Short Stories/Novelettes) format from the Summaries Schema section below.
+Use the summaries.md (Flash/Short/Novelette) format from the Summaries Schema section below.
 
 **After generating:**
 ```bash
@@ -717,7 +748,7 @@ Generate publication-ready prose. Do not ask for approval.
 
 ---
 
-### Sub-Agent: Chapter Plan (Novels)
+### Sub-Agent: Chapter Plan (Novella/Novel/Epic)
 
 **Spawn when:** A chapter needs planning (chapter-plan doesn't exist)
 
@@ -761,7 +792,7 @@ Generate complete content. Do not ask for approval.
 
 ---
 
-### Sub-Agent: Chapter Prose (Novels)
+### Sub-Agent: Chapter Prose (Novella/Novel/Epic)
 
 **Spawn when:** A chapter needs prose (chapter-plan exists but prose doesn't)
 
@@ -801,9 +832,9 @@ Generate publication-ready prose. Do not ask for approval.
 
 ---
 
-### Novel Generation Loop
+### Chaptered Format Generation Loop (Novella/Novel/Epic)
 
-For novels, after structure-plan exists, loop through all chapters:
+For novella/novel/epic, after structure-plan exists, loop through all chapters:
 
 ```
 For chapter 1 to N:
@@ -811,16 +842,16 @@ For chapter 1 to N:
   2. Check if chapter prose exists → if not, spawn chapter-prose sub-agent
   3. Continue to next chapter
 
-Report: "Novel complete. {N} chapters, ~{total} words."
+Report: "{Novella/Novel/Epic} complete. {N} chapters, ~{total} words."
 ```
 
-Do NOT stop between chapters. Generate the entire novel in one `/generate prose` invocation.
+Do NOT stop between chapters. Generate the entire book in one `/generate prose` invocation.
 
 ---
 
 ## Structure Plan Templates
 
-### Structure Plan Format (Novels)
+### Structure Plan Format (Novella/Novel/Epic)
 
 ```markdown
 ---
@@ -830,7 +861,7 @@ stage: structure-plan
 genre_key: {from treatment}
 subgenre_key: {from treatment}
 subgenre: "{from treatment}"
-length_key: novel
+length_key: {from treatment: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from treatment}
 series_structure: "{from treatment}"
@@ -919,7 +950,7 @@ Brief reference for continuity (from treatment):
 | {Character arc} | Ch {X} | Ch {Y} |
 ```
 
-### Structure Plan Format (Short Stories/Novelettes)
+### Structure Plan Format (Flash/Short/Novelette)
 
 ```markdown
 ---
@@ -1012,7 +1043,7 @@ Brief reference for continuity (from treatment):
 
 ## Chapter/Story Plan Templates
 
-### Chapter Plan Format (Novels)
+### Chapter Plan Format (Novella/Novel/Epic)
 
 ```markdown
 ---
@@ -1023,7 +1054,7 @@ chapter: {N}
 genre_key: {from structure-plan}
 subgenre_key: {from structure-plan}
 subgenre: "{from structure-plan}"
-length_key: novel
+length_key: {from structure-plan: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from structure-plan}
 series_structure: "{from structure-plan}"
@@ -1117,7 +1148,7 @@ Copy all frontmatter values from structure-plan. Do not modify.
 - {Continuity risk}
 ```
 
-### Story Plan Format (Short Stories/Novelettes)
+### Story Plan Format (Flash/Short/Novelette)
 
 ```markdown
 ---
@@ -1211,7 +1242,7 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 
 ## Summaries Schema
 
-### summaries.md (Novels)
+### summaries.md (Novella/Novel/Epic)
 
 Append after each chapter is generated. This provides continuity context for subsequent chapters.
 
@@ -1223,7 +1254,7 @@ stage: summaries
 genre_key: {from structure-plan}
 subgenre_key: {from structure-plan}
 subgenre: "{from structure-plan}"
-length_key: novel
+length_key: {from structure-plan: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from structure-plan}
 series_structure: "{from structure-plan}"
@@ -1278,7 +1309,7 @@ Copy all frontmatter values from structure-plan. Do not modify.
 {Same format — append after each chapter}
 ```
 
-### summaries.md (Short Stories/Novelettes)
+### summaries.md (Flash/Short/Novelette)
 
 Generated once after prose is complete.
 
@@ -1348,10 +1379,10 @@ Copy all frontmatter values from structure-plan. Do not modify.
 | treatment-approach | premise + taxonomies | — |
 | treatment | treatment-approach + premise | — |
 | structure-plan | treatment only | premise, treatment-approach |
-| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
-| short-story-plan | structure-plan only | premise, treatment-approach, treatment |
-| prose (novel) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment-approach, treatment, structure-plan |
-| prose (short) | short-story-plan + prose-style-card | premise, treatment-approach, treatment, structure-plan |
+| chapter-plan (novella/novel/epic) | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
+| short-story-plan (flash/short/novelette) | structure-plan only | premise, treatment-approach, treatment |
+| prose (novella/novel/epic) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment-approach, treatment, structure-plan |
+| prose (flash/short/novelette) | short-story-plan + prose-style-card | premise, treatment-approach, treatment, structure-plan |
 
 **Path Notes:**
 All paths are relative to the repository root:

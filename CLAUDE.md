@@ -113,8 +113,8 @@ prose_style: "Pulp/Action"
 ```
 
 **Required taxonomy categories** (from base-taxonomy.json):
-- `length_scope` — collected by `/new-book`
-- `series_structure` — collected by `/new-book`
+- `length` — collected by `/new-book` (stored as `length_key` in frontmatter)
+- `series_structure` — collected by `/new-book` (stored as `series_structure_key` in frontmatter)
 - `target_audience` — collected by `/generate premise`
 - `content_rating` — collected by `/generate premise`
 
