@@ -595,7 +595,7 @@ Generate complete content. Do not ask for approval.
 
 ### Sub-Agent: Prose Generation (Short Stories/Novelettes)
 
-**Spawn when:** `short-story.md` doesn't exist (and story-plan exists)
+**Spawn when:** `short-story.md` doesn't exist (and short-story-plan exists)
 
 **Sub-agent prompt template:**
 
@@ -615,12 +615,10 @@ Generate complete prose for the {project} novelette/short story.
 2. `books/{project}/summaries.md` — Story summary
 
 **Style guidance:**
-Follow the Style Notes section in the story-plan. Key elements:
-- POV and voice characteristics
+Follow the Story Configuration (Canonical) section for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for scene-specific guidance on:
 - Pacing (fast/slow/mixed)
 - Dialogue vs narration balance
 - Sensory focus
-- Tone
 
 **Scene length guidance:**
 The story-plan includes per-scene word count targets. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development — a scene targeted at 1,200 words needs more beats, dialogue, and interiority than one targeted at 600 words.
@@ -713,6 +711,9 @@ Generate prose for Chapter {N} of {project}.
 **Output files:**
 1. `books/{project}/chapters/chapter-{NN}.md` — Chapter prose
 2. Append to `books/{project}/summaries.md` — Chapter summary
+
+**Style guidance:**
+Follow the Story Configuration (Canonical) section in the chapter-plan for core style settings (POV, tense, tone, prose style, content rating). Use the Style Notes section for chapter-specific guidance on pacing, dialogue balance, and sensory focus.
 
 **Scene length guidance:**
 The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
