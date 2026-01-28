@@ -51,7 +51,7 @@ This skill orchestrates generation by spawning sub-agents with carefully managed
 
 **Check for active book first:**
 
-1. Read `books/active-book.md` and extract the `project:` value from the YAML block
+1. Read `books/active-book.yaml` and extract the `project:` value from the YAML block
 2. If `project:` is set (not `null`), use that project
 3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
    - Look for `project.yaml` in the current directory or parent directories under `books/`
@@ -825,6 +825,28 @@ Follow the frontmatter in the chapter-plan for core style settings (POV, tense, 
 **Scene length guidance:**
 The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
 
+**Chapter prose format:**
+```markdown
+# Chapter {N}: {Title}
+
+{Opening prose...}
+
+{Continue scene 1...}
+
+* * *
+
+{Scene 2 prose...}
+
+* * *
+
+{Scene 3 prose...}
+```
+
+- Start with `# Chapter {N}: {Title}` header
+- Use `* * *` (with spaces) for scene breaks within chapters
+- No frontmatter in prose files — frontmatter lives in the chapter-plan
+- End with prose, not a scene break
+
 **After generating:**
 ```bash
 mkdir -p books/{project}/chapters
@@ -1395,6 +1417,25 @@ All paths are relative to the repository root:
 - Taxonomies: `taxonomies/`
 
 ---
+
+## Frontmatter Requirements
+
+**Every generated stage file MUST begin with valid YAML frontmatter.** This is a strict requirement.
+
+- Frontmatter must be enclosed in `---` delimiters
+- All required keys must be present (see templates for each stage)
+- Keys must use exact names as specified (e.g., `prose_style_key`, not `style_key`)
+- Values must match taxonomy options exactly (no typos, correct case)
+
+**Fail fast:** If a sub-agent generates a file without valid frontmatter, the generation has failed. Report the error and suggest regenerating that stage.
+
+**Validation checklist for frontmatter:**
+- [ ] Starts with `---` on first line
+- [ ] Ends with `---` before content
+- [ ] Contains `project:` matching the project name
+- [ ] Contains `stage:` matching the stage type
+- [ ] Contains all `*_key` fields with valid taxonomy values
+- [ ] Contains corresponding display name fields
 
 ## Error Handling
 

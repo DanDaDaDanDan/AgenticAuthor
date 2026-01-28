@@ -24,14 +24,14 @@ Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit 
 
 ## Active Book
 
-All skills operate on the **active book** stored in `books/active-book.md`. This avoids needing to specify the project for each command.
+All skills operate on the **active book** stored in `books/active-book.yaml`. This avoids needing to specify the project for each command.
 
 - `/new-book` automatically sets the new project as active
 - `/select-book` switches to a different project
 - All other commands use the active book (with fallback to current directory)
 
-The file contains a YAML code block with the project name:
-```
+The file format:
+```yaml
 project: my-fantasy-novel
 ```
 
@@ -44,7 +44,7 @@ AgenticAuthor/
 │   └── prose-style-*.md   # 6 style cards (commercial, literary, minimalist, pulp, lyrical, conversational)
 ├── .claude/skills/        # Skill definitions
 └── books/                 # Book projects (separate git repo)
-    ├── active-book.md     # Currently selected project
+    ├── active-book.yaml     # Currently selected project
     └── {project}/
         ├── project.yaml         # Includes length, series_structure as taxonomy keys
         ├── premise.md           # YAML frontmatter with all taxonomy keys + display names

@@ -23,7 +23,7 @@ Export the book to a single combined file.
 
 **Check for active book first:**
 
-1. Read `books/active-book.md` and extract the `project:` value from the YAML block
+1. Read `books/active-book.yaml` and extract the `project:` value from the YAML block
 2. If `project:` is set (not `null`), use that project
 3. If `project:` is `null` or file doesn't exist, fall back to:
    - Detect the current project from working directory
@@ -31,22 +31,51 @@ Export the book to a single combined file.
 
 Read `books/{project}/project.yaml` for metadata.
 
-### Step 2: Verify Completion
+### Step 2: Pre-Export Completeness Check
 
-Check that all required files exist in `books/{project}/`:
-- `premise.md`
-- `treatment.md`
-- For novella/novel/epic: `chapters/chapter-*.md` files
-- For flash/short/novelette: `short-story.md`
+Run a completeness check before exporting:
 
-If prose is incomplete, warn the user:
+**Required files:**
+- [ ] `premise.md` exists
+- [ ] `treatment.md` exists
+- [ ] `structure-plan.md` exists
+- [ ] For novella/novel/epic: `chapters/chapter-*.md` files
+- [ ] For flash/short/novelette: `short-story.md`
+
+**Ordering and consistency:**
+- [ ] Chapter numbering is sequential (no gaps: 01, 02, 03...)
+- [ ] All chapter files are non-empty
+- [ ] Chapter count matches structure-plan
+
+**Report issues before proceeding:**
 
 ```
-Warning: Prose generation is incomplete.
-  - {X} of {Y} chapters exist
+PRE-EXPORT CHECK
+------------------------------------------------------------------------
 
-Export anyway? (The export will include only existing content)
+Files:
+  [x] premise.md
+  [x] treatment.md
+  [x] structure-plan.md
+  [x] chapters/ (12 of 12 chapters)
+
+Issues:
+  [ ] Chapter 07 is empty (0 words)
+  [ ] Missing chapter-08.md (numbering gap: 07 -> 09)
+
+------------------------------------------------------------------------
 ```
+
+If critical issues found (missing files, empty chapters, numbering gaps):
+```
+Export blocked. Fix these issues first:
+  - Generate missing chapter 08: /generate prose
+  - Check chapter 07 for content
+
+Or force export with incomplete content? (y/n)
+```
+
+If no issues, proceed to export.
 
 ### Step 3: Choose Format
 
@@ -152,18 +181,15 @@ Export complete!
 The exported file is ready for reading or further processing.
 ```
 
-### Step 6: Git Commit (Optional)
+### Step 6: Git Commit
 
-Ask user if they want to commit the export:
+Commit the export (consistent with "git everything" principle):
 
-```
-Commit export to git? (y/n)
-```
-
-If yes:
 ```bash
 cd books && git add {project}/export/{project}.md && git commit -m "Add: Export {project} ({format} format)"
 ```
+
+This maintains version history for all exports.
 
 ## Flash/Short/Novelette Export
 
@@ -199,6 +225,67 @@ Report:
 - Per-chapter word counts
 - Total prose word count
 - Average chapter length (novella/novel/epic)
+
+## Optional Front/Back Matter
+
+If these files exist in the project directory, include them in the export:
+
+| File | Location in Export |
+|------|-------------------|
+| `dedication.md` | After title page, before first chapter |
+| `epigraph.md` | After dedication (if present), before first chapter |
+| `acknowledgments.md` | After story ends, before "The End" |
+| `author-note.md` | After acknowledgments |
+| `about-author.md` | At the very end |
+
+**Check for these files:**
+```bash
+ls books/{project}/dedication.md books/{project}/epigraph.md books/{project}/acknowledgments.md books/{project}/author-note.md books/{project}/about-author.md 2>/dev/null
+```
+
+**Updated MD Format with optional matter:**
+
+```markdown
+# {Title}
+
+by {Author}
+
+---
+
+{dedication.md content, if exists}
+
+---
+
+{epigraph.md content, if exists}
+
+---
+
+{Chapter 1 content}
+
+---
+
+{Chapter 2 content}
+
+...
+
+---
+
+*The End*
+
+---
+
+{acknowledgments.md content, if exists}
+
+---
+
+{author-note.md content, if exists}
+
+---
+
+{about-author.md content, if exists}
+```
+
+Only include sections that exist. Omit the `---` separator for missing sections.
 
 ## Export Checklist
 

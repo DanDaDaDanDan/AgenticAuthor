@@ -46,11 +46,25 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
    /export
    ```
 
+## Working with Multiple Projects
+
+All commands operate on the **active book**. When you create a new project with `/new-book`, it automatically becomes active.
+
+**Check current project:** Run `/select-book` with no arguments to see which project is active and list all available projects.
+
+**Switch projects:**
+```
+/select-book my-other-book
+```
+
+The active book is stored in `books/active-book.yaml`.
+
 ## Available Skills
 
 | Skill | Purpose |
 |-------|---------|
 | `/new-book` | Create a new book project |
+| `/select-book` | Select a book project to work on |
 | `/generate` | Generate premise, treatment, or prose |
 | `/iterate` | Refine content with natural language feedback |
 | `/review` | Analyze content against quality standards |

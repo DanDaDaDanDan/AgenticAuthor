@@ -23,7 +23,7 @@ Show the current project progress and statistics.
 **Check for active book first:**
 
 1. If `project-name` argument provided, use that project
-2. Otherwise, read `books/active-book.md` and extract the `project:` value from the YAML block
+2. Otherwise, read `books/active-book.yaml` and extract the `project:` value from the YAML block
 3. If `project:` is set (not `null`), use that project
 4. If `project:` is `null` or file doesn't exist, fall back to:
    - If inside `books/{project}/`, use that project
@@ -59,54 +59,63 @@ For each existing file, calculate:
 
 ### Step 4: Display Status
 
-Output a formatted status report:
+Output a formatted status report using plain ASCII characters for terminal compatibility:
 
 ```
-📚 Project: {title}
-   Author: {author}
-   Genre: {genre}
-   Type: {Flash Fiction/Short Story/Novelette/Novella/Novel/Epic}
-   Created: {date}
+PROJECT: {title}
+  Author: {author}
+  Genre: {genre}
+  Type: {Flash Fiction/Short Story/Novelette/Novella/Novel/Epic}
+  Created: {date}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+------------------------------------------------------------------------
 
-Progress:
-  [✓] Premise          {word count} words
-  [✓] Treatment        {word count} words
-  [✓] Structure Plan   {chapter/scene count} planned
-  [✓] Generation Plans {X}/{Y} plans (novella/novel/epic) or ✓/✗ story plan (flash/short/novelette)
-  [ ] Prose            {X}/{Y} chapters (novella/novel/epic) or ✓/✗ (flash/short/novelette)
+PROGRESS:
+  [x] Premise          {word count} words
+  [x] Treatment        {word count} words
+  [x] Structure Plan   {chapter/scene count} planned
+  [x] Generation Plans {X}/{Y} plans (novella/novel/epic) or [x]/[ ] story plan (flash/short/novelette)
+  [ ] Prose            {X}/{Y} chapters (novella/novel/epic) or [x]/[ ] (flash/short/novelette)
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WORD COUNT:
+  Target: {length_target_words from frontmatter} words
+  Actual: {total prose word count} words
+  Status: {on track / under target / over target by X%}
 
-Chapters (novella/novel/epic):
-  Ch 1: {title}        Plan ✓  Prose ✓  {word count} words
-  Ch 2: {title}        Plan ✓  Prose ✓  {word count} words
-  Ch 3: {title}        Plan ✓  Prose ○  (ready to write)
-  Ch 4: {title}        Plan ○  Prose ○  (not started)
+------------------------------------------------------------------------
+
+CHAPTERS (novella/novel/epic):
+  Ch 1: {title}        Plan [x]  Prose [x]  {actual} / {target} words
+  Ch 2: {title}        Plan [x]  Prose [x]  {actual} / {target} words
+  Ch 3: {title}        Plan [x]  Prose [ ]  (ready to write)
+  Ch 4: {title}        Plan [ ]  Prose [ ]  (not started)
   ...
 
-Flash/Short/Novelette:
-  Story Plan: ✓/✗
-  Prose: ✓/✗  {word count} words
+FLASH/SHORT/NOVELETTE:
+  Story Plan: [x]/[ ]
+  Prose: [x]/[ ]  {actual} / {target} words
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+------------------------------------------------------------------------
 
-Total Progress: {X}% complete
-Total Words: {total word count}
+COMPLETION: {X}% complete
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+------------------------------------------------------------------------
 
-Recent Activity:
+RECENT ACTIVITY:
   {commit 1 - date - message}
   {commit 2 - date - message}
   {commit 3 - date - message}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+------------------------------------------------------------------------
 
-Next Steps:
-  → {Recommended next action based on current progress}
+NEXT STEPS:
+  > {Recommended next action based on current progress}
 ```
+
+**Word count sources:**
+- Target: Read `length_target_words` from premise/treatment/structure-plan frontmatter
+- Per-chapter targets: Read from structure-plan chapter breakdowns
+- Actual: Count words in prose files
 
 ### Step 5: Git Commands for Statistics
 
@@ -126,7 +135,7 @@ cd books && git log --oneline -5 -- {project}/
 cd books && git status --porcelain {project}/
 ```
 
-**Note:** This skill uses visual indicators (checkmarks, circles) for status display to improve readability.
+**Note:** This skill uses plain ASCII characters ([x], [ ], dashes) for terminal compatibility. Avoid emoji and box-drawing characters.
 
 ## Progress Calculation
 
@@ -155,16 +164,16 @@ For **flash/short/novelette**, each stage is binary (complete or not):
 If listing all projects:
 
 ```
-📚 AgenticAuthor Projects
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AGENTICAUTHOR PROJECTS
+------------------------------------------------------------------------
 
-  Project          Type          Progress    Words
-  ─────────────────────────────────────────────────
-  my-fantasy       Novel         45%         32,450
-  quick-story      Short Story   100%        8,200
-  new-project      Novel         10%         1,200
+  Project          Type          Progress    Actual / Target
+  ----------------------------------------------------------------
+  my-fantasy       Novel         45%         32,450 / 80,000 words
+  quick-story      Short Story   100%        8,200 / 7,500 words
+  new-project      Novel         10%         1,200 / 80,000 words
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+------------------------------------------------------------------------
 
 Use /status {project-name} for details.
 ```
@@ -174,11 +183,11 @@ Use /status {project-name} for details.
 If there are uncommitted changes, show a warning:
 
 ```
-⚠️  Uncommitted changes detected:
-    - premise.md (modified)
-    - chapters/chapter-03.md (new file)
+WARNING: Uncommitted changes detected:
+  - premise.md (modified)
+  - chapters/chapter-03.md (new file)
 
-    Consider committing with: git add . && git commit -m "message"
+Consider committing with: git add . && git commit -m "message"
 ```
 
 ## Next Steps Logic

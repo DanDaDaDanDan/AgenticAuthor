@@ -22,7 +22,7 @@ Analyze content against quality standards without making changes.
 
 **Check for active book first:**
 
-1. Read `books/active-book.md` and extract the `project:` value from the YAML block
+1. Read `books/active-book.yaml` and extract the `project:` value from the YAML block
 2. If `project:` is set (not `null`), use that project
 3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
    - Look for `project.yaml` in the current directory or parent directories under `books/`
@@ -268,6 +268,67 @@ When reviewing `all`, generate a combined report:
 ## Ready for Next Step?
 {Yes/No with explanation}
 ```
+
+### Frontmatter Integrity Check
+
+**Include in every review.** Check all stage files for frontmatter issues:
+
+```markdown
+## Frontmatter Integrity
+
+### {filename}
+- [ ] Valid YAML structure (opens and closes with `---`)
+- [ ] `project:` matches project name
+- [ ] `stage:` matches file type
+- [ ] All `*_key` fields present and valid
+- [ ] Display name fields match keys
+- [ ] No unknown/misspelled keys
+
+**Issues found:**
+- {List any problems: missing keys, invalid values, typos}
+
+**Cross-stage consistency:**
+- [ ] Frontmatter values match across stages (premise → treatment → structure-plan)
+- [ ] No conflicting taxonomy selections
+```
+
+If frontmatter is invalid or inconsistent, flag it as a priority fix — downstream stages depend on accurate frontmatter.
+
+### Drift Detector
+
+**Include for prose reviews.** Check where prose deviates from its plan:
+
+```markdown
+## Plan vs Prose Drift
+
+### Chapter {N}
+
+**Planned scenes:**
+1. {Scene from plan}
+2. {Scene from plan}
+
+**Actual scenes in prose:**
+1. {What actually appears}
+2. {What actually appears}
+
+**Drift analysis:**
+- [ ] Scene count matches plan
+- [ ] Scene purposes achieved
+- [ ] Character states match plan expectations
+- [ ] Key beats present
+
+**Deviations found:**
+| Planned | Actual | Assessment |
+|---------|--------|------------|
+| {planned element} | {what happened} | Intentional improvement / Needs plan update / Needs prose fix |
+
+**Recommendation:**
+- Update plan to match prose (if prose is better)
+- Regenerate prose (if plan should be authoritative)
+- No action (deviation is minor/intentional)
+```
+
+Drift is not always bad — sometimes prose improves on the plan. The review identifies drift and recommends whether to update the plan or the prose.
 
 ---
 

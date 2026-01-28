@@ -38,7 +38,7 @@ ls -d books/*/ 2>/dev/null | xargs -I{} basename {} | grep -v "^\.git$"
 If `book-name` argument provided:
 - Verify the project exists in `books/{book-name}/`
 - Verify `project.yaml` exists
-- If valid, update `books/active-book.md`
+- If valid, update `books/active-book.yaml`
 
 If `book-name` not provided:
 - Display the list of available books
@@ -72,24 +72,21 @@ Set as active anyway? (y/n)
 
 ### Step 4: Update Active Book File
 
-Create or edit `books/active-book.md` to set the selected project. The file format is:
+Create or edit `books/active-book.yaml` to set the selected project:
 
-```
-# Active Book
+```yaml
+# Active book for AgenticAuthor
+# Change with /select-book
 
-The currently selected book project.
-
-[yaml code block with: project: {book-name}]
-
-To change the active book, use `/select-book`.
+project: {book-name}
 ```
 
-Replace the `project:` value in the YAML block with the selected book name.
+Replace the `project:` value with the selected book name.
 
 ### Step 5: Commit the Change
 
 ```bash
-cd books && git add active-book.md && git commit -m "Update: Set {book-name} as active book"
+cd books && git add active-book.yaml && git commit -m "Update: Set {book-name} as active book"
 ```
 
 ### Step 6: Show Confirmation
@@ -140,7 +137,7 @@ To clear the active book (so commands will prompt):
 /select-book none
 ```
 
-This sets `project: null` in `active-book.md`.
+This sets `project: null` in `active-book.yaml`.
 
 ## Error Handling
 

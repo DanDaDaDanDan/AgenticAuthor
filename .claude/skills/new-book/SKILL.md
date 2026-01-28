@@ -142,24 +142,19 @@ cd books && git add {book-name}/ && git commit -m "Add: Initialize {book-name} p
 
 ### Step 6: Set as Active Book
 
-Create or update `books/active-book.md` to set the new project as active. The file format is:
+Create or update `books/active-book.yaml` to set the new project as active:
 
+```yaml
+# Active book for AgenticAuthor
+# Change with /select-book
+
+project: {book-name}
 ```
-# Active Book
-
-The currently selected book project.
-
-[yaml code block with: project: {book-name}]
-
-To change the active book, use `/select-book`.
-```
-
-Replace the `project:` value in the YAML block with the new book name.
 
 Commit the active book update:
 
 ```bash
-cd books && git add active-book.md && git commit -m "Update: Set {book-name} as active book"
+cd books && git add active-book.yaml && git commit -m "Update: Set {book-name} as active book"
 ```
 
 ### Step 7: Confirm Creation

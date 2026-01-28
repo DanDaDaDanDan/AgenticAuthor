@@ -21,6 +21,7 @@ AgenticAuthor/
 ├── .claude/
 │   └── skills/               # Claude Code skill definitions
 │       ├── new-book/SKILL.md
+│       ├── select-book/SKILL.md
 │       ├── generate/SKILL.md
 │       ├── iterate/SKILL.md
 │       ├── review/SKILL.md
@@ -54,6 +55,7 @@ All skills are defined in `.claude/skills/{skill}/SKILL.md`:
 | Skill | Purpose |
 |-------|---------|
 | `/new-book` | Create a new book project |
+| `/select-book` | Select a book project to work on |
 | `/generate` | Generate premise, treatment, or prose |
 | `/iterate` | Refine content with feedback |
 | `/review` | Analyze without changes |

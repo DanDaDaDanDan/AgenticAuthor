@@ -33,7 +33,7 @@ Each stage's output is self-contained — it carries forward all information nee
 
 **Check for active book first:**
 
-1. Read `books/active-book.md` and extract the `project:` value from the YAML block
+1. Read `books/active-book.yaml` and extract the `project:` value from the YAML block
 2. If `project:` is set (not `null`), use that project
 3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
    - Look for `project.yaml` in the current directory or parent directories under `books/`
@@ -181,6 +181,8 @@ Write the revised file(s) to `books/{project}/` and commit:
 cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
 ```
 
+**For prose iteration:** Also update and commit `summaries.md` with any changes to chapter summaries, open threads, or facts.
+
 ## Iteration Guidelines
 
 ### Minimal Edits Principle
@@ -224,6 +226,13 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Established world details
 
 Use the chapter-plan's Style Notes as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
+
+**After prose iteration, update `summaries.md`** to reflect any changes to:
+- Chapter/scene summaries (if plot events changed)
+- Open threads (if threads were resolved, added, or modified)
+- Facts/continuity details (if world details or character states changed)
+
+This keeps the continuity anchor in sync with actual prose content.
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building
