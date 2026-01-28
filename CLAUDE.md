@@ -21,6 +21,7 @@ Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit 
 | `/review` | Analyze content against quality standards |
 | `/status` | Show project progress |
 | `/export` | Export book to single file |
+| `/refresh-summaries` | Rebuild summaries from current prose |
 
 ## Active Book
 
