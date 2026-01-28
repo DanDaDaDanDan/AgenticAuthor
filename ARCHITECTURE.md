@@ -258,14 +258,16 @@ The treatment is **self-contained** — it includes all story configuration from
 
 Carried forward from premise (authoritative for all downstream stages):
 
-- **Prose Style:** {approach} — {pacing}, {dialogue density}
-- **POV:** {narrative perspective}
-- **Length:** {novel/novelette/short-story} (~{word count} words)
 - **Genre:** {genre/subgenre}
+- **Length:** {novel/novelette/short-story} (~{word count} words)
 - **Target Audience:** {demographic}
 - **Content Rating:** {rating}
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tense:** {past/present}
 - **Tone:** {emotional quality}
 - **Themes:** {primary}, {secondary}
+- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Story Overview
 
@@ -450,10 +452,15 @@ Generated after prose. Provides compressed context for continuity.
 Copy verbatim from structure-plan header. Do not modify.
 
 - **Genre:** {genre/subgenre}
-- **Prose Style:** {approach}
+- **Length:** {novel} (~{target word count} words)
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
 - **POV:** {narrative perspective}
 - **Tense:** {past/present}
 - **Tone:** {emotional quality}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance}
 
 ---
 
@@ -511,7 +518,8 @@ External generation plan created before each chapter's prose. Saved for review, 
 Copy verbatim from structure-plan. Do not modify.
 
 - **Genre:** {genre/subgenre}
-- **Length:** {novel} (~{target word count} words total)
+- **Length:** {novel} (~{target word count} words)
+- **Target Audience:** {demographic}
 - **Content Rating:** {rating}
 - **Prose Style:** {approach} — {pacing}, {dialogue density}
 - **POV:** {narrative perspective}
@@ -575,6 +583,7 @@ Copy verbatim from structure-plan. Do not modify.
 
 - **Genre:** {genre/subgenre}
 - **Length:** {short-story/novelette} (~{target word count} words)
+- **Target Audience:** {demographic}
 - **Content Rating:** {rating}
 - **Prose Style:** {approach} — {pacing}, {dialogue density}
 - **POV:** {narrative perspective}
