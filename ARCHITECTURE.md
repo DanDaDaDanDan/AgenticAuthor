@@ -90,7 +90,7 @@ Each stage reads only its immediate predecessor. This prevents conflicts when it
 | treatment | treatment-approach + premise |
 | structure-plan | treatment only |
 | chapter-plan | structure-plan + summaries + previous chapter plan (if exists) |
-| prose | plan + summaries + all previous chapters (epic: last 20) + prose-style-{prose_style_key} |
+| prose | plan + summaries + all previous chapters + prose-style-{prose_style_key} |
 
 **Why this matters:** If you iterate on treatment and change the ending, structure-plan sees the update automatically because it only reads treatment. Premise becomes "historical" (the seed), not the contract.
 

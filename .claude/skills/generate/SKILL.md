@@ -645,11 +645,7 @@ Generate the actual story prose.
 
 ### Context Rules
 
-**Context loading:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`summaries.md`). For chaptered formats, load previous chapters for voice and narrative continuity.
-
-**Previous chapter loading:**
-- **Novella/Novel:** all previous chapters
-- **Epic:** last 20 chapters + summaries.md (summaries provide continuity for older content)
+**Context loading:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`summaries.md`). For chaptered formats, load all previous chapters for voice and narrative continuity.
 
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
@@ -657,7 +653,7 @@ Generate the actual story prose.
 | short-story-plan | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
 | chapter-plan (novella/novel/epic) | structure-plan.md + summaries.md + previous chapter plan (if exists) | premise.md, treatment-approach.md, treatment.md |
 | prose (flash/short/novelette) | short-story-plan.md + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
-| prose (novella/novel/epic) | chapter-plan + summaries.md + all previous chapters (epic: last 20) + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| prose (novella/novel/epic) | chapter-plan + summaries.md + all previous chapters + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
 
 ### Clarifying Questions
 
@@ -859,8 +855,7 @@ Generate `books/{project}/chapters/chapter-{NN}.md` (Chapter {N}) for `{project}
 **Read only these files:**
 1. `books/{project}/chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
 2. `books/{project}/summaries.md` — Canon Facts + Open Threads (if it exists)
-3. All previous chapter prose in `books/{project}/chapters/` for voice continuity
-   - For epic only: limit to last 20 chapters if more exist
+3. All previous chapter prose in `books/{project}/chapters/`
 4. `misc/prose-style-{prose_style_key}.md` — Style card (read `prose_style_key` from frontmatter)
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or other chapter-plans.
@@ -1589,7 +1584,7 @@ Most stories should end with no open threads; if any remain, list them explicitl
 
 ## Context Management Summary
 
-**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, use `summaries.md` as the continuity anchor and load all previous chapters (epic: last 20).
+**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, use `summaries.md` as the continuity anchor and load all previous chapters.
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
@@ -1598,7 +1593,7 @@ Most stories should end with no open threads; if any remain, list them explicitl
 | structure-plan | treatment only | premise, treatment-approach |
 | chapter-plan (novella/novel/epic) | structure-plan + summaries + previous chapter plan (if exists) | premise, treatment-approach, treatment |
 | short-story-plan (flash/short/novelette) | structure-plan only | premise, treatment-approach, treatment |
-| prose (novella/novel/epic) | chapter-plan + summaries + all previous chapters (epic: last 20) + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
+| prose (novella/novel/epic) | chapter-plan + summaries + all previous chapters + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 | prose (flash/short/novelette) | short-story-plan + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 
 **Path Notes:**

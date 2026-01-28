@@ -134,7 +134,7 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
 - `books/{project}/summaries.md` (if exists) - Canon Facts + Open Threads continuity anchor
 - `books/{project}/chapters/chapter-{NN}.md` - The chapter being revised
-- All previous chapters in `books/{project}/chapters/` for voice continuity (epic: last 20)
+- All previous chapters in `books/{project}/chapters/` for voice continuity
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 - Do NOT read premise.md, treatment.md, or structure-plan.md
 
