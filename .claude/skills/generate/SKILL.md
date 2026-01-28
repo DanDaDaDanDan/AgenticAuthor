@@ -372,8 +372,7 @@ Generate complete, publication-ready content. Do not ask for approval.
 
 ## Style Considerations
 
-**Prose approach impact:** {How the selected style affects treatment choices}
-**Pacing implications:** {How pacing preference shapes scene density}
+**Prose style impact:** {How the selected prose style affects treatment choices, including implied pacing}
 ```
 
 #### Treatment Format (Novella/Novel/Epic)
