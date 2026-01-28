@@ -30,12 +30,16 @@ None. Operates on the active book.
 
 ### Step 1: Determine Format
 
-Read `books/{project}/project.yaml` to get `length_key`:
+Read `books/{project}/project.yaml` to get the `length` field:
 
 - **Flash fiction / Short story / Novelette** (`flash_fiction`, `short_story`, `novelette`): Single-file format
 - **Novella / Novel / Epic** (`novella`, `novel`, `epic`): Chaptered format
 
-### Step 2: Verify Prose Exists
+### Step 2: Verify Required Files Exist
+
+**Check structure-plan.md exists:**
+- Read `books/{project}/structure-plan.md`
+- If not found, inform user: "No structure-plan found. Run `/generate prose` first (it creates structure-plan automatically)."
 
 **For single-file format:**
 - Check `books/{project}/short-story.md` exists
@@ -88,12 +92,6 @@ stage: summaries
 **Themes Delivered:**
 - {How primary theme actually manifested in the prose}
 - {How secondary theme actually manifested}
-
-**Continuity Facts:**
-- {Key names, locations, rules, objects, relationships established in prose}
-
-**Open Threads (if any):**
-- {Any unresolved threads — typically none for standalone short fiction}
 ```
 
 #### For Chaptered Format (Novella/Novel/Epic)
@@ -145,7 +143,9 @@ When reading prose to extract summaries:
 
 **Summary:** Focus on what actually happens, not what was planned. If the prose diverged from plans, the summary reflects the prose.
 
-**Character States:** Look at dialogue, internal monologue, and actions at the chapter's end. What emotional/mental state is the character in?
+**Character Arc (single-file) / Character States (chaptered):** Look at dialogue, internal monologue, and actions. For single-file, capture the full arc (start → end). For chaptered, capture state at each chapter's end.
+
+**The following apply to chaptered format only:**
 
 **Open Threads:** Track:
 - Questions raised but not answered
@@ -188,8 +188,9 @@ Summarize what was rebuilt:
 ```
 Rebuilt summaries.md for {project}:
 - Story summary updated from current prose
-- {N} continuity facts extracted
-- {N} open threads identified (or "No open threads")
+- Key beats extracted (opening, complication, climax, resolution)
+- Character arc captured
+- Themes delivered documented
 ```
 
 **For chaptered:**
