@@ -84,8 +84,8 @@ name: {book-name}
 title: {working-title}
 author: {author-name}
 genre: {genre-key}  # e.g., fantasy, science-fiction, mystery-thriller
-length: novel  # taxonomy key: flash_fiction, short_story, novelette, novella, novel, epic
-series_structure: standalone  # taxonomy key: standalone, duology, trilogy, series, serial
+length: {length-key}  # e.g., flash_fiction, short_story, novelette, novella, novel, epic
+series_structure: {series_structure-key}  # e.g., standalone, duology, trilogy, series, serial
 created: {today's date in YYYY-MM-DD format}
 ```
 

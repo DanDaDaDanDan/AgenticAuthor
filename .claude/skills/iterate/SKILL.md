@@ -36,12 +36,12 @@ If `target` not provided, ask the user:
   1. Premise - refine the core concept
   2. Treatment - adjust the story outline
   3. Plan - modify structure plan (scene/chapter breakdown)
-  4. Chapter/story plan - adjust a generation plan (novels: specific chapter, short stories/novelettes: story plan)
+  4. Chapter/story plan - adjust a generation plan (novella/novel/epic: specific chapter, flash/short/novelette: story plan)
   5. Prose - revise generated prose
 
 For chapter/story plan:
-- Novels: ask which chapter plan to revise
-- Short stories/novelettes: there's only one plan (`short-story-plan.md`)
+- Novella/novel/epic: ask which chapter plan to revise
+- Flash/short/novelette: there's only one plan (`short-story-plan.md`)
 
 For prose, also ask which chapter(s) to revise, or "all" for the entire story.
 
@@ -108,26 +108,26 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/structure-plan.md` - Current plan (already contains frontmatter + Characters)
 - Do NOT read premise.md or treatment.md — structure-plan is self-contained
 
-**For chapter plan iteration (novels):**
+**For chapter plan iteration (novella/novel/epic):**
 - `books/{project}/structure-plan.md` - For frontmatter and character reference
 - `books/{project}/summaries.md` (if exists) - For continuity
 - Previous chapter plans from `books/{project}/chapter-plans/`
 - The specific chapter plan being revised
 - Do NOT read premise.md or treatment.md
 
-**For story plan iteration (short stories/novelettes):**
+**For story plan iteration (flash/short/novelette):**
 - `books/{project}/structure-plan.md` - For frontmatter and character reference
 - `books/{project}/short-story-plan.md` - The plan being revised
 - Do NOT read premise.md or treatment.md
 
-**For prose iteration (novels):**
+**For prose iteration (novella/novel/epic):**
 - `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
 - `books/{project}/summaries.md` (if exists) - For continuity
 - All chapters from `books/{project}/chapters/`
 - `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is Commercial
 - Do NOT read premise.md, treatment.md, or structure-plan.md
 
-**For prose iteration (short stories/novelettes):**
+**For prose iteration (flash/short/novelette):**
 - `books/{project}/short-story-plan.md` - The story plan
 - `books/{project}/short-story.md` - The story being revised
 - `AgenticAuthor/misc/prose-style-card.md` - Optional reference if style is Commercial
@@ -203,7 +203,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Iterate on chapter plans **before** generating prose for that chapter
 - Adjust scene breakdowns, character states, or style notes as needed
 - If the chapter's prose already exists, note that prose may need regeneration
-- For short stories/novelettes, iterate on `short-story-plan.md`
+- For flash/short/novelette, iterate on `short-story-plan.md`
 
 ### Prose Iteration
 
