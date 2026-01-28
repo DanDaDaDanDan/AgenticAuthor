@@ -105,10 +105,10 @@ Before completing, review:
 - If conflicts arise, **clarity and flow take priority** over ornamentation.
 
 **When to deviate:**
-- Literary fiction may use longer sentences, denser prose, fewer dialogue tags
 - Atmospheric scenes may prioritize mood over momentum
 - Distinctive character voices may break readability rules deliberately
-- Genre conventions may call for different pacing (thriller vs literary vs romance)
+- Emotional peaks may call for shorter, punchier sentences
+- Quiet moments may need breathing room over pace
 
 The goal is engaging, readable prose—not mechanical conformity.
 
