@@ -147,7 +147,7 @@ content_rating: "{Display Name, e.g., Mature/R}"
 # Style taxonomy (keys for tooling)
 prose_style_key: {commercial|literary|minimalist|pulp|lyrical|conversational}
 prose_style: "{Display Name, e.g., Pulp/Action}"
-prose_pacing_key: {fast|measured|slow-burn}
+prose_pacing_key: {fast|measured|slow_burn}
 prose_pacing: "{Display Name, e.g., Fast}"
 dialogue_density_key: {high|moderate|low}
 dialogue_density: "{Display Name, e.g., High}"
