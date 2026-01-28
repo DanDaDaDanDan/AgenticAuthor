@@ -37,8 +37,8 @@ Read `books/{project}/project.yaml` to get the genre.
 
 **For premise review:**
 - `books/{project}/premise.md`
-- `AgenticAuthor/taxonomies/base-taxonomy.json`
-- `AgenticAuthor/taxonomies/{genre}-taxonomy.json`
+- `taxonomies/base-taxonomy.json`
+- `taxonomies/{genre}-taxonomy.json`
 
 **For treatment review:**
 - `books/{project}/premise.md`
@@ -61,7 +61,7 @@ Read `books/{project}/project.yaml` to get the genre.
 - For novella/novel/epic: `books/{project}/chapter-plans/` (relevant chapter plans)
 - For novella/novel/epic: target chapter(s) from `books/{project}/chapters/`
 - For flash/short/novelette: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
-- `AgenticAuthor/misc/prose-style-card.md` - Reference if premise uses Commercial style
+- `misc/prose-style-card.md` - Reference if premise uses Commercial style
 
 ### Step 3: Analyze Content
 
