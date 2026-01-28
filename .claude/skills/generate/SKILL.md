@@ -286,9 +286,7 @@ This document analyzes the premise and plans the treatment structure. Think thro
 - Potential challenges to navigate
 
 **After generating:**
-```bash
-cd books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"
-```
+Run: cd books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"
 
 Generate complete content. Do not ask for approval.
 ```
@@ -328,9 +326,7 @@ Follow the decisions made in treatment-approach.md:
 - Carry forward frontmatter from premise (the frontmatter is authoritative for downstream stages)
 
 **After generating:**
-```bash
-cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
-```
+Run: cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
 
 Generate complete, publication-ready content. Do not ask for approval.
 ```
@@ -648,9 +644,7 @@ The overall target is {X} words across {N} scenes/chapters. Before writing the s
 Distribute word counts so they sum to the overall target. A heist scene might need 1,200 words; a quick transition might need 600. The distribution should reflect the story's needs, not be uniform.
 
 **After generating:**
-```bash
-cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
-```
+Run: cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
 
 Generate complete content. Do not ask for approval.
 ```
@@ -691,9 +685,7 @@ For each scene, think through how the prose will achieve its word count target:
 Add a "Development notes" field to each scene in your plan, briefly noting what elements will fill the space (e.g., "Extended dialogue between Dex and Throttle; Dex's internal justification monologue; sensory details of the base").
 
 **After generating:**
-```bash
-cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"
-```
+Run: cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"
 
 Generate complete content. Do not ask for approval.
 ```
@@ -731,21 +723,16 @@ Follow the frontmatter for core style settings (POV, tense, tone, prose style, c
 The story-plan includes per-scene word count targets. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development — a scene targeted at 1,200 words needs more beats, dialogue, and interiority than one targeted at 600 words.
 
 **Prose format:**
-```markdown
-# {Story Title}
-
-{Complete story prose}
-
-{Use "* * *" for scene breaks}
-```
+- Start with: # {Story Title}
+- Complete story prose follows
+- Use: * * * (asterisks with spaces) for scene breaks
+- No frontmatter in prose files
 
 **Summary format:**
 Use the summaries.md (Flash/Short/Novelette) format from the Summaries Schema section below.
 
 **After generating:**
-```bash
-cd books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"
-```
+Run: cd books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"
 
 Generate publication-ready prose. Do not ask for approval.
 ```
@@ -786,10 +773,8 @@ This chapter targets ~{X} words. Think through how the prose will achieve this:
 Include these considerations in the chapter plan so the prose sub-agent has concrete guidance.
 
 **After generating:**
-```bash
-mkdir -p books/{project}/chapter-plans
-cd books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"
-```
+Run: mkdir -p books/{project}/chapter-plans
+Then: cd books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"
 
 Generate complete content. Do not ask for approval.
 ```
@@ -826,32 +811,18 @@ Follow the frontmatter in the chapter-plan for core style settings (POV, tense, 
 The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
 
 **Chapter prose format:**
-```markdown
-# Chapter {N}: {Title}
-
-{Opening prose...}
-
-{Continue scene 1...}
-
-* * *
-
-{Scene 2 prose...}
-
-* * *
-
-{Scene 3 prose...}
-```
-
-- Start with `# Chapter {N}: {Title}` header
-- Use `* * *` (with spaces) for scene breaks within chapters
-- No frontmatter in prose files — frontmatter lives in the chapter-plan
+- Start with: # Chapter {N}: {Title}
+- Scene 1 prose follows immediately
+- Use: * * * (asterisks with spaces) for scene breaks
+- Scene 2 prose...
+- Use: * * * for next scene break
+- Scene 3 prose...
 - End with prose, not a scene break
+- No frontmatter in prose files — frontmatter lives in the chapter-plan
 
 **After generating:**
-```bash
-mkdir -p books/{project}/chapters
-cd books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
-```
+Run: mkdir -p books/{project}/chapters
+Then: cd books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
 
 Generate publication-ready prose. Do not ask for approval.
 ```
