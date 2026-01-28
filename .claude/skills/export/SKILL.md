@@ -23,7 +23,7 @@ Export the book to a single combined file.
 
 **Check for active book first:**
 
-1. Read `books/active-book.yaml` and extract the `project:` value from the YAML block
+1. Read `books/active-book.yaml` and extract the `project:` value
 2. If `project:` is set (not `null`), use that project
 3. If `project:` is `null` or file doesn't exist, fall back to:
    - Detect the current project from working directory
@@ -234,7 +234,7 @@ If these files exist in the project directory, include them in the export:
 |------|-------------------|
 | `dedication.md` | After title page, before first chapter |
 | `epigraph.md` | After dedication (if present), before first chapter |
-| `acknowledgments.md` | After story ends, before "The End" |
+| `acknowledgments.md` | After "The End", as back matter |
 | `author-note.md` | After acknowledgments |
 | `about-author.md` | At the very end |
 

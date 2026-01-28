@@ -22,7 +22,7 @@ Analyze content against quality standards without making changes.
 
 **Check for active book first:**
 
-1. Read `books/active-book.yaml` and extract the `project:` value from the YAML block
+1. Read `books/active-book.yaml` and extract the `project:` value
 2. If `project:` is set (not `null`), use that project
 3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
    - Look for `project.yaml` in the current directory or parent directories under `books/`
@@ -153,7 +153,7 @@ Generate a review report. **Do NOT make any changes to files.**
 ## Continuity Check
 | Element | Introduced | Resolved | Status |
 |---------|-----------|----------|--------|
-| {Plot thread} | Ch/Scene {X} | Ch/Scene {Y} | ✓/⚠️ |
+| {Plot thread} | Ch/Scene {X} | Ch/Scene {Y} | OK/WARN |
 
 ## Suggestions
 1. {Specific improvement suggestion}

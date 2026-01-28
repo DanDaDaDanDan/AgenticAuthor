@@ -23,7 +23,7 @@ Show the current project progress and statistics.
 **Check for active book first:**
 
 1. If `project-name` argument provided, use that project
-2. Otherwise, read `books/active-book.yaml` and extract the `project:` value from the YAML block
+2. Otherwise, read `books/active-book.yaml` and extract the `project:` value
 3. If `project:` is set (not `null`), use that project
 4. If `project:` is `null` or file doesn't exist, fall back to:
    - If inside `books/{project}/`, use that project
@@ -35,19 +35,19 @@ For the target project, check which files exist:
 
 ```
 books/{project}/
-├── project.yaml         ✓/✗
-├── premise.md           ✓/✗
-├── treatment.md         ✓/✗
-├── structure-plan.md    ✓/✗ (all project types)
-├── summaries.md         ✓/✗ (generated after prose)
+├── project.yaml         [x]/[ ]
+├── premise.md           [x]/[ ]
+├── treatment.md         [x]/[ ]
+├── structure-plan.md    [x]/[ ] (all project types)
+├── summaries.md         [x]/[ ] (generated after prose)
 ├── chapter-plans/       (novella/novel/epic only)
-│   ├── chapter-01-plan.md ✓/✗
+│   ├── chapter-01-plan.md [x]/[ ]
 │   └── ...
 ├── chapters/            (novella/novel/epic only)
-│   ├── chapter-01.md    ✓/✗
+│   ├── chapter-01.md    [x]/[ ]
 │   └── ...
-├── short-story-plan.md  ✓/✗ (flash/short/novelette only)
-└── short-story.md       ✓/✗ (flash/short/novelette only)
+├── short-story-plan.md  [x]/[ ] (flash/short/novelette only)
+└── short-story.md       [x]/[ ] (flash/short/novelette only)
 ```
 
 ### Step 3: Calculate Statistics
