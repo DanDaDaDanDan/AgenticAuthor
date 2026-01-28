@@ -72,7 +72,7 @@ Set as active anyway? (y/n)
 
 ### Step 4: Update Active Book File
 
-Edit `books/active-book.md` to set the selected project. The file format is:
+Create or edit `books/active-book.md` to set the selected project. The file format is:
 
 ```
 # Active Book
