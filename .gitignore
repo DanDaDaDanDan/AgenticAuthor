@@ -3,6 +3,9 @@
 .env.local
 .env.*.local
 
+# Local Claude settings (user-specific paths and permissions)
+.claude/settings.local.json
+
 # IDE
 .vscode/
 .idea/

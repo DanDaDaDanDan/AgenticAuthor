@@ -64,9 +64,9 @@ Generate the core concept and story foundation.
 **Note:** Premise generation is interactive (requires user input for concept and style), so it runs in the main context, not as a sub-agent.
 
 **Context to read:**
-- `AgenticAuthor/taxonomies/base-taxonomy.json` - Universal story properties
-- `AgenticAuthor/taxonomies/{genre}-taxonomy.json` - Genre-specific options
-- `AgenticAuthor/taxonomies/style-taxonomy.json` - Prose style options
+- `taxonomies/base-taxonomy.json` - Universal story properties
+- `taxonomies/{genre}-taxonomy.json` - Genre-specific options
+- `taxonomies/style-taxonomy.json` - Prose style options
 
 **Genre to filename mapping:**
 | Genre in project.yaml | Taxonomy file |
@@ -157,7 +157,7 @@ Generate the core concept and story foundation.
 
 **After generation:**
 ```bash
-cd /d/Personal/AgenticAuthor/books && git add {project}/premise.md && git commit -m "Add: Generate premise for {project}"
+cd books && git add {project}/premise.md && git commit -m "Add: Generate premise for {project}"
 ```
 
 ---
@@ -213,12 +213,12 @@ Generate treatment-approach.md for the {project} project.
 - Specific elements: {user's input, if any}
 
 **Context to read:**
-1. `D:\Personal\AgenticAuthor\books\{project}\premise.md` — Full premise
-2. `D:\Personal\AgenticAuthor\taxonomies\{genre}-taxonomy.json` — Genre structure
+1. `books/{project}/premise.md` — Full premise
+2. `taxonomies/{genre}-taxonomy.json` — Genre structure
 
 **Do NOT read:** Any other files. Premise is the authoritative source.
 
-**Output file:** `D:\Personal\AgenticAuthor\books\{project}\treatment-approach.md`
+**Output file:** `books/{project}/treatment-approach.md`
 
 **Format:**
 [Include the treatment-approach template from this skill]
@@ -233,7 +233,7 @@ This document analyzes the premise and plans the treatment structure. Think thro
 
 **After generating:**
 ```bash
-cd /d/Personal/AgenticAuthor/books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"
+cd books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"
 ```
 
 Generate complete content. Do not ask for approval.
@@ -253,12 +253,12 @@ Generate treatment.md for the {project} project.
 **Project type:** {novel/novelette/short-story}
 
 **Context to read:**
-1. `D:\Personal\AgenticAuthor\books\{project}\treatment-approach.md` — Planning document with structure decisions
-2. `D:\Personal\AgenticAuthor\books\{project}\premise.md` — Original premise for Story Configuration details
+1. `books/{project}/treatment-approach.md` — Planning document with structure decisions
+2. `books/{project}/premise.md` — Original premise for Story Configuration details
 
 **Do NOT read:** Any other files.
 
-**Output file:** `D:\Personal\AgenticAuthor\books\{project}\treatment.md`
+**Output file:** `books/{project}/treatment.md`
 
 **Format (novels):**
 [Include the novel treatment template from this skill]
@@ -275,7 +275,7 @@ Follow the decisions made in treatment-approach.md:
 
 **After generating:**
 ```bash
-cd /d/Personal/AgenticAuthor/books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
+cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"
 ```
 
 Generate complete, publication-ready content. Do not ask for approval.
@@ -516,11 +516,11 @@ Generate structure-plan.md for the {project} project.
 - Chapter/scene structure: {user's choice}
 
 **Context to read:**
-1. `D:\Personal\AgenticAuthor\books\{project}\treatment.md` — Full treatment with Story Configuration
+1. `books/{project}/treatment.md` — Full treatment with Story Configuration
 
 **Do NOT read:** premise.md or any other files. Treatment is the authoritative source.
 
-**Output file:** `D:\Personal\AgenticAuthor\books\{project}\structure-plan.md`
+**Output file:** `books/{project}/structure-plan.md`
 
 **Format for {novels/short stories}:**
 [Include appropriate structure-plan template]
@@ -537,7 +537,7 @@ Distribute word counts so they sum to the overall target. A heist scene might ne
 
 **After generating:**
 ```bash
-cd /d/Personal/AgenticAuthor/books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
+cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"
 ```
 
 Generate complete content. Do not ask for approval.
@@ -557,11 +557,11 @@ Generate short-story-plan.md for the {project} project.
 **Target word count:** {from structure-plan, e.g., ~14,000 words}
 
 **Context to read:**
-1. `D:\Personal\AgenticAuthor\books\{project}\structure-plan.md` — Full structure plan with scenes and style config
+1. `books/{project}/structure-plan.md` — Full structure plan with scenes and style config
 
 **Do NOT read:** premise.md, treatment.md, or any other files. Structure-plan is self-contained.
 
-**Output file:** `D:\Personal\AgenticAuthor\books\{project}\short-story-plan.md`
+**Output file:** `books/{project}/short-story-plan.md`
 
 **Format:**
 [Include story plan template]
@@ -580,7 +580,7 @@ Add a "Development notes" field to each scene in your plan, briefly noting what 
 
 **After generating:**
 ```bash
-cd /d/Personal/AgenticAuthor/books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"
+cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"
 ```
 
 Generate complete content. Do not ask for approval.
@@ -600,14 +600,14 @@ Generate complete prose for the {project} novelette/short story.
 **Target word count:** {from story-plan, e.g., ~14,000 words}
 
 **Context to read:**
-1. `D:\Personal\AgenticAuthor\books\{project}\short-story-plan.md` — Complete story plan with scene breakdowns and style notes
-2. `D:\Personal\AgenticAuthor\misc\prose-style-card.md` — Reference for prose style (use as loose guidance)
+1. `books/{project}/short-story-plan.md` — Complete story plan with scene breakdowns and style notes
+2. `misc/prose-style-card.md` — Reference for prose style (use as loose guidance)
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or any other files. The story-plan is self-contained.
 
 **Output files:**
-1. `D:\Personal\AgenticAuthor\books\{project}\short-story.md` — Complete prose
-2. `D:\Personal\AgenticAuthor\books\{project}\summaries.md` — Story summary
+1. `books/{project}/short-story.md` — Complete prose
+2. `books/{project}/summaries.md` — Story summary
 
 **Style guidance:**
 Follow the Style Notes section in the story-plan. Key elements:
@@ -644,7 +644,7 @@ The story-plan includes per-scene word count targets. Use these as guidance for 
 
 **After generating:**
 ```bash
-cd /d/Personal/AgenticAuthor/books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"
+cd books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"
 ```
 
 Generate publication-ready prose. Do not ask for approval.
@@ -664,13 +664,13 @@ Generate chapter plan for Chapter {N} of {project}.
 **Chapter target:** ~{X} words
 
 **Context to read:**
-1. `D:\Personal\AgenticAuthor\books\{project}\structure-plan.md` — Full structure plan
-2. `D:\Personal\AgenticAuthor\books\{project}\summaries.md` — If exists, for continuity
-3. `D:\Personal\AgenticAuthor\books\{project}\chapter-plans\chapter-*.md` — All previous chapter plans
+1. `books/{project}/structure-plan.md` — Full structure plan
+2. `books/{project}/summaries.md` — If exists, for continuity
+3. `books/{project}/chapter-plans\chapter-*.md` — All previous chapter plans
 
 **Do NOT read:** premise.md, treatment.md, or prose files.
 
-**Output file:** `D:\Personal\AgenticAuthor\books\{project}\chapter-plans\chapter-{NN}-plan.md`
+**Output file:** `books/{project}/chapter-plans\chapter-{NN}-plan.md`
 
 **Format:**
 [Include chapter plan template]
@@ -687,8 +687,8 @@ Include these considerations in the chapter plan so the prose sub-agent has conc
 
 **After generating:**
 ```bash
-mkdir -p /d/Personal/AgenticAuthor/books/{project}/chapter-plans
-cd /d/Personal/AgenticAuthor/books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"
+mkdir -p books/{project}/chapter-plans
+cd books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"
 ```
 
 Generate complete content. Do not ask for approval.
@@ -708,24 +708,24 @@ Generate prose for Chapter {N} of {project}.
 **Chapter target:** ~{X} words
 
 **Context to read:**
-1. `D:\Personal\AgenticAuthor\books\{project}\chapter-plans\chapter-{NN}-plan.md` — This chapter's plan
-2. `D:\Personal\AgenticAuthor\books\{project}\summaries.md` — For continuity
-3. `D:\Personal\AgenticAuthor\books\{project}\chapters\chapter-*.md` — All previous chapters
-4. `D:\Personal\AgenticAuthor\misc\prose-style-card.md` — Style reference
+1. `books/{project}/chapter-plans\chapter-{NN}-plan.md` — This chapter's plan
+2. `books/{project}/summaries.md` — For continuity
+3. `books/{project}/chapters\chapter-*.md` — All previous chapters
+4. `misc/prose-style-card.md` — Style reference
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or other chapter-plans.
 
 **Output files:**
-1. `D:\Personal\AgenticAuthor\books\{project}\chapters\chapter-{NN}.md` — Chapter prose
-2. Append to `D:\Personal\AgenticAuthor\books\{project}\summaries.md` — Chapter summary
+1. `books/{project}/chapters\chapter-{NN}.md` — Chapter prose
+2. Append to `books/{project}/summaries.md` — Chapter summary
 
 **Scene length guidance:**
 The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
 
 **After generating:**
 ```bash
-mkdir -p /d/Personal/AgenticAuthor/books/{project}/chapters
-cd /d/Personal/AgenticAuthor/books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
+mkdir -p books/{project}/chapters
+cd books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
 ```
 
 Generate publication-ready prose. Do not ask for approval.
@@ -1021,9 +1021,10 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 | prose (short) | short-story-plan + prose-style-card | premise, treatment-approach, treatment, structure-plan |
 
 **Path Notes:**
-- Book project files are in `books/{project}/`
-- The prose style card is at `AgenticAuthor/misc/` (repo root), NOT inside the book project
-- Taxonomies are at `AgenticAuthor/taxonomies/` (repo root)
+All paths are relative to the repository root:
+- Book project files: `books/{project}/`
+- Prose style card: `misc/prose-style-card.md`
+- Taxonomies: `taxonomies/`
 
 ---
 
