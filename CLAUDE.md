@@ -67,13 +67,13 @@ Each stage's output contains everything the next stage needs. Read only one step
 
 Automatically generate planning documents before major outputs:
 
-**`/generate treatment`** creates `treatment-approach.md` first, then `treatment.md` with Story Configuration section (carries forward style, tone, themes from premise).
+**`/generate treatment`** creates `treatment-approach.md` first, then `treatment.md` with YAML frontmatter (carries forward style, tone, themes from premise).
 
-**`/generate prose`** creates structure-plan and chapter/story plans first. Each includes Story Configuration so downstream stages are self-contained.
+**`/generate prose`** creates structure-plan and chapter/story plans first. Each includes frontmatter so downstream stages are self-contained.
 
 ### Quality First
 
-- Follow the prose style in the current stage's Story Configuration
+- Follow the prose style in the current stage's frontmatter
 - Never generate placeholder content
 - Each generation should be publication-ready
 

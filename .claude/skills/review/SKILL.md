@@ -175,7 +175,7 @@ For novels, review specific chapter plans. For short stories/novelettes, review 
 
 ## Style Notes Assessment
 - **Appropriate for content:** {Pacing/tone fit?}
-- **Consistent with story style:** {Matches the style in structure-plan's Story Configuration?}
+- **Consistent with story style:** {Matches the style in structure-plan's frontmatter?}
 
 ## Suggestions
 1. {Specific improvement suggestion}

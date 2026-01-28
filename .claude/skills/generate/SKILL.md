@@ -1143,6 +1143,28 @@ Copy all frontmatter values from structure-plan. Do not modify.
 Generated once after prose is complete.
 
 ```markdown
+---
+project: {project-name}
+stage: summaries
+genre: {genre/subgenre}
+length_type: {novelette|short-story}
+length_target_words: {number}
+target_audience: {adult|young-adult|middle-grade}
+content_rating: {clean|mature|explicit}
+prose_style: {commercial|literary|minimalist|pulp|lyrical|conversational}
+prose_pacing: {fast|measured|slow-burn}
+dialogue_density: {high|moderate|low}
+pov: {first-person|third-limited|third-omniscient|multiple}
+tense: {past|present}
+tone: "{free-form description}"
+themes:
+  - {primary theme}
+  - {secondary theme}
+custom_style_notes: "{any specific guidance}"
+---
+
+Copy all frontmatter values from structure-plan. Do not modify.
+
 # Story Summary
 
 **Summary:** {3-5 sentences covering the complete story arc}
