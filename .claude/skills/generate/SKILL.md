@@ -666,11 +666,11 @@ Generate chapter plan for Chapter {N} of {project}.
 **Context to read:**
 1. `books/{project}/structure-plan.md` — Full structure plan
 2. `books/{project}/summaries.md` — If exists, for continuity
-3. `books/{project}/chapter-plans\chapter-*.md` — All previous chapter plans
+3. `books/{project}/chapter-plans/chapter-*.md` — All previous chapter plans
 
 **Do NOT read:** premise.md, treatment.md, or prose files.
 
-**Output file:** `books/{project}/chapter-plans\chapter-{NN}-plan.md`
+**Output file:** `books/{project}/chapter-plans/chapter-{NN}-plan.md`
 
 **Format:**
 [Include chapter plan template]
@@ -708,15 +708,15 @@ Generate prose for Chapter {N} of {project}.
 **Chapter target:** ~{X} words
 
 **Context to read:**
-1. `books/{project}/chapter-plans\chapter-{NN}-plan.md` — This chapter's plan
+1. `books/{project}/chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
 2. `books/{project}/summaries.md` — For continuity
-3. `books/{project}/chapters\chapter-*.md` — All previous chapters
+3. `books/{project}/chapters/chapter-*.md` — All previous chapters
 4. `misc/prose-style-card.md` — Style reference
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or other chapter-plans.
 
 **Output files:**
-1. `books/{project}/chapters\chapter-{NN}.md` — Chapter prose
+1. `books/{project}/chapters/chapter-{NN}.md` — Chapter prose
 2. Append to `books/{project}/summaries.md` — Chapter summary
 
 **Scene length guidance:**
