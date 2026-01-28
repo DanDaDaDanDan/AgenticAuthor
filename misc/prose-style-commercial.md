@@ -1,4 +1,4 @@
-# Commercial Prose Style Card
+# Commercial/Accessible Prose Style Card
 
 **Purpose:** Optimize narrative prose for readability, emotional accessibility, and mass-market appeal.  
 **Do not imitate** any living author’s exact voice; focus on clarity, pacing, and engagement.
