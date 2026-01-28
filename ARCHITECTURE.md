@@ -302,14 +302,20 @@ The structure plan is **self-contained** — it includes story configuration fro
 ```markdown
 # Structure Plan
 
-## Story Configuration
+## Story Configuration (Canonical)
 
-Carried forward from treatment:
+Copy verbatim from treatment. Only edit if user explicitly requested changes.
 
+- **Genre:** {genre/subgenre}
+- **Length:** {novel} (~{target word count} words)
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
 - **Prose Style:** {approach} — {pacing}, {dialogue density}
 - **POV:** {narrative perspective}
+- **Tense:** {past/present}
 - **Tone:** {emotional quality}
-- **Content Rating:** {rating}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -371,14 +377,20 @@ The structure plan is **self-contained** — it includes story configuration fro
 ```markdown
 # Structure Plan
 
-## Story Configuration
+## Story Configuration (Canonical)
 
-Carried forward from treatment:
+Copy verbatim from treatment. Only edit if user explicitly requested changes.
 
+- **Genre:** {genre/subgenre}
+- **Length:** {short-story/novelette} (~{target word count} words)
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
 - **Prose Style:** {approach} — {pacing}, {dialogue density}
 - **POV:** {narrative perspective}
+- **Tense:** {past/present}
 - **Tone:** {emotional quality}
-- **Content Rating:** {rating}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -433,29 +445,58 @@ Generated after prose. Provides compressed context for continuity.
 ```markdown
 # Chapter Summaries
 
-### Chapter 1: {Title}
+## Story Configuration (Canonical)
 
-{2-4 sentence summary}
+Copy verbatim from structure-plan header. Do not modify.
 
-**Key events:** {bullet list}
-**Character states:** {where main characters end emotionally}
+- **Genre:** {genre/subgenre}
+- **Prose Style:** {approach}
+- **POV:** {narrative perspective}
+- **Tense:** {past/present}
+- **Tone:** {emotional quality}
 
 ---
 
-{Continue for each chapter}
+### Chapter 1: {Title}
+
+**Summary:** {3-5 sentences covering key plot events}
+
+**Character States at End:**
+- **{Protagonist}:** {emotional/mental state}
+- **{Other key characters}:** {state if relevant}
+
+**Open Threads:**
+- {Thread introduced or advanced} — Status: {open/advancing/resolved}
+
+**Continuity Facts Introduced:**
+- {Names, locations, rules, objects, relationships established}
+
+**Promises to Reader:**
+- {Setups that need payoff — foreshadowing, questions raised, tensions unresolved}
+
+---
+
+{Append after each chapter in same format}
 ```
 
 **For short stories/novelettes:**
 ```markdown
 # Story Summary
 
-{3-5 sentence summary of the complete story}
+**Summary:** {3-5 sentences covering the complete story arc}
 
-**Key beats:**
-- Opening: {1 sentence}
-- Complication: {1 sentence}
-- Climax: {1 sentence}
-- Resolution: {1 sentence}
+**Key Beats:**
+- **Opening:** {1 sentence}
+- **Complication:** {1 sentence}
+- **Climax:** {1 sentence}
+- **Resolution:** {1 sentence}
+
+**Character Arc:**
+- **{Protagonist}:** {starting state} → {ending state}
+
+**Themes Delivered:**
+- {How primary theme manifested}
+- {How secondary theme manifested}
 ```
 
 ### chapter-plans/chapter-{NN}-plan.md
@@ -464,6 +505,20 @@ External generation plan created before each chapter's prose. Saved for review, 
 
 ```markdown
 # Chapter {N} Plan: {Title}
+
+## Story Configuration (Canonical)
+
+Copy verbatim from structure-plan. Do not modify.
+
+- **Genre:** {genre/subgenre}
+- **Length:** {novel} (~{target word count} words total)
+- **Content Rating:** {rating}
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tense:** {past/present}
+- **Tone:** {emotional quality}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance}
 
 ## Structure Plan Reference
 - Treatment reference: {which act/scenes this covers}
@@ -486,10 +541,12 @@ External generation plan created before each chapter's prose. Saved for review, 
 
 ## Scene-by-Scene Breakdown
 ### Scene 1: {Description}
+- Word count: {portion of chapter target}
 - Purpose: {why this scene exists}
 - Conflict/Tension: {driver}
 - Key beats: {specific moments}
 - Ends with: {transition}
+- Development notes: {what fills the space}
 
 ## Style Notes
 - Pacing: {fast/slow/mixed}
@@ -512,6 +569,20 @@ External generation plan for short stories and novelettes. Similar to chapter pl
 ```markdown
 # Story Plan: {Title}
 
+## Story Configuration (Canonical)
+
+Copy verbatim from structure-plan. Do not modify.
+
+- **Genre:** {genre/subgenre}
+- **Length:** {short-story/novelette} (~{target word count} words)
+- **Content Rating:** {rating}
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tense:** {past/present}
+- **Tone:** {emotional quality}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance}
+
 ## Structure Plan Reference
 - Story arc: {the planned arc from structure-plan}
 - Scene count: {number}
@@ -526,10 +597,12 @@ External generation plan for short stories and novelettes. Similar to chapter pl
 
 ## Scene-by-Scene Breakdown
 ### Scene 1: {Description}
+- Word count target: {from structure-plan}
 - Purpose: {why this scene exists}
 - Conflict/Tension: {driver}
 - Key beats: {specific moments}
 - Ends with: {transition}
+- Development notes: {what fills the space}
 
 ## Style Notes
 - Pacing: {rhythm}

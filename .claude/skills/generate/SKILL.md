@@ -757,14 +757,20 @@ Do NOT stop between chapters. Generate the entire novel in one `/generate prose`
 ```markdown
 # Structure Plan
 
-## Story Configuration
+## Story Configuration (Canonical)
 
-Carried forward from treatment:
+Copy verbatim from treatment. Only edit if user explicitly requested changes.
 
+- **Genre:** {genre/subgenre}
+- **Length:** {novel} (~{target word count} words)
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
 - **Prose Style:** {approach} — {pacing}, {dialogue density}
 - **POV:** {narrative perspective}
+- **Tense:** {past/present}
 - **Tone:** {emotional quality}
-- **Content Rating:** {rating}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -829,14 +835,20 @@ Brief reference for continuity (from treatment):
 ```markdown
 # Structure Plan
 
-## Story Configuration
+## Story Configuration (Canonical)
 
-Carried forward from treatment:
+Copy verbatim from treatment. Only edit if user explicitly requested changes.
 
+- **Genre:** {genre/subgenre}
+- **Length:** {short-story/novelette} (~{target word count} words)
+- **Target Audience:** {demographic}
+- **Content Rating:** {rating}
 - **Prose Style:** {approach} — {pacing}, {dialogue density}
 - **POV:** {narrative perspective}
+- **Tense:** {past/present}
 - **Tone:** {emotional quality}
-- **Content Rating:** {rating}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance from premise}
 
 ## Overview
 
@@ -894,6 +906,20 @@ Brief reference for continuity (from treatment):
 
 ```markdown
 # Chapter {N} Plan: {Title}
+
+## Story Configuration (Canonical)
+
+Copy verbatim from structure-plan. Do not modify.
+
+- **Genre:** {genre/subgenre}
+- **Length:** {novel} (~{target word count} words total)
+- **Content Rating:** {rating}
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tense:** {past/present}
+- **Tone:** {emotional quality}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance}
 
 ## Structure Plan Reference
 
@@ -959,6 +985,20 @@ Brief reference for continuity (from treatment):
 ```markdown
 # Story Plan: {Title}
 
+## Story Configuration (Canonical)
+
+Copy verbatim from structure-plan. Do not modify.
+
+- **Genre:** {genre/subgenre}
+- **Length:** {short-story/novelette} (~{target word count} words)
+- **Content Rating:** {rating}
+- **Prose Style:** {approach} — {pacing}, {dialogue density}
+- **POV:** {narrative perspective}
+- **Tense:** {past/present}
+- **Tone:** {emotional quality}
+- **Themes:** {primary theme}, {secondary theme}
+- **Custom Style Notes:** {any specific guidance}
+
 ## Structure Plan Reference
 
 **From structure-plan.md:**
@@ -1002,6 +1042,76 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 
 - {Thing to avoid}
 - {Risk to watch for}
+```
+
+---
+
+## Summaries Schema
+
+### summaries.md (Novels)
+
+Append after each chapter is generated. This provides continuity context for subsequent chapters.
+
+```markdown
+# Chapter Summaries
+
+## Story Configuration (Canonical)
+
+Copy verbatim from structure-plan header. Do not modify.
+
+- **Genre:** {genre/subgenre}
+- **Prose Style:** {approach}
+- **POV:** {narrative perspective}
+- **Tense:** {past/present}
+- **Tone:** {emotional quality}
+
+---
+
+### Chapter 1: {Title}
+
+**Summary:** {3-5 sentences covering key plot events}
+
+**Character States at End:**
+- **{Protagonist}:** {emotional/mental state}
+- **{Other key characters}:** {state if relevant}
+
+**Open Threads:**
+- {Thread introduced or advanced} — Status: {open/advancing/resolved}
+
+**Continuity Facts Introduced:**
+- {Names, locations, rules, objects, relationships established}
+
+**Promises to Reader:**
+- {Setups that need payoff — foreshadowing, questions raised, tensions unresolved}
+
+---
+
+### Chapter 2: {Title}
+
+{Same format — append after each chapter}
+```
+
+### summaries.md (Short Stories/Novelettes)
+
+Generated once after prose is complete.
+
+```markdown
+# Story Summary
+
+**Summary:** {3-5 sentences covering the complete story arc}
+
+**Key Beats:**
+- **Opening:** {1 sentence}
+- **Complication:** {1 sentence}
+- **Climax:** {1 sentence}
+- **Resolution:** {1 sentence}
+
+**Character Arc:**
+- **{Protagonist}:** {starting state} → {ending state}
+
+**Themes Delivered:**
+- {How primary theme manifested}
+- {How secondary theme manifested}
 ```
 
 ---
