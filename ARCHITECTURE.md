@@ -133,12 +133,13 @@ prose
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
-| treatment | premise + taxonomies | — |
-| structure-plan | treatment only | premise |
-| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment |
-| prose | chapter-plan + summaries + prev chapters | premise, treatment, structure-plan |
+| treatment-approach | premise + taxonomies | — |
+| treatment | treatment-approach + premise | — |
+| structure-plan | treatment only | premise, treatment-approach |
+| chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
+| prose | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment-approach, treatment, structure-plan |
 
-**For short stories/novelettes:** Same principle, but simpler — story-plan reads structure-plan, prose reads story-plan only.
+**For short stories/novelettes:** Same principle — short-story-plan reads structure-plan, prose reads short-story-plan only.
 
 **Why this matters for iteration:** If you iterate on treatment and change the ending, structure-plan only reads treatment—it sees the updated version. Premise becomes "historical" (the seed that started things), not the contract. No conflicts between stages.
 

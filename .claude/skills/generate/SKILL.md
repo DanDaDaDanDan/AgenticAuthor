@@ -448,11 +448,11 @@ Generate the actual story prose.
 
 ### Orchestration Flow
 
-1. **Check what exists** — structure-plan? story-plan/chapter-plans? prose?
+1. **Check what exists** — structure-plan? short-story-plan/chapter-plans? prose?
 2. **Ask clarifying questions** UPFRONT for any missing planning documents
 3. **Spawn sub-agents** sequentially for each missing piece:
    - Structure-plan sub-agent (if missing)
-   - Story-plan sub-agent (if missing, for short stories)
+   - Short-story-plan sub-agent (if missing, for short stories)
    - Chapter-plan sub-agents (if missing, for novels)
    - Prose sub-agent(s)
 4. Report completion
