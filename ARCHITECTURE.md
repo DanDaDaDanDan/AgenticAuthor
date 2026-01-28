@@ -89,8 +89,10 @@ Each stage reads only its immediate predecessor. This prevents conflicts when it
 | treatment-approach | premise + taxonomies |
 | treatment | treatment-approach + premise |
 | structure-plan | treatment only |
-| chapter-plan | structure-plan + summaries (+ previous chapter plan, if exists) |
-| prose | plan + summaries (+ previous chapter prose, if exists) + prose-style-{prose_style_key} |
+| chapter-plan | structure-plan + summaries + previous chapter plan (if exists) |
+| prose | plan + summaries + previous chapters (scaled by length) + prose-style-{prose_style_key} |
+
+**Previous chapter loading:** Novella loads all previous chapters. Novel loads last 3. Epic loads last 2. `summaries.md` (with Canon Facts + Open Threads Ledger) provides continuity for older content.
 
 **Why this matters:** If you iterate on treatment and change the ending, structure-plan sees the update automatically because it only reads treatment. Premise becomes "historical" (the seed), not the contract.
 

@@ -132,13 +132,16 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For prose iteration (novella/novel/epic):**
 - `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
-- `books/{project}/summaries.md` (if exists) - Canon facts + open threads continuity anchor
+- `books/{project}/summaries.md` (if exists) - Canon Facts + Open Threads continuity anchor
 - `books/{project}/chapters/chapter-{NN}.md` - The chapter being revised
-- `books/{project}/chapters/chapter-{PP}.md` (if exists) - Previous chapter prose (voice + immediate handoff)
+- Previous chapters for voice continuity (scaled by length):
+  - Novella: all previous chapters
+  - Novel: last 3 chapters
+  - Epic: last 2 chapters
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read premise.md, treatment.md, or structure-plan.md (and do not load full chapter history by default)
+- Do NOT read premise.md, treatment.md, or structure-plan.md
 
-If revising multiple chapters, do it sequentially (one chapter at a time) using the minimal context above per chapter. Update `summaries.md` as you go.
+If revising multiple chapters, do it sequentially (one chapter at a time). Update `summaries.md` (both Canon Facts master section and per-chapter data) as you go.
 
 **For prose iteration (flash/short/novelette):**
 - `books/{project}/short-story-plan.md` - The story plan

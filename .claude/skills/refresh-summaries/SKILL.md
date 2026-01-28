@@ -136,11 +136,11 @@ Update this section after each chapter. Keep it concise, concrete, and canonical
 
 # Open Threads Ledger
 
-Update this table after each chapter. This is the main “what must be paid off” index downstream agents should rely on.
+Update this table after each chapter. This is the main "what must be paid off" index downstream agents should rely on.
 
-| Thread | Introduced | Last Touched | Status | Notes/Payoff |
-|--------|------------|--------------|--------|--------------|
-| {Question/setup} | Ch {X} | Ch {Y} | open/advancing/resolved | {optional} |
+| Thread | Introduced | Status | Notes |
+|--------|------------|--------|-------|
+| {Question/setup} | Ch {X} | open/advancing/resolved | {optional: payoff location if resolved} |
 
 # Chapter Summaries
 
