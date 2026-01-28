@@ -47,16 +47,22 @@ AgenticAuthor/
 └── books/                 # Book projects (separate git repo)
     ├── active-book.yaml     # Currently selected project
     └── {project}/
-        ├── project.yaml         # Includes length, series_structure as taxonomy keys
-        ├── premise.md           # YAML frontmatter with all taxonomy keys + display names
-        ├── treatment-approach.md
-        ├── treatment.md
-        ├── structure-plan.md    # All project types
-        ├── summaries.md         # Generated after prose
-        ├── chapter-plans/       # Generation plans (novella/novel/epic)
-        ├── chapters/            # Prose chapters (novella/novel/epic)
-        ├── short-story-plan.md  # Generation plan (flash/short/novelette)
-        └── short-story.md       # Complete story (flash/short/novelette)
+        ├── project.yaml           # Includes length, series_structure as taxonomy keys
+        ├── 01-premise.md          # YAML frontmatter with all taxonomy keys + display names
+        ├── 02-treatment-approach.md
+        ├── 03-treatment.md
+        ├── 04-structure-plan.md   # All project types
+        │
+        │   # For novella/novel/epic (chaptered):
+        ├── 05-chapter-plans/      # Generation plans
+        │   └── chapter-{NN}-plan.md
+        ├── 06-chapters/           # Prose + continuity
+        │   ├── chapter-{NN}.md
+        │   └── summaries.md       # Continuity anchor (chaptered only)
+        │
+        │   # For flash/short/novelette (single-file):
+        ├── 05-story-plan.md       # Generation plan
+        └── 06-story.md            # Complete story (no summaries)
 ```
 
 ## Core Principles
@@ -69,13 +75,13 @@ Each stage's output contains everything the next stage needs. Read only one step
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
-| treatment-approach | premise + taxonomies | — |
-| treatment | treatment-approach + premise | — |
-| structure-plan | treatment only | premise, treatment-approach |
-| chapter-plan | structure-plan + summaries + previous chapter plan (if exists) | premise, treatment-approach, treatment |
-| prose | chapter-plan + summaries + all previous chapters + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
+| 02-treatment-approach | 01-premise + taxonomies | — |
+| 03-treatment | 02-treatment-approach + 01-premise | — |
+| 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
+| chapter-plan | 04-structure-plan + 06-chapters/summaries.md + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
+| prose | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
-**For flash/short/novelette (single-file formats):** Same principle — short-story-plan reads structure-plan, prose reads short-story-plan only.
+**For flash/short/novelette (single-file formats):** Same principle — 05-story-plan reads 04-structure-plan, prose reads 05-story-plan only. No summaries for single-file formats.
 
 **Why:** This prevents conflicts when iterating. If you change treatment, structure-plan sees the update automatically. Premise becomes "historical" (the seed), not the contract.
 
@@ -83,9 +89,9 @@ Each stage's output contains everything the next stage needs. Read only one step
 
 Automatically generate planning documents before major outputs:
 
-**`/generate treatment`** creates `treatment-approach.md` first, then `treatment.md` with YAML frontmatter (carries forward style, tone, themes from premise).
+**`/generate treatment`** creates `02-treatment-approach.md` first, then `03-treatment.md` with YAML frontmatter (carries forward style, tone, themes from premise).
 
-**`/generate prose`** creates structure-plan and chapter/story plans first. Each includes frontmatter so downstream stages are self-contained.
+**`/generate prose`** creates `04-structure-plan.md` and chapter/story plans first. Each includes frontmatter so downstream stages are self-contained.
 
 ### Quality First
 

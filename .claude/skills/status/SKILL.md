@@ -36,18 +36,18 @@ For the target project, check which files exist:
 ```
 books/{project}/
 ├── project.yaml         [x]/[ ]
-├── premise.md           [x]/[ ]
-├── treatment.md         [x]/[ ]
-├── structure-plan.md    [x]/[ ] (all project types)
-├── summaries.md         [x]/[ ] (generated after prose)
-├── chapter-plans/       (novella/novel/epic only)
+├── 01-premise.md           [x]/[ ]
+├── 03-treatment.md         [x]/[ ]
+├── 04-structure-plan.md    [x]/[ ] (all project types)
+├── 06-06-chapters/summaries.md         [x]/[ ] (generated after prose)
+├── 05-chapter-plans/       (novella/novel/epic only)
 │   ├── chapter-01-plan.md [x]/[ ]
 │   └── ...
-├── chapters/            (novella/novel/epic only)
+├── 06-chapters/            (novella/novel/epic only)
 │   ├── chapter-01.md    [x]/[ ]
 │   └── ...
-├── short-story-plan.md  [x]/[ ] (flash/short/novelette only)
-└── short-story.md       [x]/[ ] (flash/short/novelette only)
+├── 05-story-plan.md  [x]/[ ] (flash/short/novelette only)
+└── 06-story.md       [x]/[ ] (flash/short/novelette only)
 ```
 
 ### Step 3: Calculate Statistics
@@ -123,10 +123,10 @@ Use these commands to gather information:
 
 ```bash
 # Word count for a file
-wc -w books/{project}/premise.md
+wc -w books/{project}/01-premise.md
 
 # List chapters
-ls books/{project}/chapters/
+ls books/{project}/06-chapters/
 
 # Recent commits for project
 cd books && git log --oneline -5 -- {project}/
@@ -156,8 +156,8 @@ For **novella/novel/epic**, generation plans and prose weights are distributed a
 - Prose: 55% × (completed chapters / total chapters)
 
 For **flash/short/novelette**, each stage is binary (complete or not):
-- Generation Plan: 10% if `short-story-plan.md` exists
-- Prose: 55% if `short-story.md` exists
+- Generation Plan: 10% if `05-story-plan.md` exists
+- Prose: 55% if `06-story.md` exists
 
 ## Multi-Project Summary
 
@@ -184,8 +184,8 @@ If there are uncommitted changes, show a warning:
 
 ```
 WARNING: Uncommitted changes detected:
-  - premise.md (modified)
-  - chapters/chapter-03.md (new file)
+  - 01-premise.md (modified)
+  - 06-chapters/chapter-03.md (new file)
 
 Consider committing with: git add . && git commit -m "message"
 ```

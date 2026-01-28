@@ -51,7 +51,7 @@ If `target` not provided, ask the user:
 
 For chapter/story plan:
 - Novella/novel/epic: ask which chapter plan to revise
-- Flash/short/novelette: there's only one plan (`short-story-plan.md`)
+- Flash/short/novelette: there's only one plan (`05-story-plan.md`)
 
 For prose, also ask which chapter(s) to revise, or "all" for the entire story.
 
@@ -104,47 +104,47 @@ This ensures precision and allows the user to catch unintended changes before th
 Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For premise iteration:**
-- `books/{project}/premise.md` - Current premise
+- `books/{project}/01-01-premise.md` - Current premise
 - `taxonomies/base-taxonomy.json` - Universal properties
 - `taxonomies/{genre}-taxonomy.json` - Genre-specific options
 - `taxonomies/style-taxonomy.json` - Style options (if changing style)
 
 **For treatment iteration:**
-- `books/{project}/treatment.md` - Current treatment (already self-contained with frontmatter)
-- Do NOT read premise.md — treatment is the authoritative document now
+- `books/{project}/03-03-treatment.md` - Current treatment (already self-contained with frontmatter)
+- Do NOT read 01-premise.md — treatment is the authoritative document now
 - Note: If iterating on treatment, ensure frontmatter stays accurate
 
-**For plan iteration (structure-plan.md):**
-- `books/{project}/structure-plan.md` - Current plan (already contains frontmatter + Characters)
-- Do NOT read premise.md or treatment.md — structure-plan is self-contained
+**For plan iteration (04-structure-plan.md):**
+- `books/{project}/04-04-structure-plan.md` - Current plan (already contains frontmatter + Characters)
+- Do NOT read 01-premise.md or 03-treatment.md — structure-plan is self-contained
 
 **For chapter plan iteration (novella/novel/epic):**
-- `books/{project}/structure-plan.md` - For frontmatter and character reference
-- `books/{project}/summaries.md` (if exists) - For continuity
+- `books/{project}/04-04-structure-plan.md` - For frontmatter and character reference
+- `books/{project}/06-chapters/06-chapters/summaries.md` (if exists) - For continuity
 - The specific chapter plan being revised
-- `books/{project}/chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan (local continuity only)
-- Do NOT read premise.md or treatment.md
+- `books/{project}/05-05-chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan (local continuity only)
+- Do NOT read 01-premise.md or 03-treatment.md
 
 **For story plan iteration (flash/short/novelette):**
-- `books/{project}/structure-plan.md` - For frontmatter and character reference
-- `books/{project}/short-story-plan.md` - The plan being revised
-- Do NOT read premise.md or treatment.md
+- `books/{project}/04-04-structure-plan.md` - For frontmatter and character reference
+- `books/{project}/05-story-plan.md` - The plan being revised
+- Do NOT read 01-premise.md or 03-treatment.md
 
 **For prose iteration (novella/novel/epic):**
-- `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
-- `books/{project}/summaries.md` (if exists) - Canon Facts + Open Threads continuity anchor
-- `books/{project}/chapters/chapter-{NN}.md` - The chapter being revised
-- All previous chapters in `books/{project}/chapters/` for voice continuity
+- `books/{project}/05-05-chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
+- `books/{project}/06-chapters/06-chapters/summaries.md` (if exists) - Canon Facts + Open Threads continuity anchor
+- `books/{project}/06-chapters/chapter-{NN}.md` - The chapter being revised
+- All previous chapters in `books/{project}/06-chapters/` for voice continuity
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read premise.md, treatment.md, or structure-plan.md
+- Do NOT read 01-premise.md, 03-treatment.md, or 04-structure-plan.md
 
-If revising multiple chapters, do it sequentially (one chapter at a time). Update `summaries.md` (both Canon Facts master section and per-chapter data) as you go.
+If revising multiple chapters, do it sequentially (one chapter at a time). Update `06-chapters/summaries.md` (both Canon Facts master section and per-chapter data) as you go.
 
 **For prose iteration (flash/short/novelette):**
-- `books/{project}/short-story-plan.md` - The story plan
-- `books/{project}/short-story.md` - The story being revised
+- `books/{project}/05-story-plan.md` - The story plan
+- `books/{project}/06-story.md` - The story being revised
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read premise.md, treatment.md, or structure-plan.md
+- Do NOT read 01-premise.md, 03-treatment.md, or 04-structure-plan.md
 
 ### Step 5: Apply Changes
 
@@ -184,7 +184,7 @@ Write the revised file(s) to `books/{project}/` and commit:
 cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
 ```
 
-**For prose iteration:** Also update and commit `summaries.md` (Chapter Summaries + Canon Facts + Open Threads Ledger) to reflect any changes you made.
+**For prose iteration:** Also update and commit `06-chapters/summaries.md` (Chapter Summaries + Canon Facts + Open Threads Ledger) to reflect any changes you made.
 
 ## Iteration Guidelines
 
@@ -207,7 +207,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Ensure changes cascade properly (if Act I changes, Act II/III may need adjustment)
 - Maintain character arc consistency
 
-### Plan Iteration (structure-plan.md)
+### Plan Iteration (04-structure-plan.md)
 
 - Preserve chapter/scene count unless explicitly asked to add/remove
 - Adjust pacing notes if content changes significantly
@@ -218,7 +218,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Iterate on chapter plans **before** generating prose for that chapter
 - Adjust scene breakdowns, character states, or style notes as needed
 - If the chapter's prose already exists, note that prose may need regeneration
-- For flash/short/novelette, iterate on `short-story-plan.md`
+- For flash/short/novelette, iterate on `05-story-plan.md`
 
 ### Prose Iteration
 
@@ -230,7 +230,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 
 Use the chapter-plan's Style Notes as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
 
-**After prose iteration, update `summaries.md`** to reflect any changes to:
+**After prose iteration, update `06-chapters/summaries.md`** to reflect any changes to:
 - Chapter/scene summaries (if plot events changed)
 - Open threads (if threads were resolved, added, or modified)
 - Facts/continuity details (if world details or character states changed)
@@ -273,9 +273,9 @@ If the requested change will force cascading edits to other files or sections:
 1. **Enumerate the cascade first:**
    ```
    This change will affect:
-   - treatment.md: frontmatter (field X)
-   - structure-plan.md: frontmatter would become stale (currently copies from treatment)
-   - chapter-plans/: may need regeneration if structure changes significantly
+   - 03-treatment.md: frontmatter (field X)
+   - 04-structure-plan.md: frontmatter would become stale (currently copies from treatment)
+   - 05-chapter-plans/: may need regeneration if structure changes significantly
    ```
 
 2. **Ask user how to proceed:**

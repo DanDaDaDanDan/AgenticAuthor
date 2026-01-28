@@ -46,31 +46,31 @@ Read `books/{project}/project.yaml` to get the genre.
 **Note:** Unlike generation (which uses the self-contained model), review intentionally reads multiple stages to check alignment and consistency between them.
 
 **For premise review:**
-- `books/{project}/premise.md`
+- `books/{project}/01-premise.md`
 - `taxonomies/base-taxonomy.json`
 - `taxonomies/{genre}-taxonomy.json`
 
 **For treatment review:**
-- `books/{project}/premise.md`
-- `books/{project}/treatment.md`
+- `books/{project}/01-premise.md`
+- `books/{project}/03-treatment.md`
 
-**For plan review (structure-plan.md):**
-- `books/{project}/premise.md`
-- `books/{project}/treatment.md`
-- `books/{project}/structure-plan.md`
+**For plan review (04-structure-plan.md):**
+- `books/{project}/01-premise.md`
+- `books/{project}/03-treatment.md`
+- `books/{project}/04-structure-plan.md`
 
 **For chapter plan review:**
-- `books/{project}/premise.md`
-- `books/{project}/treatment.md`
-- `books/{project}/structure-plan.md`
-- Target chapter plan from `books/{project}/chapter-plans/` or `books/{project}/short-story-plan.md`
-- `books/{project}/summaries.md` (if exists)
+- `books/{project}/01-premise.md`
+- `books/{project}/03-treatment.md`
+- `books/{project}/04-structure-plan.md`
+- Target chapter plan from `books/{project}/05-chapter-plans/` or `books/{project}/05-story-plan.md`
+- `books/{project}/06-06-chapters/summaries.md` (if exists)
 
 **For prose review:**
 - All of the above (premise includes prose style selections)
-- For novella/novel/epic: `books/{project}/chapter-plans/` (relevant chapter plans)
-- For novella/novel/epic: target chapter(s) from `books/{project}/chapters/`
-- For flash/short/novelette: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
+- For novella/novel/epic: `books/{project}/05-chapter-plans/` (relevant chapter plans)
+- For novella/novel/epic: target chapter(s) from `books/{project}/06-chapters/`
+- For flash/short/novelette: `books/{project}/05-story-plan.md` and `books/{project}/06-story.md`
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 
 ### Step 3: Analyze Content
@@ -143,10 +143,10 @@ Generate a review report. **Do NOT make any changes to files.**
 
 ## Treatment Alignment
 - **Coverage:** {Does plan cover all treatment beats?}
-- **Gaps:** {Any treatment elements missing from chapters/scenes?}
+- **Gaps:** {Any treatment elements missing from 06-chapters/scenes?}
 
 ## Chapter/Scene Balance
-- **Word count distribution:** {Are chapters/scenes balanced?}
+- **Word count distribution:** {Are 06-chapters/scenes balanced?}
 - **POV consistency:** {POV structure working?}
 - **Pacing flow:** {Action vs reflection balance}
 
@@ -170,7 +170,7 @@ For novella/novel/epic, review specific chapter plans. For flash/short/novelette
 # Plan Review: {project} - {Chapter N / Story Plan}
 
 ## Structure Plan Alignment
-- **Matches structure-plan:** {Does plan align with structure-plan.md?}
+- **Matches structure-plan:** {Does plan align with 04-structure-plan.md?}
 - **Goals addressed:** {Will this plan achieve the stated goals?}
 
 ## Continuity Check

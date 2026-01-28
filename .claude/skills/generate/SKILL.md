@@ -118,7 +118,7 @@ Generate the core concept and story foundation.
      ```
    - `select_primary`: Same as `select_one` (just a primary, no secondary)
 
-**Output file:** `premise.md`
+**Output file:** `01-01-premise.md`
 
 **Generation instructions:**
 
@@ -299,7 +299,7 @@ custom_style_notes: "{any specific guidance from user - optional}"
 
 **After generation:**
 ```bash
-cd books && git add {project}/premise.md && git commit -m "Add: Generate premise for {project}"
+cd books && git add {project}/01-premise.md && git commit -m "Add: Generate premise for {project}"
 ```
 
 ---
@@ -312,8 +312,8 @@ Generate the story outline/treatment.
 
 1. **Read premise** to understand the story (main context)
 2. **Ask clarifying questions** about ending, structure, specific elements
-3. **Spawn sub-agent** to generate treatment-approach.md (planning document)
-4. **Spawn sub-agent** to generate treatment.md (reads treatment-approach for guidance)
+3. **Spawn sub-agent** to generate 02-treatment-approach.md (planning document)
+4. **Spawn sub-agent** to generate 03-treatment.md (reads treatment-approach for guidance)
 5. Report completion
 
 ### Clarifying Questions (ask BEFORE spawning)
@@ -346,22 +346,22 @@ After reading the premise, ask the user about key story decisions:
 **Sub-agent prompt template:**
 
 ```
-Write `books/{project}/treatment-approach.md` for `{project}`.
+Write `books/{project}/02-02-treatment-approach.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 **User preferences:** Ending={...}; Structure={... if applicable}; Specific elements={... if any}
 
 **Read only:**
-1. `books/{project}/premise.md`
+1. `books/{project}/01-01-premise.md`
 2. `taxonomies/{genre}-taxonomy.json`
 
 Premise is the authoritative source. Do NOT read any other files.
 
-**Output:** `books/{project}/treatment-approach.md` (use the Treatment Approach template from this skill)
+**Output:** `books/{project}/02-02-treatment-approach.md` (use the Treatment Approach template from this skill)
 
 **Goal:** Analyze the premise and decide the best treatment structure + risks (conflict, arc, antagonist deployment, pacing challenges).
 
-**After:** `cd books && git add {project}/treatment-approach.md && git commit -m "Add: Treatment approach for {project}"`
+**After:** `cd books && git add {project}/02-treatment-approach.md && git commit -m "Add: Treatment approach for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -375,24 +375,24 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Write `books/{project}/treatment.md` for `{project}`.
+Write `books/{project}/03-03-treatment.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 
 **Read only:**
-1. `books/{project}/treatment-approach.md` — Planning document with structure decisions
-2. `books/{project}/premise.md` — Original premise for frontmatter values
+1. `books/{project}/02-02-treatment-approach.md` — Planning document with structure decisions
+2. `books/{project}/01-01-premise.md` — Original premise for frontmatter values
 
 Do NOT read any other files.
 
-**Output:** `books/{project}/treatment.md` (use the appropriate Treatment template from this skill)
+**Output:** `books/{project}/03-03-treatment.md` (use the appropriate Treatment template from this skill)
 
 **Requirements:**
-- Follow the decisions in `treatment-approach.md` (structure type, act logic, risks).
-- Copy frontmatter values from `premise.md` (frontmatter is authoritative downstream).
+- Follow the decisions in `02-treatment-approach.md` (structure type, act logic, risks).
+- Copy frontmatter values from `01-premise.md` (frontmatter is authoritative downstream).
 - Include the **Downstream Contract** section from the template.
 
-**After:** `cd books && git add {project}/treatment.md && git commit -m "Add: Generate treatment for {project}"`
+**After:** `cd books && git add {project}/03-treatment.md && git commit -m "Add: Generate treatment for {project}"`
 
 Generate complete, publication-ready content. Do not ask for approval.
 ```
@@ -495,7 +495,7 @@ custom_style_notes: "{from premise}"
 
 ## Downstream Contract
 
-- **Authoritative for:** `structure-plan.md`
+- **Authoritative for:** `04-structure-plan.md`
 - **Must preserve downstream:** ending, major beats/reveals, character arcs, and frontmatter constraints (POV/tense/tone/content rating)
 - **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
 
@@ -601,7 +601,7 @@ custom_style_notes: "{from premise}"
 
 ## Downstream Contract
 
-- **Authoritative for:** `structure-plan.md`
+- **Authoritative for:** `04-structure-plan.md`
 - **Must preserve downstream:** ending, key beats, and frontmatter constraints (POV/tense/tone/content rating)
 - **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
 
@@ -645,15 +645,15 @@ Generate the actual story prose.
 
 ### Context Rules
 
-**Context loading:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`summaries.md`). For chaptered formats, load all previous chapters for voice and narrative continuity.
+**Context loading:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`06-chapters/summaries.md`). For chaptered formats, load all previous chapters for voice and narrative continuity.
 
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
-| structure-plan | treatment.md only | premise.md, treatment-approach.md |
-| short-story-plan | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
-| chapter-plan (novella/novel/epic) | structure-plan.md + summaries.md + previous chapter plan (if exists) | premise.md, treatment-approach.md, treatment.md |
-| prose (flash/short/novelette) | short-story-plan.md + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
-| prose (novella/novel/epic) | chapter-plan + summaries.md + all previous chapters + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| structure-plan | 03-treatment.md only | 01-premise.md, 02-treatment-approach.md |
+| short-story-plan | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
+| chapter-plan (novella/novel/epic) | 04-structure-plan.md + 06-chapters/summaries.md + previous chapter plan (if exists) | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
+| prose (flash/short/novelette) | 05-story-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
+| prose (novella/novel/epic) | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
 
 ### Clarifying Questions
 
@@ -710,27 +710,27 @@ Generate the actual story prose.
 
 ### Sub-Agent: Structure Plan
 
-**Spawn when:** `structure-plan.md` doesn't exist
+**Spawn when:** `04-structure-plan.md` doesn't exist
 
 **Sub-agent prompt template:**
 
 ```
-Write `books/{project}/structure-plan.md` for `{project}`.
+Write `books/{project}/04-structure-plan.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 **User preferences:** Target length={...}; Chapter/scene structure={...}
 
-**Read only:** `books/{project}/treatment.md` (treatment is authoritative)
+**Read only:** `books/{project}/03-03-treatment.md` (treatment is authoritative)
 
-Do NOT read premise.md or any other files.
+Do NOT read 01-premise.md or any other files.
 
-**Output:** `books/{project}/structure-plan.md` (use the appropriate Structure Plan template from this skill)
+**Output:** `books/{project}/04-structure-plan.md` (use the appropriate Structure Plan template from this skill)
 
 **Requirements:**
-- Copy frontmatter from `treatment.md` and include the template’s **Downstream Contract** section.
+- Copy frontmatter from `03-treatment.md` and include the template’s **Downstream Contract** section.
 - Allocate per scene/chapter word targets deliberately (not uniform) and ensure they approximately sum to the overall target.
 
-**After:** `cd books && git add {project}/structure-plan.md && git commit -m "Add: Generate structure plan for {project}"`
+**After:** `cd books && git add {project}/04-structure-plan.md && git commit -m "Add: Generate structure plan for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -739,27 +739,27 @@ Generate complete content. Do not ask for approval.
 
 ### Sub-Agent: Story Plan (Flash/Short/Novelette)
 
-**Spawn when:** `short-story-plan.md` doesn't exist (and structure-plan exists)
+**Spawn when:** `05-story-plan.md` doesn't exist (and structure-plan exists)
 
 **Sub-agent prompt template:**
 
 ```
-Write `books/{project}/short-story-plan.md` for `{project}`.
+Write `books/{project}/05-story-plan.md` for `{project}`.
 
 **Target word count:** {from structure-plan, e.g., ~14,000 words}
 
-**Read only:** `books/{project}/structure-plan.md` (structure-plan is authoritative)
+**Read only:** `books/{project}/04-structure-plan.md` (structure-plan is authoritative)
 
-Do NOT read premise.md, treatment.md, or any other files.
+Do NOT read 01-premise.md, 03-treatment.md, or any other files.
 
-**Output:** `books/{project}/short-story-plan.md` (use the Story Plan template from this skill)
+**Output:** `books/{project}/05-story-plan.md` (use the Story Plan template from this skill)
 
 **Requirements:**
 - Carry forward per-scene word count targets (the prose agent will NOT see structure-plan).
 - Include “Development notes” for each scene so the prose can hit the intended depth/length.
 - Include the template’s **Downstream Contract** section (this plan is authoritative for prose).
 
-**After:** `cd books && git add {project}/short-story-plan.md && git commit -m "Add: Story plan for {project}"`
+**After:** `cd books && git add {project}/05-story-plan.md && git commit -m "Add: Story plan for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -768,7 +768,7 @@ Generate complete content. Do not ask for approval.
 
 ### Sub-Agent: Prose Generation (Flash/Short/Novelette)
 
-**Spawn when:** `short-story.md` doesn't exist (and short-story-plan exists)
+**Spawn when:** `06-story.md` doesn't exist (and short-story-plan exists)
 
 **Sub-agent prompt template:**
 
@@ -778,14 +778,12 @@ Write complete prose for `{project}`.
 **Target word count:** {from story-plan, e.g., ~14,000 words}
 
 **Read only:**
-1. `books/{project}/short-story-plan.md` — Complete story plan with scene breakdowns and style notes
+1. `books/{project}/05-story-plan.md` — Complete story plan with scene breakdowns and style notes
 2. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
-Do NOT read premise.md, treatment.md, structure-plan.md, or any other files.
+Do NOT read 01-premise.md, 03-treatment.md, 04-structure-plan.md, or any other files.
 
-**Output files:**
-1. `books/{project}/short-story.md` — Complete prose
-2. `books/{project}/summaries.md` — Story summary + Canon Facts + Open Threads Ledger
+**Output:** `books/{project}/06-story.md` — Complete prose
 
 **Guidance:** Follow the story plan as the authoritative contract. Use the style card for technique. Keep prose publication-ready.
 
@@ -795,9 +793,7 @@ Do NOT read premise.md, treatment.md, structure-plan.md, or any other files.
 - Use: * * * (asterisks with spaces) for scene breaks
 - No frontmatter in prose files
 
-**Summary format:** Use the `summaries.md` (Flash/Short/Novelette) schema from this skill (includes Canon Facts + Open Threads Ledger).
-
-**After:** `cd books && git add {project}/short-story.md {project}/summaries.md && git commit -m "Add: Generate prose and summary for {project}"`
+**After:** `cd books && git add {project}/06-story.md && git commit -m "Add: Generate prose for {project}"`
 
 Generate publication-ready prose. Do not ask for approval.
 ```
@@ -811,29 +807,29 @@ Generate publication-ready prose. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate `books/{project}/chapter-plans/chapter-{NN}-plan.md` for Chapter {N} of `{project}`.
+Generate `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` for Chapter {N} of `{project}`.
 
 **Chapter target:** ~{X} words
 
 **Read only these files:**
-1. `books/{project}/structure-plan.md` — Full structure plan
-2. `books/{project}/summaries.md` — If it exists (canon + open threads)
-3. `books/{project}/chapter-plans/chapter-{PP}-plan.md` — Previous chapter plan (if it exists)
+1. `books/{project}/04-structure-plan.md` — Full structure plan
+2. `books/{project}/06-chapters/summaries.md` — If it exists (canon + open threads)
+3. `books/{project}/05-chapter-plans/chapter-{PP}-plan.md` — Previous chapter plan (if it exists)
 
-**Do NOT read:** premise.md, treatment.md, or prose files.
+**Do NOT read:** 01-premise.md, 03-treatment.md, or prose files.
 
-**Output:** `books/{project}/chapter-plans/chapter-{NN}-plan.md`
+**Output:** `books/{project}/05-chapter-plans/chapter-{NN}-plan.md`
 
 **Format:** Use the Chapter Plan template from this skill.
 
 **Requirements:**
-- Use `summaries.md` as the source of canon for names/facts/open threads (if it exists).
+- Use `06-chapters/summaries.md` as the source of canon for names/facts/open threads (if it exists).
 - Include per-scene word targets and brief development notes (what fills the space: dialogue/interiority/action/description).
 - Include a short **Downstream Contract** section stating what the prose must preserve from this plan.
 
 **After:**
-Run: `mkdir -p books/{project}/chapter-plans`
-Then: `cd books && git add {project}/chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"`
+Run: `mkdir -p books/{project}/05-chapter-plans`
+Then: `cd books && git add {project}/05-chapter-plans/chapter-{NN}-plan.md && git commit -m "Add: Chapter {N} plan for {project}"`
 
 Generate complete content. Do not ask for approval.
 ```
@@ -847,24 +843,24 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Generate `books/{project}/chapters/chapter-{NN}.md` (Chapter {N}) for `{project}`.
+Generate `books/{project}/06-chapters/chapter-{NN}.md` (Chapter {N}) for `{project}`.
 
 **Chapter target:** ~{X} words
 **Project length:** {novella|novel|epic}
 
 **Read only these files:**
-1. `books/{project}/chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
-2. `books/{project}/summaries.md` — Canon Facts + Open Threads (if it exists)
-3. All previous chapter prose in `books/{project}/chapters/`
+1. `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
+2. `books/{project}/06-chapters/summaries.md` — Canon Facts + Open Threads (if it exists)
+3. All previous chapter prose in `books/{project}/06-chapters/`
 4. `misc/prose-style-{prose_style_key}.md` — Style card (read `prose_style_key` from frontmatter)
 
-**Do NOT read:** premise.md, treatment.md, structure-plan.md, or other chapter-plans.
+**Do NOT read:** 01-premise.md, 03-treatment.md, 04-structure-plan.md, or other chapter-plans.
 
 **Output files:**
-1. `books/{project}/chapters/chapter-{NN}.md` — Chapter prose
-2. Update `books/{project}/summaries.md` — Create if missing. **IMPORTANT:** Update BOTH the master Canon Facts section at the top AND add this chapter's summary at the bottom. Do not just append per-chapter data without merging into the master sections.
+1. `books/{project}/06-chapters/chapter-{NN}.md` — Chapter prose
+2. Update `books/{project}/06-chapters/summaries.md` — Create if missing. **IMPORTANT:** Update BOTH the master Canon Facts section at the top AND add this chapter's summary at the bottom. Do not just append per-chapter data without merging into the master sections.
 
-**Guidance:** Follow the chapter plan as the authoritative contract. Use `summaries.md` Canon Facts as the source of truth for names/facts. Keep prose publication-ready.
+**Guidance:** Follow the chapter plan as the authoritative contract. Use `06-chapters/summaries.md` Canon Facts as the source of truth for names/facts. Keep prose publication-ready.
 
 **Chapter prose format:**
 
@@ -907,8 +903,8 @@ End on a hook, revelation, or emotional beat that pulls readers forward.}
 - **No meta-commentary:** Never write "In this chapter..." or "The scene opens with..."
 
 **After generating:**
-Run: mkdir -p books/{project}/chapters
-Then: cd books && git add {project}/chapters/chapter-{NN}.md {project}/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
+Run: mkdir -p books/{project}/06-chapters
+Then: cd books && git add {project}/06-chapters/chapter-{NN}.md {project}/06-chapters/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
 
 Generate publication-ready prose. Do not ask for approval.
 ```
@@ -1217,7 +1213,7 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 
 ## Structure Plan Reference
 
-**From structure-plan.md:**
+**From 04-structure-plan.md:**
 - Treatment reference: {which act/scenes this covers}
 - Summary: {the planned summary}
 - Chapter goals: {from structure plan}
@@ -1228,7 +1224,7 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 This plan is authoritative for the prose of Chapter {N}.
 
 - **Prose must preserve:** POV, scene order, key beats/reveals, and the planned hook/turn (unless the user explicitly requests changes)
-- **Canon source:** use `summaries.md` as the continuity anchor for names/facts/open threads
+- **Canon source:** use `06-chapters/summaries.md` as the continuity anchor for names/facts/open threads
 
 ## Continuity Check
 
@@ -1339,17 +1335,17 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 
 ## Structure Plan Reference
 
-**From structure-plan.md:**
+**From 04-structure-plan.md:**
 - Story arc: {the planned arc}
 - Scene count: {number of scenes}
 - Target word count: {estimate}
 
 ## Downstream Contract
 
-This plan is authoritative for the prose in `short-story.md`.
+This plan is authoritative for the prose in `06-story.md`.
 
 - **Prose must preserve:** scene order, key beats/turns, and style notes (unless the user explicitly requests changes)
-- **Canon source:** if `summaries.md` exists, treat it as the continuity anchor for names/facts
+- **Canon source:** if `06-chapters/summaries.md` exists, treat it as the continuity anchor for names/facts
 
 ## Character States
 
@@ -1395,11 +1391,13 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 
 ---
 
-## Summaries Schema
+## Summaries Schema (Chaptered Formats Only)
 
-### summaries.md (Novella/Novel/Epic)
+### 06-chapters/summaries.md
 
-Append after each chapter is generated. This provides continuity context for subsequent chapters.
+For novella/novel/epic only. Append after each chapter is generated. This provides continuity context for subsequent chapters.
+
+**Note:** Flash/short/novelette formats do not generate summaries.md — the entire story is generated in one pass.
 
 ```markdown
 ---
@@ -1493,108 +1491,21 @@ Update this table after each chapter. This is the main "what must be paid off" i
 {Same format — append after each chapter}
 ```
 
-### summaries.md (Flash/Short/Novelette)
-
-Generated once after prose is complete.
-
-```markdown
----
-project: {project-name}
-stage: summaries
-# Copy ALL taxonomy keys and display names from structure-plan frontmatter
-# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
-genre_key: {from structure-plan}
-# Multi-select: subgenre (primary/secondary object)
-subgenre_keys: {from structure-plan - copy entire object}
-subgenres: {from structure-plan - copy entire object}
-length_key: {from structure-plan: flash_fiction|short_story|novelette}
-length_target_words: {number}
-series_structure_key: {from structure-plan}
-series_structure: "{from structure-plan}"
-target_audience_key: {from structure-plan}
-target_audience: "{from structure-plan}"
-content_rating_key: {from structure-plan}
-content_rating: "{from structure-plan}"
-prose_style_key: {from structure-plan}
-prose_style: "{from structure-plan}"
-dialogue_density_key: {from structure-plan}
-dialogue_density: "{from structure-plan}"
-pov_key: {from structure-plan}
-pov: "{from structure-plan}"
-tense: {from structure-plan}
-tone: "{from structure-plan}"
-mood: "{from structure-plan}"
-# Multi-select: copy all genre-specific arrays/objects from structure-plan
-# Examples (actual fields depend on genre):
-magic_system_keys: {from structure-plan - copy array if present}
-magic_systems: {from structure-plan - copy array if present}
-fantasy_race_keys: {from structure-plan - copy array if present}
-fantasy_races: {from structure-plan - copy array if present}
-theme_keys: {from structure-plan - copy array if present}
-themes: {from structure-plan - copy array if present}
-quest_type_key: {from structure-plan - copy if present}
-quest_type: "{from structure-plan - copy if present}"
-world_type_key: {from structure-plan - copy if present}
-world_type: "{from structure-plan - copy if present}"
-worldbuilding_depth_key: {from structure-plan - copy if present}
-worldbuilding_depth: "{from structure-plan - copy if present}"
-tags:
-  - {from structure-plan}
-custom_style_notes: "{from structure-plan}"
----
-
-Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
-
-# Canon Facts (Continuity Anchor)
-
-Keep this concise and canonical (spellings, relationships, rules).
-
-- **Characters:** {names, roles, relationships}
-- **Locations:** {place names}
-- **World/System Rules:** {rules that must remain consistent}
-- **Objects/Terms:** {important items/orgs/jargon}
-
-# Open Threads Ledger (Post-Story)
-
-Most stories should end with no open threads; if any remain, list them explicitly (and consider revising the prose).
-
-| Thread | Introduced | Resolved | Status | Notes |
-|--------|------------|----------|--------|------|
-| {Question/setup} | Scene {X} | Scene {Y} | resolved/open | {optional} |
-
-# Story Summary
-
-**Summary:** {3-5 sentences covering the complete story arc}
-
-**Key Beats:**
-- **Opening:** {1 sentence}
-- **Complication:** {1 sentence}
-- **Climax:** {1 sentence}
-- **Resolution:** {1 sentence}
-
-**Character Arc:**
-- **{Protagonist}:** {starting state} → {ending state}
-
-**Themes Delivered:**
-- {How primary theme manifested}
-- {How secondary theme manifested}
-```
-
 ---
 
 ## Context Management Summary
 
-**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, use `summaries.md` as the continuity anchor and load all previous chapters.
+**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, use `06-chapters/summaries.md` as the continuity anchor and load all previous chapters.
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
-| treatment-approach | premise + taxonomies | — |
-| treatment | treatment-approach + premise | — |
-| structure-plan | treatment only | premise, treatment-approach |
-| chapter-plan (novella/novel/epic) | structure-plan + summaries + previous chapter plan (if exists) | premise, treatment-approach, treatment |
-| short-story-plan (flash/short/novelette) | structure-plan only | premise, treatment-approach, treatment |
-| prose (novella/novel/epic) | chapter-plan + summaries + all previous chapters + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
-| prose (flash/short/novelette) | short-story-plan + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
+| 02-treatment-approach | 01-premise + taxonomies | — |
+| 03-treatment | 02-treatment-approach + 01-premise | — |
+| 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
+| chapter-plan (novella/novel/epic) | 04-structure-plan + 06-chapters/summaries.md + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
+| 05-story-plan (flash/short/novelette) | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
+| prose (novella/novel/epic) | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
+| prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
 **Path Notes:**
 All paths are relative to the repository root:

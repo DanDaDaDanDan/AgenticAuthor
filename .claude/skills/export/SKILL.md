@@ -36,11 +36,11 @@ Read `books/{project}/project.yaml` for metadata.
 Run a completeness check before exporting:
 
 **Required files:**
-- [ ] `premise.md` exists
-- [ ] `treatment.md` exists
-- [ ] `structure-plan.md` exists
-- [ ] For novella/novel/epic: `chapters/chapter-*.md` files
-- [ ] For flash/short/novelette: `short-story.md`
+- [ ] `01-premise.md` exists
+- [ ] `03-treatment.md` exists
+- [ ] `04-structure-plan.md` exists
+- [ ] For novella/novel/epic: `06-chapters/chapter-*.md` files
+- [ ] For flash/short/novelette: `06-story.md`
 
 **Ordering and consistency:**
 - [ ] Chapter numbering is sequential (no gaps: 01, 02, 03...)
@@ -54,10 +54,10 @@ PRE-EXPORT CHECK
 ------------------------------------------------------------------------
 
 Files:
-  [x] premise.md
-  [x] treatment.md
-  [x] structure-plan.md
-  [x] chapters/ (12 of 12 chapters)
+  [x] 01-premise.md
+  [x] 03-treatment.md
+  [x] 04-structure-plan.md
+  [x] 06-chapters/ (12 of 12 chapters)
 
 Issues:
   [ ] Chapter 07 is empty (0 words)
@@ -135,15 +135,15 @@ Length: {word count} words
 
 ## Premise
 
-{premise.md content}
+{01-premise.md content}
 
 ## Treatment
 
-{treatment.md content}
+{03-treatment.md content}
 
 ## Structure Plan
 
-{structure-plan.md content, if exists}
+{04-structure-plan.md content, if exists}
 
 ---
 
@@ -203,7 +203,7 @@ by {Author}
 
 ---
 
-{short-story.md content}
+{06-story.md content}
 
 ---
 
@@ -216,9 +216,9 @@ Calculate and display word counts:
 
 ```bash
 # Count words in prose files
-wc -w books/{project}/chapters/*.md
+wc -w books/{project}/06-chapters/*.md
 # or
-wc -w books/{project}/short-story.md
+wc -w books/{project}/06-story.md
 ```
 
 Report:

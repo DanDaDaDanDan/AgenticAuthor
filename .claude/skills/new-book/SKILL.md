@@ -39,12 +39,12 @@ Then ask:
   12. Other (use generic taxonomy)
 
 - What length is this project?
-  1. Flash fiction (single file, ~500-1,500 words) - generates `short-story.md`
-  2. Short story (single file, ~1,500-7,500 words) - generates `short-story.md`
-  3. Novelette (single file, ~7,500-17,500 words) - generates `short-story.md`
-  4. Novella (chaptered, ~17,500-40,000 words) - generates `chapters/` directory
-  5. Novel (chaptered, ~40,000-120,000 words) - generates `chapters/` directory
-  6. Epic (chaptered, ~120,000+ words) - generates `chapters/` directory
+  1. Flash fiction (single file, ~500-1,500 words) - generates `06-story.md`
+  2. Short story (single file, ~1,500-7,500 words) - generates `06-story.md`
+  3. Novelette (single file, ~7,500-17,500 words) - generates `06-story.md`
+  4. Novella (chaptered, ~17,500-40,000 words) - generates `06-chapters/` directory
+  5. Novel (chaptered, ~40,000-120,000 words) - generates `06-chapters/` directory
+  6. Epic (chaptered, ~120,000+ words) - generates `06-chapters/` directory
 
 - Is this a standalone or part of a series?
   1. Standalone (complete story in one book)
@@ -63,7 +63,7 @@ Create the directory structure:
 ```
 books/{book-name}/
 ├── project.yaml
-└── chapters/        (only for novella, novel, epic)
+└── 06-chapters/        (only for novella, novel, epic)
 ```
 
 Use the Bash tool to create the directories:

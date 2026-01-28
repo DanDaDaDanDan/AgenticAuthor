@@ -38,15 +38,16 @@ Each book project in `books/{project}/` contains:
 | File | Purpose |
 |------|---------|
 | `project.yaml` | Metadata (name, title, author, genre, length) |
-| `premise.md` | Core concept and story foundation |
-| `treatment-approach.md` | Planning rationale (auto-generated) |
-| `treatment.md` | Story outline with act structure |
-| `structure-plan.md` | Scene/chapter breakdown |
-| `summaries.md` | Prose summaries for continuity |
-| `chapter-plans/` | Per-chapter generation plans (novels) |
-| `chapters/` | Prose chapters (novels) |
-| `short-story-plan.md` | Generation plan (short stories/novelettes) |
-| `short-story.md` | Complete prose (short stories/novelettes) |
+| `01-premise.md` | Core concept and story foundation |
+| `02-treatment-approach.md` | Planning rationale (auto-generated) |
+| `03-treatment.md` | Story outline with act structure |
+| `04-structure-plan.md` | Scene/chapter breakdown |
+| `05-chapter-plans/` | Per-chapter generation plans (novella/novel/epic) |
+| `05-story-plan.md` | Generation plan (flash/short/novelette) |
+| `06-chapters/` | Prose chapters + summaries.md (novella/novel/epic) |
+| `06-story.md` | Complete prose (flash/short/novelette — no summaries) |
+
+Numbered prefixes show the order of generation. Summaries live inside `06-chapters/` since they only exist for chaptered formats.
 
 ## Skills
 
@@ -67,18 +68,18 @@ All skills are defined in `.claude/skills/{skill}/SKILL.md`:
 Three user commands with implicit planning steps:
 
 ```
-/generate premise    → premise.md
+/generate premise    → 01-premise.md
 
-/generate treatment  → [treatment-approach.md] → treatment.md
+/generate treatment  → [02-treatment-approach.md] → 03-treatment.md
 
-/generate prose      → [structure-plan.md] → [plans] → prose
+/generate prose      → [04-structure-plan.md] → [plans] → prose
 ```
 
 Bracketed steps `[...]` are generated automatically. Generation runs autonomously to completion; use `/iterate` afterward to refine.
 
-**For novels:** Prose generates `chapter-plans/` and `chapters/` directories.
+**For novella/novel/epic:** Prose generates `05-chapter-plans/` and `06-chapters/` (including `summaries.md`).
 
-**For short stories/novelettes:** Prose generates `short-story-plan.md` and `short-story.md`.
+**For flash/short/novelette:** Prose generates `05-story-plan.md` and `06-story.md` (no summaries).
 
 ## Self-Contained Stages
 
@@ -86,11 +87,11 @@ Each stage reads only its immediate predecessor. This prevents conflicts when it
 
 | Generating | Reads |
 |------------|-------|
-| treatment-approach | premise + taxonomies |
-| treatment | treatment-approach + premise |
-| structure-plan | treatment only |
-| chapter-plan | structure-plan + summaries + previous chapter plan (if exists) |
-| prose | plan + summaries + all previous chapters + prose-style-{prose_style_key} |
+| 02-treatment-approach | 01-premise + taxonomies |
+| 03-treatment | 02-treatment-approach + 01-premise |
+| 04-structure-plan | 03-treatment only |
+| chapter-plan | 04-structure-plan + 06-chapters/summaries.md + previous chapter plan (if exists) |
+| prose | plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key} |
 
 **Why this matters:** If you iterate on treatment and change the ending, structure-plan sees the update automatically because it only reads treatment. Premise becomes "historical" (the seed), not the contract.
 

@@ -4,7 +4,9 @@ description: Rebuild summaries from current prose.
 argument-hint: ""
 ---
 
-Rebuild `summaries.md` from the current prose files. Use this when summaries have drifted out of sync with prose (e.g., after manual edits or if iteration didn't update properly).
+Rebuild `06-chapters/06-chapters/summaries.md` from the current prose files. Use this when summaries have drifted out of sync with prose (e.g., after manual edits or if iteration didn't update properly).
+
+**Note:** This skill only applies to chaptered formats (novella/novel/epic). Single-file formats (flash/short/novelette) do not use summaries.
 
 ## Usage
 
@@ -28,92 +30,36 @@ None. Operates on the active book.
    - Look for `project.yaml` in the current directory or parent directories under `books/`
    - If not found, ask the user which project to work on (or suggest `/select-book`)
 
-### Step 1: Determine Format
+### Step 1: Verify Chaptered Format
 
 Read `books/{project}/project.yaml` to get the `length` field:
 
-- **Flash fiction / Short story / Novelette** (`flash_fiction`, `short_story`, `novelette`): Single-file format
-- **Novella / Novel / Epic** (`novella`, `novel`, `epic`): Chaptered format
+- **Flash fiction / Short story / Novelette** (`flash_fiction`, `short_story`, `novelette`): Inform user "This skill only applies to chaptered formats (novella/novel/epic). Single-file stories don't use summaries."
+- **Novella / Novel / Epic** (`novella`, `novel`, `epic`): Continue
 
 ### Step 2: Verify Required Files Exist
 
-**Check structure-plan.md exists:**
-- Read `books/{project}/structure-plan.md`
-- If not found, inform user: "No structure-plan found. Run `/generate prose` first (it creates structure-plan automatically)."
+**Check 04-structure-plan.md exists:**
+- Read `books/{project}/04-structure-plan.md`
+- If not found, inform user: "No 04-structure-plan.md found. Run `/generate prose` first (it creates structure-plan automatically)."
 
-**For single-file format:**
-- Check `books/{project}/short-story.md` exists
-- If not, inform user: "No prose found. Run `/generate prose` first."
-
-**For chaptered format:**
-- Check `books/{project}/chapters/` directory has at least one chapter
+**Check chapters exist:**
+- Check `books/{project}/06-chapters/` directory has at least one chapter
 - If empty, inform user: "No chapters found. Run `/generate prose` first."
 
 ### Step 3: Read Required Context
 
 **Read these files:**
-1. `books/{project}/structure-plan.md` — For frontmatter (taxonomy keys, characters)
-2. All prose files:
-   - Single-file: `books/{project}/short-story.md`
-   - Chaptered: All `books/{project}/chapters/chapter-*.md` files (in order)
+1. `books/{project}/04-structure-plan.md` — For frontmatter (taxonomy keys, characters)
+2. All `books/{project}/06-chapters/chapter-*.md` files (in order)
 
-**Do NOT read:** premise.md, treatment.md, chapter-plans, or short-story-plan.
+**Do NOT read:** 01-premise.md, 03-treatment.md, 05-chapter-plans, or 05-story-plan.
 
 The goal is to rebuild summaries purely from the prose as it currently exists.
 
 ### Step 4: Generate Summaries
 
-#### For Single-File Format (Flash/Short/Novelette)
-
-Generate `summaries.md` with this structure:
-
-```markdown
----
-project: {project-name}
-stage: summaries
-# Copy ALL taxonomy keys and display names from structure-plan frontmatter verbatim
-# Include all single-select (scalars), primary/secondary (objects), and multi-select (arrays)
-{...copy all frontmatter from structure-plan...}
----
-
-# Canon Facts (Continuity Anchor)
-
-Keep this concise and canonical (spellings, relationships, rules).
-
-- **Characters:** {names, roles, relationships}
-- **Locations:** {place names}
-- **World/System Rules:** {rules that must remain consistent}
-- **Objects/Terms:** {important items/orgs/jargon}
-
-# Open Threads Ledger (Post-Story)
-
-Most stories should end with no open threads; if any remain, list them explicitly (and consider revising the prose).
-
-| Thread | Introduced | Resolved | Status | Notes |
-|--------|------------|----------|--------|------|
-| {Question/setup} | Scene {X} | Scene {Y} | resolved/open | {optional} |
-
-# Story Summary
-
-**Summary:** {3-5 sentences covering the complete story arc — derived from actual prose}
-
-**Key Beats:**
-- **Opening:** {1 sentence describing how the story actually opens}
-- **Complication:** {1 sentence on the main complication as written}
-- **Climax:** {1 sentence on the climactic moment}
-- **Resolution:** {1 sentence on how it resolves}
-
-**Character Arc:**
-- **{Protagonist name from prose}:** {starting state} → {ending state}
-
-**Themes Delivered:**
-- {How primary theme actually manifested in the prose}
-- {How secondary theme actually manifested}
-```
-
-#### For Chaptered Format (Novella/Novel/Epic)
-
-Generate `summaries.md` with this structure:
+Generate `06-chapters/06-chapters/summaries.md` with this structure:
 
 ```markdown
 ---
@@ -212,25 +158,15 @@ Mark threads as:
 Write the regenerated summaries:
 
 ```bash
-cd books && git add {project}/summaries.md && git commit -m "Refresh: Rebuild summaries.md from current prose for {project}"
+cd books && git add {project}/06-chapters/06-chapters/summaries.md && git commit -m "Refresh: Rebuild 06-chapters/summaries.md from current prose for {project}"
 ```
 
 ### Step 7: Report Changes
 
 Summarize what was rebuilt:
 
-**For single-file:**
 ```
-Rebuilt summaries.md for {project}:
-- Story summary updated from current prose
-- Key beats extracted (opening, complication, climax, resolution)
-- Character arc captured
-- Themes delivered documented
-```
-
-**For chaptered:**
-```
-Rebuilt summaries.md for {project}:
+Rebuilt 06-chapters/06-chapters/summaries.md for {project}:
 - {N} chapter summaries regenerated
 - {N} total continuity facts extracted
 - {N} open threads tracked ({M} resolved, {K} still open)
@@ -244,14 +180,14 @@ Chapters processed:
 ## When to Use This Skill
 
 - After manual edits to prose files
-- When summaries.md seems out of sync with actual content
+- When 06-chapters/summaries.md seems out of sync with actual content
 - After recovering from failed iteration
 - Before continuing generation if you suspect drift
 - To audit continuity before final review
 
 ## Notes
 
-- This skill overwrites existing summaries.md entirely
+- This skill overwrites existing 06-chapters/summaries.md entirely
 - If you only need to update one chapter's summary, use `/iterate prose` instead
 - The skill reads prose only — it does not validate against plans
 - Use `/review` after refreshing to check for continuity issues
