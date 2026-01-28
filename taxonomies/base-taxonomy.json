@@ -170,44 +170,6 @@
         }
       }
     },
-    "pacing": {
-      "category_name": "Story Pacing",
-      "selection_rule": "select_one",
-      "description": "The speed at which the story unfolds",
-      "required": false,
-      "options": {
-        "breakneck": {
-          "name": "Breakneck",
-          "description": "Non-stop action and developments",
-          "characteristics": ["constant motion", "minimal downtime", "rapid scene changes"],
-          "best_for": ["thrillers", "action", "page-turners"]
-        },
-        "fast": {
-          "name": "Fast",
-          "description": "Quick progression with brief pauses",
-          "characteristics": ["frequent developments", "short chapters", "cliffhangers"],
-          "best_for": ["mysteries", "adventure", "YA"]
-        },
-        "moderate": {
-          "name": "Moderate",
-          "description": "Balanced progression",
-          "characteristics": ["steady development", "breathing room", "balanced action/reflection"],
-          "best_for": ["most genres", "character-driven", "romance"]
-        },
-        "slow": {
-          "name": "Slow",
-          "description": "Deliberate, thoughtful progression",
-          "characteristics": ["detailed exploration", "character depth", "atmospheric"],
-          "best_for": ["literary fiction", "historical", "epic fantasy"]
-        },
-        "variable": {
-          "name": "Variable",
-          "description": "Alternating pace throughout",
-          "characteristics": ["dynamic rhythm", "intense/calm cycles", "strategic pacing"],
-          "best_for": ["epics", "sagas", "complex narratives"]
-        }
-      }
-    },
     "point_of_view": {
       "category_name": "Narrative Point of View",
       "selection_rule": "select_one",

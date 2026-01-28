@@ -151,8 +151,6 @@ content_rating: "{Display Name, e.g., Mature/R}"
 # Style taxonomy (keys for tooling)
 prose_style_key: {commercial|literary|minimalist|pulp|lyrical|conversational}
 prose_style: "{Display Name, e.g., Pulp/Action}"
-prose_pacing_key: {fast|measured|slow_burn}
-prose_pacing: "{Display Name, e.g., Fast}"
 dialogue_density_key: {high|moderate|low}
 dialogue_density: "{Display Name, e.g., High}"
 pov_key: {first_person|third_limited|third_multiple|third_omniscient|second_person}
@@ -398,8 +396,6 @@ content_rating_key: {from premise}
 content_rating: "{from premise}"
 prose_style_key: {from premise}
 prose_style: "{from premise}"
-prose_pacing_key: {from premise}
-prose_pacing: "{from premise}"
 dialogue_density_key: {from premise}
 dialogue_density: "{from premise}"
 pov_key: {from premise}
@@ -487,8 +483,6 @@ content_rating_key: {from premise}
 content_rating: "{from premise}"
 prose_style_key: {from premise}
 prose_style: "{from premise}"
-prose_pacing_key: {from premise}
-prose_pacing: "{from premise}"
 dialogue_density_key: {from premise}
 dialogue_density: "{from premise}"
 pov_key: {from premise}
@@ -868,8 +862,6 @@ content_rating_key: {from treatment}
 content_rating: "{from treatment}"
 prose_style_key: {from treatment}
 prose_style: "{from treatment}"
-prose_pacing_key: {from treatment}
-prose_pacing: "{from treatment}"
 dialogue_density_key: {from treatment}
 dialogue_density: "{from treatment}"
 pov_key: {from treatment}
@@ -967,8 +959,6 @@ content_rating_key: {from treatment}
 content_rating: "{from treatment}"
 prose_style_key: {from treatment}
 prose_style: "{from treatment}"
-prose_pacing_key: {from treatment}
-prose_pacing: "{from treatment}"
 dialogue_density_key: {from treatment}
 dialogue_density: "{from treatment}"
 pov_key: {from treatment}
@@ -1061,8 +1051,6 @@ content_rating_key: {from structure-plan}
 content_rating: "{from structure-plan}"
 prose_style_key: {from structure-plan}
 prose_style: "{from structure-plan}"
-prose_pacing_key: {from structure-plan}
-prose_pacing: "{from structure-plan}"
 dialogue_density_key: {from structure-plan}
 dialogue_density: "{from structure-plan}"
 pov_key: {from structure-plan}
@@ -1165,8 +1153,6 @@ content_rating_key: {from structure-plan}
 content_rating: "{from structure-plan}"
 prose_style_key: {from structure-plan}
 prose_style: "{from structure-plan}"
-prose_pacing_key: {from structure-plan}
-prose_pacing: "{from structure-plan}"
 dialogue_density_key: {from structure-plan}
 dialogue_density: "{from structure-plan}"
 pov_key: {from structure-plan}
@@ -1261,8 +1247,6 @@ content_rating_key: {from structure-plan}
 content_rating: "{from structure-plan}"
 prose_style_key: {from structure-plan}
 prose_style: "{from structure-plan}"
-prose_pacing_key: {from structure-plan}
-prose_pacing: "{from structure-plan}"
 dialogue_density_key: {from structure-plan}
 dialogue_density: "{from structure-plan}"
 pov_key: {from structure-plan}
@@ -1328,8 +1312,6 @@ content_rating_key: {from structure-plan}
 content_rating: "{from structure-plan}"
 prose_style_key: {from structure-plan}
 prose_style: "{from structure-plan}"
-prose_pacing_key: {from structure-plan}
-prose_pacing: "{from structure-plan}"
 dialogue_density_key: {from structure-plan}
 dialogue_density: "{from structure-plan}"
 pov_key: {from structure-plan}

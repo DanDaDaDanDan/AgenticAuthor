@@ -87,29 +87,6 @@
           "best_for": "Introspective, atmospheric, literary"
         }
       }
-    },
-    "pacing_style": {
-      "category_name": "Pacing Style",
-      "selection_rule": "select_one",
-      "description": "The overall rhythm and speed of the narrative",
-      "required": false,
-      "options": {
-        "fast": {
-          "name": "Fast/Propulsive",
-          "description": "Quick scenes, frequent cuts, momentum prioritized",
-          "chapter_length": "Shorter chapters, cliffhanger endings"
-        },
-        "measured": {
-          "name": "Measured/Balanced",
-          "description": "Varies pace by scene needs, breathing room between intensity",
-          "chapter_length": "Variable, follows story rhythm"
-        },
-        "slow_burn": {
-          "name": "Slow Burn",
-          "description": "Patient development, atmosphere and character prioritized",
-          "chapter_length": "Longer chapters, immersive scenes"
-        }
-      }
     }
   },
   "custom_notes": {
