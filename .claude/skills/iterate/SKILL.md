@@ -29,6 +29,16 @@ Each stage's output is self-contained — it carries forward all information nee
 
 ## Instructions
 
+### Step 0: Detect Current Project
+
+**Check for active book first:**
+
+1. Read `books/active-book.md` and extract the `project:` value from the YAML block
+2. If `project:` is set (not `null`), use that project
+3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
+   - Look for `project.yaml` in the current directory or parent directories under `books/`
+   - If not found, ask the user which project to work on (or suggest `/select-book`)
+
 ### Step 1: Determine Target
 
 If `target` not provided, ask the user:

@@ -21,9 +21,15 @@ Export the book to a single combined file.
 
 ### Step 1: Find Project
 
-Detect the current project from working directory or ask user.
+**Check for active book first:**
 
-Read `project.yaml` for metadata.
+1. Read `books/active-book.md` and extract the `project:` value from the YAML block
+2. If `project:` is set (not `null`), use that project
+3. If `project:` is `null` or file doesn't exist, fall back to:
+   - Detect the current project from working directory
+   - If not found, ask user which project to export (or suggest `/select-book`)
+
+Read `books/{project}/project.yaml` for metadata.
 
 ### Step 2: Verify Completion
 

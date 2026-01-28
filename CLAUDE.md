@@ -14,12 +14,26 @@ Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit 
 
 | Skill | Purpose |
 |-------|---------|
-| `/new-book` | Create a new book project |
+| `/new-book` | Create a new book project (sets it as active) |
+| `/select-book` | Select a book project to work on |
 | `/generate` | Generate premise, treatment, or prose |
 | `/iterate` | Refine content with natural language feedback |
 | `/review` | Analyze content against quality standards |
 | `/status` | Show project progress |
 | `/export` | Export book to single file |
+
+## Active Book
+
+All skills operate on the **active book** stored in `books/active-book.md`. This avoids needing to specify the project for each command.
+
+- `/new-book` automatically sets the new project as active
+- `/select-book` switches to a different project
+- All other commands use the active book (with fallback to current directory)
+
+```yaml
+# books/active-book.md contains:
+project: my-fantasy-novel
+```
 
 ## Structure
 
@@ -30,6 +44,7 @@ AgenticAuthor/
 │   └── prose-style-*.md   # 6 style cards (commercial, literary, minimalist, pulp, lyrical, conversational)
 ├── .claude/skills/        # Skill definitions
 └── books/                 # Book projects (separate git repo)
+    ├── active-book.md     # Currently selected project
     └── {project}/
         ├── project.yaml         # Includes length, series_structure as taxonomy keys
         ├── premise.md           # YAML frontmatter with all taxonomy keys + display names

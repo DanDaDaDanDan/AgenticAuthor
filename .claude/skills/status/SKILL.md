@@ -20,10 +20,14 @@ Show the current project progress and statistics.
 
 ### Step 1: Find Project(s)
 
-Check the current working directory:
-- If inside `books/{project}/`, use that project
-- If in repository root, check if `project-name` argument provided
-- If no argument, list all projects in `books/` directory
+**Check for active book first:**
+
+1. If `project-name` argument provided, use that project
+2. Otherwise, read `books/active-book.md` and extract the `project:` value from the YAML block
+3. If `project:` is set (not `null`), use that project
+4. If `project:` is `null` or file doesn't exist, fall back to:
+   - If inside `books/{project}/`, use that project
+   - Otherwise, list all projects in `books/` directory
 
 ### Step 2: Read Project Data
 

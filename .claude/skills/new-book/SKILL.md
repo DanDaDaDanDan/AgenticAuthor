@@ -140,7 +140,29 @@ Stage and commit the new project:
 cd books && git add {book-name}/ && git commit -m "Add: Initialize {book-name} project"
 ```
 
-### Step 6: Confirm Creation
+### Step 6: Set as Active Book
+
+Update `books/active-book.md` to set the new project as active:
+
+```markdown
+# Active Book
+
+The currently selected book project.
+
+```yaml
+project: {book-name}
+```
+
+To change the active book, use `/select-book`.
+```
+
+Commit the active book update:
+
+```bash
+cd books && git add active-book.md && git commit -m "Update: Set {book-name} as active book"
+```
+
+### Step 7: Confirm Creation
 
 Display a summary:
 
@@ -154,9 +176,12 @@ Created new book project: {book-name}
   Length: {length}
   Series: {series_structure}
 
-Next steps:
-  1. cd books/{book-name}
-  2. Run /generate premise to create your story concept
+This project is now active. All commands will operate on it.
+
+Next step:
+  Run /generate premise to create your story concept
+
+To switch projects later: /select-book
 ```
 
 ## Genre to Taxonomy Mapping
