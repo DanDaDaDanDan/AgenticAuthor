@@ -5,7 +5,7 @@ AgenticAuthor uses Claude Code skills to generate books. There is no separate ap
 ## Design Philosophy
 
 - **Self-Contained Stages:** Each stage's output contains everything the next stage needs. You only read one step back, never two. This ensures iteration on any stage doesn't create conflicts with earlier stages.
-- **Quality First:** Follow the prose style in the current stage's configuration. Never generate placeholder content.
+- **Quality First:** Follow the prose style in the current stage's frontmatter. Never generate placeholder content.
 - **Git Everything:** Every operation commits to git for version history and iteration.
 - **Natural Language Iteration:** Users refine content with plain English feedback.
 

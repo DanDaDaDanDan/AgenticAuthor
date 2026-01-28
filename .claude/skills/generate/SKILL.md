@@ -572,7 +572,7 @@ Generate short-story-plan.md for the {project} project.
 **Target word count:** {from structure-plan, e.g., ~14,000 words}
 
 **Context to read:**
-1. `books/{project}/structure-plan.md` — Full structure plan with scenes and style config
+1. `books/{project}/structure-plan.md` — Full structure plan with scenes and frontmatter
 
 **Do NOT read:** premise.md, treatment.md, or any other files. Structure-plan is self-contained.
 
@@ -1003,6 +1003,10 @@ Copy all frontmatter values from structure-plan. Do not modify.
 - **Dialogue vs narration:** {balance for this chapter}
 - **Sensory focus:** {what senses to emphasize}
 
+## Length Strategy
+
+{2-4 sentences analyzing how this chapter will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
+
 ## Potential Pitfalls
 
 - {Thing to avoid or be careful about}
@@ -1074,6 +1078,10 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 - **Tone:** {emotional quality}
 - **Dialogue vs narration:** {balance}
 - **Sensory focus:** {what senses to emphasize}
+
+## Length Strategy
+
+{2-4 sentences analyzing how this story will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
 
 ## Potential Pitfalls
 
