@@ -77,7 +77,7 @@ mkdir -p books/{book-name}           # for flash fiction, short stories, novelet
 
 Write the project.yaml file with the gathered information.
 
-**Important:** Store genre, length, and series_structure as taxonomy keys (lowercase with underscores) to enable downstream tooling:
+**Important:** Store genre, length, and series_structure as taxonomy keys (lowercase, using hyphens for genre and underscores for length) to enable downstream tooling:
 
 ```yaml
 name: {book-name}
