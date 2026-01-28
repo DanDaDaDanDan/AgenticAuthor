@@ -96,6 +96,27 @@ Generate the core concept and story foundation.
 5. Review style-taxonomy for prose style options appropriate to the genre
 6. Include 2-3 taxonomy-derived tags in the final premise
 7. Store both taxonomy keys and display names in the frontmatter for downstream tooling
+8. **For multi-select categories, follow the taxonomy's `selection_rule`:**
+   - `select_one`: Store as scalar (`category_key: value`, `category: "Display"`)
+   - `select_primary_and_secondary`: Ask user for primary, then optionally secondary. Store as object:
+     ```yaml
+     category_keys:
+       primary: key1
+       secondary: key2  # omit if not chosen
+     categories:
+       primary: "Display 1"
+       secondary: "Display 2"  # omit if not chosen
+     ```
+   - `select_one_or_two`, `select_up_to_three`, `select_all_that_apply`: Let user pick multiple. Store as array:
+     ```yaml
+     category_keys:
+       - key1
+       - key2
+     categories:
+       - "Display 1"
+       - "Display 2"
+     ```
+   - `select_primary`: Same as `select_one` (just a primary, no secondary)
 
 **Output file:** `premise.md`
 
@@ -103,14 +124,26 @@ Generate the core concept and story foundation.
 
 1. Ask the user for a brief concept (1-3 sentences describing the story idea).
 
-2. Ask about target audience:
+2. **Present subgenre options from the genre taxonomy:**
+   Read the genre taxonomy and find the subgenre category (named `{genre}_subgenre`, e.g., `fantasy_subgenre`, `romance_subgenre`). Present options to the user:
+   > What subgenre fits this story?
+   > {List options from taxonomy with brief descriptions}
+
+   Check the category's `selection_rule`:
+   - If `select_primary_and_secondary`: Ask for primary choice, then offer optional secondary
+   - If `select_one`: Just ask for one choice
+   - If multi-select (`select_up_to_three`, etc.): Allow multiple selections
+
+   Store the selection(s) in the appropriate frontmatter structure (object for primary/secondary, array for multi-select, scalar for single).
+
+3. Ask about target audience:
    > Who is the target audience?
    > 1. Middle Grade (ages 8-12) - age-appropriate themes, no explicit content
    > 2. Young Adult (ages 13-17) - coming-of-age themes, limited mature content
    > 3. New Adult (ages 18-25) - mature themes, identity exploration
    > 4. Adult (ages 18+) - no restrictions, complex narratives
 
-3. Ask about content rating:
+4. Ask about content rating:
    > What content rating fits this story?
    > 1. Clean/All Ages - no profanity, violence, or sexual content
    > 2. Mild/PG - minimal mature content, mild profanity, non-graphic violence
@@ -118,7 +151,7 @@ Generate the core concept and story foundation.
    > 4. Mature/R - adult content, strong language, violence, sexual content
    > 5. Explicit/NC-17 - graphic adult content, no limits
 
-4. Ask about prose style preference:
+5. Ask about prose style preference:
    > What prose style fits this story?
    > 1. Commercial/Accessible - clear, readable, mass-market appeal
    > 2. Literary - denser prose, rewards close reading
@@ -129,7 +162,32 @@ Generate the core concept and story foundation.
 
    Note the genre's `best_for` suggestions in style-taxonomy.json but let the user choose freely.
 
-5. Generate a complete premise document with YAML frontmatter:
+6. Ask about dialogue density (optional):
+   > How dialogue-heavy should the narrative be?
+   > 1. High (40-60%) - dialogue-driven, scenes play out in conversation
+   > 2. Moderate (25-40%) - balanced mix of dialogue and narrative
+   > 3. Low (<25%) - narrative-driven, dialogue used sparingly for impact
+
+   **Default:** If the user skips or says "you decide," use Moderate (works for most genres).
+
+7. Ask about point of view:
+   > What narrative POV works best?
+   > 1. First Person - intimate, limited knowledge, "I/me" narration
+   > 2. Third Person Limited (Single POV) - one character's thoughts, some distance
+   > 3. Third Person Multiple - rotating POV between characters
+   > 4. Third Person Omniscient - all-knowing narrator, can access any thoughts
+   > 5. Second Person - "you" narration (uncommon, experimental)
+
+   **Default:** If the user skips or says "you decide," use Third Person Limited for most genres, First Person for YA/Romance/Urban Fantasy.
+
+8. Ask about tense:
+   > What tense should the narrative use?
+   > 1. Past tense - traditional storytelling ("She walked...")
+   > 2. Present tense - immediate, cinematic ("She walks...")
+
+   **Default:** If the user skips or says "you decide," use Past tense (the industry standard for most genres).
+
+9. Generate a complete premise document with YAML frontmatter:
 
 ```markdown
 ---
@@ -137,8 +195,13 @@ project: {project-name}
 stage: premise
 # Genre taxonomy (keys for tooling, names for readability)
 genre_key: {genre-key from project.yaml}
-subgenre_key: {taxonomy key, e.g., social_issue, workplace_drama}
-subgenre: "{Display Name, e.g., Social Issue Fiction / Workplace Drama}"
+# Subgenre uses select_primary_and_secondary → object with primary/secondary
+subgenre_keys:
+  primary: {key, e.g., dark_fantasy}
+  secondary: {key or omit if none, e.g., political_intrigue}
+subgenres:
+  primary: "{Display Name, e.g., Dark Fantasy}"
+  secondary: "{Display Name or omit if none, e.g., Political Intrigue}"
 # Base taxonomy - required categories (store both key and display name)
 length_key: {from project.yaml: flash_fiction|short_story|novelette|novella|novel|epic}
 length_target_words: {number}
@@ -156,12 +219,40 @@ dialogue_density: "{Display Name, e.g., High}"
 pov_key: {first_person|third_limited|third_multiple|third_omniscient|second_person}
 pov: "{Display Name, e.g., First Person}"
 tense: {past|present}
-# Themes and tone
+# Themes and tone (free-form)
 tone: "{free-form description}"
 mood: "{free-form description}"
+# Genre-specific multi-select fields (examples from fantasy - actual fields vary by genre)
+# Magic system uses select_one_or_two → array
+magic_system_keys:
+  - {key, e.g., hard_magic_system}
+  - {optional second key, e.g., elemental_magic}
+magic_systems:
+  - "{Display Name, e.g., Hard Magic System}"
+  - "{optional second, e.g., Elemental Magic}"
+# Fantasy races uses select_all_that_apply → array
+fantasy_race_keys:
+  - {key}
+  - {key}
+fantasy_races:
+  - "{Display Name}"
+  - "{Display Name}"
+# Themes uses select_up_to_three → array
+theme_keys:
+  - {key, e.g., power_corruption}
+  - {key, e.g., identity_belonging}
 themes:
-  - {primary theme}
-  - {secondary theme}
+  - "{Display Name, e.g., Power and Corruption}"
+  - "{Display Name, e.g., Identity and Belonging}"
+# Quest type uses select_primary → scalar (like select_one)
+quest_type_key: {key, e.g., political_intrigue}
+quest_type: "{Display Name, e.g., Political Intrigue}"
+# Other select_one categories as scalars
+world_type_key: {key, e.g., secondary_world}
+world_type: "{Display Name, e.g., Secondary World}"
+worldbuilding_depth_key: {key, e.g., moderate}
+worldbuilding_depth: "{Display Name, e.g., Moderate}"
+# Tags and custom notes
 tags:
   - {tag1}
   - {tag2}
@@ -197,8 +288,7 @@ custom_style_notes: "{any specific guidance from user - optional}"
 
 ## Prose Style
 
-- **Approach:** {Display name from frontmatter}
-- **Pacing:** {Display name from frontmatter}
+- **Approach:** {Display name from frontmatter, e.g., Pulp/Action}
 - **Dialogue density:** {Display name from frontmatter}
 - **POV:** {Display name from frontmatter}
 - **Tense:** {from frontmatter}
@@ -381,10 +471,12 @@ Generate complete, publication-ready content. Do not ask for approval.
 ---
 project: {project-name}
 stage: treatment
-# Copy all taxonomy keys and display names from premise frontmatter
+# Copy ALL taxonomy keys and display names from premise frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from premise}
-subgenre_key: {from premise}
-subgenre: "{from premise}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from premise - copy entire object}
+subgenres: {from premise - copy entire object}
 length_key: {from premise: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from premise}
@@ -402,9 +494,20 @@ pov: "{from premise}"
 tense: {from premise}
 tone: "{from premise}"
 mood: "{from premise}"
-themes:
-  - {from premise}
-  - {from premise}
+# Multi-select: copy all genre-specific arrays/objects from premise
+# Examples (actual fields depend on genre):
+magic_system_keys: {from premise - copy array if present}
+magic_systems: {from premise - copy array if present}
+fantasy_race_keys: {from premise - copy array if present}
+fantasy_races: {from premise - copy array if present}
+theme_keys: {from premise - copy array if present}
+themes: {from premise - copy array if present}
+quest_type_key: {from premise - copy if present}
+quest_type: "{from premise - copy if present}"
+world_type_key: {from premise - copy if present}
+world_type: "{from premise - copy if present}"
+worldbuilding_depth_key: {from premise - copy if present}
+worldbuilding_depth: "{from premise - copy if present}"
 tags:
   - {from premise}
 custom_style_notes: "{from premise}"
@@ -468,10 +571,12 @@ custom_style_notes: "{from premise}"
 ---
 project: {project-name}
 stage: treatment
-# Copy all taxonomy keys and display names from premise frontmatter
+# Copy ALL taxonomy keys and display names from premise frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from premise}
-subgenre_key: {from premise}
-subgenre: "{from premise}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from premise - copy entire object}
+subgenres: {from premise - copy entire object}
 length_key: {from premise: flash_fiction|short_story|novelette}
 length_target_words: {number}
 series_structure_key: {from premise}
@@ -489,9 +594,20 @@ pov: "{from premise}"
 tense: {from premise}
 tone: "{from premise}"
 mood: "{from premise}"
-themes:
-  - {from premise}
-  - {from premise}
+# Multi-select: copy all genre-specific arrays/objects from premise
+# Examples (actual fields depend on genre):
+magic_system_keys: {from premise - copy array if present}
+magic_systems: {from premise - copy array if present}
+fantasy_race_keys: {from premise - copy array if present}
+fantasy_races: {from premise - copy array if present}
+theme_keys: {from premise - copy array if present}
+themes: {from premise - copy array if present}
+quest_type_key: {from premise - copy if present}
+quest_type: "{from premise - copy if present}"
+world_type_key: {from premise - copy if present}
+world_type: "{from premise - copy if present}"
+worldbuilding_depth_key: {from premise - copy if present}
+worldbuilding_depth: "{from premise - copy if present}"
 tags:
   - {from premise}
 custom_style_notes: "{from premise}"
@@ -804,14 +920,44 @@ Follow the frontmatter in the chapter-plan for core style settings (POV, tense, 
 The chapter-plan includes per-scene word count targets and development notes. Use these as guidance for how much space each scene should occupy. Scenes can run shorter or longer if the prose calls for it, but the targets help ensure proper development.
 
 **Chapter prose format:**
-- Start with: # Chapter {N}: {Title}
-- Scene 1 prose follows immediately
-- Use: * * * (asterisks with spaces) for scene breaks
-- Scene 2 prose...
-- Use: * * * for next scene break
-- Scene 3 prose...
-- End with prose, not a scene break
-- No frontmatter in prose files — frontmatter lives in the chapter-plan
+
+Use this template structure for all chapter files:
+
+```markdown
+# Chapter {N}: {Title}
+
+{Optional epigraph — use sparingly, only when thematically resonant}
+> "Quote text here."
+> — Attribution
+
+{Scene 1 prose begins immediately after the heading (or epigraph if present).
+No blank line needed after the heading. Start with action, dialogue, or
+sensory detail — never "Chapter X begins with..."}
+
+{Continue Scene 1 prose...}
+
+* * *
+
+{Scene 2 prose begins after the scene break.
+The asterisks with spaces (* * *) create a visual pause.
+Each scene should open with a clear grounding in time/place/character.}
+
+{Continue Scene 2 prose...}
+
+* * *
+
+{Scene 3 prose...}
+
+{Final scene ends with prose, not a scene break.
+End on a hook, revelation, or emotional beat that pulls readers forward.}
+```
+
+**Formatting rules:**
+- **Chapter heading:** `# Chapter {N}: {Title}` — always include both number and title
+- **Scene breaks:** `* * *` (asterisks with spaces) — centered, with blank lines before/after
+- **Epigraphs:** Optional. Use `>` blockquote format. Only include when genuinely meaningful.
+- **No frontmatter:** Prose files contain only prose. Metadata lives in chapter-plans.
+- **No meta-commentary:** Never write "In this chapter..." or "The scene opens with..."
 
 **After generating:**
 Run: mkdir -p books/{project}/chapters
@@ -847,10 +993,12 @@ Do NOT stop between chapters. Generate the entire book in one `/generate prose` 
 ---
 project: {project-name}
 stage: structure-plan
-# Copy all taxonomy keys and display names from treatment frontmatter
+# Copy ALL taxonomy keys and display names from treatment frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from treatment}
-subgenre_key: {from treatment}
-subgenre: "{from treatment}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from treatment - copy entire object}
+subgenres: {from treatment - copy entire object}
 length_key: {from treatment: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from treatment}
@@ -868,15 +1016,26 @@ pov: "{from treatment}"
 tense: {from treatment}
 tone: "{from treatment}"
 mood: "{from treatment}"
-themes:
-  - {from treatment}
-  - {from treatment}
+# Multi-select: copy all genre-specific arrays/objects from treatment
+# Examples (actual fields depend on genre):
+magic_system_keys: {from treatment - copy array if present}
+magic_systems: {from treatment - copy array if present}
+fantasy_race_keys: {from treatment - copy array if present}
+fantasy_races: {from treatment - copy array if present}
+theme_keys: {from treatment - copy array if present}
+themes: {from treatment - copy array if present}
+quest_type_key: {from treatment - copy if present}
+quest_type: "{from treatment - copy if present}"
+world_type_key: {from treatment - copy if present}
+world_type: "{from treatment - copy if present}"
+worldbuilding_depth_key: {from treatment - copy if present}
+worldbuilding_depth: "{from treatment - copy if present}"
 tags:
   - {from treatment}
 custom_style_notes: "{from treatment}"
 ---
 
-Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
+Copy ALL frontmatter values from treatment, including multi-select arrays and objects. Do not modify unless user explicitly requested changes.
 
 # Structure Plan
 
@@ -944,10 +1103,12 @@ Brief reference for continuity (from treatment):
 ---
 project: {project-name}
 stage: structure-plan
-# Copy all taxonomy keys and display names from treatment frontmatter
+# Copy ALL taxonomy keys and display names from treatment frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from treatment}
-subgenre_key: {from treatment}
-subgenre: "{from treatment}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from treatment - copy entire object}
+subgenres: {from treatment - copy entire object}
 length_key: {from treatment: flash_fiction|short_story|novelette}
 length_target_words: {number}
 series_structure_key: {from treatment}
@@ -965,15 +1126,26 @@ pov: "{from treatment}"
 tense: {from treatment}
 tone: "{from treatment}"
 mood: "{from treatment}"
-themes:
-  - {from treatment}
-  - {from treatment}
+# Multi-select: copy all genre-specific arrays/objects from treatment
+# Examples (actual fields depend on genre):
+magic_system_keys: {from treatment - copy array if present}
+magic_systems: {from treatment - copy array if present}
+fantasy_race_keys: {from treatment - copy array if present}
+fantasy_races: {from treatment - copy array if present}
+theme_keys: {from treatment - copy array if present}
+themes: {from treatment - copy array if present}
+quest_type_key: {from treatment - copy if present}
+quest_type: "{from treatment - copy if present}"
+world_type_key: {from treatment - copy if present}
+world_type: "{from treatment - copy if present}"
+worldbuilding_depth_key: {from treatment - copy if present}
+worldbuilding_depth: "{from treatment - copy if present}"
 tags:
   - {from treatment}
 custom_style_notes: "{from treatment}"
 ---
 
-Copy all frontmatter values from treatment. Do not modify unless user explicitly requested changes.
+Copy ALL frontmatter values from treatment, including multi-select arrays and objects. Do not modify unless user explicitly requested changes.
 
 # Structure Plan
 
@@ -1036,10 +1208,12 @@ Brief reference for continuity (from treatment):
 project: {project-name}
 stage: chapter-plan
 chapter: {N}
-# Copy all taxonomy keys and display names from structure-plan frontmatter
+# Copy ALL taxonomy keys and display names from structure-plan frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from structure-plan}
-subgenre_key: {from structure-plan}
-subgenre: "{from structure-plan}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from structure-plan - copy entire object}
+subgenres: {from structure-plan - copy entire object}
 length_key: {from structure-plan: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from structure-plan}
@@ -1057,15 +1231,26 @@ pov: "{from structure-plan}"
 tense: {from structure-plan}
 tone: "{from structure-plan}"
 mood: "{from structure-plan}"
-themes:
-  - {from structure-plan}
-  - {from structure-plan}
+# Multi-select: copy all genre-specific arrays/objects from structure-plan
+# Examples (actual fields depend on genre):
+magic_system_keys: {from structure-plan - copy array if present}
+magic_systems: {from structure-plan - copy array if present}
+fantasy_race_keys: {from structure-plan - copy array if present}
+fantasy_races: {from structure-plan - copy array if present}
+theme_keys: {from structure-plan - copy array if present}
+themes: {from structure-plan - copy array if present}
+quest_type_key: {from structure-plan - copy if present}
+quest_type: "{from structure-plan - copy if present}"
+world_type_key: {from structure-plan - copy if present}
+world_type: "{from structure-plan - copy if present}"
+worldbuilding_depth_key: {from structure-plan - copy if present}
+worldbuilding_depth: "{from structure-plan - copy if present}"
 tags:
   - {from structure-plan}
 custom_style_notes: "{from structure-plan}"
 ---
 
-Copy all frontmatter values from structure-plan. Do not modify.
+Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
 
 # Chapter {N} Plan: {Title}
 
@@ -1138,10 +1323,12 @@ Copy all frontmatter values from structure-plan. Do not modify.
 ---
 project: {project-name}
 stage: story-plan
-# Copy all taxonomy keys and display names from structure-plan frontmatter
+# Copy ALL taxonomy keys and display names from structure-plan frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from structure-plan}
-subgenre_key: {from structure-plan}
-subgenre: "{from structure-plan}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from structure-plan - copy entire object}
+subgenres: {from structure-plan - copy entire object}
 length_key: {from structure-plan: flash_fiction|short_story|novelette}
 length_target_words: {number}
 series_structure_key: {from structure-plan}
@@ -1159,15 +1346,26 @@ pov: "{from structure-plan}"
 tense: {from structure-plan}
 tone: "{from structure-plan}"
 mood: "{from structure-plan}"
-themes:
-  - {from structure-plan}
-  - {from structure-plan}
+# Multi-select: copy all genre-specific arrays/objects from structure-plan
+# Examples (actual fields depend on genre):
+magic_system_keys: {from structure-plan - copy array if present}
+magic_systems: {from structure-plan - copy array if present}
+fantasy_race_keys: {from structure-plan - copy array if present}
+fantasy_races: {from structure-plan - copy array if present}
+theme_keys: {from structure-plan - copy array if present}
+themes: {from structure-plan - copy array if present}
+quest_type_key: {from structure-plan - copy if present}
+quest_type: "{from structure-plan - copy if present}"
+world_type_key: {from structure-plan - copy if present}
+world_type: "{from structure-plan - copy if present}"
+worldbuilding_depth_key: {from structure-plan - copy if present}
+worldbuilding_depth: "{from structure-plan - copy if present}"
 tags:
   - {from structure-plan}
 custom_style_notes: "{from structure-plan}"
 ---
 
-Copy all frontmatter values from structure-plan. Do not modify.
+Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
 
 # Story Plan: {Title}
 
@@ -1232,10 +1430,12 @@ Append after each chapter is generated. This provides continuity context for sub
 ---
 project: {project-name}
 stage: summaries
-# Copy all taxonomy keys and display names from structure-plan frontmatter
+# Copy ALL taxonomy keys and display names from structure-plan frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from structure-plan}
-subgenre_key: {from structure-plan}
-subgenre: "{from structure-plan}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from structure-plan - copy entire object}
+subgenres: {from structure-plan - copy entire object}
 length_key: {from structure-plan: novella|novel|epic}
 length_target_words: {number}
 series_structure_key: {from structure-plan}
@@ -1253,15 +1453,26 @@ pov: "{from structure-plan}"
 tense: {from structure-plan}
 tone: "{from structure-plan}"
 mood: "{from structure-plan}"
-themes:
-  - {from structure-plan}
-  - {from structure-plan}
+# Multi-select: copy all genre-specific arrays/objects from structure-plan
+# Examples (actual fields depend on genre):
+magic_system_keys: {from structure-plan - copy array if present}
+magic_systems: {from structure-plan - copy array if present}
+fantasy_race_keys: {from structure-plan - copy array if present}
+fantasy_races: {from structure-plan - copy array if present}
+theme_keys: {from structure-plan - copy array if present}
+themes: {from structure-plan - copy array if present}
+quest_type_key: {from structure-plan - copy if present}
+quest_type: "{from structure-plan - copy if present}"
+world_type_key: {from structure-plan - copy if present}
+world_type: "{from structure-plan - copy if present}"
+worldbuilding_depth_key: {from structure-plan - copy if present}
+worldbuilding_depth: "{from structure-plan - copy if present}"
 tags:
   - {from structure-plan}
 custom_style_notes: "{from structure-plan}"
 ---
 
-Copy all frontmatter values from structure-plan. Do not modify.
+Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
 
 # Chapter Summaries
 
@@ -1297,10 +1508,12 @@ Generated once after prose is complete.
 ---
 project: {project-name}
 stage: summaries
-# Copy all taxonomy keys and display names from structure-plan frontmatter
+# Copy ALL taxonomy keys and display names from structure-plan frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
 genre_key: {from structure-plan}
-subgenre_key: {from structure-plan}
-subgenre: "{from structure-plan}"
+# Multi-select: subgenre (primary/secondary object)
+subgenre_keys: {from structure-plan - copy entire object}
+subgenres: {from structure-plan - copy entire object}
 length_key: {from structure-plan: flash_fiction|short_story|novelette}
 length_target_words: {number}
 series_structure_key: {from structure-plan}
@@ -1318,15 +1531,26 @@ pov: "{from structure-plan}"
 tense: {from structure-plan}
 tone: "{from structure-plan}"
 mood: "{from structure-plan}"
-themes:
-  - {from structure-plan}
-  - {from structure-plan}
+# Multi-select: copy all genre-specific arrays/objects from structure-plan
+# Examples (actual fields depend on genre):
+magic_system_keys: {from structure-plan - copy array if present}
+magic_systems: {from structure-plan - copy array if present}
+fantasy_race_keys: {from structure-plan - copy array if present}
+fantasy_races: {from structure-plan - copy array if present}
+theme_keys: {from structure-plan - copy array if present}
+themes: {from structure-plan - copy array if present}
+quest_type_key: {from structure-plan - copy if present}
+quest_type: "{from structure-plan - copy if present}"
+world_type_key: {from structure-plan - copy if present}
+world_type: "{from structure-plan - copy if present}"
+worldbuilding_depth_key: {from structure-plan - copy if present}
+worldbuilding_depth: "{from structure-plan - copy if present}"
 tags:
   - {from structure-plan}
 custom_style_notes: "{from structure-plan}"
 ---
 
-Copy all frontmatter values from structure-plan. Do not modify.
+Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
 
 # Story Summary
 
@@ -1395,3 +1619,100 @@ All paths are relative to the repository root:
 - If project.yaml is missing, prompt to run `/new-book` first
 - Never generate placeholder or skeleton content - always generate complete, quality prose
 - If a sub-agent fails, report the error and suggest `/iterate` to fix
+
+---
+
+## Multi-Select Frontmatter Reference
+
+Taxonomy files define different selection rules for categories. This reference documents how each rule maps to YAML frontmatter structure.
+
+### Selection Rules and YAML Patterns
+
+| Selection Rule | Key Field | Display Field | YAML Structure |
+|---------------|-----------|---------------|----------------|
+| `select_one` | `{cat}_key` | `{cat}` | scalar |
+| `select_primary` | `{cat}_key` | `{cat}` | scalar |
+| `select_primary_and_secondary` | `{cat}_keys` | `{cat}s` | object with `primary`, `secondary?` |
+| `select_one_or_two` | `{cat}_keys` | `{cat}s` | array |
+| `select_up_to_three` | `{cat}_keys` | `{cat}s` | array |
+| `select_all_that_apply` | `{cat}_keys` | `{cat}s` | array |
+
+### Example: select_one (scalar)
+
+```yaml
+world_type_key: secondary_world
+world_type: "Secondary World"
+```
+
+### Example: select_primary_and_secondary (object)
+
+```yaml
+subgenre_keys:
+  primary: dark_fantasy
+  secondary: political_intrigue  # omit if not chosen
+subgenres:
+  primary: "Dark Fantasy"
+  secondary: "Political Intrigue"  # omit if not chosen
+```
+
+### Example: select_one_or_two (array)
+
+```yaml
+magic_system_keys:
+  - hard_magic_system
+  - elemental_magic
+magic_systems:
+  - "Hard Magic System"
+  - "Elemental Magic"
+```
+
+### Example: select_up_to_three (array)
+
+```yaml
+theme_keys:
+  - power_corruption
+  - identity_belonging
+  - destiny_free_will
+themes:
+  - "Power and Corruption"
+  - "Identity and Belonging"
+  - "Destiny vs Free Will"
+```
+
+### Example: select_all_that_apply (array)
+
+```yaml
+fantasy_race_keys:
+  - elves
+  - dwarves
+  - dragons
+  - fae_folk
+fantasy_races:
+  - "Elves"
+  - "Dwarves"
+  - "Dragons"
+  - "Fae/Faeries"
+```
+
+### Rules
+
+1. **Single-item arrays stay arrays** — never collapse to scalars
+2. **Primary/secondary uses named object** — not array (preserves semantic distinction)
+3. **Optional secondary omitted if not chosen** — standard YAML absence
+4. **Plural naming for all multi-select** — `_keys` suffix, plural display name
+5. **Copy verbatim between stages** — do not modify structure when propagating frontmatter
+
+### Genre-Specific Categories
+
+Different genres have different multi-select categories. Common examples:
+
+**Fantasy:**
+- `fantasy_subgenre` → `select_primary_and_secondary`
+- `magic_system_type` → `select_one_or_two`
+- `fantasy_races` → `select_all_that_apply`
+- `fantasy_themes` → `select_up_to_three`
+- `quest_type` → `select_primary`
+- `world_type` → `select_one`
+- `worldbuilding_depth` → `select_one`
+
+**Other genres:** Check the specific genre taxonomy file for the exact selection rules. The premise stage reads the taxonomy and creates the initial frontmatter; all downstream stages copy it verbatim.
