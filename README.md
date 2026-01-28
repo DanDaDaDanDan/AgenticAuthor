@@ -67,7 +67,7 @@ Three user commands, with planning handled automatically:
 | `/generate treatment` | treatment.md | Generates treatment-approach.md first |
 | `/generate prose` | chapters/ or short-story.md | Generates structure-plan.md and chapter/story plans first |
 
-Each stage builds on the previous. The AI handles planning dependencies so you focus on reviewing and iterating the outputs that matter.
+Each stage builds on the previous. Generation runs autonomously to completion — use `/iterate` afterward to refine any output.
 
 ## Natural Language Iteration
 

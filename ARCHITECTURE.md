@@ -110,7 +110,7 @@ Three user commands with implicit planning steps:
 /generate prose      → [structure-plan.md] → [chapter-NN-plan.md → chapter-NN.md] × N
 ```
 
-Bracketed steps `[...]` are implicit — generated automatically and presented for review before proceeding. Research shows explicit planning before prose generation significantly improves quality (Gurung & Lapata, 2025).
+Bracketed steps `[...]` are implicit — generated automatically before the main output. Generation runs autonomously to completion; use `/iterate` afterward to refine any stage.
 
 ## Context Flow
 
@@ -142,7 +142,7 @@ prose
 
 **Why this matters for iteration:** If you iterate on treatment and change the ending, structure-plan only reads treatment—it sees the updated version. Premise becomes "historical" (the seed that started things), not the contract. No conflicts between stages.
 
-**Prose generation uses implicit planning:** Before writing, the AI generates structure-plan.md (if missing) and chapter/story plans. Each is presented for review before proceeding.
+**Prose generation uses implicit planning:** Before writing, the AI generates structure-plan.md (if missing) and chapter/story plans. Generation runs autonomously to completion; use `/iterate` afterward to refine any output.
 
 ## File Formats
 
