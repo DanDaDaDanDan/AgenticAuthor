@@ -553,8 +553,8 @@ Generate the actual story prose.
 | structure-plan | treatment.md only | premise.md, treatment-approach.md |
 | short-story-plan | structure-plan.md only | premise.md, treatment-approach.md, treatment.md |
 | chapter-plan (novella/novel/epic) | structure-plan.md + summaries.md + prev chapter-plans | premise.md, treatment-approach.md, treatment.md |
-| prose (flash/short/novelette) | short-story-plan.md + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
-| prose (novella/novel/epic) | chapter-plan + summaries.md + prev chapters + prose-style-card.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| prose (flash/short/novelette) | short-story-plan.md + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
+| prose (novella/novel/epic) | chapter-plan + summaries.md + prev chapters + prose-style-{prose_style_key}.md | premise.md, treatment-approach.md, treatment.md, structure-plan.md |
 
 ### Clarifying Questions
 
@@ -709,7 +709,7 @@ Generate complete prose for the {project} flash fiction/short story/novelette.
 
 **Context to read:**
 1. `books/{project}/short-story-plan.md` — Complete story plan with scene breakdowns and style notes
-2. `misc/prose-style-card.md` — Reference for prose style (use as loose guidance)
+2. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or any other files. The story-plan is self-contained.
 
@@ -807,7 +807,7 @@ Generate prose for Chapter {N} of {project}.
 1. `books/{project}/chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
 2. `books/{project}/summaries.md` — For continuity
 3. `books/{project}/chapters/chapter-*.md` — All previous chapters
-4. `misc/prose-style-card.md` — Style reference
+4. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
 **Do NOT read:** premise.md, treatment.md, structure-plan.md, or other chapter-plans.
 
@@ -1381,13 +1381,13 @@ Copy all frontmatter values from structure-plan. Do not modify.
 | structure-plan | treatment only | premise, treatment-approach |
 | chapter-plan (novella/novel/epic) | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
 | short-story-plan (flash/short/novelette) | structure-plan only | premise, treatment-approach, treatment |
-| prose (novella/novel/epic) | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment-approach, treatment, structure-plan |
-| prose (flash/short/novelette) | short-story-plan + prose-style-card | premise, treatment-approach, treatment, structure-plan |
+| prose (novella/novel/epic) | chapter-plan + summaries + prev chapters + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
+| prose (flash/short/novelette) | short-story-plan + prose-style-{prose_style_key} | premise, treatment-approach, treatment, structure-plan |
 
 **Path Notes:**
 All paths are relative to the repository root:
 - Book project files: `books/{project}/`
-- Prose style card: `misc/prose-style-card.md`
+- Prose style cards: `misc/prose-style-{prose_style_key}.md` (commercial, literary, minimalist, pulp, lyrical, conversational)
 - Taxonomies: `taxonomies/`
 
 ---

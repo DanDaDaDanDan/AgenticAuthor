@@ -27,7 +27,7 @@ Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit 
 AgenticAuthor/
 ├── taxonomies/            # 14 JSON files (base, 12 genre, style)
 ├── misc/
-│   └── prose-style-card.md
+│   └── prose-style-*.md   # 6 style cards (commercial, literary, minimalist, pulp, lyrical, conversational)
 ├── .claude/skills/        # Skill definitions
 └── books/                 # Book projects (separate git repo)
     └── {project}/
@@ -57,7 +57,7 @@ Each stage's output contains everything the next stage needs. Read only one step
 | treatment | treatment-approach + premise | — |
 | structure-plan | treatment only | premise, treatment-approach |
 | chapter-plan | structure-plan + summaries + prev chapter-plans | premise, treatment-approach, treatment |
-| prose | chapter-plan + summaries + prev chapters + prose-style-card | premise, treatment-approach, treatment, structure-plan |
+| prose | chapter-plan + summaries + prev chapters + prose-style-{style_key} | premise, treatment-approach, treatment, structure-plan |
 
 **For flash/short/novelette (single-file formats):** Same principle — short-story-plan reads structure-plan, prose reads short-story-plan only.
 
@@ -125,7 +125,7 @@ Every skill operation commits to the books/ git repo. This enables iteration and
 ## Key Paths
 
 - **Book files:** `books/{project}/`
-- **Style card:** `misc/prose-style-card.md`
+- **Style cards:** `misc/prose-style-{style_key}.md` (commercial, literary, minimalist, pulp, lyrical, conversational)
 - **Taxonomies:** `taxonomies/`
 
-The prose style card and taxonomies are at the repo root, NOT inside book projects.
+The prose style cards and taxonomies are at the repo root, NOT inside book projects.

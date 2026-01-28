@@ -126,7 +126,7 @@ Genre and style selections are recorded in the project's `premise.md` and guide 
 
 Style is selected per-project during premise generation. Six approaches are available:
 
-- **Commercial** - Clear, readable, mass-market appeal (see `misc/prose-style-card.md` for detailed guidance)
+- **Commercial** - Clear, readable, mass-market appeal (see `misc/prose-style-commercial.md`)
 - **Literary** - Denser prose, rewards close reading, thematic depth
 - **Minimalist** - Spare, precise, subtext-heavy
 - **Pulp** - Fast, punchy, momentum-driven

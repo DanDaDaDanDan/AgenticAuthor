@@ -61,7 +61,7 @@ Read `books/{project}/project.yaml` to get the genre.
 - For novella/novel/epic: `books/{project}/chapter-plans/` (relevant chapter plans)
 - For novella/novel/epic: target chapter(s) from `books/{project}/chapters/`
 - For flash/short/novelette: `books/{project}/short-story-plan.md` and `books/{project}/short-story.md`
-- `misc/prose-style-card.md` - Reference if premise uses Commercial style
+- `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 
 ### Step 3: Analyze Content
 

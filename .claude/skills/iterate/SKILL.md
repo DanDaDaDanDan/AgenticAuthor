@@ -124,13 +124,13 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - `books/{project}/chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
 - `books/{project}/summaries.md` (if exists) - For continuity
 - All chapters from `books/{project}/chapters/`
-- `misc/prose-style-card.md` - Optional reference if style is Commercial
+- `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 - Do NOT read premise.md, treatment.md, or structure-plan.md
 
 **For prose iteration (flash/short/novelette):**
 - `books/{project}/short-story-plan.md` - The story plan
 - `books/{project}/short-story.md` - The story being revised
-- `misc/prose-style-card.md` - Optional reference if style is Commercial
+- `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 - Do NOT read premise.md, treatment.md, or structure-plan.md
 
 ### Step 5: Apply Changes
@@ -213,7 +213,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Plot thread continuity
 - Established world details
 
-Use the chapter-plan's Style Notes as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. (For Commercial style, `misc/prose-style-card.md` provides detailed reference.)
+Use the chapter-plan's Style Notes as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building

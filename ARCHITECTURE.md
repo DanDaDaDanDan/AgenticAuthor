@@ -17,7 +17,7 @@ AgenticAuthor/
 ├── ARCHITECTURE.md        # This file
 ├── taxonomies/            # Story classification (14 JSON files)
 ├── misc/
-│   └── prose-style-card.md   # Detailed Commercial prose guidance
+│   └── prose-style-*.md      # 6 style cards (commercial, literary, minimalist, pulp, lyrical, conversational)
 ├── .claude/
 │   └── skills/               # Claude Code skill definitions
 │       ├── new-book/SKILL.md
@@ -88,7 +88,7 @@ Each stage reads only its immediate predecessor. This prevents conflicts when it
 | treatment | treatment-approach + premise |
 | structure-plan | treatment only |
 | chapter-plan | structure-plan + summaries + prev plans |
-| prose | plan + summaries + prev prose + style-card |
+| prose | plan + summaries + prev prose + prose-style-{style_key} |
 
 **Why this matters:** If you iterate on treatment and change the ending, structure-plan sees the update automatically because it only reads treatment. Premise becomes "historical" (the seed), not the contract.
 
@@ -104,7 +104,7 @@ Full context rules are in `.claude/skills/generate/SKILL.md`.
 | Iteration guidelines | `.claude/skills/iterate/SKILL.md` |
 | Review criteria | `.claude/skills/review/SKILL.md` |
 | Taxonomy options | `taxonomies/*.json` |
-| Commercial prose guidance | `misc/prose-style-card.md` |
+| Prose style cards | `misc/prose-style-{style_key}.md` |
 
 ## Extending the System
 
