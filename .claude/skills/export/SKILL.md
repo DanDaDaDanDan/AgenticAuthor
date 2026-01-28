@@ -30,8 +30,8 @@ Read `project.yaml` for metadata.
 Check that all required files exist in `books/{project}/`:
 - `premise.md`
 - `treatment.md`
-- For novels: `chapters/chapter-*.md` files
-- For short stories/novelettes: `short-story.md`
+- For novella/novel/epic: `chapters/chapter-*.md` files
+- For flash/short/novelette: `short-story.md`
 
 If prose is incomplete, warn the user:
 
@@ -159,9 +159,9 @@ If yes:
 cd books && git add {project}/export/{project}.md && git commit -m "Add: Export {project} ({format} format)"
 ```
 
-## Short Story/Novelette Export
+## Flash/Short/Novelette Export
 
-For short stories and novelettes, the export is simpler since there's only one prose file:
+For flash fiction, short stories, and novelettes, the export is simpler since there's only one prose file:
 
 **MD Format:**
 ```markdown
@@ -192,7 +192,7 @@ wc -w books/{project}/short-story.md
 Report:
 - Per-chapter word counts
 - Total prose word count
-- Average chapter length (novels)
+- Average chapter length (novella/novel/epic)
 
 ## Export Checklist
 

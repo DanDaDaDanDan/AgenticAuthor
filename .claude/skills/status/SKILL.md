@@ -36,14 +36,14 @@ books/{project}/
 ├── treatment.md         ✓/✗
 ├── structure-plan.md    ✓/✗ (all project types)
 ├── summaries.md         ✓/✗ (generated after prose)
-├── chapter-plans/       (novels only)
+├── chapter-plans/       (novella/novel/epic only)
 │   ├── chapter-01-plan.md ✓/✗
 │   └── ...
-├── chapters/            (novels only)
+├── chapters/            (novella/novel/epic only)
 │   ├── chapter-01.md    ✓/✗
 │   └── ...
-├── short-story-plan.md  ✓/✗ (short stories/novelettes only)
-└── short-story.md       ✓/✗ (short stories/novelettes only)
+├── short-story-plan.md  ✓/✗ (flash/short/novelette only)
+└── short-story.md       ✓/✗ (flash/short/novelette only)
 ```
 
 ### Step 3: Calculate Statistics
@@ -61,7 +61,7 @@ Output a formatted status report:
 📚 Project: {title}
    Author: {author}
    Genre: {genre}
-   Type: {novel/novelette/short-story}
+   Type: {flash_fiction/short_story/novelette/novella/novel/epic}
    Created: {date}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -70,19 +70,19 @@ Progress:
   [✓] Premise          {word count} words
   [✓] Treatment        {word count} words
   [✓] Structure Plan   {chapter/scene count} planned
-  [✓] Generation Plans {X}/{Y} plans (novels) or ✓/✗ story plan (short stories)
-  [ ] Prose            {X}/{Y} chapters (novels) or ✓/✗ (short stories)
+  [✓] Generation Plans {X}/{Y} plans (novella/novel/epic) or ✓/✗ story plan (flash/short/novelette)
+  [ ] Prose            {X}/{Y} chapters (novella/novel/epic) or ✓/✗ (flash/short/novelette)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Chapters (novels):
+Chapters (novella/novel/epic):
   Ch 1: {title}        Plan ✓  Prose ✓  {word count} words
   Ch 2: {title}        Plan ✓  Prose ✓  {word count} words
   Ch 3: {title}        Plan ✓  Prose ○  (ready to write)
   Ch 4: {title}        Plan ○  Prose ○  (not started)
   ...
 
-Short Story:
+Flash/Short/Novelette:
   Story Plan: ✓/✗
   Prose: ✓/✗  {word count} words
 
@@ -128,8 +128,8 @@ cd books && git status --porcelain {project}/
 
 Calculate completion percentage based on stages:
 
-| Stage | Weight (Novel) | Weight (Short Story) |
-|-------|---------------|---------------------|
+| Stage | Weight (Novella/Novel/Epic) | Weight (Flash/Short/Novelette) |
+|-------|------------------------------|-------------------------------|
 | Premise | 10% | 10% |
 | Treatment | 15% | 15% |
 | Structure Plan | 10% | 10% |
@@ -138,11 +138,11 @@ Calculate completion percentage based on stages:
 
 **Weight distribution within stages:**
 
-For **novels**, generation plans and prose weights are distributed across chapters:
+For **novella/novel/epic**, generation plans and prose weights are distributed across chapters:
 - Generation Plans: 10% × (completed plans / total chapters)
 - Prose: 55% × (completed chapters / total chapters)
 
-For **short stories/novelettes**, each stage is binary (complete or not):
+For **flash/short/novelette**, each stage is binary (complete or not):
 - Generation Plan: 10% if `short-story-plan.md` exists
 - Prose: 55% if `short-story.md` exists
 
@@ -186,6 +186,6 @@ Suggest next action based on current state:
 | No premise | `/generate premise` |
 | Premise only | `/generate treatment` |
 | Treatment complete | `/generate prose` (creates structure plan automatically) |
-| Some chapters done (novels) | `/generate prose` to continue |
+| Some chapters done (novella/novel/epic) | `/generate prose` to continue |
 | All complete | `/export` to create final document |
 | Recent iteration | Review changes, continue writing |
