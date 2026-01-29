@@ -68,9 +68,9 @@ books/{book-name}/
 
 Use the Bash tool to create the directories:
 ```bash
-mkdir -p books/{book-name}/chapters  # for novella, novel, epic
+mkdir -p books/{book-name}/06-chapters  # for novella, novel, epic
 # OR
-mkdir -p books/{book-name}           # for flash fiction, short stories, novelettes
+mkdir -p books/{book-name}              # for flash fiction, short stories, novelettes
 ```
 
 ### Step 3: Create project.yaml

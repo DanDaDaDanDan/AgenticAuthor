@@ -35,19 +35,23 @@ For the target project, check which files exist:
 
 ```
 books/{project}/
-├── project.yaml         [x]/[ ]
+├── project.yaml            [x]/[ ]
 ├── 01-premise.md           [x]/[ ]
 ├── 03-treatment.md         [x]/[ ]
 ├── 04-structure-plan.md    [x]/[ ] (all project types)
-├── 06-chapters/summaries.md         [x]/[ ] (generated after prose)
+│
+│   # For novella/novel/epic:
 ├── 05-chapter-plans/       (novella/novel/epic only)
-│   ├── chapter-01-plan.md [x]/[ ]
+│   ├── chapter-01-plan.md  [x]/[ ]
 │   └── ...
 ├── 06-chapters/            (novella/novel/epic only)
-│   ├── chapter-01.md    [x]/[ ]
-│   └── ...
-├── 05-story-plan.md  [x]/[ ] (flash/short/novelette only)
-└── 06-story.md       [x]/[ ] (flash/short/novelette only)
+│   ├── chapter-01.md       [x]/[ ]
+│   ├── ...
+│   └── summaries.md        [x]/[ ] (continuity anchor)
+│
+│   # For flash/short/novelette:
+├── 05-story-plan.md        [x]/[ ] (flash/short/novelette only)
+└── 06-story.md             [x]/[ ] (flash/short/novelette only)
 ```
 
 ### Step 3: Calculate Statistics

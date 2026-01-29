@@ -215,8 +215,8 @@ by {Author}
 Calculate and display word counts:
 
 ```bash
-# Count words in prose files
-wc -w books/{project}/06-chapters/*.md
+# Count words in prose files (exclude summaries.md)
+wc -w books/{project}/06-chapters/chapter-*.md
 # or
 wc -w books/{project}/06-story.md
 ```
