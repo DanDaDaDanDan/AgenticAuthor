@@ -994,8 +994,6 @@ This file is the authoritative plan for all chapter plans.
 
 ## Characters
 
-Brief reference for continuity (from treatment):
-
 - **{Protagonist}:** {one-line arc summary: starting state → ending state}
 - **{Antagonist/Key character}:** {one-line role summary}
 - **{Other key characters}:** {brief notes}
