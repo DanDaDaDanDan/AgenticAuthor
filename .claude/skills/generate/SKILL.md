@@ -1345,7 +1345,7 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 This plan is authoritative for the prose in `06-story.md`.
 
 - **Prose must preserve:** scene order, key beats/turns, and style notes (unless the user explicitly requests changes)
-- **Canon source:** if `06-chapters/summaries.md` exists, treat it as the continuity anchor for names/facts
+- **Note:** Single-file formats do not use summaries.md — continuity is maintained within this plan
 
 ## Character States
 
