@@ -29,17 +29,15 @@ Each stage's output is self-contained — it carries forward all information nee
 
 ## Instructions
 
-### Step 0: Detect Current Project
+### Step 1: Detect Project (Main Context)
 
 **Check for active book first:**
 
 1. Read `books/active-book.yaml` and extract the `project:` value
 2. If `project:` is set (not `null`), use that project
-3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
-   - Look for `project.yaml` in the current directory or parent directories under `books/`
-   - If not found, ask the user which project to work on (or suggest `/select-book`)
+3. If `project:` is `null` or file doesn't exist, ask the user which project to work on (or suggest `/select-book`)
 
-### Step 1: Determine Target
+### Step 2: Determine Target (Main Context)
 
 If `target` not provided, ask the user:
 - What would you like to iterate on?
@@ -55,12 +53,12 @@ For chapter plan (novella/novel/epic only):
 
 For prose, also ask which chapter(s) to revise, or "all" for the entire story.
 
-### Step 2: Gather Feedback
+### Step 3: Gather Feedback (Main Context)
 
 If `feedback` not provided, ask the user:
 - What changes would you like to make?
 
-### Step 3: Confirm Understanding
+### Step 4: Confirm Understanding (Main Context)
 
 **Before making any changes, restate what you understood:**
 
@@ -81,9 +79,9 @@ Proceed with these changes?
 
 Do NOT proceed until you're confident you understand the request.
 
-### Step 3.5: Enumerate Planned Changes
+### Step 5: Enumerate Planned Changes (Main Context)
 
-Before making any edits, list exactly what you will modify:
+Before spawning the edit sub-agent, describe what will be modified:
 
 ```
 Planned modifications:
@@ -95,13 +93,48 @@ Sections preserved unchanged:
 - [Section B]
 ```
 
-This ensures precision and allows the user to catch unintended changes before they happen.
+**Ask for approval:**
+```
+Ready to apply these changes?
+```
 
-### Step 4: Read Context
+### Step 6: Check for Cascading Changes (Main Context)
 
-**Read only the immediately prior stage plus the target being iterated.**
+If the requested change will force cascading edits to other files:
+
+1. **Enumerate the cascade:**
+   ```
+   This change will affect:
+   - 03-treatment.md: frontmatter (field X)
+   - 04-structure-plan.md: frontmatter would become stale
+   - 05-chapter-plans/: may need regeneration if structure changes significantly
+   ```
+
+2. **Ask user how to proceed:**
+   - Proceed with change + inform about downstream staleness?
+   - Proceed and cascade updates to downstream files?
+   - Abort and reconsider?
+
+### Step 7: Spawn Edit Sub-Agent
+
+Once the user approves, use the Task tool to spawn an Edit Sub-Agent with subagent_type `general-purpose`.
+
+**Sub-agent prompt template:**
+
+```
+You are the Edit Sub-Agent for AgenticAuthor.
+
+## Task
+Apply iteration changes to "{target}" for project "{project}".
+
+## Approved Changes
+{enumerated list of approved changes from Step 5}
+
+## Context Reading
 
 Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
+
+**Read only the immediately prior stage plus the target being iterated:**
 
 **For premise iteration:**
 - `books/{project}/01-premise.md` - Current premise
@@ -112,16 +145,14 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 **For treatment iteration:**
 - `books/{project}/03-treatment.md` - Current treatment (already self-contained with frontmatter)
 - Do NOT read 01-premise.md — treatment is the authoritative document now
-- Note: If iterating on treatment, ensure frontmatter stays accurate
 
 **For plan iteration (04-structure-plan.md):**
-- `books/{project}/04-structure-plan.md` - Current plan (already contains frontmatter + Characters)
-- For flash/short/novelette, this is the macro plan; the micro beat sheet lives in `05-story-plan.md`
-- Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md — structure-plan is self-contained
+- `books/{project}/04-structure-plan.md` - Current plan
+- Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md
 
 **For story-plan iteration (05-story-plan.md; flash/short/novelette only):**
-- `books/{project}/05-story-plan.md` - Current story plan (self-contained micro beat sheet; authoritative for `06-story.md`)
-- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md — story-plan is self-contained
+- `books/{project}/05-story-plan.md` - Current story plan
+- Do NOT read earlier stages
 
 **For chapter plan iteration (novella/novel/epic only):**
 - `books/{project}/04-structure-plan.md` - Structure plan (frontmatter, characters, chapter breakdown)
@@ -132,26 +163,22 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 **For prose iteration (novella/novel/epic):**
 - `books/{project}/06-chapters/chapter-{NN}.md` - The chapter being revised
 - All previous chapters in `books/{project}/06-chapters/` for continuity
-- All chapter plans in `books/{project}/05-chapter-plans/` - Current chapter plan is authoritative; future plans provide context
-- `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
+- All chapter plans in `books/{project}/05-chapter-plans/`
+- `misc/prose-style-{prose_style_key}.md` - Style card
 - Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md
-
-If revising multiple chapters, do it sequentially (one chapter at a time).
 
 **For prose iteration (flash/short/novelette):**
 - `books/{project}/05-story-plan.md` - Story plan (authoritative contract for prose)
 - `books/{project}/06-story.md` - The story being revised
-- `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md
+- `misc/prose-style-{prose_style_key}.md` - Style card
+- Do NOT read earlier stages
 
-### Step 5: Apply Changes
+## Apply Changes
 
-Generate the revised content:
-
-1. **Apply the confirmed changes** - Make the specific changes discussed
+1. **Apply the approved changes** - Make the specific changes discussed
 2. **Preserve everything else** - Don't change elements not mentioned in feedback
 3. **Maintain consistency** - Ensure changes align with the current stage's context
-4. **Follow frontmatter** - For prose, use the style from the plan's frontmatter and Style Notes (chapter-plan for novella/novel/epic, story-plan for flash/short/novelette)
+4. **Follow frontmatter** - For prose, use the style from the plan's frontmatter
 
 **Prose iteration principles:**
 - Preserve the author's distinctive voice and style
@@ -160,9 +187,18 @@ Generate the revised content:
 - Don't flatten literary prose into generic writing
 - If cutting for pacing, preserve essential story information
 
-### Step 6: Show Summary of Changes
+## Write and Commit
 
-Briefly summarize what changed:
+Write the revised file(s) to `books/{project}/` and commit:
+
+**PowerShell:**
+```powershell
+cd books; git add {project}/{file(s)}; git commit -m "Iterate: {target} - {brief feedback summary}"
+```
+
+## Return Summary
+
+Return a summary of what changed:
 
 ```
 Changes applied:
@@ -172,21 +208,50 @@ Changes applied:
 Preserved:
 - {Key element kept intact}
 - {Another preserved element}
+
+Committed: "Iterate: {target} - {brief summary}"
+```
 ```
 
-### Step 7: Write and Commit
+### Step 8: Report Result (Main Context)
 
-Write the revised file(s) to `books/{project}/` and commit:
+When the sub-agent returns:
 
-**Bash:**
-```bash
-cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
-```
+1. **Display the summary** of changes applied
+2. **Inform about cascade implications** (if any):
+   ```
+   Note: Since you changed {X}, these downstream stages may need updating:
+   - 04-structure-plan.md (currently reads from treatment)
+   - Run /generate-prose to regenerate with the new treatment
+   ```
+3. **Remind about version history:**
+   ```
+   To view history: git log --oneline (in books/ directory)
+   To compare: git diff HEAD~1
+   To revert: git checkout HEAD~1 -- {file}
+   ```
 
-**PowerShell:**
-```powershell
-cd books; git add {project}/{file(s)}; git commit -m "Iterate: {target} - {brief feedback summary}"
-```
+## Why Hybrid?
+
+Iterate involves two distinct concerns:
+1. **Understanding intent** — requires back-and-forth with the user
+2. **Applying edits** — requires reading file content
+
+**Main context handles:**
+- Parsing target and feedback
+- Asking clarifying questions
+- Enumerating planned changes
+- Getting user approval
+- Explaining cascade implications
+
+**Sub-agent handles:**
+- Reading full file content
+- Applying the approved changes
+- Writing and committing
+
+This preserves the interactive "show what will change" UX while keeping file content out of main context.
+
+---
 
 ## Iteration Guidelines
 
@@ -197,41 +262,36 @@ cd books; git add {project}/{file(s)}; git commit -m "Iterate: {target} - {brief
 - If feedback is broad ("make it darker"), still identify the smallest set of changes that achieves the goal
 - Only rewrite entire documents when explicitly requested ("rewrite this from scratch")
 
-### Premise Iteration
+### Target-Specific Guidelines
 
+**Premise Iteration:**
 - Preserve the core hook unless explicitly asked to change
 - Maintain genre alignment
 - Update taxonomy selections if tone/style changes significantly
 
-### Treatment Iteration
-
+**Treatment Iteration:**
 - Keep the basic story arc unless restructuring is requested
 - Ensure changes cascade properly (if Act I changes, Act II/III may need adjustment)
 - Maintain character arc consistency
 
-### Plan Iteration (04-structure-plan.md)
-
+**Plan Iteration (04-structure-plan.md):**
 - Preserve chapter/scene count unless explicitly asked to add/remove
 - Adjust pacing notes if content changes significantly
 - Update continuity tracking table
 
-### Chapter Plan Iteration (Novella/Novel/Epic Only)
-
+**Chapter Plan Iteration (Novella/Novel/Epic Only):**
 - Iterate on chapter plans **before** generating prose for that chapter
 - Adjust scene breakdowns, character states, or style notes as needed
 - If the chapter's prose already exists, note that prose may need regeneration
 
-**Note:** For flash/short/novelette, `04-structure-plan.md` is the macro plan and `05-story-plan.md` is the micro beat sheet (authoritative for `06-story.md`). Iterate the appropriate one based on what you want to change.
-
-### Prose Iteration
-
-**Most common iteration target.** Apply feedback while maintaining:
-- The story's established voice and tone
-- Character voice consistency
-- Plot thread continuity
-- Established world details
-
-Use the plan's Style Notes as guidance, not rigid rules (chapter-plan for novella/novel/epic, story-plan for flash/short/novelette). If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
+**Prose Iteration:**
+- Apply feedback while maintaining:
+  - The story's established voice and tone
+  - Character voice consistency
+  - Plot thread continuity
+  - Established world details
+- Use the plan's Style Notes as guidance, not rigid rules
+- The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building
@@ -245,8 +305,22 @@ Use the plan's Style Notes as guidance, not rigid rules (chapter-plan for novell
 - Pacing issues (too slow/fast for the scene type)
 - Unclear plot points or confusing passages
 
-For chapter-specific feedback, only revise that chapter.
-For global feedback ("make everything darker"), revise all chapters.
+## Cascade Rules by Stage
+
+**Premise changes:**
+- If downstream stages don't exist yet: no action needed
+- If treatment-approach already exists: its frontmatter may be stale
+
+**Treatment changes:**
+- Structure-plan reads only treatment, so it automatically sees changes when regenerated
+- If structure-plan already exists: inform user they may want to regenerate
+
+**Structure plan changes:**
+- May require chapter plan revisions for affected chapters
+- May require prose revision for affected chapters
+
+**Chapter plan changes:**
+- May require prose regeneration for that chapter (if prose exists)
 
 ## Natural Language Feedback Examples
 
@@ -257,47 +331,6 @@ For global feedback ("make everything darker"), revise all chapters.
 - "Add more romantic tension between the leads"
 - "The dialogue feels stilted, make it more natural"
 - "This chapter needs a stronger hook at the end"
-
-## Cascading Changes and the Self-Contained Model
-
-Because each stage only reads the immediately prior stage, iteration automatically propagates forward.
-
-### Before Making Changes
-
-If the requested change will force cascading edits to other files or sections:
-
-1. **Enumerate the cascade first:**
-   ```
-   This change will affect:
-   - 03-treatment.md: frontmatter (field X)
-   - 04-structure-plan.md: frontmatter would become stale (currently copies from treatment)
-   - 05-chapter-plans/: may need regeneration if structure changes significantly
-   ```
-
-2. **Ask user how to proceed:**
-   - Proceed with change + inform about downstream staleness?
-   - Proceed and cascade updates to downstream files?
-   - Abort and reconsider?
-
-### Cascade Rules by Stage
-
-**Premise changes:**
-- If downstream stages don't exist yet: no action needed — they'll read the updated premise
-- If treatment-approach already exists: its frontmatter may be stale. Inform user they may want to regenerate treatment-approach or update its frontmatter.
-
-**Treatment changes:**
-- Structure-plan reads only treatment, so it automatically sees changes when regenerated
-- If structure-plan already exists: inform user the ending/arc changed and they may want to regenerate structure-plan
-- Premise becomes "historical" — it's the seed, not the contract
-
-**Structure plan changes → May require:**
-- Chapter plan revisions for affected chapters
-- Prose revision for affected chapters
-
-**Chapter plan changes → May require:**
-- Prose regeneration for that chapter (if prose exists)
-
-After completing the iteration, inform the user if downstream stages may need updating.
 
 ## Version History
 

@@ -18,17 +18,15 @@ Analyze content against quality standards without making changes.
 
 ## Instructions
 
-### Step 0: Detect Current Project
+### Step 1: Detect Project (Main Context)
 
 **Check for active book first:**
 
 1. Read `books/active-book.yaml` and extract the `project:` value
 2. If `project:` is set (not `null`), use that project
-3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
-   - Look for `project.yaml` in the current directory or parent directories under `books/`
-   - If not found, ask the user which project to work on (or suggest `/select-book`)
+3. If `project:` is `null` or file doesn't exist, ask the user which project to work on (or suggest `/select-book`)
 
-### Step 1: Determine Target
+### Step 2: Determine Target (Main Context)
 
 If `target` not provided, ask the user:
 - What would you like to review?
@@ -40,7 +38,21 @@ If `target` not provided, ask the user:
   6. Prose (specific chapter or all)
   7. All - complete project review
 
-### Step 2: Read Context
+For chapter plan or prose, also ask which chapter(s) if applicable.
+
+### Step 3: Spawn Review Sub-Agent
+
+Use the Task tool to spawn a Review Sub-Agent with subagent_type `general-purpose`.
+
+**Sub-agent prompt template:**
+
+```
+You are the Review Sub-Agent for AgenticAuthor.
+
+## Task
+Review "{target}" for project "{project}".
+
+## Context Reading
 
 Read `books/{project}/project.yaml` to get the genre.
 
@@ -83,7 +95,7 @@ Read `books/{project}/project.yaml` to get the genre.
 - For flash/short/novelette: `books/{project}/04-structure-plan.md`, `books/{project}/05-story-plan.md` (if present), and `books/{project}/06-story.md`
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 
-### Step 3: Analyze Content
+## Analysis
 
 Generate a review report. **Do NOT make any changes to files.**
 
@@ -96,227 +108,9 @@ For `prose` reviews, include a short **Prose Lint** section with lightweight, me
 - **Scene break count** vs. planned scene count
 - **Repeated phrase counts** for phrases listed in `prose_guidance.avoid_overuse` (from the plan frontmatter)
 
-Recommended approach (Python, no external dependencies):
+Use Python to calculate these metrics (see detailed script below).
 
-**Bash:**
-```bash
-python - <<'PY'
-import re
-from pathlib import Path
-
-def read(path):
-    return Path(path).read_text(encoding="utf-8", errors="replace")
-
-def frontmatter_block(text):
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return ""
-    for i in range(1, len(lines)):
-        if lines[i].strip() == "---":
-            return "\n".join(lines[1:i])
-    return ""
-
-def extract_avoid_overuse(frontmatter):
-    phrases = []
-    lines = frontmatter.splitlines()
-    in_pg = False
-    in_ao = False
-    for line in lines:
-        if re.match(r"^prose_guidance:\s*$", line):
-            in_pg, in_ao = True, False
-            continue
-        if in_pg and re.match(r"^\S", line):  # back to top-level
-            in_pg, in_ao = False, False
-        if in_pg and re.match(r"^\s{2}avoid_overuse:\s*$", line):
-            in_ao = True
-            continue
-        if in_ao:
-            m = re.match(r"^\s{4}-\s*(.+?)\s*$", line)
-            if m:
-                raw = m.group(1).strip().strip('"').strip("'")
-                # Skip template placeholders
-                if raw and not raw.startswith("{") and not raw.endswith("}"):
-                    phrases.append(raw)
-                continue
-            # end avoid_overuse block if indentation changes
-            if re.match(r"^\s{0,2}\S", line):
-                in_ao = False
-    # de-dupe while preserving order
-    seen = set()
-    out = []
-    for p in phrases:
-        key = p.lower()
-        if key not in seen:
-            seen.add(key)
-            out.append(p)
-    return out
-
-def syllables(word):
-    w = re.sub(r"[^a-z]", "", word.lower())
-    if not w:
-        return 0
-    if len(w) <= 3:
-        return 1
-    if w.endswith("e"):
-        w = w[:-1]
-    groups = re.findall(r"[aeiouy]+", w)
-    return max(1, len(groups))
-
-def flesch_reading_ease(text):
-    plain = re.sub(r"^#.*$", "", text, flags=re.M)
-    words = re.findall(r"[A-Za-z0-9'']+", plain)
-    sents = [s for s in re.split(r"(?<=[.!?])\s+", plain.strip()) if re.search(r"[A-Za-z]", s)]
-    if not words or not sents:
-        return None
-    syll = sum(syllables(w) for w in words)
-    wps = len(words) / len(sents)
-    spw = syll / len(words)
-    return 206.835 - 1.015 * wps - 84.6 * spw
-
-def extract_planned_scene_count(text):
-    m = re.search(r"\*\*Number of scenes:\*\*\s*(\d+)", text)
-    return int(m.group(1)) if m else None
-
-project = "{project}"
-story_path = Path(f"books/{project}/06-story.md")
-chapters_dir = Path(f"books/{project}/06-chapters")
-if story_path.exists():
-    story = read(story_path)
-else:
-    chapter_paths = sorted(chapters_dir.glob("chapter-*.md"))
-    story = "\n".join(read(p) for p in chapter_paths) if chapter_paths else ""
-plan_path = Path(f"books/{project}/05-story-plan.md")
-plan_text = read(plan_path) if plan_path.exists() else read(f"books/{project}/04-structure-plan.md")
-
-fm = frontmatter_block(plan_text)
-avoid = extract_avoid_overuse(fm)
-
-flesch = flesch_reading_ease(story)
-lines = story.splitlines()
-quote_lines = sum(1 for l in lines if '"' in l)
-scene_breaks = sum(1 for l in lines if l.strip() == "* * *")
-planned_scenes = extract_planned_scene_count(plan_text)
-
-print("flesch_est", None if flesch is None else round(flesch, 1))
-print("quote_line_ratio", f"{quote_lines}/{len(lines)}")
-print("scene_breaks", scene_breaks)
-print("planned_scenes", planned_scenes)
-for p in avoid:
-    print("phrase", p, story.lower().count(p.lower()))
-PY
-```
-
-**PowerShell:**
-```powershell
-@'
-import re
-from pathlib import Path
-
-def read(path):
-    return Path(path).read_text(encoding="utf-8", errors="replace")
-
-def frontmatter_block(text):
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return ""
-    for i in range(1, len(lines)):
-        if lines[i].strip() == "---":
-            return "\n".join(lines[1:i])
-    return ""
-
-def extract_avoid_overuse(frontmatter):
-    phrases = []
-    lines = frontmatter.splitlines()
-    in_pg = False
-    in_ao = False
-    for line in lines:
-        if re.match(r"^prose_guidance:\s*$", line):
-            in_pg, in_ao = True, False
-            continue
-        if in_pg and re.match(r"^\S", line):  # back to top-level
-            in_pg, in_ao = False, False
-        if in_pg and re.match(r"^\s{2}avoid_overuse:\s*$", line):
-            in_ao = True
-            continue
-        if in_ao:
-            m = re.match(r"^\s{4}-\s*(.+?)\s*$", line)
-            if m:
-                raw = m.group(1).strip().strip('"').strip("'")
-                # Skip template placeholders
-                if raw and not raw.startswith("{") and not raw.endswith("}"):
-                    phrases.append(raw)
-                continue
-            # end avoid_overuse block if indentation changes
-            if re.match(r"^\s{0,2}\S", line):
-                in_ao = False
-    # de-dupe while preserving order
-    seen = set()
-    out = []
-    for p in phrases:
-        key = p.lower()
-        if key not in seen:
-            seen.add(key)
-            out.append(p)
-    return out
-
-def syllables(word):
-    w = re.sub(r"[^a-z]", "", word.lower())
-    if not w:
-        return 0
-    if len(w) <= 3:
-        return 1
-    if w.endswith("e"):
-        w = w[:-1]
-    groups = re.findall(r"[aeiouy]+", w)
-    return max(1, len(groups))
-
-def flesch_reading_ease(text):
-    plain = re.sub(r"^#.*$", "", text, flags=re.M)
-    words = re.findall(r"[A-Za-z0-9'']+", plain)
-    sents = [s for s in re.split(r"(?<=[.!?])\s+", plain.strip()) if re.search(r"[A-Za-z]", s)]
-    if not words or not sents:
-        return None
-    syll = sum(syllables(w) for w in words)
-    wps = len(words) / len(sents)
-    spw = syll / len(words)
-    return 206.835 - 1.015 * wps - 84.6 * spw
-
-def extract_planned_scene_count(text):
-    m = re.search(r"\*\*Number of scenes:\*\*\s*(\d+)", text)
-    return int(m.group(1)) if m else None
-
-project = "{project}"
-story_path = Path(f"books/{project}/06-story.md")
-chapters_dir = Path(f"books/{project}/06-chapters")
-if story_path.exists():
-    story = read(story_path)
-else:
-    chapter_paths = sorted(chapters_dir.glob("chapter-*.md"))
-    story = "\n".join(read(p) for p in chapter_paths) if chapter_paths else ""
-plan_path = Path(f"books/{project}/05-story-plan.md")
-plan_text = read(plan_path) if plan_path.exists() else read(f"books/{project}/04-structure-plan.md")
-
-fm = frontmatter_block(plan_text)
-avoid = extract_avoid_overuse(fm)
-
-flesch = flesch_reading_ease(story)
-lines = story.splitlines()
-quote_lines = sum(1 for l in lines if '"' in l)
-scene_breaks = sum(1 for l in lines if l.strip() == "* * *")
-planned_scenes = extract_planned_scene_count(plan_text)
-
-print("flesch_est", None if flesch is None else round(flesch, 1))
-print("quote_line_ratio", f"{quote_lines}/{len(lines)}")
-print("scene_breaks", scene_breaks)
-print("planned_scenes", planned_scenes)
-for p in avoid:
-    print("phrase", p, story.lower().count(p.lower()))
-'@ | python -
-```
-
----
-
-## Review Reports by Target
+## Review Report Templates
 
 ### Premise Review
 
@@ -412,12 +206,12 @@ for p in avoid:
 
 ## Subtext & Friction
 - **Ally disagreement (required):** {Is there at least one meaningful disagreement that changes a choice/approach?}
-- **Not “thesis-y”:** {Does the plan force dramatized moments instead of manifesto paragraphs?}
+- **Not "thesis-y":** {Does the plan force dramatized moments instead of manifesto paragraphs?}
 
 ## Prose Guidance Quality
 - **avoid_overuse:** {Actionable phrase/tic list (prefer plain phrases)?}
 - **pacing_notes:** {Specific and stage-appropriate?}
-- **preserve:** {Clear “do not lose” items for the prose agent?}
+- **preserve:** {Clear "do not lose" items for the prose agent?}
 
 ## Suggestions
 1. {Specific improvement suggestion}
@@ -427,8 +221,6 @@ for p in avoid:
 ```
 
 ### Chapter Plan Review (Novella/Novel/Epic Only)
-
-For novella/novel/epic, review specific chapter plans. For flash/short/novelette, use "Story Plan Review" (`05-story-plan.md`) as the micro generation plan (structure-plan is macro).
 
 ```markdown
 # Chapter Plan Review: {project} - Chapter {N}
@@ -492,7 +284,7 @@ For novella/novel/epic, review specific chapter plans. For flash/short/novelette
 ## Prose Lint (metrics)
 - **Estimated Flesch Reading Ease:** {value} (compare to style card target)
 - **Dialogue ratio proxy:** {quote lines}/{total lines} ({interpretation})
-- **Scene breaks:** {actual scene breaks} (planned scenes: {planned count}; expected breaks ≈ planned-1)
+- **Scene breaks:** {actual scene breaks} (planned scenes: {planned count}; expected breaks = planned-1)
 - **Repeated phrases (from `prose_guidance.avoid_overuse`):**
   - {phrase}: {count}
 
@@ -512,6 +304,34 @@ For novella/novel/epic, review specific chapter plans. For flash/short/novelette
 - **Story plan alignment (flash/short/novelette):** {Does prose follow `05-story-plan.md` micro beats and constraints?}
 - **Chapter plan alignment (novella/novel/epic):** {Does prose follow the chapter plan's scene breakdown?}
 - **Consistency notes:** {Any contradictions or continuity gaps?}
+
+## Plan vs Prose Drift
+
+### {Chapter N or Story}
+
+**Planned scenes:**
+1. {Scene from plan}
+2. {Scene from plan}
+
+**Actual scenes in prose:**
+1. {What actually appears}
+2. {What actually appears}
+
+**Drift analysis:**
+- [ ] Scene count matches plan
+- [ ] Scene purposes achieved
+- [ ] Character states match plan expectations
+- [ ] Key beats present
+
+**Deviations found:**
+| Planned | Actual | Assessment |
+|---------|--------|------------|
+| {planned element} | {what happened} | Intentional improvement / Needs plan update / Needs prose fix |
+
+**Recommendation:**
+- Update plan to match prose (if prose is better)
+- Regenerate prose (if plan should be authoritative)
+- No action (deviation is minor/intentional)
 
 ## Suggestions
 1. {Specific improvement idea with location}
@@ -570,44 +390,6 @@ When reviewing `all`, generate a combined report:
 
 If frontmatter is invalid or inconsistent, flag it as a priority fix — downstream stages depend on accurate frontmatter.
 
-### Drift Detector
-
-**Include for prose reviews.** Check where prose deviates from its plan:
-
-```markdown
-## Plan vs Prose Drift
-
-### Chapter {N}
-
-**Planned scenes:**
-1. {Scene from plan}
-2. {Scene from plan}
-
-**Actual scenes in prose:**
-1. {What actually appears}
-2. {What actually appears}
-
-**Drift analysis:**
-- [ ] Scene count matches plan
-- [ ] Scene purposes achieved
-- [ ] Character states match plan expectations
-- [ ] Key beats present
-
-**Deviations found:**
-| Planned | Actual | Assessment |
-|---------|--------|------------|
-| {planned element} | {what happened} | Intentional improvement / Needs plan update / Needs prose fix |
-
-**Recommendation:**
-- Update plan to match prose (if prose is better)
-- Regenerate prose (if plan should be authoritative)
-- No action (deviation is minor/intentional)
-```
-
-Drift is not always bad — sometimes prose improves on the plan. The review identifies drift and recommends whether to update the plan or the prose.
-
----
-
 ## Output Guidelines
 
 - **Be specific:** Reference exact locations (chapter, paragraph, line when possible)
@@ -617,9 +399,19 @@ Drift is not always bad — sometimes prose improves on the plan. The review ide
 - **Respect intentional choices:** If something deviates from guidelines but works, acknowledge it as a valid stylistic choice rather than an error
 - **Avoid mechanical judgments:** Don't reduce prose quality to ratios and word counts—assess how it *reads*
 
-## After Review
+## Return Format
 
-Inform the user:
+Return the complete review report as your response. The main agent will present it to the user for discussion.
+```
+
+### Step 4: Present Findings (Main Context)
+
+When the sub-agent returns the review report:
+
+1. **Display the full report** to the user
+2. **Offer to discuss** any findings
+3. **Suggest next steps:**
+
 ```
 Review complete. To address any suggestions:
   /iterate {target} "{specific feedback}"
@@ -628,4 +420,129 @@ To see version history:
   git log --oneline (in books/ directory)
 ```
 
-**Do NOT automatically apply changes.** The review is advisory only.
+**Do NOT automatically apply changes.** The review is advisory only. The user decides what to iterate on.
+
+## Why Hybrid?
+
+Review requires reading multiple stages (premise, treatment, plan, prose) to check alignment — this pollutes main context with content that's only needed for analysis.
+
+**Sub-agent handles:**
+- Reading all the files (heavy context load)
+- Running prose lint metrics
+- Generating the structured report
+
+**Main context handles:**
+- Asking which target to review
+- Presenting findings to user
+- Discussing results and suggesting `/iterate` commands
+
+This keeps the conversation focused on actionable discussion while the analysis happens in isolation.
+
+---
+
+## Prose Lint Script (for sub-agent reference)
+
+**PowerShell:**
+```powershell
+@'
+import re
+from pathlib import Path
+
+def read(path):
+    return Path(path).read_text(encoding="utf-8", errors="replace")
+
+def frontmatter_block(text):
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return ""
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[1:i])
+    return ""
+
+def extract_avoid_overuse(frontmatter):
+    phrases = []
+    lines = frontmatter.splitlines()
+    in_pg = False
+    in_ao = False
+    for line in lines:
+        if re.match(r"^prose_guidance:\s*$", line):
+            in_pg, in_ao = True, False
+            continue
+        if in_pg and re.match(r"^\S", line):
+            in_pg, in_ao = False, False
+        if in_pg and re.match(r"^\s{2}avoid_overuse:\s*$", line):
+            in_ao = True
+            continue
+        if in_ao:
+            m = re.match(r"^\s{4}-\s*(.+?)\s*$", line)
+            if m:
+                raw = m.group(1).strip().strip('"').strip("'")
+                if raw and not raw.startswith("{") and not raw.endswith("}"):
+                    phrases.append(raw)
+                continue
+            if re.match(r"^\s{0,2}\S", line):
+                in_ao = False
+    seen = set()
+    out = []
+    for p in phrases:
+        key = p.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out
+
+def syllables(word):
+    w = re.sub(r"[^a-z]", "", word.lower())
+    if not w:
+        return 0
+    if len(w) <= 3:
+        return 1
+    if w.endswith("e"):
+        w = w[:-1]
+    groups = re.findall(r"[aeiouy]+", w)
+    return max(1, len(groups))
+
+def flesch_reading_ease(text):
+    plain = re.sub(r"^#.*$", "", text, flags=re.M)
+    words = re.findall(r"[A-Za-z0-9'']+", plain)
+    sents = [s for s in re.split(r"(?<=[.!?])\s+", plain.strip()) if re.search(r"[A-Za-z]", s)]
+    if not words or not sents:
+        return None
+    syll = sum(syllables(w) for w in words)
+    wps = len(words) / len(sents)
+    spw = syll / len(words)
+    return 206.835 - 1.015 * wps - 84.6 * spw
+
+def extract_planned_scene_count(text):
+    m = re.search(r"\*\*Number of scenes:\*\*\s*(\d+)", text)
+    return int(m.group(1)) if m else None
+
+project = "{project}"
+story_path = Path(f"books/{project}/06-story.md")
+chapters_dir = Path(f"books/{project}/06-chapters")
+if story_path.exists():
+    story = read(story_path)
+else:
+    chapter_paths = sorted(chapters_dir.glob("chapter-*.md"))
+    story = "\n".join(read(p) for p in chapter_paths) if chapter_paths else ""
+plan_path = Path(f"books/{project}/05-story-plan.md")
+plan_text = read(plan_path) if plan_path.exists() else read(f"books/{project}/04-structure-plan.md")
+
+fm = frontmatter_block(plan_text)
+avoid = extract_avoid_overuse(fm)
+
+flesch = flesch_reading_ease(story)
+lines = story.splitlines()
+quote_lines = sum(1 for l in lines if '"' in l)
+scene_breaks = sum(1 for l in lines if l.strip() == "* * *")
+planned_scenes = extract_planned_scene_count(plan_text)
+
+print("flesch_est", None if flesch is None else round(flesch, 1))
+print("quote_line_ratio", f"{quote_lines}/{len(lines)}")
+print("scene_breaks", scene_breaks)
+print("planned_scenes", planned_scenes)
+for p in avoid:
+    print("phrase", p, story.lower().count(p.lower()))
+'@ | python -
+```
