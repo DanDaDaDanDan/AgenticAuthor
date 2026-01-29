@@ -146,7 +146,7 @@ Generate the revised content:
 1. **Apply the confirmed changes** - Make the specific changes discussed
 2. **Preserve everything else** - Don't change elements not mentioned in feedback
 3. **Maintain consistency** - Ensure changes align with the current stage's context
-4. **Follow frontmatter** - For prose, use the style from chapter-plan's frontmatter and Style Notes (originally from premise → treatment → structure-plan)
+4. **Follow frontmatter** - For prose, use the style from the plan's frontmatter and Style Notes (chapter-plan for novella/novel/epic, structure-plan for flash/short/novelette)
 
 **Prose iteration principles:**
 - Preserve the author's distinctive voice and style
@@ -220,7 +220,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Plot thread continuity
 - Established world details
 
-Use the chapter-plan's Style Notes as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
+Use the plan's Style Notes as guidance, not rigid rules (chapter-plan for novella/novel/epic, structure-plan for flash/short/novelette). If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building
