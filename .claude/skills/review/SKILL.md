@@ -64,7 +64,7 @@ Read `books/{project}/project.yaml` to get the genre.
 - `books/{project}/03-treatment.md`
 - `books/{project}/04-structure-plan.md`
 - Target chapter plan from `books/{project}/05-chapter-plans/` or `books/{project}/05-story-plan.md`
-- `books/{project}/06-chapters/summaries.md` (if exists)
+- All previous chapter prose in `books/{project}/06-chapters/` (for continuity check)
 
 **For prose review:**
 - All of the above (premise includes prose style selections)

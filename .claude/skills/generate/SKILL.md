@@ -645,15 +645,15 @@ Generate the actual story prose.
 
 ### Context Rules
 
-**Context loading:** Each sub-agent reads its immediate predecessor **plus** the continuity anchor (`06-chapters/summaries.md`). For chaptered formats, load all previous chapters for voice and narrative continuity.
+**Context loading:** Each sub-agent reads its immediate predecessor. For chaptered formats, load all previous chapter prose for continuity.
 
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
 | structure-plan | 03-treatment.md only | 01-premise.md, 02-treatment-approach.md |
 | 05-story-plan (flash/short/novelette) | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
-| chapter-plan (novella/novel/epic) | 04-structure-plan.md + 06-chapters/summaries.md + previous chapter plan (if exists) | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
+| chapter-plan (novella/novel/epic) | 04-structure-plan.md + all previous chapter prose + previous chapter plan (if exists) | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
 | prose (flash/short/novelette) | 05-story-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
-| prose (novella/novel/epic) | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
+| prose (novella/novel/epic) | chapter-plan + all previous chapters + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
 
 ### Clarifying Questions
 
@@ -813,17 +813,17 @@ Generate `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` for Chapter {N}
 
 **Read only these files:**
 1. `books/{project}/04-structure-plan.md` — Full structure plan
-2. `books/{project}/06-chapters/summaries.md` — If it exists (canon + open threads)
+2. All previous chapter prose in `books/{project}/06-chapters/` — Source of truth for canon facts, character states, and continuity
 3. `books/{project}/05-chapter-plans/chapter-{PP}-plan.md` — Previous chapter plan (if it exists)
 
-**Do NOT read:** 01-premise.md, 03-treatment.md, or prose files.
+**Do NOT read:** 01-premise.md, 03-treatment.md.
 
 **Output:** `books/{project}/05-chapter-plans/chapter-{NN}-plan.md`
 
 **Format:** Use the Chapter Plan template from this skill.
 
 **Requirements:**
-- Use `06-chapters/summaries.md` as the source of canon for names/facts/open threads (if it exists).
+- Use previous chapter prose as the source of truth for names, facts, character states, and open threads.
 - Include per-scene word targets and brief development notes (what fills the space: dialogue/interiority/action/description).
 - Include a short **Downstream Contract** section stating what the prose must preserve from this plan.
 
@@ -850,17 +850,14 @@ Generate `books/{project}/06-chapters/chapter-{NN}.md` (Chapter {N}) for `{proje
 
 **Read only these files:**
 1. `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
-2. `books/{project}/06-chapters/summaries.md` — Canon Facts + Open Threads (if it exists)
-3. All previous chapter prose in `books/{project}/06-chapters/`
-4. `misc/prose-style-{prose_style_key}.md` — Style card (read `prose_style_key` from frontmatter)
+2. All previous chapter prose in `books/{project}/06-chapters/` — Source of truth for continuity
+3. `misc/prose-style-{prose_style_key}.md` — Style card (read `prose_style_key` from frontmatter)
 
 **Do NOT read:** 01-premise.md, 03-treatment.md, 04-structure-plan.md, or other chapter-plans.
 
-**Output files:**
-1. `books/{project}/06-chapters/chapter-{NN}.md` — Chapter prose
-2. Update `books/{project}/06-chapters/summaries.md` — Create if missing. **IMPORTANT:** Update BOTH the master Canon Facts section at the top AND add this chapter's summary at the bottom. Do not just append per-chapter data without merging into the master sections.
+**Output:** `books/{project}/06-chapters/chapter-{NN}.md` — Chapter prose
 
-**Guidance:** Follow the chapter plan as the authoritative contract. Use `06-chapters/summaries.md` Canon Facts as the source of truth for names/facts. Keep prose publication-ready.
+**Guidance:** Follow the chapter plan as the authoritative contract. Use previous chapter prose as the source of truth for names, facts, and continuity. Keep prose publication-ready.
 
 **Chapter prose format:**
 
@@ -904,7 +901,7 @@ End on a hook, revelation, or emotional beat that pulls readers forward.}
 
 **After generating:**
 Run: mkdir -p books/{project}/06-chapters
-Then: cd books && git add {project}/06-chapters/chapter-{NN}.md {project}/06-chapters/summaries.md && git commit -m "Add: Generate chapter {N} prose and summary for {project}"
+Then: cd books && git add {project}/06-chapters/chapter-{NN}.md && git commit -m "Add: Generate chapter {N} prose for {project}"
 
 Generate publication-ready prose. Do not ask for approval.
 ```
@@ -1224,7 +1221,7 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 This plan is authoritative for the prose of Chapter {N}.
 
 - **Prose must preserve:** POV, scene order, key beats/reveals, and the planned hook/turn (unless the user explicitly requests changes)
-- **Canon source:** use `06-chapters/summaries.md` as the continuity anchor for names/facts/open threads
+- **Canon source:** previous chapter prose is the source of truth for names, facts, and continuity
 
 ## Continuity Check
 
@@ -1345,7 +1342,6 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 This plan is authoritative for the prose in `06-story.md`.
 
 - **Prose must preserve:** scene order, key beats/turns, and style notes (unless the user explicitly requests changes)
-- **Note:** Single-file formats do not use summaries.md — continuity is maintained within this plan
 
 ## Character States
 
@@ -1391,120 +1387,18 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 
 ---
 
-## Summaries Schema (Chaptered Formats Only)
-
-### 06-chapters/summaries.md
-
-For novella/novel/epic only. Append after each chapter is generated. This provides continuity context for subsequent chapters.
-
-**Note:** Flash/short/novelette formats do not generate summaries.md — the entire story is generated in one pass.
-
-```markdown
----
-project: {project-name}
-stage: summaries
-# Copy ALL taxonomy keys and display names from structure-plan frontmatter
-# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
-genre_key: {from structure-plan}
-# Multi-select: subgenre (primary/secondary object)
-subgenre_keys: {from structure-plan - copy entire object}
-subgenres: {from structure-plan - copy entire object}
-length_key: {from structure-plan: novella|novel|epic}
-length_target_words: {number}
-series_structure_key: {from structure-plan}
-series_structure: "{from structure-plan}"
-target_audience_key: {from structure-plan}
-target_audience: "{from structure-plan}"
-content_rating_key: {from structure-plan}
-content_rating: "{from structure-plan}"
-prose_style_key: {from structure-plan}
-prose_style: "{from structure-plan}"
-dialogue_density_key: {from structure-plan}
-dialogue_density: "{from structure-plan}"
-pov_key: {from structure-plan}
-pov: "{from structure-plan}"
-tense: {from structure-plan}
-tone: "{from structure-plan}"
-mood: "{from structure-plan}"
-# Multi-select: copy all genre-specific arrays/objects from structure-plan
-# Examples (actual fields depend on genre):
-magic_system_keys: {from structure-plan - copy array if present}
-magic_systems: {from structure-plan - copy array if present}
-fantasy_race_keys: {from structure-plan - copy array if present}
-fantasy_races: {from structure-plan - copy array if present}
-theme_keys: {from structure-plan - copy array if present}
-themes: {from structure-plan - copy array if present}
-quest_type_key: {from structure-plan - copy if present}
-quest_type: "{from structure-plan - copy if present}"
-world_type_key: {from structure-plan - copy if present}
-world_type: "{from structure-plan - copy if present}"
-worldbuilding_depth_key: {from structure-plan - copy if present}
-worldbuilding_depth: "{from structure-plan - copy if present}"
-tags:
-  - {from structure-plan}
-custom_style_notes: "{from structure-plan}"
----
-
-Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
-
-# Canon Facts (Continuity Anchor)
-
-Update this section after each chapter. Keep it concise, concrete, and canonical (spellings, relationships, rules).
-
-- **Characters:** {names, roles, relationships, signature details}
-- **Locations:** {place names, geography, key features}
-- **World/System Rules:** {rules that must remain consistent}
-- **Timeline:** {relative/absolute time markers}
-- **Objects/Terms:** {important items, organizations, jargon}
-
-# Open Threads Ledger
-
-Update this table after each chapter. This is the main "what must be paid off" index downstream agents should rely on.
-
-| Thread | Introduced | Status | Notes |
-|--------|------------|--------|-------|
-| {Question/setup} | Ch {X} | open/advancing/resolved | {optional: payoff location if resolved} |
-
-# Chapter Summaries
-
-### Chapter 1: {Title}
-
-**Summary:** {3-5 sentences covering key plot events}
-
-**Character States at End:**
-- **{Protagonist}:** {emotional/mental state}
-- **{Other key characters}:** {state if relevant}
-
-**Threads Updated (this chapter):**
-- {Thread introduced/advanced/resolved} — Status: {open/advancing/resolved}
-
-**Canon Facts Added (this chapter):**
-- {Names, locations, rules, objects, relationships established (add to Canon Facts above)}
-
-**Promises to Reader:**
-- {Setups that need payoff — foreshadowing, questions raised, tensions unresolved}
-
----
-
-### Chapter 2: {Title}
-
-{Same format — append after each chapter}
-```
-
----
-
 ## Context Management Summary
 
-**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, use `06-chapters/summaries.md` as the continuity anchor and load all previous chapters.
+**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, load all previous chapter prose for continuity.
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
 | 02-treatment-approach | 01-premise + taxonomies | — |
 | 03-treatment | 02-treatment-approach + 01-premise | — |
 | 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
-| chapter-plan (novella/novel/epic) | 04-structure-plan + 06-chapters/summaries.md + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
+| chapter-plan (novella/novel/epic) | 04-structure-plan + all previous chapter prose + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
 | 05-story-plan (flash/short/novelette) | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
-| prose (novella/novel/epic) | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
+| prose (novella/novel/epic) | chapter-plan + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 | prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
 **Path Notes:**

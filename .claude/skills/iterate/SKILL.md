@@ -120,9 +120,9 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For chapter plan iteration (novella/novel/epic):**
 - `books/{project}/04-structure-plan.md` - For frontmatter and character reference
-- `books/{project}/06-chapters/summaries.md` (if exists) - For continuity
+- All previous chapter prose in `books/{project}/06-chapters/` - For continuity
 - The specific chapter plan being revised
-- `books/{project}/05-chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan (local continuity only)
+- `books/{project}/05-chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan
 - Do NOT read 01-premise.md or 03-treatment.md
 
 **For story plan iteration (flash/short/novelette):**
@@ -132,13 +132,12 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For prose iteration (novella/novel/epic):**
 - `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
-- `books/{project}/06-chapters/summaries.md` (if exists) - Canon Facts + Open Threads continuity anchor
 - `books/{project}/06-chapters/chapter-{NN}.md` - The chapter being revised
-- All previous chapters in `books/{project}/06-chapters/` for voice continuity
+- All previous chapters in `books/{project}/06-chapters/` for continuity
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 - Do NOT read 01-premise.md, 03-treatment.md, or 04-structure-plan.md
 
-If revising multiple chapters, do it sequentially (one chapter at a time). Update `06-chapters/summaries.md` (both Canon Facts master section and per-chapter data) as you go.
+If revising multiple chapters, do it sequentially (one chapter at a time).
 
 **For prose iteration (flash/short/novelette):**
 - `books/{project}/05-story-plan.md` - The story plan
@@ -184,8 +183,6 @@ Write the revised file(s) to `books/{project}/` and commit:
 cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
 ```
 
-**For prose iteration:** Also update and commit `06-chapters/summaries.md` (Chapter Summaries + Canon Facts + Open Threads Ledger) to reflect any changes you made.
-
 ## Iteration Guidelines
 
 ### Minimal Edits Principle
@@ -229,13 +226,6 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Established world details
 
 Use the chapter-plan's Style Notes as guidance, not rigid rules. If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
-
-**After prose iteration, update `06-chapters/summaries.md`** to reflect any changes to:
-- Chapter/scene summaries (if plot events changed)
-- Open threads (if threads were resolved, added, or modified)
-- Facts/continuity details (if world details or character states changed)
-
-This keeps the continuity anchor in sync with actual prose content.
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building

@@ -44,10 +44,10 @@ Each book project in `books/{project}/` contains:
 | `04-structure-plan.md` | Scene/chapter breakdown |
 | `05-chapter-plans/` | Per-chapter generation plans (novella/novel/epic) |
 | `05-story-plan.md` | Generation plan (flash/short/novelette) |
-| `06-chapters/` | Prose chapters + summaries.md (novella/novel/epic) |
-| `06-story.md` | Complete prose (flash/short/novelette — no summaries) |
+| `06-chapters/` | Prose chapters (novella/novel/epic) |
+| `06-story.md` | Complete prose (flash/short/novelette) |
 
-Numbered prefixes show the order of generation. Summaries live inside `06-chapters/` since they only exist for chaptered formats.
+Numbered prefixes show the order of generation.
 
 ## Skills
 
@@ -77,9 +77,9 @@ Three user commands with implicit planning steps:
 
 Bracketed steps `[...]` are generated automatically. Generation runs autonomously to completion; use `/iterate` afterward to refine.
 
-**For novella/novel/epic:** Prose generates `05-chapter-plans/` and `06-chapters/` (including `summaries.md`).
+**For novella/novel/epic:** Prose generates `05-chapter-plans/` and `06-chapters/`.
 
-**For flash/short/novelette:** Prose generates `05-story-plan.md` and `06-story.md` (no summaries).
+**For flash/short/novelette:** Prose generates `05-story-plan.md` and `06-story.md`.
 
 ## Self-Contained Stages
 
@@ -90,9 +90,9 @@ Each stage reads only its immediate predecessor. This prevents conflicts when it
 | 02-treatment-approach | 01-premise + taxonomies |
 | 03-treatment | 02-treatment-approach + 01-premise |
 | 04-structure-plan | 03-treatment only |
-| chapter-plan (novella/novel/epic) | 04-structure-plan + 06-chapters/summaries.md + previous chapter plan (if exists) |
+| chapter-plan (novella/novel/epic) | 04-structure-plan + all previous chapter prose + previous chapter plan (if exists) |
 | 05-story-plan (flash/short/novelette) | 04-structure-plan only |
-| prose (novella/novel/epic) | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key} |
+| prose (novella/novel/epic) | chapter-plan + all previous chapters + prose-style-{prose_style_key} |
 | prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} |
 
 **Why this matters:** If you iterate on treatment and change the ending, structure-plan sees the update automatically because it only reads treatment. Premise becomes "historical" (the seed), not the contract.

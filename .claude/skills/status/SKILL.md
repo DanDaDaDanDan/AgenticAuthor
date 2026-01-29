@@ -46,8 +46,7 @@ books/{project}/
 │   └── ...
 ├── 06-chapters/            (novella/novel/epic only)
 │   ├── chapter-01.md       [x]/[ ]
-│   ├── ...
-│   └── summaries.md        [x]/[ ] (continuity anchor)
+│   └── ...
 │
 │   # For flash/short/novelette:
 ├── 05-story-plan.md        [x]/[ ] (flash/short/novelette only)

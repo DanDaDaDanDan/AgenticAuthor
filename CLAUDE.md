@@ -21,7 +21,6 @@ Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit 
 | `/review` | Analyze content against quality standards |
 | `/status` | Show project progress |
 | `/export` | Export book to single file |
-| `/refresh-summaries` | Rebuild summaries from current prose |
 
 ## Active Book
 
@@ -56,13 +55,12 @@ AgenticAuthor/
         │   # For novella/novel/epic (chaptered):
         ├── 05-chapter-plans/      # Generation plans
         │   └── chapter-{NN}-plan.md
-        ├── 06-chapters/           # Prose + continuity
-        │   ├── chapter-{NN}.md
-        │   └── summaries.md       # Continuity anchor (chaptered only)
+        ├── 06-chapters/           # Prose
+        │   └── chapter-{NN}.md
         │
         │   # For flash/short/novelette (single-file):
         ├── 05-story-plan.md       # Generation plan
-        └── 06-story.md            # Complete story (no summaries)
+        └── 06-story.md            # Complete story
 ```
 
 ## Core Principles
@@ -78,10 +76,10 @@ Each stage's output contains everything the next stage needs. Read only one step
 | 02-treatment-approach | 01-premise + taxonomies | — |
 | 03-treatment | 02-treatment-approach + 01-premise | — |
 | 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
-| chapter-plan | 04-structure-plan + 06-chapters/summaries.md + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
-| prose | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
+| chapter-plan | 04-structure-plan + all previous chapter prose + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
+| prose | chapter-plan + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
-**For flash/short/novelette (single-file formats):** Same principle — 05-story-plan reads 04-structure-plan, prose reads 05-story-plan only. No summaries for single-file formats.
+**For flash/short/novelette (single-file formats):** Same principle — 05-story-plan reads 04-structure-plan, prose reads 05-story-plan only.
 
 **Why:** This prevents conflicts when iterating. If you change treatment, structure-plan sees the update automatically. Premise becomes "historical" (the seed), not the contract.
 

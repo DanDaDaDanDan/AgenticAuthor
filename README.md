@@ -113,13 +113,12 @@ books/
     │   # For novella/novel/epic:
     ├── 05-chapter-plans/        # Generation plans
     │   └── chapter-{NN}-plan.md
-    ├── 06-chapters/             # Prose + continuity
-    │   ├── chapter-{NN}.md
-    │   └── summaries.md         # Continuity anchor
+    ├── 06-chapters/             # Prose chapters
+    │   └── chapter-{NN}.md
     │
     │   # For flash/short/novelette:
     ├── 05-story-plan.md         # Generation plan
-    └── 06-story.md              # Complete story (no summaries)
+    └── 06-story.md              # Complete story
 ```
 
 ## Taxonomies
