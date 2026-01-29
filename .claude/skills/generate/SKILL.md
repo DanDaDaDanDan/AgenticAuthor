@@ -118,7 +118,7 @@ Generate the core concept and story foundation.
      ```
    - `select_primary`: Same as `select_one` (just a primary, no secondary)
 
-**Output file:** `01-01-premise.md`
+**Output file:** `01-premise.md`
 
 **Generation instructions:**
 
@@ -346,18 +346,18 @@ After reading the premise, ask the user about key story decisions:
 **Sub-agent prompt template:**
 
 ```
-Write `books/{project}/02-02-treatment-approach.md` for `{project}`.
+Write `books/{project}/02-treatment-approach.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 **User preferences:** Ending={...}; Structure={... if applicable}; Specific elements={... if any}
 
 **Read only:**
-1. `books/{project}/01-01-premise.md`
+1. `books/{project}/01-premise.md`
 2. `taxonomies/{genre}-taxonomy.json`
 
 Premise is the authoritative source. Do NOT read any other files.
 
-**Output:** `books/{project}/02-02-treatment-approach.md` (use the Treatment Approach template from this skill)
+**Output:** `books/{project}/02-treatment-approach.md` (use the Treatment Approach template from this skill)
 
 **Goal:** Analyze the premise and decide the best treatment structure + risks (conflict, arc, antagonist deployment, pacing challenges).
 
@@ -375,17 +375,17 @@ Generate complete content. Do not ask for approval.
 **Sub-agent prompt template:**
 
 ```
-Write `books/{project}/03-03-treatment.md` for `{project}`.
+Write `books/{project}/03-treatment.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 
 **Read only:**
-1. `books/{project}/02-02-treatment-approach.md` — Planning document with structure decisions
-2. `books/{project}/01-01-premise.md` — Original premise for frontmatter values
+1. `books/{project}/02-treatment-approach.md` — Planning document with structure decisions
+2. `books/{project}/01-premise.md` — Original premise for frontmatter values
 
 Do NOT read any other files.
 
-**Output:** `books/{project}/03-03-treatment.md` (use the appropriate Treatment template from this skill)
+**Output:** `books/{project}/03-treatment.md` (use the appropriate Treatment template from this skill)
 
 **Requirements:**
 - Follow the decisions in `02-treatment-approach.md` (structure type, act logic, risks).
@@ -634,7 +634,7 @@ Generate the actual story prose.
 
 ### Orchestration Flow
 
-1. **Check what exists** — structure-plan? short-story-plan/chapter-plans? prose?
+1. **Check what exists** — 04-structure-plan? 05-story-plan/05-chapter-plans? prose?
 2. **Ask clarifying questions** UPFRONT for any missing planning documents
 3. **Spawn sub-agents** sequentially for each missing piece:
    - Structure-plan sub-agent (if missing)
@@ -650,7 +650,7 @@ Generate the actual story prose.
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
 | structure-plan | 03-treatment.md only | 01-premise.md, 02-treatment-approach.md |
-| short-story-plan | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
+| 05-story-plan (flash/short/novelette) | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
 | chapter-plan (novella/novel/epic) | 04-structure-plan.md + 06-chapters/summaries.md + previous chapter plan (if exists) | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
 | prose (flash/short/novelette) | 05-story-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
 | prose (novella/novel/epic) | chapter-plan + 06-chapters/summaries.md + all previous chapters + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
@@ -720,7 +720,7 @@ Write `books/{project}/04-structure-plan.md` for `{project}`.
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 **User preferences:** Target length={...}; Chapter/scene structure={...}
 
-**Read only:** `books/{project}/03-03-treatment.md` (treatment is authoritative)
+**Read only:** `books/{project}/03-treatment.md` (treatment is authoritative)
 
 Do NOT read 01-premise.md or any other files.
 
@@ -768,7 +768,7 @@ Generate complete content. Do not ask for approval.
 
 ### Sub-Agent: Prose Generation (Flash/Short/Novelette)
 
-**Spawn when:** `06-story.md` doesn't exist (and short-story-plan exists)
+**Spawn when:** `06-story.md` doesn't exist (and 05-story-plan.md exists)
 
 **Sub-agent prompt template:**
 

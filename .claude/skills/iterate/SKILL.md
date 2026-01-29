@@ -104,35 +104,35 @@ This ensures precision and allows the user to catch unintended changes before th
 Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For premise iteration:**
-- `books/{project}/01-01-premise.md` - Current premise
+- `books/{project}/01-premise.md` - Current premise
 - `taxonomies/base-taxonomy.json` - Universal properties
 - `taxonomies/{genre}-taxonomy.json` - Genre-specific options
 - `taxonomies/style-taxonomy.json` - Style options (if changing style)
 
 **For treatment iteration:**
-- `books/{project}/03-03-treatment.md` - Current treatment (already self-contained with frontmatter)
+- `books/{project}/03-treatment.md` - Current treatment (already self-contained with frontmatter)
 - Do NOT read 01-premise.md — treatment is the authoritative document now
 - Note: If iterating on treatment, ensure frontmatter stays accurate
 
 **For plan iteration (04-structure-plan.md):**
-- `books/{project}/04-04-structure-plan.md` - Current plan (already contains frontmatter + Characters)
+- `books/{project}/04-structure-plan.md` - Current plan (already contains frontmatter + Characters)
 - Do NOT read 01-premise.md or 03-treatment.md — structure-plan is self-contained
 
 **For chapter plan iteration (novella/novel/epic):**
-- `books/{project}/04-04-structure-plan.md` - For frontmatter and character reference
-- `books/{project}/06-chapters/06-chapters/summaries.md` (if exists) - For continuity
+- `books/{project}/04-structure-plan.md` - For frontmatter and character reference
+- `books/{project}/06-chapters/summaries.md` (if exists) - For continuity
 - The specific chapter plan being revised
-- `books/{project}/05-05-chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan (local continuity only)
+- `books/{project}/05-chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan (local continuity only)
 - Do NOT read 01-premise.md or 03-treatment.md
 
 **For story plan iteration (flash/short/novelette):**
-- `books/{project}/04-04-structure-plan.md` - For frontmatter and character reference
+- `books/{project}/04-structure-plan.md` - For frontmatter and character reference
 - `books/{project}/05-story-plan.md` - The plan being revised
 - Do NOT read 01-premise.md or 03-treatment.md
 
 **For prose iteration (novella/novel/epic):**
-- `books/{project}/05-05-chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
-- `books/{project}/06-chapters/06-chapters/summaries.md` (if exists) - Canon Facts + Open Threads continuity anchor
+- `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
+- `books/{project}/06-chapters/summaries.md` (if exists) - Canon Facts + Open Threads continuity anchor
 - `books/{project}/06-chapters/chapter-{NN}.md` - The chapter being revised
 - All previous chapters in `books/{project}/06-chapters/` for voice continuity
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style

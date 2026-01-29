@@ -39,7 +39,7 @@ books/{project}/
 ├── 01-premise.md           [x]/[ ]
 ├── 03-treatment.md         [x]/[ ]
 ├── 04-structure-plan.md    [x]/[ ] (all project types)
-├── 06-06-chapters/summaries.md         [x]/[ ] (generated after prose)
+├── 06-chapters/summaries.md         [x]/[ ] (generated after prose)
 ├── 05-chapter-plans/       (novella/novel/epic only)
 │   ├── chapter-01-plan.md [x]/[ ]
 │   └── ...

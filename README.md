@@ -77,9 +77,9 @@ Three user commands, with planning handled automatically:
 
 | Command | Output | Implicit Steps |
 |---------|--------|----------------|
-| `/generate premise` | premise.md | — |
-| `/generate treatment` | treatment.md | Generates treatment-approach.md first |
-| `/generate prose` | chapters/ or short-story.md | Generates structure-plan.md and chapter/story plans first |
+| `/generate premise` | 01-premise.md | — |
+| `/generate treatment` | 03-treatment.md | Generates 02-treatment-approach.md first |
+| `/generate prose` | 06-chapters/ or 06-story.md | Generates 04-structure-plan.md and 05-chapter-plans/ or 05-story-plan.md first |
 
 Each stage builds on the previous. Generation runs autonomously to completion — use `/iterate` afterward to refine any output.
 
@@ -102,22 +102,24 @@ Generated projects are stored in the `books/` directory:
 
 ```
 books/
-├── .git/                      # Shared git repository
+├── .git/                        # Shared git repository
 └── my-book/
-    ├── project.yaml           # Metadata
-    ├── premise.md             # Book premise
-    ├── treatment-approach.md  # Treatment planning (auto-generated)
-    ├── treatment.md           # Detailed treatment
-    ├── structure-plan.md      # Scene/chapter plan
-    ├── summaries.md           # Prose summaries
-    ├── chapter-plans/         # Generation plans (novels)
-    │   ├── chapter-01-plan.md
-    │   └── ...
-    ├── chapters/              # Prose chapters (novels)
-    │   ├── chapter-01.md
-    │   └── ...
-    ├── short-story-plan.md    # Generation plan (short stories/novelettes)
-    └── short-story.md         # Complete story (short stories/novelettes)
+    ├── project.yaml             # Metadata
+    ├── 01-premise.md            # Book premise
+    ├── 02-treatment-approach.md # Treatment planning (auto-generated)
+    ├── 03-treatment.md          # Detailed treatment
+    ├── 04-structure-plan.md     # Scene/chapter plan
+    │
+    │   # For novella/novel/epic:
+    ├── 05-chapter-plans/        # Generation plans
+    │   └── chapter-{NN}-plan.md
+    ├── 06-chapters/             # Prose + continuity
+    │   ├── chapter-{NN}.md
+    │   └── summaries.md         # Continuity anchor
+    │
+    │   # For flash/short/novelette:
+    ├── 05-story-plan.md         # Generation plan
+    └── 06-story.md              # Complete story (no summaries)
 ```
 
 ## Taxonomies
@@ -134,7 +136,7 @@ The `taxonomies/` directory contains 14 JSON files that guide story development:
 
 **Style taxonomy:** Prose style options (Commercial, Literary, Minimalist, Pulp, Lyrical, Conversational)
 
-Genre and style selections are recorded in the project's `premise.md` and guide all subsequent generation.
+Genre and style selections are recorded in the project's `01-premise.md` and guide all subsequent generation.
 
 ## Prose Styles
 
@@ -149,7 +151,7 @@ Style is selected per-project during premise generation. Six approaches are avai
 
 Each style has a corresponding reference card in `misc/prose-style-{style}.md` with detailed guidance.
 
-The selected style is recorded in `premise.md` and guides all prose generation for that project.
+The selected style is recorded in `01-premise.md` and guides all prose generation for that project.
 
 ## Documentation
 

@@ -4,7 +4,7 @@ description: Rebuild summaries from current prose.
 argument-hint: ""
 ---
 
-Rebuild `06-chapters/06-chapters/summaries.md` from the current prose files. Use this when summaries have drifted out of sync with prose (e.g., after manual edits or if iteration didn't update properly).
+Rebuild `06-chapters/summaries.md` from the current prose files. Use this when summaries have drifted out of sync with prose (e.g., after manual edits or if iteration didn't update properly).
 
 **Note:** This skill only applies to chaptered formats (novella/novel/epic). Single-file formats (flash/short/novelette) do not use summaries.
 
@@ -59,7 +59,7 @@ The goal is to rebuild summaries purely from the prose as it currently exists.
 
 ### Step 4: Generate Summaries
 
-Generate `06-chapters/06-chapters/summaries.md` with this structure:
+Generate `06-chapters/summaries.md` with this structure:
 
 ```markdown
 ---
@@ -158,7 +158,7 @@ Mark threads as:
 Write the regenerated summaries:
 
 ```bash
-cd books && git add {project}/06-chapters/06-chapters/summaries.md && git commit -m "Refresh: Rebuild 06-chapters/summaries.md from current prose for {project}"
+cd books && git add {project}/06-chapters/summaries.md && git commit -m "Refresh: Rebuild 06-chapters/summaries.md from current prose for {project}"
 ```
 
 ### Step 7: Report Changes
@@ -166,7 +166,7 @@ cd books && git add {project}/06-chapters/06-chapters/summaries.md && git commit
 Summarize what was rebuilt:
 
 ```
-Rebuilt 06-chapters/06-chapters/summaries.md for {project}:
+Rebuilt 06-chapters/summaries.md for {project}:
 - {N} chapter summaries regenerated
 - {N} total continuity facts extracted
 - {N} open threads tracked ({M} resolved, {K} still open)
