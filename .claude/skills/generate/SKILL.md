@@ -18,24 +18,12 @@ Route generation to a stage-specific skill.
 
 ---
 
-## Routing
+## Note
 
-**Recommended:** Use the stage-specific skills directly:
+Users can also invoke stage skills directly:
 - `/generate-premise` (same as `/generate premise`)
 - `/generate-treatment` (same as `/generate treatment`)
 - `/generate-prose` (same as `/generate prose`)
-
-If invoked as `/generate` with no stage, infer the next stage from existing files:
-1. If `books/{project}/01-premise.md` is missing → `premise`
-2. Else if `books/{project}/03-treatment.md` is missing → `treatment`
-3. Else → `prose`
-
-**Dispatch rules:**
-- `premise` → invoke the `/generate-premise` skill
-- `treatment` → invoke the `/generate-treatment` skill
-- `prose` → invoke the `/generate-prose` skill
-
-Do NOT generate content directly in this skill. Always dispatch to the stage skills.
 
 ---
 
@@ -56,4 +44,4 @@ Do NOT generate content directly in this skill. Always dispatch to the stage ski
    - `treatment` → `Skill(skill: "generate-treatment")`
    - `prose` → `Skill(skill: "generate-prose")`
 
-This skill is purely a router. All generation logic lives in the stage-specific skills.
+Do NOT generate content directly. This skill is purely a router.
