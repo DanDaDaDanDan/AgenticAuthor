@@ -52,24 +52,26 @@ Read `books/{project}/project.yaml` to get the genre.
 
 **For treatment review:**
 - `books/{project}/01-premise.md`
+- `books/{project}/02-treatment-approach.md`
 - `books/{project}/03-treatment.md`
 
 **For plan review (04-structure-plan.md):**
 - `books/{project}/01-premise.md`
+- `books/{project}/02-treatment-approach.md`
 - `books/{project}/03-treatment.md`
 - `books/{project}/04-structure-plan.md`
 
 **For chapter plan review:**
 - `books/{project}/01-premise.md`
+- `books/{project}/02-treatment-approach.md`
 - `books/{project}/03-treatment.md`
 - `books/{project}/04-structure-plan.md`
 - Target chapter plan from `books/{project}/05-chapter-plans/` or `books/{project}/05-story-plan.md`
-- All previous chapter prose in `books/{project}/06-chapters/` (for continuity check)
 
 **For prose review:**
 - All of the above (premise includes prose style selections)
-- For novella/novel/epic: `books/{project}/05-chapter-plans/` (relevant chapter plans)
-- For novella/novel/epic: target chapter(s) from `books/{project}/06-chapters/`
+- For novella/novel/epic: all chapter plans in `books/{project}/05-chapter-plans/`
+- For novella/novel/epic: all chapter prose in `books/{project}/06-chapters/`
 - For flash/short/novelette: `books/{project}/05-story-plan.md` and `books/{project}/06-story.md`
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 
@@ -288,7 +290,7 @@ When reviewing `all`, generate a combined report:
 - {List any problems: missing keys, invalid values, typos}
 
 **Cross-stage consistency:**
-- [ ] Frontmatter values match across stages (premise → treatment → structure-plan)
+- [ ] Frontmatter values match across stages (premise → treatment-approach → treatment → structure-plan)
 - [ ] No conflicting taxonomy selections
 ```
 

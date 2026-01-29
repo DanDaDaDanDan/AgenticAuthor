@@ -88,11 +88,11 @@ Each stage reads only its immediate predecessor. This prevents conflicts when it
 | Generating | Reads |
 |------------|-------|
 | 02-treatment-approach | 01-premise + taxonomies |
-| 03-treatment | 02-treatment-approach + 01-premise |
+| 03-treatment | 02-treatment-approach only |
 | 04-structure-plan | 03-treatment only |
-| chapter-plan (novella/novel/epic) | 04-structure-plan + all previous chapter prose + previous chapter plan (if exists) |
+| chapter-plan (novella/novel/epic) | 04-structure-plan only |
 | 05-story-plan (flash/short/novelette) | 04-structure-plan only |
-| prose (novella/novel/epic) | chapter-plan + all previous chapters + prose-style-{prose_style_key} |
+| prose (novella/novel/epic) | all previous chapters + all chapter plans (current + future) + prose-style-{prose_style_key} |
 | prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} |
 
 **Why this matters:** If you iterate on treatment and change the ending, structure-plan sees the update automatically because it only reads treatment. Premise becomes "historical" (the seed), not the contract.

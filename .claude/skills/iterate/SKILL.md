@@ -116,34 +116,32 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For plan iteration (04-structure-plan.md):**
 - `books/{project}/04-structure-plan.md` - Current plan (already contains frontmatter + Characters)
-- Do NOT read 01-premise.md or 03-treatment.md — structure-plan is self-contained
+- Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md — structure-plan is self-contained
 
 **For chapter plan iteration (novella/novel/epic):**
-- `books/{project}/04-structure-plan.md` - For frontmatter and character reference
-- All previous chapter prose in `books/{project}/06-chapters/` - For continuity
+- `books/{project}/04-structure-plan.md` - Self-contained plan (frontmatter, characters, chapter breakdown)
 - The specific chapter plan being revised
-- `books/{project}/05-chapter-plans/chapter-{PP}-plan.md` (if exists) - Previous chapter plan
-- Do NOT read 01-premise.md or 03-treatment.md
+- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, previous chapter prose, or other chapter plans
 
 **For story plan iteration (flash/short/novelette):**
-- `books/{project}/04-structure-plan.md` - For frontmatter and character reference
+- `books/{project}/04-structure-plan.md` - Self-contained plan (frontmatter, characters, scene breakdown)
 - `books/{project}/05-story-plan.md` - The plan being revised
-- Do NOT read 01-premise.md or 03-treatment.md
+- Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md
 
 **For prose iteration (novella/novel/epic):**
-- `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` - The plan for the chapter being revised
 - `books/{project}/06-chapters/chapter-{NN}.md` - The chapter being revised
 - All previous chapters in `books/{project}/06-chapters/` for continuity
+- All chapter plans in `books/{project}/05-chapter-plans/` - Current chapter plan is authoritative; future plans provide context
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read 01-premise.md, 03-treatment.md, or 04-structure-plan.md
+- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md
 
 If revising multiple chapters, do it sequentially (one chapter at a time).
 
 **For prose iteration (flash/short/novelette):**
-- `books/{project}/05-story-plan.md` - The story plan
+- `books/{project}/05-story-plan.md` - The story plan (self-contained)
 - `books/{project}/06-story.md` - The story being revised
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read 01-premise.md, 03-treatment.md, or 04-structure-plan.md
+- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md
 
 ### Step 5: Apply Changes
 
@@ -277,7 +275,7 @@ If the requested change will force cascading edits to other files or sections:
 
 **Premise changes:**
 - If downstream stages don't exist yet: no action needed — they'll read the updated premise
-- If treatment already exists: treatment's frontmatter may be stale. Inform user they may want to regenerate treatment or update its frontmatter.
+- If treatment-approach already exists: its frontmatter may be stale. Inform user they may want to regenerate treatment-approach or update its frontmatter.
 
 **Treatment changes:**
 - Structure-plan reads only treatment, so it automatically sees changes when regenerated

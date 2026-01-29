@@ -379,11 +379,9 @@ Write `books/{project}/03-treatment.md` for `{project}`.
 
 **Project type:** {flash_fiction|short_story|novelette|novella|novel|epic}
 
-**Read only:**
-1. `books/{project}/02-treatment-approach.md` — Planning document with structure decisions
-2. `books/{project}/01-premise.md` — Original premise for frontmatter values
+**Read only:** `books/{project}/02-treatment-approach.md` — Self-contained planning document (includes frontmatter values from premise)
 
-Do NOT read any other files.
+Do NOT read 01-premise.md or any other files.
 
 **Output:** `books/{project}/03-treatment.md` (use the appropriate Treatment template from this skill)
 
@@ -402,6 +400,37 @@ Generate complete, publication-ready content. Do not ask for approval.
 #### Treatment Approach Format
 
 ```markdown
+---
+project: {project-name}
+stage: treatment-approach
+# Copy ALL taxonomy keys and display names from premise frontmatter
+# This makes treatment-approach self-contained so treatment doesn't need to read premise
+genre_key: {from premise}
+subgenre_keys: {from premise - copy entire object}
+subgenres: {from premise - copy entire object}
+length_key: {from premise}
+length_target_words: {from premise}
+series_structure_key: {from premise}
+series_structure: "{from premise}"
+target_audience_key: {from premise}
+target_audience: "{from premise}"
+content_rating_key: {from premise}
+content_rating: "{from premise}"
+prose_style_key: {from premise}
+prose_style: "{from premise}"
+dialogue_density_key: {from premise}
+dialogue_density: "{from premise}"
+pov_key: {from premise}
+pov: "{from premise}"
+tense: {from premise}
+tone: "{from premise}"
+mood: "{from premise}"
+# Copy all genre-specific arrays/objects from premise
+# (actual fields depend on genre - copy whatever exists in premise)
+tags: {from premise}
+custom_style_notes: "{from premise}"
+---
+
 # Treatment Approach
 
 ## Premise Analysis
@@ -449,46 +478,46 @@ Generate complete, publication-ready content. Do not ask for approval.
 ---
 project: {project-name}
 stage: treatment
-# Copy ALL taxonomy keys and display names from premise frontmatter
-# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
-genre_key: {from premise}
+# Copy ALL taxonomy keys and display names from treatment-approach frontmatter
+# Treatment-approach is self-contained (already has all values from premise)
+genre_key: {from treatment-approach}
 # Multi-select: subgenre (primary/secondary object)
-subgenre_keys: {from premise - copy entire object}
-subgenres: {from premise - copy entire object}
-length_key: {from premise: novella|novel|epic}
+subgenre_keys: {from treatment-approach - copy entire object}
+subgenres: {from treatment-approach - copy entire object}
+length_key: {from treatment-approach: novella|novel|epic}
 length_target_words: {number}
-series_structure_key: {from premise}
-series_structure: "{from premise}"
-target_audience_key: {from premise}
-target_audience: "{from premise}"
-content_rating_key: {from premise}
-content_rating: "{from premise}"
-prose_style_key: {from premise}
-prose_style: "{from premise}"
-dialogue_density_key: {from premise}
-dialogue_density: "{from premise}"
-pov_key: {from premise}
-pov: "{from premise}"
-tense: {from premise}
-tone: "{from premise}"
-mood: "{from premise}"
-# Multi-select: copy all genre-specific arrays/objects from premise
+series_structure_key: {from treatment-approach}
+series_structure: "{from treatment-approach}"
+target_audience_key: {from treatment-approach}
+target_audience: "{from treatment-approach}"
+content_rating_key: {from treatment-approach}
+content_rating: "{from treatment-approach}"
+prose_style_key: {from treatment-approach}
+prose_style: "{from treatment-approach}"
+dialogue_density_key: {from treatment-approach}
+dialogue_density: "{from treatment-approach}"
+pov_key: {from treatment-approach}
+pov: "{from treatment-approach}"
+tense: {from treatment-approach}
+tone: "{from treatment-approach}"
+mood: "{from treatment-approach}"
+# Multi-select: copy all genre-specific arrays/objects from treatment-approach
 # Examples (actual fields depend on genre):
-magic_system_keys: {from premise - copy array if present}
-magic_systems: {from premise - copy array if present}
-fantasy_race_keys: {from premise - copy array if present}
-fantasy_races: {from premise - copy array if present}
-theme_keys: {from premise - copy array if present}
-themes: {from premise - copy array if present}
-quest_type_key: {from premise - copy if present}
-quest_type: "{from premise - copy if present}"
-world_type_key: {from premise - copy if present}
-world_type: "{from premise - copy if present}"
-worldbuilding_depth_key: {from premise - copy if present}
-worldbuilding_depth: "{from premise - copy if present}"
+magic_system_keys: {from treatment-approach - copy array if present}
+magic_systems: {from treatment-approach - copy array if present}
+fantasy_race_keys: {from treatment-approach - copy array if present}
+fantasy_races: {from treatment-approach - copy array if present}
+theme_keys: {from treatment-approach - copy array if present}
+themes: {from treatment-approach - copy array if present}
+quest_type_key: {from treatment-approach - copy if present}
+quest_type: "{from treatment-approach - copy if present}"
+world_type_key: {from treatment-approach - copy if present}
+world_type: "{from treatment-approach - copy if present}"
+worldbuilding_depth_key: {from treatment-approach - copy if present}
+worldbuilding_depth: "{from treatment-approach - copy if present}"
 tags:
-  - {from premise}
-custom_style_notes: "{from premise}"
+  - {from treatment-approach}
+custom_style_notes: "{from treatment-approach}"
 ---
 
 # Treatment
@@ -555,46 +584,46 @@ custom_style_notes: "{from premise}"
 ---
 project: {project-name}
 stage: treatment
-# Copy ALL taxonomy keys and display names from premise frontmatter
-# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
-genre_key: {from premise}
+# Copy ALL taxonomy keys and display names from treatment-approach frontmatter
+# Treatment-approach is self-contained (already has all values from premise)
+genre_key: {from treatment-approach}
 # Multi-select: subgenre (primary/secondary object)
-subgenre_keys: {from premise - copy entire object}
-subgenres: {from premise - copy entire object}
-length_key: {from premise: flash_fiction|short_story|novelette}
+subgenre_keys: {from treatment-approach - copy entire object}
+subgenres: {from treatment-approach - copy entire object}
+length_key: {from treatment-approach: flash_fiction|short_story|novelette}
 length_target_words: {number}
-series_structure_key: {from premise}
-series_structure: "{from premise}"
-target_audience_key: {from premise}
-target_audience: "{from premise}"
-content_rating_key: {from premise}
-content_rating: "{from premise}"
-prose_style_key: {from premise}
-prose_style: "{from premise}"
-dialogue_density_key: {from premise}
-dialogue_density: "{from premise}"
-pov_key: {from premise}
-pov: "{from premise}"
-tense: {from premise}
-tone: "{from premise}"
-mood: "{from premise}"
-# Multi-select: copy all genre-specific arrays/objects from premise
+series_structure_key: {from treatment-approach}
+series_structure: "{from treatment-approach}"
+target_audience_key: {from treatment-approach}
+target_audience: "{from treatment-approach}"
+content_rating_key: {from treatment-approach}
+content_rating: "{from treatment-approach}"
+prose_style_key: {from treatment-approach}
+prose_style: "{from treatment-approach}"
+dialogue_density_key: {from treatment-approach}
+dialogue_density: "{from treatment-approach}"
+pov_key: {from treatment-approach}
+pov: "{from treatment-approach}"
+tense: {from treatment-approach}
+tone: "{from treatment-approach}"
+mood: "{from treatment-approach}"
+# Multi-select: copy all genre-specific arrays/objects from treatment-approach
 # Examples (actual fields depend on genre):
-magic_system_keys: {from premise - copy array if present}
-magic_systems: {from premise - copy array if present}
-fantasy_race_keys: {from premise - copy array if present}
-fantasy_races: {from premise - copy array if present}
-theme_keys: {from premise - copy array if present}
-themes: {from premise - copy array if present}
-quest_type_key: {from premise - copy if present}
-quest_type: "{from premise - copy if present}"
-world_type_key: {from premise - copy if present}
-world_type: "{from premise - copy if present}"
-worldbuilding_depth_key: {from premise - copy if present}
-worldbuilding_depth: "{from premise - copy if present}"
+magic_system_keys: {from treatment-approach - copy array if present}
+magic_systems: {from treatment-approach - copy array if present}
+fantasy_race_keys: {from treatment-approach - copy array if present}
+fantasy_races: {from treatment-approach - copy array if present}
+theme_keys: {from treatment-approach - copy array if present}
+themes: {from treatment-approach - copy array if present}
+quest_type_key: {from treatment-approach - copy if present}
+quest_type: "{from treatment-approach - copy if present}"
+world_type_key: {from treatment-approach - copy if present}
+world_type: "{from treatment-approach - copy if present}"
+worldbuilding_depth_key: {from treatment-approach - copy if present}
+worldbuilding_depth: "{from treatment-approach - copy if present}"
 tags:
-  - {from premise}
-custom_style_notes: "{from premise}"
+  - {from treatment-approach}
+custom_style_notes: "{from treatment-approach}"
 ---
 
 # Treatment
@@ -645,15 +674,15 @@ Generate the actual story prose.
 
 ### Context Rules
 
-**Context loading:** Each sub-agent reads its immediate predecessor. For chaptered formats, load all previous chapter prose for continuity.
+**Context loading:** Each sub-agent reads only its immediate predecessor. Stages are fully self-contained.
 
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
 | structure-plan | 03-treatment.md only | 01-premise.md, 02-treatment-approach.md |
 | 05-story-plan (flash/short/novelette) | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
-| chapter-plan (novella/novel/epic) | 04-structure-plan.md + all previous chapter prose + previous chapter plan (if exists) | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
+| chapter-plan (novella/novel/epic) | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
 | prose (flash/short/novelette) | 05-story-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
-| prose (novella/novel/epic) | chapter-plan + all previous chapters + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
+| prose (novella/novel/epic) | all previous chapter prose + all chapter plans (current + future) + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
 
 ### Clarifying Questions
 
@@ -722,7 +751,7 @@ Write `books/{project}/04-structure-plan.md` for `{project}`.
 
 **Read only:** `books/{project}/03-treatment.md` (treatment is authoritative)
 
-Do NOT read 01-premise.md or any other files.
+Do NOT read 01-premise.md, 02-treatment-approach.md, or any other files.
 
 **Output:** `books/{project}/04-structure-plan.md` (use the appropriate Structure Plan template from this skill)
 
@@ -750,7 +779,7 @@ Write `books/{project}/05-story-plan.md` for `{project}`.
 
 **Read only:** `books/{project}/04-structure-plan.md` (structure-plan is authoritative)
 
-Do NOT read 01-premise.md, 03-treatment.md, or any other files.
+Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or any other files.
 
 **Output:** `books/{project}/05-story-plan.md` (use the Story Plan template from this skill)
 
@@ -781,7 +810,7 @@ Write complete prose for `{project}`.
 1. `books/{project}/05-story-plan.md` — Complete story plan with scene breakdowns and style notes
 2. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
-Do NOT read 01-premise.md, 03-treatment.md, 04-structure-plan.md, or any other files.
+Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md, or any other files.
 
 **Output:** `books/{project}/06-story.md` — Complete prose
 
@@ -811,19 +840,16 @@ Generate `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` for Chapter {N}
 
 **Chapter target:** ~{X} words
 
-**Read only these files:**
-1. `books/{project}/04-structure-plan.md` — Full structure plan
-2. All previous chapter prose in `books/{project}/06-chapters/` — Source of truth for canon facts, character states, and continuity
-3. `books/{project}/05-chapter-plans/chapter-{PP}-plan.md` — Previous chapter plan (if it exists)
+**Read only:** `books/{project}/04-structure-plan.md` — Self-contained structure plan (includes character info and full chapter breakdown)
 
-**Do NOT read:** 01-premise.md, 03-treatment.md.
+**Do NOT read:** 01-premise.md, 02-treatment-approach.md, 03-treatment.md, previous chapter prose, or other chapter plans.
 
 **Output:** `books/{project}/05-chapter-plans/chapter-{NN}-plan.md`
 
 **Format:** Use the Chapter Plan template from this skill.
 
 **Requirements:**
-- Use previous chapter prose as the source of truth for names, facts, character states, and open threads.
+- Use structure-plan as the source of truth for this chapter's content, goals, and beats.
 - Include per-scene word targets and brief development notes (what fills the space: dialogue/interiority/action/description).
 - Include a short **Downstream Contract** section stating what the prose must preserve from this plan.
 
@@ -849,15 +875,15 @@ Generate `books/{project}/06-chapters/chapter-{NN}.md` (Chapter {N}) for `{proje
 **Project length:** {novella|novel|epic}
 
 **Read only these files:**
-1. `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` — This chapter's plan
-2. All previous chapter prose in `books/{project}/06-chapters/` — Source of truth for continuity
+1. All previous chapter prose in `books/{project}/06-chapters/` — Source of truth for continuity
+2. All chapter plans in `books/{project}/05-chapter-plans/` — Current chapter plan is authoritative; future plans provide foreshadowing context
 3. `misc/prose-style-{prose_style_key}.md` — Style card (read `prose_style_key` from frontmatter)
 
-**Do NOT read:** 01-premise.md, 03-treatment.md, 04-structure-plan.md, or other chapter-plans.
+**Do NOT read:** 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md.
 
 **Output:** `books/{project}/06-chapters/chapter-{NN}.md` — Chapter prose
 
-**Guidance:** Follow the chapter plan as the authoritative contract. Use previous chapter prose as the source of truth for names, facts, and continuity. Keep prose publication-ready.
+**Guidance:** Follow this chapter's plan as the authoritative contract. Use previous chapter prose for continuity and future chapter plans for foreshadowing context. Keep prose publication-ready.
 
 **Chapter prose format:**
 
@@ -1221,19 +1247,7 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 This plan is authoritative for the prose of Chapter {N}.
 
 - **Prose must preserve:** POV, scene order, key beats/reveals, and the planned hook/turn (unless the user explicitly requests changes)
-- **Canon source:** previous chapter prose is the source of truth for names, facts, and continuity
-
-## Continuity Check
-
-**Carrying forward from previous chapters:**
-- {Open thread 1 - status}
-- {Open thread 2 - status}
-- {Character emotional state entering this chapter}
-- {Key setting/world details established}
-
-**Promises to readers:** {things set up that need payoff}
-
-(For Chapter 1, note "First chapter - establishing baseline" for continuity)
+- **Canon source:** prose agent reads all previous chapter prose for continuity
 
 ## Character States
 
@@ -1389,16 +1403,16 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 
 ## Context Management Summary
 
-**Context loading:** Each stage reads its immediate predecessor. For chaptered formats, load all previous chapter prose for continuity.
+**Context loading:** Each stage reads only its immediate predecessor. Stages are fully self-contained.
 
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
 | 02-treatment-approach | 01-premise + taxonomies | — |
-| 03-treatment | 02-treatment-approach + 01-premise | — |
+| 03-treatment | 02-treatment-approach only | 01-premise |
 | 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
-| chapter-plan (novella/novel/epic) | 04-structure-plan + all previous chapter prose + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
+| chapter-plan (novella/novel/epic) | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
 | 05-story-plan (flash/short/novelette) | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
-| prose (novella/novel/epic) | chapter-plan + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
+| prose (novella/novel/epic) | all previous chapter prose + all chapter plans (current + future) + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 | prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
 **Path Notes:**

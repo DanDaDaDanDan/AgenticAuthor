@@ -74,12 +74,12 @@ Each stage's output contains everything the next stage needs. Read only one step
 | Generating | Reads | Does NOT Read |
 |------------|-------|---------------|
 | 02-treatment-approach | 01-premise + taxonomies | — |
-| 03-treatment | 02-treatment-approach + 01-premise | — |
+| 03-treatment | 02-treatment-approach only | 01-premise |
 | 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
-| chapter-plan | 04-structure-plan + all previous chapter prose + previous chapter plan (if exists) | 01-premise, 02-treatment-approach, 03-treatment |
-| prose | chapter-plan + all previous chapters + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
+| chapter-plan | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
+| prose | all previous chapters + all chapter plans (current + future) + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
-**For flash/short/novelette (single-file formats):** Same principle — 05-story-plan reads 04-structure-plan, prose reads 05-story-plan only.
+**For flash/short/novelette (single-file formats):** Same principle — 05-story-plan reads 04-structure-plan only, prose reads 05-story-plan only.
 
 **Why:** This prevents conflicts when iterating. If you change treatment, structure-plan sees the update automatically. Premise becomes "historical" (the seed), not the contract.
 
@@ -87,7 +87,7 @@ Each stage's output contains everything the next stage needs. Read only one step
 
 Automatically generate planning documents before major outputs:
 
-**`/generate treatment`** creates `02-treatment-approach.md` first, then `03-treatment.md` with YAML frontmatter (carries forward style, tone, themes from premise).
+**`/generate treatment`** creates `02-treatment-approach.md` (with frontmatter from premise), then `03-treatment.md` (copies frontmatter from treatment-approach).
 
 **`/generate prose`** creates `04-structure-plan.md` and chapter/story plans first. Each includes frontmatter so downstream stages are self-contained.
 
