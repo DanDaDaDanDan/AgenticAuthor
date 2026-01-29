@@ -49,7 +49,7 @@ books/{project}/
 │   └── ...
 │
 │   # For flash/short/novelette:
-├── 05-story-plan.md        [x]/[ ] (flash/short/novelette only)
+│   # (04-structure-plan.md serves as generation plan — no separate plan file)
 └── 06-story.md             [x]/[ ] (flash/short/novelette only)
 ```
 
@@ -77,7 +77,7 @@ PROGRESS:
   [x] Premise          {word count} words
   [x] Treatment        {word count} words
   [x] Structure Plan   {chapter/scene count} planned
-  [x] Generation Plans {X}/{Y} plans (novella/novel/epic) or [x]/[ ] story plan (flash/short/novelette)
+  [x] Generation Plans {X}/{Y} plans (novella/novel/epic) or N/A (flash/short/novelette - included in Structure Plan)
   [ ] Prose            {X}/{Y} chapters (novella/novel/epic) or [x]/[ ] (flash/short/novelette)
 
 WORD COUNT:
@@ -95,7 +95,7 @@ CHAPTERS (novella/novel/epic):
   ...
 
 FLASH/SHORT/NOVELETTE:
-  Story Plan: [x]/[ ]
+  (Structure Plan includes generation planning - no separate plan file)
   Prose: [x]/[ ]  {actual} / {target} words
 
 ------------------------------------------------------------------------
@@ -159,7 +159,7 @@ For **novella/novel/epic**, generation plans and prose weights are distributed a
 - Prose: 55% × (completed chapters / total chapters)
 
 For **flash/short/novelette**, each stage is binary (complete or not):
-- Generation Plan: 10% if `05-story-plan.md` exists
+- Structure Plan + Generation Plan: Combined 20% if `04-structure-plan.md` exists (structure-plan includes generation planning for single-file formats)
 - Prose: 55% if `06-story.md` exists
 
 ## Multi-Project Summary

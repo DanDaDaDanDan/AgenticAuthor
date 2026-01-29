@@ -59,7 +59,7 @@ AgenticAuthor/
         │   └── chapter-{NN}.md
         │
         │   # For flash/short/novelette (single-file):
-        ├── 05-story-plan.md       # Generation plan
+        │   # (04-structure-plan.md IS the generation plan — no separate plan file)
         └── 06-story.md            # Complete story
 ```
 
@@ -76,10 +76,10 @@ Each stage's output contains everything the next stage needs. Read only one step
 | 02-treatment-approach | 01-premise + taxonomies | — |
 | 03-treatment | 02-treatment-approach only | 01-premise |
 | 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
-| chapter-plan | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
+| chapter-plan N | 04-structure-plan + chapter-plans 1..N-1 | 01-premise, 02-treatment-approach, 03-treatment, chapter prose |
 | prose | all previous chapters + all chapter plans (current + future) + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
-**For flash/short/novelette (single-file formats):** Same principle — 05-story-plan reads 04-structure-plan only, prose reads 05-story-plan only.
+**For flash/short/novelette (single-file formats):** Same principle — 04-structure-plan IS the generation plan (no separate story-plan), prose reads 04-structure-plan + prose-style-{prose_style_key}.
 
 **Why:** This prevents conflicts when iterating. If you change treatment, structure-plan sees the update automatically. Premise becomes "historical" (the seed), not the contract.
 
@@ -89,7 +89,7 @@ Automatically generate planning documents before major outputs:
 
 **`/generate treatment`** creates `02-treatment-approach.md` (with frontmatter from premise), then `03-treatment.md` (copies frontmatter from treatment-approach).
 
-**`/generate prose`** creates `04-structure-plan.md` and chapter/story plans first. Each includes frontmatter so downstream stages are self-contained.
+**`/generate prose`** creates `04-structure-plan.md` first, then chapter plans (for chaptered formats). Each includes frontmatter so downstream stages are self-contained. For single-file formats, structure-plan includes all generation planning.
 
 ### Quality First
 

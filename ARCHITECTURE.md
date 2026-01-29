@@ -41,9 +41,8 @@ Each book project in `books/{project}/` contains:
 | `01-premise.md` | Core concept and story foundation |
 | `02-treatment-approach.md` | Planning rationale (auto-generated) |
 | `03-treatment.md` | Story outline with act structure |
-| `04-structure-plan.md` | Scene/chapter breakdown |
-| `05-chapter-plans/` | Per-chapter generation plans (novella/novel/epic) |
-| `05-story-plan.md` | Generation plan (flash/short/novelette) |
+| `04-structure-plan.md` | Scene/chapter breakdown (also serves as generation plan for flash/short/novelette) |
+| `05-chapter-plans/` | Per-chapter generation plans (novella/novel/epic only) |
 | `06-chapters/` | Prose chapters (novella/novel/epic) |
 | `06-story.md` | Complete prose (flash/short/novelette) |
 
@@ -79,7 +78,7 @@ Bracketed steps `[...]` are generated automatically. Generation runs autonomousl
 
 **For novella/novel/epic:** Prose generates `05-chapter-plans/` and `06-chapters/`.
 
-**For flash/short/novelette:** Prose generates `05-story-plan.md` and `06-story.md`.
+**For flash/short/novelette:** `04-structure-plan.md` includes generation planning, then prose generates `06-story.md` directly.
 
 ## Self-Contained Stages
 
@@ -90,10 +89,9 @@ Each stage reads only its immediate predecessor. This prevents conflicts when it
 | 02-treatment-approach | 01-premise + taxonomies |
 | 03-treatment | 02-treatment-approach only |
 | 04-structure-plan | 03-treatment only |
-| chapter-plan (novella/novel/epic) | 04-structure-plan only |
-| 05-story-plan (flash/short/novelette) | 04-structure-plan only |
+| chapter-plan N (novella/novel/epic) | 04-structure-plan + chapter-plans 1..N-1 |
 | prose (novella/novel/epic) | all previous chapters + all chapter plans (current + future) + prose-style-{prose_style_key} |
-| prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} |
+| prose (flash/short/novelette) | 04-structure-plan + prose-style-{prose_style_key} |
 
 **Why this matters:** If you iterate on treatment and change the ending, structure-plan sees the update automatically because it only reads treatment. Premise becomes "historical" (the seed), not the contract.
 

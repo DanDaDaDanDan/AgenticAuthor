@@ -663,12 +663,11 @@ Generate the actual story prose.
 
 ### Orchestration Flow
 
-1. **Check what exists** — 04-structure-plan? 05-story-plan/05-chapter-plans? prose?
+1. **Check what exists** — 04-structure-plan? 05-chapter-plans (novella/novel/epic)? prose?
 2. **Ask clarifying questions** UPFRONT for any missing planning documents
 3. **Spawn sub-agents** sequentially for each missing piece:
-   - Structure-plan sub-agent (if missing)
-   - Short-story-plan sub-agent (if missing, for flash/short/novelette)
-   - Chapter-plan sub-agents (if missing, for novella/novel/epic)
+   - Structure-plan sub-agent (if missing) — for single-file formats, this includes all generation planning
+   - Chapter-plan sub-agents (if missing, for novella/novel/epic only)
    - Prose sub-agent(s)
 4. Report completion
 
@@ -679,9 +678,8 @@ Generate the actual story prose.
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
 | structure-plan | 03-treatment.md only | 01-premise.md, 02-treatment-approach.md |
-| 05-story-plan (flash/short/novelette) | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
-| chapter-plan (novella/novel/epic) | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
-| prose (flash/short/novelette) | 05-story-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
+| chapter-plan N (novella/novel/epic) | 04-structure-plan.md + chapter-plans 1..N-1 | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, chapter prose |
+| prose (flash/short/novelette) | 04-structure-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
 | prose (novella/novel/epic) | all previous chapter prose + all chapter plans (current + future) + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
 
 ### Clarifying Questions
@@ -766,55 +764,26 @@ Generate complete content. Do not ask for approval.
 
 ---
 
-### Sub-Agent: Story Plan (Flash/Short/Novelette)
-
-**Spawn when:** `05-story-plan.md` doesn't exist (and structure-plan exists)
-
-**Sub-agent prompt template:**
-
-```
-Write `books/{project}/05-story-plan.md` for `{project}`.
-
-**Target word count:** {from structure-plan, e.g., ~14,000 words}
-
-**Read only:** `books/{project}/04-structure-plan.md` (structure-plan is authoritative)
-
-Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or any other files.
-
-**Output:** `books/{project}/05-story-plan.md` (use the Story Plan template from this skill)
-
-**Requirements:**
-- Carry forward per-scene word count targets (the prose agent will NOT see structure-plan).
-- Include “Development notes” for each scene so the prose can hit the intended depth/length.
-- Include the template’s **Downstream Contract** section (this plan is authoritative for prose).
-
-**After:** `cd books && git add {project}/05-story-plan.md && git commit -m "Add: Story plan for {project}"`
-
-Generate complete content. Do not ask for approval.
-```
-
----
-
 ### Sub-Agent: Prose Generation (Flash/Short/Novelette)
 
-**Spawn when:** `06-story.md` doesn't exist (and 05-story-plan.md exists)
+**Spawn when:** `06-story.md` doesn't exist (and structure-plan exists)
 
 **Sub-agent prompt template:**
 
 ```
 Write complete prose for `{project}`.
 
-**Target word count:** {from story-plan, e.g., ~14,000 words}
+**Target word count:** {from structure-plan, e.g., ~14,000 words}
 
 **Read only:**
-1. `books/{project}/05-story-plan.md` — Complete story plan with scene breakdowns and style notes
+1. `books/{project}/04-structure-plan.md` — Complete structure plan with scene breakdowns, development notes, and style notes
 2. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
-Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md, or any other files.
+Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or any other files.
 
 **Output:** `books/{project}/06-story.md` — Complete prose
 
-**Guidance:** Follow the story plan as the authoritative contract. Use the style card for technique. Keep prose publication-ready.
+**Guidance:** Follow the structure plan as the authoritative contract. Use the style card for technique. Keep prose publication-ready.
 
 **Prose format:**
 - Start with: # {Story Title}
@@ -840,16 +809,19 @@ Generate `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` for Chapter {N}
 
 **Chapter target:** ~{X} words
 
-**Read only:** `books/{project}/04-structure-plan.md` — Self-contained structure plan (includes character info and full chapter breakdown)
+**Read only these files:**
+1. `books/{project}/04-structure-plan.md` — Structure plan (characters, full chapter breakdown)
+2. All previous chapter plans in `books/{project}/05-chapter-plans/` (chapters 1 through {N-1}) — For continuity of character states and plot threads
 
-**Do NOT read:** 01-premise.md, 02-treatment-approach.md, 03-treatment.md, previous chapter prose, or other chapter plans.
+**Do NOT read:** 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or chapter prose.
 
 **Output:** `books/{project}/05-chapter-plans/chapter-{NN}-plan.md`
 
 **Format:** Use the Chapter Plan template from this skill.
 
 **Requirements:**
-- Use structure-plan as the source of truth for this chapter's content, goals, and beats.
+- Use structure-plan as the source of truth for this chapter's high-level content, goals, and beats.
+- Reference previous chapter plans for character states, established details, and open threads.
 - Include per-scene word targets and brief development notes (what fills the space: dialogue/interiority/action/description).
 - Include a short **Downstream Contract** section stating what the prose must preserve from this plan.
 
@@ -1133,17 +1105,21 @@ Note: Per-scene word count targets below should approximately sum to the overall
 
 ## Downstream Contract
 
-This file is the authoritative plan for the story plan.
+This file is the authoritative plan for prose generation (`06-story.md`).
 
-- **Must preserve downstream:** scene order, required reveals/turns, and scene purposes
-- **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
+- **Prose must preserve:** scene order, key beats/turns, and style notes (unless the user explicitly requests changes)
 
-## Characters
+## Character States
 
-Brief reference for continuity (from treatment):
+### {Protagonist}
+- **Starting emotional state:** {where they begin}
+- **Goal:** {what they want}
+- **Internal conflict:** {tension driving them}
+- **Arc:** {starting state → ending state}
+- **Voice notes:** {how to render their perspective}
 
-- **{Protagonist}:** {one-line arc summary: starting state → ending state}
-- **{Other key characters}:** {brief role notes}
+### {Other Characters}
+- **{Name}:** {role, function, and how they affect protagonist}
 
 ## Scene Breakdown
 
@@ -1159,7 +1135,9 @@ Brief reference for continuity (from treatment):
 2. {Development - what happens}
 3. {Turn/Hook - how scene ends or transitions}
 
-**Character state:** {Where the protagonist is emotionally at scene end}
+**Character state at end:** {Where the protagonist is emotionally}
+
+**Development notes:** {what fills the space — e.g., "dialogue exchange + internal monologue + setting details"}
 
 ---
 
@@ -1172,16 +1150,28 @@ Brief reference for continuity (from treatment):
 - **Climax:** Scene {X} — {the peak moment}
 - **Resolution:** Scene {X} — {how it ends}
 
-## Continuity Notes
+## Style Notes
 
-{Brief notes on any details that must remain consistent across scenes}
+- **Pacing:** {overall rhythm}
+- **Tone:** {emotional quality}
+- **Dialogue vs narration:** {balance}
+- **Sensory focus:** {what senses to emphasize}
+
+## Length Strategy
+
+{2-4 sentences analyzing how this story will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
+
+## Potential Pitfalls
+
+- {Thing to avoid or be careful about}
+- {Risk to watch for}
 ```
 
 ---
 
-## Chapter/Story Plan Templates
+## Chapter Plan Template (Novella/Novel/Epic Only)
 
-### Chapter Plan Format (Novella/Novel/Epic)
+### Chapter Plan Format
 
 ```markdown
 ---
@@ -1242,6 +1232,18 @@ Copy ALL frontmatter values from structure-plan, including multi-select arrays a
 - Chapter goals: {from structure plan}
 - Ends with: {the planned hook/turn}
 
+## Continuity from Previous Chapters
+
+{For Chapter 1, write "First chapter - establishing baseline."}
+
+**Carrying forward from previous chapter plans:**
+- {Open thread 1 from previous plans - status}
+- {Open thread 2 - status}
+- {Character emotional state entering this chapter, based on where previous plan left them}
+- {Key details/facts established that affect this chapter}
+
+**Promises to readers:** {things set up in previous chapters that need attention}
+
 ## Downstream Contract
 
 This plan is authoritative for the prose of Chapter {N}.
@@ -1292,113 +1294,6 @@ This plan is authoritative for the prose of Chapter {N}.
 - {Continuity risk}
 ```
 
-### Story Plan Format (Flash/Short/Novelette)
-
-```markdown
----
-project: {project-name}
-stage: story-plan
-# Copy ALL taxonomy keys and display names from structure-plan frontmatter
-# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
-genre_key: {from structure-plan}
-# Multi-select: subgenre (primary/secondary object)
-subgenre_keys: {from structure-plan - copy entire object}
-subgenres: {from structure-plan - copy entire object}
-length_key: {from structure-plan: flash_fiction|short_story|novelette}
-length_target_words: {number}
-series_structure_key: {from structure-plan}
-series_structure: "{from structure-plan}"
-target_audience_key: {from structure-plan}
-target_audience: "{from structure-plan}"
-content_rating_key: {from structure-plan}
-content_rating: "{from structure-plan}"
-prose_style_key: {from structure-plan}
-prose_style: "{from structure-plan}"
-dialogue_density_key: {from structure-plan}
-dialogue_density: "{from structure-plan}"
-pov_key: {from structure-plan}
-pov: "{from structure-plan}"
-tense: {from structure-plan}
-tone: "{from structure-plan}"
-mood: "{from structure-plan}"
-# Multi-select: copy all genre-specific arrays/objects from structure-plan
-# Examples (actual fields depend on genre):
-magic_system_keys: {from structure-plan - copy array if present}
-magic_systems: {from structure-plan - copy array if present}
-fantasy_race_keys: {from structure-plan - copy array if present}
-fantasy_races: {from structure-plan - copy array if present}
-theme_keys: {from structure-plan - copy array if present}
-themes: {from structure-plan - copy array if present}
-quest_type_key: {from structure-plan - copy if present}
-quest_type: "{from structure-plan - copy if present}"
-world_type_key: {from structure-plan - copy if present}
-world_type: "{from structure-plan - copy if present}"
-worldbuilding_depth_key: {from structure-plan - copy if present}
-worldbuilding_depth: "{from structure-plan - copy if present}"
-tags:
-  - {from structure-plan}
-custom_style_notes: "{from structure-plan}"
----
-
-Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
-
-# Story Plan: {Title}
-
-## Structure Plan Reference
-
-**From 04-structure-plan.md:**
-- Story arc: {the planned arc}
-- Scene count: {number of scenes}
-- Target word count: {estimate}
-
-## Downstream Contract
-
-This plan is authoritative for the prose in `06-story.md`.
-
-- **Prose must preserve:** scene order, key beats/turns, and style notes (unless the user explicitly requests changes)
-
-## Character States
-
-### {Protagonist}
-- **Starting emotional state:** {where they begin}
-- **Goal:** {what they want}
-- **Internal conflict:** {tension driving them}
-- **Voice notes:** {how to render their perspective}
-
-### {Other Characters}
-- **{Name}:** {role and function}
-
-## Scene-by-Scene Breakdown
-
-Copy per-scene word count targets from structure-plan. These guide prose generation.
-
-### Scene 1: {Description}
-- **Word count target:** {from structure-plan, e.g., ~900 words}
-- **Purpose:** {why this scene exists}
-- **Conflict/Tension:** {what drives the scene}
-- **Key beats:** {1-3 specific moments}
-- **Ends with:** {transition or turn}
-- **Development notes:** {what will fill the space — e.g., "dialogue exchange + internal monologue + setting details"}
-
-{Repeat for each scene, carrying forward word count targets from structure-plan}
-
-## Style Notes
-
-- **Pacing:** {overall rhythm}
-- **Tone:** {emotional quality}
-- **Dialogue vs narration:** {balance}
-- **Sensory focus:** {what senses to emphasize}
-
-## Length Strategy
-
-{2-4 sentences analyzing how this story will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
-
-## Potential Pitfalls
-
-- {Thing to avoid}
-- {Risk to watch for}
-```
-
 ---
 
 ## Context Management Summary
@@ -1410,10 +1305,9 @@ Copy per-scene word count targets from structure-plan. These guide prose generat
 | 02-treatment-approach | 01-premise + taxonomies | — |
 | 03-treatment | 02-treatment-approach only | 01-premise |
 | 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
-| chapter-plan (novella/novel/epic) | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
-| 05-story-plan (flash/short/novelette) | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
+| chapter-plan N (novella/novel/epic) | 04-structure-plan + chapter-plans 1..N-1 | 01-premise, 02-treatment-approach, 03-treatment, chapter prose |
 | prose (novella/novel/epic) | all previous chapter prose + all chapter plans (current + future) + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
-| prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
+| prose (flash/short/novelette) | 04-structure-plan + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment |
 
 **Path Notes:**
 All paths are relative to the repository root:

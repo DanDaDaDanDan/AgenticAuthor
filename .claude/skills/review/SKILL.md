@@ -34,8 +34,8 @@ If `target` not provided, ask the user:
 - What would you like to review?
   1. Premise
   2. Treatment
-  3. Plan (structure plan - all project types)
-  4. Chapter/story plan (novella/novel/epic: specific chapter plan, flash/short/novelette: story plan)
+  3. Plan (structure plan - all project types; includes generation planning for flash/short/novelette)
+  4. Chapter plan (novella/novel/epic only: specific chapter plan)
   5. Prose (specific chapter or all)
   6. All - complete project review
 
@@ -61,18 +61,18 @@ Read `books/{project}/project.yaml` to get the genre.
 - `books/{project}/03-treatment.md`
 - `books/{project}/04-structure-plan.md`
 
-**For chapter plan review:**
+**For chapter plan review (novella/novel/epic only):**
 - `books/{project}/01-premise.md`
 - `books/{project}/02-treatment-approach.md`
 - `books/{project}/03-treatment.md`
 - `books/{project}/04-structure-plan.md`
-- Target chapter plan from `books/{project}/05-chapter-plans/` or `books/{project}/05-story-plan.md`
+- Target chapter plan from `books/{project}/05-chapter-plans/`
 
 **For prose review:**
 - All of the above (premise includes prose style selections)
 - For novella/novel/epic: all chapter plans in `books/{project}/05-chapter-plans/`
 - For novella/novel/epic: all chapter prose in `books/{project}/06-chapters/`
-- For flash/short/novelette: `books/{project}/05-story-plan.md` and `books/{project}/06-story.md`
+- For flash/short/novelette: `books/{project}/04-structure-plan.md` (includes generation planning) and `books/{project}/06-story.md`
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 
 ### Step 3: Analyze Content
@@ -164,19 +164,19 @@ Generate a review report. **Do NOT make any changes to files.**
 **Overall:** {Ready for prose, or needs adjustment}
 ```
 
-### Chapter/Story Plan Review
+### Chapter Plan Review (Novella/Novel/Epic Only)
 
-For novella/novel/epic, review specific chapter plans. For flash/short/novelette, review the story plan.
+For novella/novel/epic, review specific chapter plans. For flash/short/novelette, use "Plan Review" since structure-plan includes generation planning.
 
 ```markdown
-# Plan Review: {project} - {Chapter N / Story Plan}
+# Chapter Plan Review: {project} - Chapter {N}
 
 ## Structure Plan Alignment
 - **Matches structure-plan:** {Does plan align with 04-structure-plan.md?}
 - **Goals addressed:** {Will this plan achieve the stated goals?}
 
 ## Continuity Check
-- **Previous content threads:** {Properly picked up? (N/A for first chapter, or N/A for flash/short/novelette)}
+- **Previous content threads:** {Properly picked up from earlier chapters? (N/A for first chapter)}
 - **Character states:** {Consistent with where they should be?}
 - **World details:** {No contradictions?}
 

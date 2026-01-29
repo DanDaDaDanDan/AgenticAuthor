@@ -79,7 +79,7 @@ Three user commands, with planning handled automatically:
 |---------|--------|----------------|
 | `/generate premise` | 01-premise.md | — |
 | `/generate treatment` | 03-treatment.md | Generates 02-treatment-approach.md first |
-| `/generate prose` | 06-chapters/ or 06-story.md | Generates 04-structure-plan.md and 05-chapter-plans/ or 05-story-plan.md first |
+| `/generate prose` | 06-chapters/ or 06-story.md | Generates 04-structure-plan.md first (includes generation planning for single-file formats), then 05-chapter-plans/ for chaptered formats |
 
 Each stage builds on the previous. Generation runs autonomously to completion — use `/iterate` afterward to refine any output.
 
@@ -117,7 +117,7 @@ books/
     │   └── chapter-{NN}.md
     │
     │   # For flash/short/novelette:
-    ├── 05-story-plan.md         # Generation plan
+    │   # (04-structure-plan.md includes generation planning — no separate plan file)
     └── 06-story.md              # Complete story
 ```
 

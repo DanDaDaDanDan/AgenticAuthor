@@ -45,13 +45,12 @@ If `target` not provided, ask the user:
 - What would you like to iterate on?
   1. Premise - refine the core concept
   2. Treatment - adjust the story outline
-  3. Plan - modify structure plan (scene/chapter breakdown)
-  4. Chapter/story plan - adjust a generation plan (novella/novel/epic: specific chapter, flash/short/novelette: story plan)
+  3. Plan - modify structure plan (scene/chapter breakdown, includes generation planning for flash/short/novelette)
+  4. Chapter plan - adjust a chapter's generation plan (novella/novel/epic only)
   5. Prose - revise generated prose
 
-For chapter/story plan:
-- Novella/novel/epic: ask which chapter plan to revise
-- Flash/short/novelette: there's only one plan (`05-story-plan.md`)
+For chapter plan (novella/novel/epic only):
+- Ask which chapter plan to revise
 
 For prose, also ask which chapter(s) to revise, or "all" for the entire story.
 
@@ -116,17 +115,14 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For plan iteration (04-structure-plan.md):**
 - `books/{project}/04-structure-plan.md` - Current plan (already contains frontmatter + Characters)
+- For flash/short/novelette, structure-plan also includes generation planning (scene breakdowns, style notes, etc.)
 - Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md — structure-plan is self-contained
 
-**For chapter plan iteration (novella/novel/epic):**
-- `books/{project}/04-structure-plan.md` - Self-contained plan (frontmatter, characters, chapter breakdown)
+**For chapter plan iteration (novella/novel/epic only):**
+- `books/{project}/04-structure-plan.md` - Structure plan (frontmatter, characters, chapter breakdown)
+- All previous chapter plans in `books/{project}/05-chapter-plans/` (for continuity)
 - The specific chapter plan being revised
-- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, previous chapter prose, or other chapter plans
-
-**For story plan iteration (flash/short/novelette):**
-- `books/{project}/04-structure-plan.md` - Self-contained plan (frontmatter, characters, scene breakdown)
-- `books/{project}/05-story-plan.md` - The plan being revised
-- Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md
+- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or chapter prose
 
 **For prose iteration (novella/novel/epic):**
 - `books/{project}/06-chapters/chapter-{NN}.md` - The chapter being revised
@@ -138,10 +134,10 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 If revising multiple chapters, do it sequentially (one chapter at a time).
 
 **For prose iteration (flash/short/novelette):**
-- `books/{project}/05-story-plan.md` - The story plan (self-contained)
+- `books/{project}/04-structure-plan.md` - Structure plan (self-contained, includes generation planning)
 - `books/{project}/06-story.md` - The story being revised
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md
+- Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md
 
 ### Step 5: Apply Changes
 
@@ -208,12 +204,13 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Adjust pacing notes if content changes significantly
 - Update continuity tracking table
 
-### Chapter Plan Iteration
+### Chapter Plan Iteration (Novella/Novel/Epic Only)
 
 - Iterate on chapter plans **before** generating prose for that chapter
 - Adjust scene breakdowns, character states, or style notes as needed
 - If the chapter's prose already exists, note that prose may need regeneration
-- For flash/short/novelette, iterate on `05-story-plan.md`
+
+**Note:** For flash/short/novelette, iterate on `04-structure-plan.md` which includes generation planning.
 
 ### Prose Iteration
 
