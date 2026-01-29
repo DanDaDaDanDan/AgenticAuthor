@@ -42,6 +42,10 @@ Run a completeness check before exporting:
 - [ ] For novella/novel/epic: `06-chapters/chapter-*.md` files
 - [ ] For flash/short/novelette: `06-story.md`
 
+**Recommended (do not block export if missing):**
+- [ ] For flash/short/novelette: `05-story-plan.md` exists (useful as the micro beat sheet / prose contract)
+- [ ] For novella/novel/epic: `05-chapter-plans/chapter-*-plan.md` files exist (useful as generation plans / audit trail)
+
 **Ordering and consistency:**
 - [ ] Chapter numbering is sequential (no gaps: 01, 02, 03...)
 - [ ] All chapter files are non-empty
@@ -144,6 +148,10 @@ Length: {word count} words
 ## Structure Plan
 
 {04-structure-plan.md content, if exists}
+
+## Story Plan (flash/short/novelette only)
+
+{05-story-plan.md content, if exists}
 
 ---
 
@@ -306,6 +314,7 @@ These formats could be added later:
 For now, the markdown export can be converted using external tools like Pandoc:
 
 ```bash
+# From inside books/{project}/
 pandoc export/{project}.md -o export/{project}.epub
 pandoc export/{project}.md -o export/{project}.pdf
 ```

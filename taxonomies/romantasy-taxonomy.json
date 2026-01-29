@@ -7,7 +7,7 @@
   "categories": {
     "world_setting": {
       "category_name": "Primary World Setting",
-      "selection_rule": "select_one_primary_optional_secondary",
+      "selection_rule": "select_primary_and_secondary",
       "description": "The fundamental world type where the story takes place",
       "options": {
         "contemporary_hidden": {

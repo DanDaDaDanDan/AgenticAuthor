@@ -59,7 +59,7 @@ AgenticAuthor/
         │   └── chapter-{NN}.md
         │
         │   # For flash/short/novelette (single-file):
-        │   # (04-structure-plan.md IS the generation plan — no separate plan file)
+        ├── 05-story-plan.md       # Micro beat sheet (single-file only)
         └── 06-story.md            # Complete story
 ```
 
@@ -79,7 +79,7 @@ Each stage's output contains everything the next stage needs. Read only one step
 | chapter-plan N | 04-structure-plan + chapter-plans 1..N-1 | 01-premise, 02-treatment-approach, 03-treatment, chapter prose |
 | prose | all previous chapters + all chapter plans (current + future) + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
-**For flash/short/novelette (single-file formats):** Same principle — 04-structure-plan IS the generation plan (no separate story-plan), prose reads 04-structure-plan + prose-style-{prose_style_key}.
+**For flash/short/novelette (single-file formats):** Same principle — `05-story-plan.md` is the prose contract; story-plan reads `04-structure-plan.md`, and prose reads `05-story-plan.md` + `prose-style-{prose_style_key}`.
 
 **Why:** This prevents conflicts when iterating. If you change treatment, structure-plan sees the update automatically. Premise becomes "historical" (the seed), not the contract.
 
@@ -89,7 +89,7 @@ Automatically generate planning documents before major outputs:
 
 **`/generate treatment`** creates `02-treatment-approach.md` (with frontmatter from premise), then `03-treatment.md` (copies frontmatter from treatment-approach).
 
-**`/generate prose`** creates `04-structure-plan.md` first, then chapter plans (for chaptered formats). Each includes frontmatter so downstream stages are self-contained. For single-file formats, structure-plan includes all generation planning.
+**`/generate prose`** creates `04-structure-plan.md` first. For single-file formats it then creates `05-story-plan.md` before writing `06-story.md`. For chaptered formats it then creates chapter plans and chapter prose. Each plan includes frontmatter so downstream stages are self-contained.
 
 ### Quality First
 

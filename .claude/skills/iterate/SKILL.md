@@ -24,7 +24,7 @@ Each stage's output is self-contained — it carries forward all information nee
 
 ## Arguments
 
-- `target` (optional): What to iterate on - `premise`, `treatment`, `plan`, `chapter-plan`, or `prose`
+- `target` (optional): What to iterate on - `premise`, `treatment`, `plan`, `story-plan`, `chapter-plan`, or `prose`
 - `feedback` (optional): Natural language description of desired changes
 
 ## Instructions
@@ -45,9 +45,10 @@ If `target` not provided, ask the user:
 - What would you like to iterate on?
   1. Premise - refine the core concept
   2. Treatment - adjust the story outline
-  3. Plan - modify structure plan (scene/chapter breakdown, includes generation planning for flash/short/novelette)
-  4. Chapter plan - adjust a chapter's generation plan (novella/novel/epic only)
-  5. Prose - revise generated prose
+  3. Plan - modify structure plan (macro scene/chapter breakdown)
+  4. Story plan - modify micro beat sheet (flash/short/novelette only)
+  5. Chapter plan - adjust a chapter's generation plan (novella/novel/epic only)
+  6. Prose - revise generated prose
 
 For chapter plan (novella/novel/epic only):
 - Ask which chapter plan to revise
@@ -115,8 +116,12 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 
 **For plan iteration (04-structure-plan.md):**
 - `books/{project}/04-structure-plan.md` - Current plan (already contains frontmatter + Characters)
-- For flash/short/novelette, structure-plan also includes generation planning (scene breakdowns, style notes, etc.)
+- For flash/short/novelette, this is the macro plan; the micro beat sheet lives in `05-story-plan.md`
 - Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md — structure-plan is self-contained
+
+**For story-plan iteration (05-story-plan.md; flash/short/novelette only):**
+- `books/{project}/05-story-plan.md` - Current story plan (self-contained micro beat sheet; authoritative for `06-story.md`)
+- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md — story-plan is self-contained
 
 **For chapter plan iteration (novella/novel/epic only):**
 - `books/{project}/04-structure-plan.md` - Structure plan (frontmatter, characters, chapter breakdown)
@@ -134,10 +139,10 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 If revising multiple chapters, do it sequentially (one chapter at a time).
 
 **For prose iteration (flash/short/novelette):**
-- `books/{project}/04-structure-plan.md` - Structure plan (self-contained, includes generation planning)
+- `books/{project}/05-story-plan.md` - Story plan (authoritative contract for prose)
 - `books/{project}/06-story.md` - The story being revised
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
-- Do NOT read 01-premise.md, 02-treatment-approach.md, or 03-treatment.md
+- Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md
 
 ### Step 5: Apply Changes
 
@@ -146,7 +151,7 @@ Generate the revised content:
 1. **Apply the confirmed changes** - Make the specific changes discussed
 2. **Preserve everything else** - Don't change elements not mentioned in feedback
 3. **Maintain consistency** - Ensure changes align with the current stage's context
-4. **Follow frontmatter** - For prose, use the style from the plan's frontmatter and Style Notes (chapter-plan for novella/novel/epic, structure-plan for flash/short/novelette)
+4. **Follow frontmatter** - For prose, use the style from the plan's frontmatter and Style Notes (chapter-plan for novella/novel/epic, story-plan for flash/short/novelette)
 
 **Prose iteration principles:**
 - Preserve the author's distinctive voice and style
@@ -210,7 +215,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Adjust scene breakdowns, character states, or style notes as needed
 - If the chapter's prose already exists, note that prose may need regeneration
 
-**Note:** For flash/short/novelette, iterate on `04-structure-plan.md` which includes generation planning.
+**Note:** For flash/short/novelette, `04-structure-plan.md` is the macro plan and `05-story-plan.md` is the micro beat sheet (authoritative for `06-story.md`). Iterate the appropriate one based on what you want to change.
 
 ### Prose Iteration
 
@@ -220,7 +225,7 @@ cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {b
 - Plot thread continuity
 - Established world details
 
-Use the plan's Style Notes as guidance, not rigid rules (chapter-plan for novella/novel/epic, structure-plan for flash/short/novelette). If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
+Use the plan's Style Notes as guidance, not rigid rules (chapter-plan for novella/novel/epic, story-plan for flash/short/novelette). If the existing prose has a distinctive style that works, preserve it. The matching style card (`misc/prose-style-{prose_style_key}.md`) provides detailed reference.
 
 **What to preserve during prose iteration:**
 - Distinctive atmosphere and world-building

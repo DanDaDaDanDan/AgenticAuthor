@@ -3,7 +3,7 @@
   "taxonomy_name": "Base Story Properties",
   "description": "Universal properties applicable to all genres",
   "categories": {
-    "length_scope": {
+    "length": {
       "category_name": "Story Length",
       "selection_rule": "select_one",
       "description": "The target length of the complete story",
@@ -50,6 +50,26 @@
           "word_range": "120,000+",
           "chapter_count": "30+",
           "reading_time": "12+ hours"
+        }
+      }
+    },
+    "pacing": {
+      "category_name": "Pacing",
+      "selection_rule": "select_one",
+      "description": "Overall narrative pacing",
+      "required": false,
+      "options": {
+        "slow": {
+          "name": "Slow/Burn",
+          "description": "Deliberate pacing with more reflection and texture"
+        },
+        "moderate": {
+          "name": "Moderate/Balanced",
+          "description": "A mix of momentum and breathing room"
+        },
+        "fast": {
+          "name": "Fast/Propulsive",
+          "description": "High momentum with frequent turns and cliffhangers"
         }
       }
     },
@@ -255,7 +275,7 @@
   },
   "metadata": {
     "version": "1.0",
-    "required_categories": ["length_scope", "target_audience", "content_rating", "series_structure"],
+    "required_categories": ["length", "target_audience", "content_rating", "series_structure"],
     "optional_categories": ["pacing", "point_of_view", "ending_type"],
     "usage": "This base taxonomy should be merged with genre-specific taxonomies. Required categories must always be present in user selections."
   }

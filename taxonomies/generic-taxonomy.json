@@ -2,12 +2,12 @@
   "taxonomy_version": "1.0",
   "taxonomy_name": "Generic Story Classification",
   "extends": "base-taxonomy",
-  "genre": "custom",
+  "genre": "generic",
   "description": "Comprehensive taxonomy supporting all genres - based on original selections.json",
   "categories": {
     "genres": {
       "category_name": "Genre",
-      "selection_rule": "select_multiple",
+      "selection_rule": "select_all_that_apply",
       "description": "The story's genre classification(s)",
       "options": {
         "literary_fiction": {
@@ -149,7 +149,7 @@
     },
     "themes": {
       "category_name": "Themes",
-      "selection_rule": "select_multiple",
+      "selection_rule": "select_all_that_apply",
       "description": "Central ideas explored in the story",
       "options": {
         "good_vs_evil": {
@@ -216,7 +216,7 @@
     },
     "moods": {
       "category_name": "Overall Mood",
-      "selection_rule": "select_multiple",
+      "selection_rule": "select_all_that_apply",
       "description": "The emotional atmosphere",
       "options": {
         "lighthearted": {
@@ -283,7 +283,7 @@
     },
     "vibes": {
       "category_name": "Vibe",
-      "selection_rule": "select_multiple",
+      "selection_rule": "select_all_that_apply",
       "description": "The world's overall feeling",
       "options": {
         "mundane_realism": {
@@ -357,7 +357,7 @@
     },
     "cultural_lens": {
       "category_name": "Cultural Perspective",
-      "selection_rule": "select_multiple",
+      "selection_rule": "select_all_that_apply",
       "description": "Cultural influences and perspective",
       "options": {
         "western": {
@@ -645,7 +645,7 @@
     },
     "sub_genre_motifs": {
       "category_name": "Story Motifs",
-      "selection_rule": "select_multiple",
+      "selection_rule": "select_all_that_apply",
       "description": "Specific story patterns and tropes",
       "options": {
         "enemies_to_lovers": {

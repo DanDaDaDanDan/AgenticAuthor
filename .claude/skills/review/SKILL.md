@@ -14,7 +14,7 @@ Analyze content against quality standards without making changes.
 
 ## Arguments
 
-- `target` (optional): What to review - `premise`, `treatment`, `plan`, `chapter-plan`, `prose`, or `all`
+- `target` (optional): What to review - `premise`, `treatment`, `plan`, `story-plan`, `chapter-plan`, `prose`, or `all`
 
 ## Instructions
 
@@ -34,10 +34,11 @@ If `target` not provided, ask the user:
 - What would you like to review?
   1. Premise
   2. Treatment
-  3. Plan (structure plan - all project types; includes generation planning for flash/short/novelette)
-  4. Chapter plan (novella/novel/epic only: specific chapter plan)
-  5. Prose (specific chapter or all)
-  6. All - complete project review
+  3. Plan (04-structure-plan.md - macro plan; all project types)
+  4. Story plan (05-story-plan.md - micro beat sheet; flash/short/novelette only)
+  5. Chapter plan (novella/novel/epic only: specific chapter plan)
+  6. Prose (specific chapter or all)
+  7. All - complete project review
 
 ### Step 2: Read Context
 
@@ -61,6 +62,13 @@ Read `books/{project}/project.yaml` to get the genre.
 - `books/{project}/03-treatment.md`
 - `books/{project}/04-structure-plan.md`
 
+**For story plan review (05-story-plan.md; flash/short/novelette only):**
+- `books/{project}/01-premise.md`
+- `books/{project}/02-treatment-approach.md`
+- `books/{project}/03-treatment.md`
+- `books/{project}/04-structure-plan.md`
+- `books/{project}/05-story-plan.md`
+
 **For chapter plan review (novella/novel/epic only):**
 - `books/{project}/01-premise.md`
 - `books/{project}/02-treatment-approach.md`
@@ -72,12 +80,124 @@ Read `books/{project}/project.yaml` to get the genre.
 - All of the above (premise includes prose style selections)
 - For novella/novel/epic: all chapter plans in `books/{project}/05-chapter-plans/`
 - For novella/novel/epic: all chapter prose in `books/{project}/06-chapters/`
-- For flash/short/novelette: `books/{project}/04-structure-plan.md` (includes generation planning) and `books/{project}/06-story.md`
+- For flash/short/novelette: `books/{project}/04-structure-plan.md`, `books/{project}/05-story-plan.md` (if present), and `books/{project}/06-story.md`
 - `misc/prose-style-{prose_style_key}.md` - Style card matching the project's prose style
 
 ### Step 3: Analyze Content
 
 Generate a review report. **Do NOT make any changes to files.**
+
+### Prose Lint (Required for Prose Review)
+
+For `prose` reviews, include a short **Prose Lint** section with lightweight, measurable signals:
+
+- Estimated **Flesch Reading Ease** (compare to the style card target range)
+- **Dialogue ratio proxy** (quote-line ratio)
+- **Scene break count** vs. planned scene count
+- **Repeated phrase counts** for phrases listed in `prose_guidance.avoid_overuse` (from the plan frontmatter)
+
+Recommended approach (Python, no external dependencies):
+
+```bash
+python - <<'PY'
+import re
+from pathlib import Path
+
+def read(path):
+    return Path(path).read_text(encoding="utf-8", errors="replace")
+
+def frontmatter_block(text):
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return ""
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[1:i])
+    return ""
+
+def extract_avoid_overuse(frontmatter):
+    phrases = []
+    lines = frontmatter.splitlines()
+    in_pg = False
+    in_ao = False
+    for line in lines:
+        if re.match(r"^prose_guidance:\\s*$", line):
+            in_pg, in_ao = True, False
+            continue
+        if in_pg and re.match(r"^\\S", line):  # back to top-level
+            in_pg, in_ao = False, False
+        if in_pg and re.match(r"^\\s{2}avoid_overuse:\\s*$", line):
+            in_ao = True
+            continue
+        if in_ao:
+            m = re.match(r"^\\s{4}-\\s*(.+?)\\s*$", line)
+            if m:
+                raw = m.group(1).strip().strip('\"').strip(\"'\")
+                # Skip template placeholders
+                if raw and not raw.startswith(\"{\") and not raw.endswith(\"}\"):
+                    phrases.append(raw)
+                continue
+            # end avoid_overuse block if indentation changes
+            if re.match(r\"^\\s{0,2}\\S\", line):
+                in_ao = False
+    # de-dupe while preserving order
+    seen = set()
+    out = []
+    for p in phrases:
+        key = p.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out
+
+def syllables(word):
+    w = re.sub(r\"[^a-z]\", \"\", word.lower())
+    if not w:
+        return 0
+    if len(w) <= 3:
+        return 1
+    if w.endswith(\"e\"):
+        w = w[:-1]
+    groups = re.findall(r\"[aeiouy]+\", w)
+    return max(1, len(groups))
+
+def flesch_reading_ease(text):
+    plain = re.sub(r\"^#.*$\", \"\", text, flags=re.M)
+    words = re.findall(r\"[A-Za-z0-9’']+\", plain)
+    sents = [s for s in re.split(r\"(?<=[.!?])\\s+\", plain.strip()) if re.search(r\"[A-Za-z]\", s)]
+    if not words or not sents:
+        return None
+    syll = sum(syllables(w) for w in words)
+    wps = len(words) / len(sents)
+    spw = syll / len(words)
+    return 206.835 - 1.015 * wps - 84.6 * spw
+
+def extract_planned_scene_count(text):
+    m = re.search(r\"\\*\\*Number of scenes:\\*\\*\\s*(\\d+)\", text)
+    return int(m.group(1)) if m else None
+
+project = \"{project}\"
+story = read(f\"books/{project}/06-story.md\")
+plan_path = Path(f\"books/{project}/05-story-plan.md\")
+plan_text = read(plan_path) if plan_path.exists() else read(f\"books/{project}/04-structure-plan.md\")
+
+fm = frontmatter_block(plan_text)
+avoid = extract_avoid_overuse(fm)
+
+flesch = flesch_reading_ease(story)
+lines = story.splitlines()
+quote_lines = sum(1 for l in lines if '\"' in l)
+scene_breaks = sum(1 for l in lines if l.strip() == \"* * *\")
+planned_scenes = extract_planned_scene_count(plan_text)
+
+print(\"flesch_est\", None if flesch is None else round(flesch, 1))
+print(\"quote_line_ratio\", f\"{quote_lines}/{len(lines)}\")
+print(\"scene_breaks\", scene_breaks)
+print(\"planned_scenes\", planned_scenes)
+for p in avoid:
+    print(\"phrase\", p, story.lower().count(p.lower()))
+PY
+```
 
 ---
 
@@ -164,9 +284,36 @@ Generate a review report. **Do NOT make any changes to files.**
 **Overall:** {Ready for prose, or needs adjustment}
 ```
 
+### Story Plan Review (Flash/Short/Novelette Only)
+
+```markdown
+# Story Plan Review: {project}
+
+## Structure Plan Alignment
+- **Matches 04-structure-plan.md:** {Does story-plan preserve scene order, beats, and style notes?}
+- **Scene engines present:** {Does every scene include desire/obstacle/escalation/turn/cost?}
+- **Micro-turns present:** {2-4 state changes per scene?}
+- **Must-dramatize moments:** {One per scene, concrete and non-summary?}
+
+## Subtext & Friction
+- **Ally disagreement (required):** {Is there at least one meaningful disagreement that changes a choice/approach?}
+- **Not “thesis-y”:** {Does the plan force dramatized moments instead of manifesto paragraphs?}
+
+## Prose Guidance Quality
+- **avoid_overuse:** {Actionable phrase/tic list (prefer plain phrases)?}
+- **pacing_notes:** {Specific and stage-appropriate?}
+- **preserve:** {Clear “do not lose” items for the prose agent?}
+
+## Suggestions
+1. {Specific improvement suggestion}
+2. {Another suggestion}
+
+**Overall:** {Ready for prose generation, or iterate story-plan first}
+```
+
 ### Chapter Plan Review (Novella/Novel/Epic Only)
 
-For novella/novel/epic, review specific chapter plans. For flash/short/novelette, use "Plan Review" since structure-plan includes generation planning.
+For novella/novel/epic, review specific chapter plans. For flash/short/novelette, use "Story Plan Review" (`05-story-plan.md`) as the micro generation plan (structure-plan is macro).
 
 ```markdown
 # Chapter Plan Review: {project} - Chapter {N}
@@ -223,6 +370,13 @@ For novella/novel/epic, review specific chapter plans. For flash/short/novelette
 - **Consistency:** {Single POV per scene?}
 - **Any drift:** {Unintentional perspective shifts?}
 
+## Prose Lint (metrics)
+- **Estimated Flesch Reading Ease:** {value} (compare to style card target)
+- **Dialogue ratio proxy:** {quote lines}/{total lines} ({interpretation})
+- **Scene breaks:** {actual scene breaks} (planned scenes: {planned count}; expected breaks ≈ planned-1)
+- **Repeated phrases (from `prose_guidance.avoid_overuse`):**
+  - {phrase}: {count}
+
 ## Strengths to Preserve
 
 - {What's working well - voice, atmosphere, moments}
@@ -236,7 +390,8 @@ For novella/novel/epic, review specific chapter plans. For flash/short/novelette
 
 ## Plot/Continuity
 - **Structure plan alignment:** {Does prose follow structure plan?}
-- **Chapter plan alignment:** {Does prose follow the chapter plan's scene breakdown?}
+- **Story plan alignment (flash/short/novelette):** {Does prose follow `05-story-plan.md` micro beats and constraints?}
+- **Chapter plan alignment (novella/novel/epic):** {Does prose follow the chapter plan's scene breakdown?}
 - **Consistency notes:** {Any contradictions or continuity gaps?}
 
 ## Suggestions

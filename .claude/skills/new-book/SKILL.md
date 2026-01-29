@@ -39,9 +39,9 @@ Then ask:
   12. Other (use generic taxonomy)
 
 - What length is this project?
-  1. Flash fiction (single file, ~500-1,500 words) - generates `06-story.md`
-  2. Short story (single file, ~1,500-7,500 words) - generates `06-story.md`
-  3. Novelette (single file, ~7,500-17,500 words) - generates `06-story.md`
+  1. Flash fiction (single file, ~500-1,500 words) - generates `05-story-plan.md` + `06-story.md`
+  2. Short story (single file, ~1,500-7,500 words) - generates `05-story-plan.md` + `06-story.md`
+  3. Novelette (single file, ~7,500-17,500 words) - generates `05-story-plan.md` + `06-story.md`
   4. Novella (chaptered, ~17,500-40,000 words) - generates `06-chapters/` directory
   5. Novel (chaptered, ~40,000-120,000 words) - generates `06-chapters/` directory
   6. Epic (chaptered, ~120,000+ words) - generates `06-chapters/` directory

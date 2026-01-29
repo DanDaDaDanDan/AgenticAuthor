@@ -89,7 +89,7 @@ Generate the core concept and story foundation.
 | generic | generic-taxonomy.json |
 
 **Using taxonomy data:**
-1. Review the genre taxonomy's subgenres and present relevant options to the user
+1. Review the genre taxonomy's subgenre/type category and present relevant options to the user
 2. Use the selected subgenre's `key_features`, `themes`, and `tone` to guide the premise
 3. Read `length` and `series_structure` from project.yaml (already collected by /new-book)
 4. Ask the user about `target_audience` and `content_rating` from base-taxonomy options
@@ -124,17 +124,25 @@ Generate the core concept and story foundation.
 
 1. Ask the user for a brief concept (1-3 sentences describing the story idea).
 
-2. **Present subgenre options from the genre taxonomy:**
-   Read the genre taxonomy and find the subgenre category (named `{genre}_subgenre`, e.g., `fantasy_subgenre`, `romance_subgenre`). Present options to the user:
-   > What subgenre fits this story?
+2. **Present the story’s “subgenre/type” from the genre taxonomy:**
+   Not all taxonomies name this category `{genre}_subgenre`. Determine the best-fit category in this order:
+   1. Prefer a category key ending in `_subgenre` (e.g., `fantasy_subgenre`, `contemporary_subgenre`, `scifi_subgenre`, `mystery_subgenre`).
+   2. Otherwise use a genre-specific fallback:
+      - `urban-fantasy` → `urban_fantasy_type`
+      - `romantasy` → `world_setting`
+      - `literary-fiction` → `literary_style`
+      - `historical-fiction` → `historical_period`
+      - `young-adult` → `ya_genre`
+      - `generic` → `genres`
+
+   Present the chosen category’s options to the user:
+   > What subgenre/type fits this story best?
    > {List options from taxonomy with brief descriptions}
 
-   Check the category's `selection_rule`:
-   - If `select_primary_and_secondary`: Ask for primary choice, then offer optional secondary
-   - If `select_one`: Just ask for one choice
-   - If multi-select (`select_up_to_three`, etc.): Allow multiple selections
-
-   Store the selection(s) in the appropriate frontmatter structure (object for primary/secondary, array for multi-select, scalar for single).
+   Map the category’s `selection_rule` into the standard frontmatter fields:
+   - If `select_primary_and_secondary`: Ask for primary choice, then offer optional secondary; store into `subgenre_keys`/`subgenres` object.
+   - If `select_primary` or `select_one`: Ask for one choice; store as `subgenre_keys.primary`/`subgenres.primary` and omit `secondary`.
+   - If it’s a multi-select rule: Ask for **one primary** and optionally **one secondary** from the options; store into `subgenre_keys`/`subgenres` object (do not store more than two in `subgenre_keys`).
 
 3. Ask about target audience:
    > Who is the target audience?
@@ -388,6 +396,11 @@ Do NOT read 01-premise.md or any other files.
 **Requirements:**
 - Follow the decisions in `02-treatment-approach.md` (structure type, act logic, risks).
 - Copy frontmatter values from `02-treatment-approach.md` (treatment-approach has all values from premise).
+- Add a `prose_guidance` block in frontmatter with actionable, project-specific guidance:
+  - `avoid_overuse`: phrases/tics to watch for (keep entries as plain phrases whenever possible)
+  - `techniques`: specific craft techniques to apply (e.g., “replace thesis paragraphs with dramatized friction”)
+  - `pacing_notes`: where to tighten/expand and why
+  - `preserve`: what is working and must not be lost downstream
 - Include the **Downstream Contract** section from the template.
 
 **After:** `cd books && git add {project}/03-treatment.md && git commit -m "Add: Generate treatment for {project}"`
@@ -518,6 +531,16 @@ worldbuilding_depth: "{from treatment-approach - copy if present}"
 tags:
   - {from treatment-approach}
 custom_style_notes: "{from treatment-approach}"
+prose_guidance:
+  # Required. Keep `avoid_overuse` entries as plain phrases/tics whenever possible.
+  avoid_overuse:
+    - {phrase or tic to watch for}
+  techniques:
+    - {specific craft technique to apply}
+  pacing_notes:
+    - {pacing note (where to tighten/expand and why)}
+  preserve:
+    - {element that must be preserved downstream}
 ---
 
 # Treatment
@@ -624,6 +647,16 @@ worldbuilding_depth: "{from treatment-approach - copy if present}"
 tags:
   - {from treatment-approach}
 custom_style_notes: "{from treatment-approach}"
+prose_guidance:
+  # Required. Keep `avoid_overuse` entries as plain phrases/tics whenever possible.
+  avoid_overuse:
+    - {phrase or tic to watch for}
+  techniques:
+    - {specific craft technique to apply}
+  pacing_notes:
+    - {pacing note (where to tighten/expand and why)}
+  preserve:
+    - {element that must be preserved downstream}
 ---
 
 # Treatment
@@ -663,10 +696,11 @@ Generate the actual story prose.
 
 ### Orchestration Flow
 
-1. **Check what exists** — 04-structure-plan? 05-chapter-plans (novella/novel/epic)? prose?
+1. **Check what exists** — 04-structure-plan? 05-story-plan (flash/short/novelette)? 05-chapter-plans (novella/novel/epic)? prose?
 2. **Ask clarifying questions** UPFRONT for any missing planning documents
 3. **Spawn sub-agents** sequentially for each missing piece:
-   - Structure-plan sub-agent (if missing) — for single-file formats, this includes all generation planning
+   - Structure-plan sub-agent (if missing) — macro plan for all formats
+   - Story-plan sub-agent (if missing, flash/short/novelette only) — micro beat sheet used as the prose contract
    - Chapter-plan sub-agents (if missing, for novella/novel/epic only)
    - Prose sub-agent(s)
 4. Report completion
@@ -678,8 +712,9 @@ Generate the actual story prose.
 | Generating | Sub-agent Reads | Sub-agent Does NOT Read |
 |------------|-----------------|-------------------------|
 | structure-plan | 03-treatment.md only | 01-premise.md, 02-treatment-approach.md |
+| story-plan (flash/short/novelette) | 04-structure-plan.md only | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, prose |
 | chapter-plan N (novella/novel/epic) | 04-structure-plan.md + chapter-plans 1..N-1 | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, chapter prose |
-| prose (flash/short/novelette) | 04-structure-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md |
+| prose (flash/short/novelette) | 05-story-plan.md + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
 | prose (novella/novel/epic) | all previous chapter prose + all chapter plans (current + future) + prose-style-{prose_style_key}.md | 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md |
 
 ### Clarifying Questions
@@ -755,7 +790,9 @@ Do NOT read 01-premise.md, 02-treatment-approach.md, or any other files.
 
 **Requirements:**
 - Copy frontmatter from `03-treatment.md` and include the template’s **Downstream Contract** section.
+- Preserve `prose_guidance` from treatment frontmatter (do not drop or rename it).
 - Allocate per scene/chapter word targets deliberately (not uniform) and ensure they approximately sum to the overall target.
+- For flash/short/novelette: each planned scene must include explicit **Desire / Obstacle / Escalation / Turn / Cost** fields (see template).
 
 **After:** `cd books && git add {project}/04-structure-plan.md && git commit -m "Add: Generate structure plan for {project}"`
 
@@ -764,26 +801,75 @@ Generate complete content. Do not ask for approval.
 
 ---
 
+### Sub-Agent: Story Plan (Flash/Short/Novelette)
+
+**Spawn when:** `05-story-plan.md` doesn't exist (and structure-plan exists; flash/short/novelette only)
+
+**Sub-agent prompt template:**
+
+```
+Write `books/{project}/05-story-plan.md` for `{project}`.
+
+**Project type:** {flash_fiction|short_story|novelette}
+
+**Read only:**
+1. `books/{project}/04-structure-plan.md` — Macro structure plan (authoritative)
+
+Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or any other files.
+
+**Output:** `books/{project}/05-story-plan.md` (use the Story Plan template from this skill)
+
+**Requirements:**
+- Copy ALL frontmatter values from `04-structure-plan.md` (including `prose_guidance`) — do not modify.
+- Expand each scene into a micro plan that makes prose generation difficult to “hand-wave”:
+  - Explicit: Desire / Obstacle / Escalation / Turn / Cost
+  - 2–4 micro-turns (state changes) per scene
+  - Identify one “must dramatize” moment per scene that may NOT be summarized in prose
+- Identify where the story will include **at least 1 meaningful disagreement between allies** (subtext engine), and what it changes.
+- If the story is domain-heavy (tech/legal/medical/etc.), ensure the plan includes at least 1 constraint (MFA/logs/detection) and a cost.
+
+**After:** `cd books && git add {project}/05-story-plan.md && git commit -m "Add: Story plan for {project}"`
+
+Generate complete content. Do not ask for approval.
+```
+
+---
+
 ### Sub-Agent: Prose Generation (Flash/Short/Novelette)
 
-**Spawn when:** `06-story.md` doesn't exist (and structure-plan exists)
+**Spawn when:** `06-story.md` doesn't exist (and story-plan exists)
 
 **Sub-agent prompt template:**
 
 ```
 Write complete prose for `{project}`.
 
-**Target word count:** {from structure-plan, e.g., ~14,000 words}
+**Target word count:** {from story-plan/structure-plan, e.g., ~14,000 words}
 
 **Read only:**
-1. `books/{project}/04-structure-plan.md` — Complete structure plan with scene breakdowns, development notes, and style notes
+1. `books/{project}/05-story-plan.md` — Story plan (authoritative prose contract)
 2. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
-Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or any other files.
+Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md, or any other files.
 
 **Output:** `books/{project}/06-story.md` — Complete prose
 
-**Guidance:** Follow the structure plan as the authoritative contract. Use the style card for technique. Keep prose publication-ready.
+**Guidance:** Follow the story plan as the authoritative contract. Use the style card for technique. Keep prose publication-ready.
+
+You must obey `prose_guidance` from the story-plan frontmatter (especially `avoid_overuse`, `pacing_notes`, and `preserve`).
+
+**Required process (two-pass):**
+1. **Draft pass:** write a complete draft that covers the plan (do not polish yet).
+2. **Self-review pass:** run the checklist below (do not include the checklist in the prose file).
+3. **Revise pass:** revise for clarity, tension, and polish; then output the final revised prose.
+
+**Self-review checklist (required):**
+- Each scene has a clear desire / obstacle / turn (and a cost).
+- No “thesis paragraph” unless it is anchored to an immediate sensory stimulus AND a present-moment choice.
+- Supporting-character introductions do not exceed 2 sentences of explicit backstory on first meeting.
+- Include at least 1 meaningful disagreement between allies (subtext), and ensure it changes a choice/approach.
+- If domain-heavy: include at least 1 realistic constraint (MFA/logs/detection/etc.) and a cost for bypassing it.
+- Confirm compliance with `prose_guidance` (avoid overuse phrases/tics; apply pacing notes; preserve what must be preserved).
 
 **Prose format:**
 - Start with: # {Story Title}
@@ -824,6 +910,7 @@ Generate `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` for Chapter {N}
 - Reference previous chapter plans for character states, established details, and open threads.
 - Include per-scene word targets and brief development notes (what fills the space: dialogue/interiority/action/description).
 - Include a short **Downstream Contract** section stating what the prose must preserve from this plan.
+- Preserve `prose_guidance` from structure-plan frontmatter (do not drop or rename it).
 
 **After:**
 Run: `mkdir -p books/{project}/05-chapter-plans`
@@ -856,6 +943,8 @@ Generate `books/{project}/06-chapters/chapter-{NN}.md` (Chapter {N}) for `{proje
 **Output:** `books/{project}/06-chapters/chapter-{NN}.md` — Chapter prose
 
 **Guidance:** Follow this chapter's plan as the authoritative contract. Use previous chapter prose for continuity and future chapter plans for foreshadowing context. Keep prose publication-ready.
+
+You must obey `prose_guidance` from the chapter-plan frontmatter (especially `avoid_overuse`, `pacing_notes`, and `preserve`).
 
 **Chapter prose format:**
 
@@ -971,6 +1060,7 @@ worldbuilding_depth: "{from treatment - copy if present}"
 tags:
   - {from treatment}
 custom_style_notes: "{from treatment}"
+prose_guidance: {from treatment - copy entire object}
 ---
 
 Copy ALL frontmatter values from treatment, including multi-select arrays and objects. Do not modify unless user explicitly requested changes.
@@ -1086,6 +1176,7 @@ worldbuilding_depth: "{from treatment - copy if present}"
 tags:
   - {from treatment}
 custom_style_notes: "{from treatment}"
+prose_guidance: {from treatment - copy entire object}
 ---
 
 Copy ALL frontmatter values from treatment, including multi-select arrays and objects. Do not modify unless user explicitly requested changes.
@@ -1103,9 +1194,10 @@ Note: Per-scene word count targets below should approximately sum to the overall
 
 ## Downstream Contract
 
-This file is the authoritative plan for prose generation (`06-story.md`).
+This file is the authoritative macro plan for story-plan generation (`05-story-plan.md`).
 
-- **Prose must preserve:** scene order, key beats/turns, and style notes (unless the user explicitly requests changes)
+- **Story plan must preserve:** scene order, key beats/turns, `prose_guidance`, and style notes (unless the user explicitly requests changes)
+- **Prose contract:** `05-story-plan.md` becomes the authoritative contract for `06-story.md`
 
 ## Character States
 
@@ -1127,6 +1219,13 @@ This file is the authoritative plan for prose generation (`06-story.md`).
 **Word count target:** {estimate}
 
 **Purpose:** {What this scene accomplishes}
+
+**Scene engine:**
+- **Desire:** {what the protagonist wants right now}
+- **Obstacle:** {what blocks it}
+- **Escalation:** {what makes it worse}
+- **Turn:** {what changes by the end}
+- **Cost:** {what is paid (emotionally or materially)}
 
 **Beat-by-beat:**
 1. {Opening beat - how scene starts}
@@ -1163,6 +1262,112 @@ This file is the authoritative plan for prose generation (`06-story.md`).
 
 - {Thing to avoid or be careful about}
 - {Risk to watch for}
+```
+
+---
+
+## Story Plan Template (Flash/Short/Novelette Only)
+
+### Story Plan Format
+
+```markdown
+---
+project: {project-name}
+stage: story-plan
+# Copy ALL taxonomy keys and display names from structure-plan frontmatter
+# This includes single-select (scalars), primary/secondary (objects), and multi-select (arrays)
+genre_key: {from structure-plan}
+subgenre_keys: {from structure-plan - copy entire object}
+subgenres: {from structure-plan - copy entire object}
+length_key: {from structure-plan: flash_fiction|short_story|novelette}
+length_target_words: {number}
+series_structure_key: {from structure-plan}
+series_structure: "{from structure-plan}"
+target_audience_key: {from structure-plan}
+target_audience: "{from structure-plan}"
+content_rating_key: {from structure-plan}
+content_rating: "{from structure-plan}"
+prose_style_key: {from structure-plan}
+prose_style: "{from structure-plan}"
+dialogue_density_key: {from structure-plan}
+dialogue_density: "{from structure-plan}"
+pov_key: {from structure-plan}
+pov: "{from structure-plan}"
+tense: {from structure-plan}
+tone: "{from structure-plan}"
+mood: "{from structure-plan}"
+# Multi-select: copy all genre-specific arrays/objects from structure-plan
+magic_system_keys: {from structure-plan - copy array if present}
+magic_systems: {from structure-plan - copy array if present}
+fantasy_race_keys: {from structure-plan - copy array if present}
+fantasy_races: {from structure-plan - copy array if present}
+theme_keys: {from structure-plan - copy array if present}
+themes: {from structure-plan - copy array if present}
+quest_type_key: {from structure-plan - copy if present}
+quest_type: "{from structure-plan - copy if present}"
+world_type_key: {from structure-plan - copy if present}
+world_type: "{from structure-plan - copy if present}"
+worldbuilding_depth_key: {from structure-plan - copy if present}
+worldbuilding_depth: "{from structure-plan - copy if present}"
+tags:
+  - {from structure-plan}
+custom_style_notes: "{from structure-plan}"
+prose_guidance: {from structure-plan - copy entire object}
+---
+
+Copy ALL frontmatter values from structure-plan, including `prose_guidance`. Do not modify.
+
+# Story Plan: {Title}
+
+## Structure Plan Reference
+
+**From 04-structure-plan.md:**
+- Target word count: {from structure-plan overview}
+- Scene count: {from structure-plan overview}
+- Story arc: {1-3 lines summarizing the arc}
+
+## Voice Calibration
+
+{Optional but recommended for voice-heavy stories: 200-400 words of in-voice sample narration OR a bullet list of “voice moves” and “don’ts.”}
+
+## Story-wide Engines (Required)
+
+- **Ally disagreement (required):** {Where it happens, what is at stake, and what it changes}
+- **Domain constraint (if applicable):** {MFA/logs/detection/etc.} + {what it costs to bypass}
+
+## Scene-by-Scene Micro Plan
+
+### Scene 1: {Title/Description}
+
+**Setting:** {from structure-plan}
+**Word count target:** {from structure-plan}
+
+**Desire:** {what the protagonist wants right now}
+**Obstacle:** {what blocks it}
+**Escalation:** {what makes it worse}
+**Turn:** {what changes by the end}
+**Cost:** {what is paid (emotionally or materially)}
+
+**Micro-turns (2-4):**
+1. {state change}
+2. {state change}
+
+**Must dramatize moment:** {one specific beat that must be shown in-scene (not summarized)}
+**Backstory constraint:** {ensure intros stay ≤2 sentences of explicit backstory on first meeting}
+
+**Notes:** {how to spend words — dialogue/interiority/action/texture; where subtext lives; what to avoid per prose_guidance}
+**Ends with:** {hook/turn}
+
+---
+
+{Repeat for each scene}
+
+## Downstream Contract
+
+This file is the authoritative plan for prose generation (`06-story.md`).
+
+- **Prose must preserve:** scene order, key beats/turns, scene engines (desire/obstacle/escalation/turn/cost), the planned ally disagreement, and `prose_guidance`.
+- **Theme delivery constraint:** no thesis-only paragraphs; any thematic statement must be anchored to immediate sensation + present-moment choice.
 ```
 
 ---
@@ -1216,6 +1421,7 @@ worldbuilding_depth: "{from structure-plan - copy if present}"
 tags:
   - {from structure-plan}
 custom_style_notes: "{from structure-plan}"
+prose_guidance: {from structure-plan - copy entire object}
 ---
 
 Copy ALL frontmatter values from structure-plan, including multi-select arrays and objects. Do not modify.
@@ -1303,9 +1509,10 @@ This plan is authoritative for the prose of Chapter {N}.
 | 02-treatment-approach | 01-premise + taxonomies | — |
 | 03-treatment | 02-treatment-approach only | 01-premise |
 | 04-structure-plan | 03-treatment only | 01-premise, 02-treatment-approach |
+| 05-story-plan (flash/short/novelette) | 04-structure-plan only | 01-premise, 02-treatment-approach, 03-treatment |
 | chapter-plan N (novella/novel/epic) | 04-structure-plan + chapter-plans 1..N-1 | 01-premise, 02-treatment-approach, 03-treatment, chapter prose |
 | prose (novella/novel/epic) | all previous chapter prose + all chapter plans (current + future) + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
-| prose (flash/short/novelette) | 04-structure-plan + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment |
+| prose (flash/short/novelette) | 05-story-plan + prose-style-{prose_style_key} | 01-premise, 02-treatment-approach, 03-treatment, 04-structure-plan |
 
 **Path Notes:**
 All paths are relative to the repository root:
