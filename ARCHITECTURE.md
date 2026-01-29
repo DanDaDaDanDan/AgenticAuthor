@@ -22,7 +22,10 @@ AgenticAuthor/
 │   └── skills/               # Claude Code skill definitions
 │       ├── new-book/SKILL.md
 │       ├── select-book/SKILL.md
-│       ├── generate/SKILL.md
+│       ├── generate/SKILL.md       # Router (/generate [stage])
+│       ├── generate-premise/SKILL.md
+│       ├── generate-treatment/SKILL.md
+│       ├── generate-prose/SKILL.md
 │       ├── iterate/SKILL.md
 │       ├── review/SKILL.md
 │       ├── status/SKILL.md
@@ -57,7 +60,10 @@ All skills are defined in `.claude/skills/{skill}/SKILL.md`:
 |-------|---------|
 | `/new-book` | Create a new book project |
 | `/select-book` | Select a book project to work on |
-| `/generate` | Generate premise, treatment, or prose |
+| `/generate` | Router for stage generation |
+| `/generate-premise` | Generate 01-premise.md |
+| `/generate-treatment` | Generate 02-treatment-approach.md → 03-treatment.md |
+| `/generate-prose` | Generate planning + prose |
 | `/iterate` | Refine content with feedback |
 | `/review` | Analyze without changes |
 | `/status` | Show progress |
@@ -68,11 +74,11 @@ All skills are defined in `.claude/skills/{skill}/SKILL.md`:
 Three user commands with implicit planning steps:
 
 ```
-/generate premise    → 01-premise.md
+/generate-premise    → 01-premise.md
 
-/generate treatment  → [02-treatment-approach.md] → 03-treatment.md
+/generate-treatment  → [02-treatment-approach.md] → 03-treatment.md
 
-/generate prose      → [04-structure-plan.md] → [plans] → prose
+/generate-prose      → [04-structure-plan.md] → [plans] → prose
 ```
 
 Bracketed steps `[...]` are generated automatically. Generation runs autonomously to completion; use `/iterate` afterward to refine.
@@ -103,7 +109,7 @@ Full context rules are in `.claude/skills/generate/SKILL.md`.
 
 | Topic | Location |
 |-------|----------|
-| File formats & templates | `.claude/skills/generate/SKILL.md` — Templates section |
+| File formats & templates | `.claude/skills/generate-premise/SKILL.md`, `.claude/skills/generate-treatment/SKILL.md`, `.claude/skills/generate-prose/SKILL.md` |
 | Context rules | `.claude/skills/generate/SKILL.md` — Context Management Summary |
 | Sub-agent execution model | `.claude/skills/generate/SKILL.md` — Execution Model |
 | Iteration guidelines | `.claude/skills/iterate/SKILL.md` |
@@ -124,4 +130,4 @@ Full context rules are in `.claude/skills/generate/SKILL.md`.
 
 1. Create `taxonomies/your-genre-taxonomy.json`
 2. Follow the structure of existing taxonomies
-3. Add genre mapping in `/new-book` and `/generate premise`
+3. Add genre mapping in `/new-book` and `/generate-premise`

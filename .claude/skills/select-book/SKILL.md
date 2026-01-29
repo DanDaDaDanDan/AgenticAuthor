@@ -22,15 +22,18 @@ Select a book project to work on. All subsequent `/generate`, `/iterate`, `/stat
 
 Read the `books/` directory to find available projects. List subdirectories that contain a `project.yaml` file (this automatically excludes `.git` and other non-project directories):
 
+**Bash:**
 ```bash
 for dir in books/*/; do
   [ -f "$dir/project.yaml" ] && basename "$dir"
 done
 ```
 
-Alternatively, just list directories and filter out `.git`:
-```bash
-ls -d books/*/ 2>/dev/null | xargs -I{} basename {} | grep -v "^\.git$"
+**PowerShell:**
+```powershell
+Get-ChildItem -Directory books |
+  Where-Object { Test-Path (Join-Path $_.FullName 'project.yaml') } |
+  Select-Object -ExpandProperty Name
 ```
 
 ### Step 2: Select Book
@@ -57,8 +60,14 @@ Which project would you like to work on?
 
 Before setting as active, verify the project has a valid `project.yaml`:
 
+**Bash:**
 ```bash
 cat books/{book-name}/project.yaml
+```
+
+**PowerShell:**
+```powershell
+Get-Content books/{book-name}/project.yaml
 ```
 
 If `project.yaml` is missing, warn the user:
@@ -87,6 +96,10 @@ Replace the `project:` value with the selected book name.
 
 ```bash
 cd books && git add active-book.yaml && git commit -m "Update: Set {book-name} as active book"
+```
+
+```powershell
+cd books; git add active-book.yaml; git commit -m "Update: Set {book-name} as active book"
 ```
 
 ### Step 6: Show Confirmation

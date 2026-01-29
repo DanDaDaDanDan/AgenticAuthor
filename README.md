@@ -31,9 +31,9 @@ AgenticAuthor uses Claude Code as the orchestrator to help you write complete bo
 
 3. **Generate your book:**
    ```
-   /generate premise
-   /generate treatment
-   /generate prose
+   /generate-premise
+   /generate-treatment
+   /generate-prose
    ```
 
 4. **Iterate with natural language:**
@@ -65,7 +65,10 @@ The active book is stored in `books/active-book.yaml`.
 |-------|---------|
 | `/new-book` | Create a new book project |
 | `/select-book` | Select a book project to work on |
-| `/generate` | Generate premise, treatment, or prose |
+| `/generate` | Router for stage generation (premise/treatment/prose) |
+| `/generate-premise` | Generate 01-premise.md |
+| `/generate-treatment` | Generate 02-treatment-approach.md → 03-treatment.md |
+| `/generate-prose` | Generate planning + prose (04-structure-plan.md → plans → prose) |
 | `/iterate` | Refine content with natural language feedback |
 | `/review` | Analyze content against quality standards |
 | `/status` | Show project progress |
@@ -77,9 +80,11 @@ Three user commands, with planning handled automatically:
 
 | Command | Output | Implicit Steps |
 |---------|--------|----------------|
-| `/generate premise` | 01-premise.md | — |
-| `/generate treatment` | 03-treatment.md | Generates 02-treatment-approach.md first |
-| `/generate prose` | 06-chapters/ or 06-story.md | Generates 04-structure-plan.md first, then 05-story-plan.md for single-file formats or 05-chapter-plans/ for chaptered formats |
+| `/generate-premise` | 01-premise.md | — |
+| `/generate-treatment` | 03-treatment.md | Generates 02-treatment-approach.md first |
+| `/generate-prose` | 06-chapters/ or 06-story.md | Generates 04-structure-plan.md first, then 05-story-plan.md for single-file formats or 05-chapter-plans/ for chaptered formats |
+
+`/generate [stage]` is a router alias for these stage-specific skills.
 
 Each stage builds on the previous. Generation runs autonomously to completion — use `/iterate` afterward to refine any output.
 

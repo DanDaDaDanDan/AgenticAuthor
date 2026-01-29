@@ -178,8 +178,14 @@ Preserved:
 
 Write the revised file(s) to `books/{project}/` and commit:
 
+**Bash:**
 ```bash
 cd books && git add {project}/{file(s)} && git commit -m "Iterate: {target} - {brief feedback summary}"
+```
+
+**PowerShell:**
+```powershell
+cd books; git add {project}/{file(s)}; git commit -m "Iterate: {target} - {brief feedback summary}"
 ```
 
 ## Iteration Guidelines

@@ -98,6 +98,7 @@ For `prose` reviews, include a short **Prose Lint** section with lightweight, me
 
 Recommended approach (Python, no external dependencies):
 
+**Bash:**
 ```bash
 python - <<'PY'
 import re
@@ -121,24 +122,24 @@ def extract_avoid_overuse(frontmatter):
     in_pg = False
     in_ao = False
     for line in lines:
-        if re.match(r"^prose_guidance:\\s*$", line):
+        if re.match(r"^prose_guidance:\s*$", line):
             in_pg, in_ao = True, False
             continue
-        if in_pg and re.match(r"^\\S", line):  # back to top-level
+        if in_pg and re.match(r"^\S", line):  # back to top-level
             in_pg, in_ao = False, False
-        if in_pg and re.match(r"^\\s{2}avoid_overuse:\\s*$", line):
+        if in_pg and re.match(r"^\s{2}avoid_overuse:\s*$", line):
             in_ao = True
             continue
         if in_ao:
-            m = re.match(r"^\\s{4}-\\s*(.+?)\\s*$", line)
+            m = re.match(r"^\s{4}-\s*(.+?)\s*$", line)
             if m:
-                raw = m.group(1).strip().strip('\"').strip(\"'\")
+                raw = m.group(1).strip().strip('"').strip("'")
                 # Skip template placeholders
-                if raw and not raw.startswith(\"{\") and not raw.endswith(\"}\"):
+                if raw and not raw.startswith("{") and not raw.endswith("}"):
                     phrases.append(raw)
                 continue
             # end avoid_overuse block if indentation changes
-            if re.match(r\"^\\s{0,2}\\S\", line):
+            if re.match(r"^\s{0,2}\S", line):
                 in_ao = False
     # de-dupe while preserving order
     seen = set()
@@ -151,20 +152,20 @@ def extract_avoid_overuse(frontmatter):
     return out
 
 def syllables(word):
-    w = re.sub(r\"[^a-z]\", \"\", word.lower())
+    w = re.sub(r"[^a-z]", "", word.lower())
     if not w:
         return 0
     if len(w) <= 3:
         return 1
-    if w.endswith(\"e\"):
+    if w.endswith("e"):
         w = w[:-1]
-    groups = re.findall(r\"[aeiouy]+\", w)
+    groups = re.findall(r"[aeiouy]+", w)
     return max(1, len(groups))
 
 def flesch_reading_ease(text):
-    plain = re.sub(r\"^#.*$\", \"\", text, flags=re.M)
-    words = re.findall(r\"[A-Za-z0-9’']+\", plain)
-    sents = [s for s in re.split(r\"(?<=[.!?])\\s+\", plain.strip()) if re.search(r\"[A-Za-z]\", s)]
+    plain = re.sub(r"^#.*$", "", text, flags=re.M)
+    words = re.findall(r"[A-Za-z0-9'']+", plain)
+    sents = [s for s in re.split(r"(?<=[.!?])\s+", plain.strip()) if re.search(r"[A-Za-z]", s)]
     if not words or not sents:
         return None
     syll = sum(syllables(w) for w in words)
@@ -173,30 +174,144 @@ def flesch_reading_ease(text):
     return 206.835 - 1.015 * wps - 84.6 * spw
 
 def extract_planned_scene_count(text):
-    m = re.search(r\"\\*\\*Number of scenes:\\*\\*\\s*(\\d+)\", text)
+    m = re.search(r"\*\*Number of scenes:\*\*\s*(\d+)", text)
     return int(m.group(1)) if m else None
 
-project = \"{project}\"
-story = read(f\"books/{project}/06-story.md\")
-plan_path = Path(f\"books/{project}/05-story-plan.md\")
-plan_text = read(plan_path) if plan_path.exists() else read(f\"books/{project}/04-structure-plan.md\")
+project = "{project}"
+story_path = Path(f"books/{project}/06-story.md")
+chapters_dir = Path(f"books/{project}/06-chapters")
+if story_path.exists():
+    story = read(story_path)
+else:
+    chapter_paths = sorted(chapters_dir.glob("chapter-*.md"))
+    story = "\n".join(read(p) for p in chapter_paths) if chapter_paths else ""
+plan_path = Path(f"books/{project}/05-story-plan.md")
+plan_text = read(plan_path) if plan_path.exists() else read(f"books/{project}/04-structure-plan.md")
 
 fm = frontmatter_block(plan_text)
 avoid = extract_avoid_overuse(fm)
 
 flesch = flesch_reading_ease(story)
 lines = story.splitlines()
-quote_lines = sum(1 for l in lines if '\"' in l)
-scene_breaks = sum(1 for l in lines if l.strip() == \"* * *\")
+quote_lines = sum(1 for l in lines if '"' in l)
+scene_breaks = sum(1 for l in lines if l.strip() == "* * *")
 planned_scenes = extract_planned_scene_count(plan_text)
 
-print(\"flesch_est\", None if flesch is None else round(flesch, 1))
-print(\"quote_line_ratio\", f\"{quote_lines}/{len(lines)}\")
-print(\"scene_breaks\", scene_breaks)
-print(\"planned_scenes\", planned_scenes)
+print("flesch_est", None if flesch is None else round(flesch, 1))
+print("quote_line_ratio", f"{quote_lines}/{len(lines)}")
+print("scene_breaks", scene_breaks)
+print("planned_scenes", planned_scenes)
 for p in avoid:
-    print(\"phrase\", p, story.lower().count(p.lower()))
+    print("phrase", p, story.lower().count(p.lower()))
 PY
+```
+
+**PowerShell:**
+```powershell
+@'
+import re
+from pathlib import Path
+
+def read(path):
+    return Path(path).read_text(encoding="utf-8", errors="replace")
+
+def frontmatter_block(text):
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return ""
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return "\n".join(lines[1:i])
+    return ""
+
+def extract_avoid_overuse(frontmatter):
+    phrases = []
+    lines = frontmatter.splitlines()
+    in_pg = False
+    in_ao = False
+    for line in lines:
+        if re.match(r"^prose_guidance:\s*$", line):
+            in_pg, in_ao = True, False
+            continue
+        if in_pg and re.match(r"^\S", line):  # back to top-level
+            in_pg, in_ao = False, False
+        if in_pg and re.match(r"^\s{2}avoid_overuse:\s*$", line):
+            in_ao = True
+            continue
+        if in_ao:
+            m = re.match(r"^\s{4}-\s*(.+?)\s*$", line)
+            if m:
+                raw = m.group(1).strip().strip('"').strip("'")
+                # Skip template placeholders
+                if raw and not raw.startswith("{") and not raw.endswith("}"):
+                    phrases.append(raw)
+                continue
+            # end avoid_overuse block if indentation changes
+            if re.match(r"^\s{0,2}\S", line):
+                in_ao = False
+    # de-dupe while preserving order
+    seen = set()
+    out = []
+    for p in phrases:
+        key = p.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out
+
+def syllables(word):
+    w = re.sub(r"[^a-z]", "", word.lower())
+    if not w:
+        return 0
+    if len(w) <= 3:
+        return 1
+    if w.endswith("e"):
+        w = w[:-1]
+    groups = re.findall(r"[aeiouy]+", w)
+    return max(1, len(groups))
+
+def flesch_reading_ease(text):
+    plain = re.sub(r"^#.*$", "", text, flags=re.M)
+    words = re.findall(r"[A-Za-z0-9'']+", plain)
+    sents = [s for s in re.split(r"(?<=[.!?])\s+", plain.strip()) if re.search(r"[A-Za-z]", s)]
+    if not words or not sents:
+        return None
+    syll = sum(syllables(w) for w in words)
+    wps = len(words) / len(sents)
+    spw = syll / len(words)
+    return 206.835 - 1.015 * wps - 84.6 * spw
+
+def extract_planned_scene_count(text):
+    m = re.search(r"\*\*Number of scenes:\*\*\s*(\d+)", text)
+    return int(m.group(1)) if m else None
+
+project = "{project}"
+story_path = Path(f"books/{project}/06-story.md")
+chapters_dir = Path(f"books/{project}/06-chapters")
+if story_path.exists():
+    story = read(story_path)
+else:
+    chapter_paths = sorted(chapters_dir.glob("chapter-*.md"))
+    story = "\n".join(read(p) for p in chapter_paths) if chapter_paths else ""
+plan_path = Path(f"books/{project}/05-story-plan.md")
+plan_text = read(plan_path) if plan_path.exists() else read(f"books/{project}/04-structure-plan.md")
+
+fm = frontmatter_block(plan_text)
+avoid = extract_avoid_overuse(fm)
+
+flesch = flesch_reading_ease(story)
+lines = story.splitlines()
+quote_lines = sum(1 for l in lines if '"' in l)
+scene_breaks = sum(1 for l in lines if l.strip() == "* * *")
+planned_scenes = extract_planned_scene_count(plan_text)
+
+print("flesch_est", None if flesch is None else round(flesch, 1))
+print("quote_line_ratio", f"{quote_lines}/{len(lines)}")
+print("scene_breaks", scene_breaks)
+print("planned_scenes", planned_scenes)
+for p in avoid:
+    print("phrase", p, story.lower().count(p.lower()))
+'@ | python -
 ```
 
 ---
@@ -369,6 +484,10 @@ For novella/novel/epic, review specific chapter plans. For flash/short/novelette
 ### POV Discipline
 - **Consistency:** {Single POV per scene?}
 - **Any drift:** {Unintentional perspective shifts?}
+
+### Plausibility
+- **Target level:** {Does prose match `plausibility_key` (grounded/heightened/stylized) from the plan frontmatter?}
+- **Domain moments:** {If specialized domains appear, do details and consequences fit the chosen level?}
 
 ## Prose Lint (metrics)
 - **Estimated Flesch Reading Ease:** {value} (compare to style card target)

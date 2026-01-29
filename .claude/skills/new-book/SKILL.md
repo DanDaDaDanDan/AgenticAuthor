@@ -66,11 +66,20 @@ books/{book-name}/
 └── 06-chapters/        (only for novella, novel, epic)
 ```
 
-Use the Bash tool to create the directories:
+Create the directories (use your shell):
+
+**Bash:**
 ```bash
 mkdir -p books/{book-name}/06-chapters  # for novella, novel, epic
 # OR
 mkdir -p books/{book-name}              # for flash fiction, short stories, novelettes
+```
+
+**PowerShell:**
+```powershell
+New-Item -ItemType Directory -Force -Path books/{book-name}/06-chapters | Out-Null  # for novella, novel, epic
+# OR
+New-Item -ItemType Directory -Force -Path books/{book-name} | Out-Null              # for flash fiction, short stories, novelettes
 ```
 
 ### Step 3: Create project.yaml
@@ -128,16 +137,28 @@ created: {today's date in YYYY-MM-DD format}
 
 Check if books/.git exists. If not, initialize git:
 
+**Bash:**
 ```bash
 cd books && git init
+```
+
+**PowerShell:**
+```powershell
+cd books; git init
 ```
 
 ### Step 5: Create Initial Commit
 
 Stage and commit the new project:
 
+**Bash:**
 ```bash
 cd books && git add {book-name}/ && git commit -m "Add: Initialize {book-name} project"
+```
+
+**PowerShell:**
+```powershell
+cd books; git add {book-name}/; git commit -m "Add: Initialize {book-name} project"
 ```
 
 ### Step 6: Set as Active Book
@@ -153,8 +174,14 @@ project: {book-name}
 
 Commit the active book update:
 
+**Bash:**
 ```bash
 cd books && git add active-book.yaml && git commit -m "Update: Set {book-name} as active book"
+```
+
+**PowerShell:**
+```powershell
+cd books; git add active-book.yaml; git commit -m "Update: Set {book-name} as active book"
 ```
 
 ### Step 7: Confirm Creation
@@ -174,7 +201,7 @@ Created new book project: {book-name}
 This project is now active. All commands will operate on it.
 
 Next step:
-  Run /generate premise to create your story concept
+  Run /generate-premise to create your story concept (or /generate premise)
 
 To switch projects later: /select-book
 ```

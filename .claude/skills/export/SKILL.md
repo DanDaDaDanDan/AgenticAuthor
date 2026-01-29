@@ -73,7 +73,7 @@ Issues:
 If critical issues found (missing files, empty chapters, numbering gaps):
 ```
 Export blocked. Fix these issues first:
-  - Generate missing chapter 08: /generate prose
+  - Generate missing chapter 08: /generate-prose
   - Check chapter 07 for content
 
 Or force export with incomplete content? (y/n)
@@ -95,8 +95,14 @@ If no issues, proceed to export.
 
 Create the export directory if needed:
 
+**Bash:**
 ```bash
 mkdir -p books/{project}/export
+```
+
+**PowerShell:**
+```powershell
+New-Item -ItemType Directory -Force -Path books/{project}/export | Out-Null
 ```
 
 **MD Format (reader-ready):**
@@ -193,8 +199,14 @@ The exported file is ready for reading or further processing.
 
 Commit the export (consistent with "git everything" principle):
 
+**Bash:**
 ```bash
 cd books && git add {project}/export/{project}.md && git commit -m "Add: Export {project} ({format} format)"
+```
+
+**PowerShell:**
+```powershell
+cd books; git add {project}/export/{project}.md; git commit -m "Add: Export {project} ({format} format)"
 ```
 
 This maintains version history for all exports.
@@ -222,11 +234,23 @@ by {Author}
 
 Calculate and display word counts:
 
+**Bash:**
 ```bash
-# Count words in prose files
+# Count words in prose files (chaptered)
 wc -w books/{project}/06-chapters/chapter-*.md
-# or
+
+# Count words in prose (single-file)
 wc -w books/{project}/06-story.md
+```
+
+**PowerShell:**
+```powershell
+# Count words in prose files (chaptered)
+Get-ChildItem books/{project}/06-chapters -Filter "chapter-*.md" -ErrorAction SilentlyContinue |
+  ForEach-Object { [pscustomobject]@{ File=$_.Name; Words=(Get-Content $_.FullName | Measure-Object -Word).Words } }
+
+# Count words in prose (single-file)
+(Get-Content books/{project}/06-story.md | Measure-Object -Word).Words
 ```
 
 Report:
@@ -249,6 +273,12 @@ If these files exist in the project directory, include them in the export:
 **Check for these files:**
 ```bash
 ls books/{project}/dedication.md books/{project}/epigraph.md books/{project}/acknowledgments.md books/{project}/author-note.md books/{project}/about-author.md 2>/dev/null
+```
+
+**PowerShell:**
+```powershell
+Get-Item books/{project}/dedication.md, books/{project}/epigraph.md, books/{project}/acknowledgments.md, books/{project}/author-note.md, books/{project}/about-author.md -ErrorAction SilentlyContinue |
+  Select-Object -ExpandProperty Name
 ```
 
 **Updated MD Format with optional matter:**

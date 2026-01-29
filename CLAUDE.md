@@ -6,7 +6,7 @@ Guidance for Claude Code when working with AgenticAuthor. See [ARCHITECTURE.md](
 
 AgenticAuthor uses Claude Code skills for AI-powered book generation. No separate application - Claude Code is the orchestrator.
 
-**User commands:** `/generate premise` → `/generate treatment` → `/generate prose`
+**User commands:** `/generate-premise` → `/generate-treatment` → `/generate-prose` (or `/generate [stage]` as a router)
 
 Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit — the AI generates them automatically before the main output.
 
@@ -16,7 +16,10 @@ Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit 
 |-------|---------|
 | `/new-book` | Create a new book project (sets it as active) |
 | `/select-book` | Select a book project to work on |
-| `/generate` | Generate premise, treatment, or prose |
+| `/generate` | Router for stage generation |
+| `/generate-premise` | Generate 01-premise.md |
+| `/generate-treatment` | Generate 02-treatment-approach.md → 03-treatment.md |
+| `/generate-prose` | Generate planning + prose |
 | `/iterate` | Refine content with natural language feedback |
 | `/review` | Analyze content against quality standards |
 | `/status` | Show project progress |
@@ -87,9 +90,9 @@ Each stage's output contains everything the next stage needs. Read only one step
 
 Automatically generate planning documents before major outputs:
 
-**`/generate treatment`** creates `02-treatment-approach.md` (with frontmatter from premise), then `03-treatment.md` (copies frontmatter from treatment-approach).
+**`/generate-treatment`** creates `02-treatment-approach.md` (with frontmatter from premise), then `03-treatment.md` (copies frontmatter from treatment-approach).
 
-**`/generate prose`** creates `04-structure-plan.md` first. For single-file formats it then creates `05-story-plan.md` before writing `06-story.md`. For chaptered formats it then creates chapter plans and chapter prose. Each plan includes frontmatter so downstream stages are self-contained.
+**`/generate-prose`** creates `04-structure-plan.md` first. For single-file formats it then creates `05-story-plan.md` before writing `06-story.md`. For chaptered formats it then creates chapter plans and chapter prose. Each plan includes frontmatter so downstream stages are self-contained.
 
 ### Quality First
 
@@ -109,7 +112,7 @@ Generation work runs in sub-agents with isolated context:
 **Why sub-agents?**
 - Context isolation prevents contamination from earlier stages
 - Token efficiency — each generation uses minimal context
-- Autonomy — `/generate prose` runs start-to-finish without interruption
+- Autonomy — `/generate-prose` runs start-to-finish without interruption
 
 **Main agent does NOT:**
 - Ask for approval between generation steps
@@ -135,8 +138,8 @@ prose_style: "Pulp/Action"
 **Required taxonomy categories** (from base-taxonomy.json):
 - `length` — collected by `/new-book` (stored as `length_key` in frontmatter)
 - `series_structure` — collected by `/new-book` (stored as `series_structure_key` in frontmatter)
-- `target_audience` — collected by `/generate premise`
-- `content_rating` — collected by `/generate premise`
+- `target_audience` — collected by `/generate-premise`
+- `content_rating` — collected by `/generate-premise`
 
 ### Git Everything
 

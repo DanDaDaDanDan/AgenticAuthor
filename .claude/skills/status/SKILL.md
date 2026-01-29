@@ -124,6 +124,7 @@ NEXT STEPS:
 
 Use these commands to gather information:
 
+**Bash:**
 ```bash
 # Word count for a file
 wc -w books/{project}/01-premise.md
@@ -132,10 +133,25 @@ wc -w books/{project}/01-premise.md
 ls books/{project}/06-chapters/
 
 # Recent commits for project
-cd books && git log --oneline -5 -- {project}/
+cd books; git log --oneline -5 -- {project}/
 
 # Check for uncommitted changes
-cd books && git status --porcelain {project}/
+cd books; git status --porcelain {project}/
+```
+
+**PowerShell:**
+```powershell
+# Word count for a file
+(Get-Content books/{project}/01-premise.md | Measure-Object -Word).Words
+
+# List chapters
+Get-ChildItem books/{project}/06-chapters -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
+
+# Recent commits for project
+cd books; git log --oneline -5 -- {project}/
+
+# Check for uncommitted changes
+cd books; git status --porcelain {project}/
 ```
 
 **Note:** This skill uses plain ASCII characters ([x], [ ], dashes) for terminal compatibility. Avoid emoji and box-drawing characters.
@@ -191,7 +207,9 @@ WARNING: Uncommitted changes detected:
   - 01-premise.md (modified)
   - 06-chapters/chapter-03.md (new file)
 
-Consider committing with: git add . && git commit -m "message"
+Consider committing with:
+- Bash: `git add . && git commit -m "message"`
+- PowerShell: `git add .; git commit -m "message"`
 ```
 
 ## Next Steps Logic
@@ -200,9 +218,9 @@ Suggest next action based on current state:
 
 | Current State | Suggested Next Step |
 |--------------|---------------------|
-| No premise | `/generate premise` |
-| Premise only | `/generate treatment` |
-| Treatment complete | `/generate prose` (creates structure plan automatically) |
-| Some chapters done (novella/novel/epic) | `/generate prose` to continue |
+| No premise | `/generate-premise` |
+| Premise only | `/generate-treatment` |
+| Treatment complete | `/generate-prose` (creates structure plan automatically) |
+| Some chapters done (novella/novel/epic) | `/generate-prose` to continue |
 | All complete | `/export` to create final document |
 | Recent iteration | Review changes, continue writing |

@@ -73,6 +73,41 @@
         }
       }
     },
+    "plausibility": {
+      "category_name": "Plausibility / Realism",
+      "selection_rule": "select_one",
+      "description": "How strictly the story should adhere to real-world constraints for specialized domains (technology, law, medicine, military, etc.)",
+      "required": false,
+      "options": {
+        "grounded": {
+          "name": "Grounded",
+          "description": "Real-world constraints and consequences; competent systems and procedures; details should stand up to scrutiny.",
+          "expectations": [
+            "Assume capable opposition and realistic safeguards where relevant",
+            "Include plausible tradeoffs, costs, and consequences for shortcuts",
+            "Avoid common-but-implausible tropes unless explicitly justified in-story"
+          ]
+        },
+        "heightened": {
+          "name": "Heightened",
+          "description": "Cinematic realism; streamlined details and timing are acceptable, but the world remains internally consistent and consequence-aware.",
+          "expectations": [
+            "Prefer plausible simplifications over precise procedural accuracy",
+            "Include at least one meaningful constraint and a cost when domain-heavy",
+            "Maintain internal logic even when compressing timelines or complexity"
+          ]
+        },
+        "stylized": {
+          "name": "Stylized",
+          "description": "Impressionistic or allegorical; prioritize voice, theme, and mood over procedural accuracy. Keep domain mechanics light and non-technical.",
+          "expectations": [
+            "Avoid overly specific technical claims unless necessary and supported",
+            "Use evocative, high-level detail rather than step-by-step mechanics",
+            "Preserve internal consistency of the story's tone and rules"
+          ]
+        }
+      }
+    },
     "target_audience": {
       "category_name": "Target Audience",
       "selection_rule": "select_one",
@@ -276,7 +311,7 @@
   "metadata": {
     "version": "1.0",
     "required_categories": ["length", "target_audience", "content_rating", "series_structure"],
-    "optional_categories": ["pacing", "point_of_view", "ending_type"],
+    "optional_categories": ["pacing", "plausibility", "point_of_view", "ending_type"],
     "usage": "This base taxonomy should be merged with genre-specific taxonomies. Required categories must always be present in user selections."
   }
 }

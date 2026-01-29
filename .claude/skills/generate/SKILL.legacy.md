@@ -1,10 +1,10 @@
 ---
-name: generate
-description: Route to stage-specific generation (premise, treatment, prose).
+name: generate-legacy
+description: Legacy monolithic generate skill (deprecated).
 argument-hint: "[stage]"
 ---
 
-Route generation to a stage-specific skill.
+Generate content at any stage of the book creation process.
 
 ## Usage
 
@@ -15,27 +15,6 @@ Route generation to a stage-specific skill.
 ## Arguments
 
 - `stage`: One of `premise`, `treatment`, or `prose`
-
----
-
-## Routing
-
-**Recommended:** Use the stage-specific skills directly:
-- `/generate-premise` (same as `/generate premise`)
-- `/generate-treatment` (same as `/generate treatment`)
-- `/generate-prose` (same as `/generate prose`)
-
-If invoked as `/generate` with no stage, infer the next stage from existing files:
-1. If `books/{project}/01-premise.md` is missing → `premise`
-2. Else if `books/{project}/03-treatment.md` is missing → `treatment`
-3. Else → `prose`
-
-**Dispatch rules:**
-- `premise` → follow `.claude/skills/generate-premise/SKILL.md`
-- `treatment` → follow `.claude/skills/generate-treatment/SKILL.md`
-- `prose` → follow `.claude/skills/generate-prose/SKILL.md`
-
-Do NOT generate content directly in this skill. Use the stage skills.
 
 ---
 
@@ -79,17 +58,6 @@ This skill orchestrates generation by spawning sub-agents with carefully managed
    - If not found, ask the user which project to work on (or suggest `/select-book`)
 
 Read `books/{project}/project.yaml` to get project metadata (genre, length, title, author).
-
----
-
-## Legacy Stage Sections (Deprecated)
-
-Stage-specific generation instructions and templates have moved to:
-- `.claude/skills/generate-premise/SKILL.md`
-- `.claude/skills/generate-treatment/SKILL.md`
-- `.claude/skills/generate-prose/SKILL.md`
-
-Do not use the legacy stage sections below. The original monolithic version is preserved at `.claude/skills/generate/SKILL.legacy.md`.
 
 ---
 
@@ -1069,7 +1037,7 @@ For chapter 1 to N:
 Report: "{Novella/Novel/Epic} complete. {N} chapters, ~{total} words."
 ```
 
-Do NOT stop between chapters. Generate the entire book in one `/generate-prose` invocation.
+Do NOT stop between chapters. Generate the entire book in one `/generate prose` invocation.
 
 ---
 
