@@ -39,27 +39,21 @@ Do NOT generate content directly in this skill. Always dispatch to the stage ski
 
 ---
 
-## Step 0: Detect Current Project
-
-**Check for active book first:**
-
-1. Read `books/active-book.yaml` and extract the `project:` value from the YAML block
-2. If `project:` is set (not `null`), use that project
-3. If `project:` is `null` or file doesn't exist, fall back to directory detection:
-   - Look for `project.yaml` in the current directory or parent directories under `books/`
-   - If not found, ask the user which project to work on (or suggest `/select-book`)
-
-Read `books/{project}/project.yaml` to get project metadata (genre, length, title, author).
-
----
-
 ## Execution
 
-1. Detect the current project (Step 0 above)
-2. Parse the `stage` argument (or infer from existing files if not provided)
-3. Invoke the corresponding skill:
-   - `premise` → `/generate-premise`
-   - `treatment` → `/generate-treatment`
-   - `prose` → `/generate-prose`
+1. **Detect the current project:**
+   - Read `books/active-book.yaml` and extract the `project:` value
+   - If `project:` is `null` or file doesn't exist, ask user to run `/select-book`
+
+2. **Determine the stage** (from argument or infer from files):
+   - If `stage` argument provided → use it
+   - Else if `books/{project}/01-premise.md` missing → `premise`
+   - Else if `books/{project}/03-treatment.md` missing → `treatment`
+   - Else → `prose`
+
+3. **Invoke the stage skill** using the Skill tool:
+   - `premise` → `Skill(skill: "generate-premise")`
+   - `treatment` → `Skill(skill: "generate-treatment")`
+   - `prose` → `Skill(skill: "generate-prose")`
 
 This skill is purely a router. All generation logic lives in the stage-specific skills.
