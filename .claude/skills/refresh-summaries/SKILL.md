@@ -124,9 +124,7 @@ When reading prose to extract summaries:
 
 **Summary:** Focus on what actually happens, not what was planned. If the prose diverged from plans, the summary reflects the prose.
 
-**Character Arc (single-file) / Character States (chaptered):** Look at dialogue, internal monologue, and actions. For single-file, capture the full arc (start → end). For chaptered, capture state at each chapter's end.
-
-**The following apply to chaptered format only:**
+**Character States:** Look at dialogue, internal monologue, and actions to capture each character's emotional/mental state at each chapter's end.
 
 **Open Threads Ledger:** Track:
 - Questions raised but not answered

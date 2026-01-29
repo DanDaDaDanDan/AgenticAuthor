@@ -143,10 +143,10 @@ Generate a review report. **Do NOT make any changes to files.**
 
 ## Treatment Alignment
 - **Coverage:** {Does plan cover all treatment beats?}
-- **Gaps:** {Any treatment elements missing from 06-chapters/scenes?}
+- **Gaps:** {Any treatment elements missing from the planned chapters/scenes?}
 
 ## Chapter/Scene Balance
-- **Word count distribution:** {Are 06-chapters/scenes balanced?}
+- **Word count distribution:** {Are chapters/scenes balanced?}
 - **POV consistency:** {POV structure working?}
 - **Pacing flow:** {Action vs reflection balance}
 
