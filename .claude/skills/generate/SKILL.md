@@ -387,7 +387,7 @@ Do NOT read 01-premise.md or any other files.
 
 **Requirements:**
 - Follow the decisions in `02-treatment-approach.md` (structure type, act logic, risks).
-- Copy frontmatter values from `01-premise.md` (frontmatter is authoritative downstream).
+- Copy frontmatter values from `02-treatment-approach.md` (treatment-approach has all values from premise).
 - Include the **Downstream Contract** section from the template.
 
 **After:** `cd books && git add {project}/03-treatment.md && git commit -m "Add: Generate treatment for {project}"`
