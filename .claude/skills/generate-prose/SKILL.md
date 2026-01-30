@@ -137,7 +137,7 @@ Do NOT read 01-premise.md, 02-treatment-approach.md, or any other files.
 - Preserve `plausibility_key` from treatment frontmatter (do not drop or rename it). If missing (legacy), set it to `heightened` / `Heightened`. Calibrate domain detail to it.
 - Allocate per scene/chapter word targets deliberately (not uniform) and ensure they approximately sum to the overall target.
 - For flash/short/novelette: each planned scene must include explicit **Desire / Obstacle / Escalation / Turn / Cost** fields (see template).
-- **CRITICAL: Include ALL template sections** — downstream stages (story-plan or chapter-plans) will copy from structure-plan to become self-contained:
+- Include ALL template sections (downstream stages copy from structure-plan):
   - Character States (detailed: arcs, voice notes, tells, functions)
   - Story Arc Mapping (opening hook through resolution)
   - Style Notes (pacing, tone, dialogue balance, sensory focus)
@@ -172,7 +172,7 @@ Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or any oth
 
 **Requirements:**
 - Copy ALL frontmatter values from `04-structure-plan.md` (including `prose_guidance` and `plausibility_key`). If `plausibility_key` is missing (legacy), set it to `heightened` / `Heightened`.
-- **CRITICAL: Copy these sections from structure-plan to make story-plan self-contained:**
+- Copy these sections from structure-plan (making story-plan self-contained):
   - Character States (full character info with arcs, voice notes, tells, functions)
   - Story Arc Mapping (opening hook, complication, climax, resolution)
   - Style Notes (pacing, tone, dialogue balance, sensory focus)
@@ -227,12 +227,12 @@ You must obey `plausibility_key` from the story-plan frontmatter:
 - `heightened`: allow cinematic compression, but keep internal logic; when domain-heavy, include at least one constraint and a cost.
 - `stylized`: keep mechanics light and non-technical; avoid overly specific claims; prioritize voice, theme, and mood.
 
-**Required process (two-pass):**
-1. **Draft pass:** write a complete draft that covers the plan (do not polish yet).
-2. **Self-review pass:** run the checklist below (do not include the checklist in the prose file).
-3. **Revise pass:** revise for clarity, tension, and polish; then output the final revised prose.
+**Required process:**
+1. **Draft:** write a complete draft that covers the plan (do not polish yet).
+2. **Self-review:** run the checklist below (do not include the checklist in the prose file).
+3. **Revise:** revise for clarity, tension, and polish; then output the final revised prose.
 
-**Self-review checklist (required):**
+**Self-review checklist:**
 - Each scene has a clear desire / obstacle / turn (and a cost).
 - No "thesis paragraph" unless it is anchored to an immediate sensory stimulus AND a present-moment choice.
 - Supporting-character introductions do not exceed 2 sentences of explicit backstory on first meeting.
@@ -282,7 +282,7 @@ Generate `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` for Chapter {N}
 - Copy ALL frontmatter values from `04-structure-plan.md` (including `prose_guidance` and `plausibility_key`). If `plausibility_key` is missing (legacy), set it to `heightened` / `Heightened`.
 - Use structure-plan as the source of truth for this chapter's high-level content, goals, and beats.
 - Reference previous chapter plans for character states, established details, and open threads.
-- **CRITICAL: Copy/adapt these sections from structure-plan to make chapter-plan self-contained for prose generation:**
+- Copy/adapt these sections from structure-plan (making chapter-plan self-contained):
   - Character States (for characters appearing in this chapter — include arcs, voice notes, tells)
   - Style Notes (pacing, tone, dialogue balance, sensory focus — adapt for this chapter)
   - Length Strategy (how to allocate words within this chapter)
@@ -336,7 +336,12 @@ You must obey `plausibility_key` from the chapter-plan frontmatter:
 - `heightened`: allow cinematic compression, but keep internal logic; when domain-heavy, include at least one constraint and a cost.
 - `stylized`: keep mechanics light and non-technical; avoid overly specific claims; prioritize voice, theme, and mood.
 
-**Self-review checklist (required):**
+**Required process:**
+1. **Draft:** write a complete draft that covers the plan (do not polish yet).
+2. **Self-review:** run the checklist below (do not include the checklist in the prose file).
+3. **Revise:** revise for clarity, tension, and polish; then output the final revised prose.
+
+**Self-review checklist:**
 - Each scene has a clear desire / obstacle / turn (and a cost).
 - No "thesis paragraph" unless it is anchored to an immediate sensory stimulus AND a present-moment choice.
 - Supporting-character introductions do not exceed 2 sentences of explicit backstory on first meeting.
@@ -649,8 +654,11 @@ This file is the authoritative macro plan for story-plan generation (`05-story-p
 - **Arc:** {starting state → ending state}
 - **Voice notes:** {how to render their perspective}
 
-### {Other Characters}
-- **{Name}:** {role, function, and how they affect protagonist}
+### {Other Key Characters}
+- **{Name}:**
+  - **Role:** {their function in the story}
+  - **Tells/Voice:** {distinctive traits, speech patterns}
+  - **Key moments:** {where they matter most}
 
 ## Scene Breakdown
 
@@ -773,8 +781,6 @@ Copy ALL frontmatter values from structure-plan, including `prose_guidance`. Do 
 
 ## Character States
 
-{Copy ALL character information from structure-plan to make this file self-contained}
-
 ### {Protagonist}
 - **Starting emotional state:** {from structure-plan}
 - **Goal:** {from structure-plan}
@@ -827,16 +833,12 @@ Copy ALL frontmatter values from structure-plan, including `prose_guidance`. Do 
 
 ## Story Arc Mapping
 
-{Copy from structure-plan}
-
 - **Opening hook:** Scene {X} — {how it grabs the reader}
 - **Complication:** Scene {X} — {where tension rises}
 - **Climax:** Scene {X} — {the peak moment}
 - **Resolution:** Scene {X} — {how it ends}
 
 ## Style Notes
-
-{Copy from structure-plan}
 
 - **Pacing:** {overall rhythm}
 - **Tone:** {emotional quality}
@@ -845,11 +847,9 @@ Copy ALL frontmatter values from structure-plan, including `prose_guidance`. Do 
 
 ## Length Strategy
 
-{Copy from structure-plan: 2-4 sentences analyzing how this story will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
+{2-4 sentences analyzing how this story will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
 
 ## Potential Pitfalls
-
-{Copy from structure-plan}
 
 - {Thing to avoid or be careful about}
 - {Risk to watch for}
@@ -955,8 +955,6 @@ This plan is authoritative for the prose of Chapter {N}.
 - **Style compliance:** follow Style Notes and avoid Potential Pitfalls
 
 ## Character States
-
-{Copy/adapt from structure-plan's Character States for characters appearing in this chapter}
 
 ### {POV Character}
 - **Emotional state:** {where they are mentally/emotionally entering this chapter}
