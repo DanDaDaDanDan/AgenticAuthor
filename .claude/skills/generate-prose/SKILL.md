@@ -166,10 +166,16 @@ Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or any oth
 
 **Requirements:**
 - Copy ALL frontmatter values from `04-structure-plan.md` (including `prose_guidance` and `plausibility_key`). If `plausibility_key` is missing (legacy), set it to `heightened` / `Heightened`.
-- Expand each scene into a micro plan that makes prose generation difficult to “hand-wave”:
+- **CRITICAL: Copy these sections from structure-plan to make story-plan self-contained:**
+  - Character States (full character info with arcs, voice notes, tells, functions)
+  - Story Arc Mapping (opening hook, complication, climax, resolution)
+  - Style Notes (pacing, tone, dialogue balance, sensory focus)
+  - Length Strategy (how to allocate words)
+  - Potential Pitfalls (what to avoid)
+- Expand each scene into a micro plan that makes prose generation difficult to "hand-wave":
   - Explicit: Desire / Obstacle / Escalation / Turn / Cost
   - 2–4 micro-turns (state changes) per scene
-  - Identify one “must dramatize” moment per scene that may NOT be summarized in prose
+  - Identify one "must dramatize" moment per scene that may NOT be summarized in prose
 - Identify where the story will include **at least 1 meaningful disagreement between allies** (subtext engine), and what it changes.
 - If the story is domain-heavy (tech/legal/medical/etc.), ensure the plan includes at least 1 meaningful constraint and consequence appropriate to `plausibility_key` (e.g., security: authentication/logging; legal: evidence/traces; medical: limits/triage).
 
@@ -196,11 +202,17 @@ Write complete prose for `{project}`.
 1. `books/{project}/05-story-plan.md` — Story plan (authoritative prose contract)
 2. `misc/prose-style-{prose_style_key}.md` — Style card matching the project's prose style (read `prose_style_key` from frontmatter)
 
-Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md, or any other files.
+Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md, or any other files. The story-plan is fully self-contained with all character info, style notes, and pitfalls you need.
 
 **Output:** `books/{project}/06-story.md` — Complete prose
 
-**Guidance:** Follow the story plan as the authoritative contract. Use the style card for technique. Keep prose publication-ready.
+**Guidance:** Follow the story plan as the authoritative contract. The story-plan contains:
+- **Character States:** Full character info with arcs, voice notes, tells
+- **Style Notes:** Pacing, tone, dialogue balance, sensory focus
+- **Potential Pitfalls:** What to avoid
+- **Scene Micro Plans:** Desire/obstacle/turn/cost for each scene
+
+Use the style card for prose technique. Keep prose publication-ready.
 
 You must obey `prose_guidance` from the story-plan frontmatter (especially `avoid_overuse`, `pacing_notes`, and `preserve`).
 
@@ -216,11 +228,14 @@ You must obey `plausibility_key` from the story-plan frontmatter:
 
 **Self-review checklist (required):**
 - Each scene has a clear desire / obstacle / turn (and a cost).
-- No “thesis paragraph” unless it is anchored to an immediate sensory stimulus AND a present-moment choice.
+- No "thesis paragraph" unless it is anchored to an immediate sensory stimulus AND a present-moment choice.
 - Supporting-character introductions do not exceed 2 sentences of explicit backstory on first meeting.
 - Include at least 1 meaningful disagreement between allies (subtext), and ensure it changes a choice/approach.
 - If domain-heavy: include at least 1 meaningful constraint and consequence appropriate to `plausibility_key` (e.g., security: authentication/logging; legal: evidence/traces; medical: limits/triage).
 - Confirm compliance with `prose_guidance` (avoid overuse phrases/tics; apply pacing notes; preserve what must be preserved).
+- Check the **Potential Pitfalls** section in story-plan and verify you avoided each one.
+- Follow **Style Notes** for pacing, tone, and sensory focus.
+- Use **Character States** for voice notes, tells, and arc consistency.
 
 **Prose format:**
 - Start with: # {Story Title}
@@ -686,12 +701,32 @@ Copy ALL frontmatter values from structure-plan, including `prose_guidance`. Do 
 
 # Story Plan: {Title}
 
-## Structure Plan Reference
+## Story Overview
 
-**From 04-structure-plan.md:**
-- Target word count: {from structure-plan overview}
-- Scene count: {from structure-plan overview}
-- Story arc: {1-3 lines summarizing the arc}
+- **Target word count:** {from structure-plan overview}
+- **Number of scenes:** {from structure-plan overview}
+- **POV:** {from structure-plan}
+- **Timespan:** {from structure-plan}
+
+**Story arc:** {1-3 lines summarizing the arc from structure-plan}
+
+## Character States
+
+{Copy ALL character information from structure-plan to make this file self-contained}
+
+### {Protagonist}
+- **Starting emotional state:** {from structure-plan}
+- **Goal:** {from structure-plan}
+- **Internal conflict:** {from structure-plan}
+- **Arc:** {from structure-plan: starting state → ending state}
+- **Voice notes:** {from structure-plan}
+
+### {Other Key Characters}
+{For each character from structure-plan, include:}
+- **{Name}:**
+  - **Role:** {their function in the story}
+  - **Tells/Voice:** {distinctive traits, speech patterns}
+  - **Key moments:** {where they matter most}
 
 ## Voice Calibration
 
@@ -729,12 +764,44 @@ Copy ALL frontmatter values from structure-plan, including `prose_guidance`. Do 
 
 {Repeat for each scene}
 
+## Story Arc Mapping
+
+{Copy from structure-plan}
+
+- **Opening hook:** Scene {X} — {how it grabs the reader}
+- **Complication:** Scene {X} — {where tension rises}
+- **Climax:** Scene {X} — {the peak moment}
+- **Resolution:** Scene {X} — {how it ends}
+
+## Style Notes
+
+{Copy from structure-plan}
+
+- **Pacing:** {overall rhythm}
+- **Tone:** {emotional quality}
+- **Dialogue vs narration:** {balance}
+- **Sensory focus:** {what senses to emphasize}
+
+## Length Strategy
+
+{Copy from structure-plan: 2-4 sentences analyzing how this story will achieve its word count target — which moments deserve space, what naturally invites expansion, where to resist rushing}
+
+## Potential Pitfalls
+
+{Copy from structure-plan}
+
+- {Thing to avoid or be careful about}
+- {Risk to watch for}
+- {Continuity concern}
+
 ## Downstream Contract
 
 This file is the authoritative plan for prose generation (`06-story.md`).
 
 - **Prose must preserve:** scene order, key beats/turns, scene engines (desire/obstacle/escalation/turn/cost), the planned ally disagreement, and `prose_guidance`.
 - **Theme delivery constraint:** no thesis-only paragraphs; any thematic statement must be anchored to immediate sensation + present-moment choice.
+- **Character consistency:** use Character States section for arcs, voice notes, and tells.
+- **Style compliance:** follow Style Notes and avoid Potential Pitfalls.
 ```
 
 ---
