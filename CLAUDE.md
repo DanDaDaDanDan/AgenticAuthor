@@ -22,6 +22,7 @@ Planning steps (treatment-approach, structure-plan, chapter-plans) are implicit 
 | `/generate-prose` | Generate planning + prose |
 | `/iterate` | Refine content with natural language feedback |
 | `/review` | Analyze content against quality standards |
+| `/polish` | Polish prose via iterative GPT-5.2 Pro critique |
 | `/status` | Show project progress |
 | `/export` | Export book to single file |
 
