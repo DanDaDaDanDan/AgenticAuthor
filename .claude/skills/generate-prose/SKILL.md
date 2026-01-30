@@ -132,11 +132,17 @@ Do NOT read 01-premise.md, 02-treatment-approach.md, or any other files.
 **Output:** `books/{project}/04-structure-plan.md` (use the appropriate Structure Plan template from this skill)
 
 **Requirements:**
-- Copy frontmatter from `03-treatment.md` and include the template’s **Downstream Contract** section.
+- Copy frontmatter from `03-treatment.md` and include the template's **Downstream Contract** section.
 - Preserve `prose_guidance` from treatment frontmatter (do not drop or rename it).
 - Preserve `plausibility_key` from treatment frontmatter (do not drop or rename it). If missing (legacy), set it to `heightened` / `Heightened`. Calibrate domain detail to it.
 - Allocate per scene/chapter word targets deliberately (not uniform) and ensure they approximately sum to the overall target.
 - For flash/short/novelette: each planned scene must include explicit **Desire / Obstacle / Escalation / Turn / Cost** fields (see template).
+- **CRITICAL: Include ALL template sections** — downstream stages (story-plan or chapter-plans) will copy from structure-plan to become self-contained:
+  - Character States (detailed: arcs, voice notes, tells, functions)
+  - Story Arc Mapping (opening hook through resolution)
+  - Style Notes (pacing, tone, dialogue balance, sensory focus)
+  - Length Strategy (word allocation guidance)
+  - Potential Pitfalls (what to avoid)
 
 **After (Bash):** `cd books && git add {project}/04-structure-plan.md && git commit -m "Add: Generate structure plan for {project}"`
 **After (PowerShell):** `cd books; git add {project}/04-structure-plan.md; git commit -m "Add: Generate structure plan for {project}"`
@@ -196,7 +202,7 @@ Generate complete content. Do not ask for approval.
 ```
 Write complete prose for `{project}`.
 
-**Target word count:** {from story-plan/structure-plan, e.g., ~14,000 words}
+**Target word count:** {from story-plan, e.g., ~14,000 words}
 
 **Read only:**
 1. `books/{project}/05-story-plan.md` — Story plan (authoritative prose contract)
@@ -273,12 +279,16 @@ Generate `books/{project}/05-chapter-plans/chapter-{NN}-plan.md` for Chapter {N}
 **Format:** Use the Chapter Plan template from this skill.
 
 **Requirements:**
+- Copy ALL frontmatter values from `04-structure-plan.md` (including `prose_guidance` and `plausibility_key`). If `plausibility_key` is missing (legacy), set it to `heightened` / `Heightened`.
 - Use structure-plan as the source of truth for this chapter's high-level content, goals, and beats.
 - Reference previous chapter plans for character states, established details, and open threads.
+- **CRITICAL: Copy/adapt these sections from structure-plan to make chapter-plan self-contained for prose generation:**
+  - Character States (for characters appearing in this chapter — include arcs, voice notes, tells)
+  - Style Notes (pacing, tone, dialogue balance, sensory focus — adapt for this chapter)
+  - Length Strategy (how to allocate words within this chapter)
+  - Potential Pitfalls (what to avoid — both story-wide and chapter-specific)
 - Include per-scene word targets and brief development notes (what fills the space: dialogue/interiority/action/description).
 - Include a short **Downstream Contract** section stating what the prose must preserve from this plan.
-- Preserve `prose_guidance` from structure-plan frontmatter (do not drop or rename it).
-- Preserve `plausibility_key` from structure-plan frontmatter (do not drop or rename it). If missing (legacy), set it to `heightened` / `Heightened`. Calibrate domain detail to it.
 
 **After:**
 Create directory (Bash): `mkdir -p books/{project}/05-chapter-plans`
@@ -307,11 +317,17 @@ Generate `books/{project}/06-chapters/chapter-{NN}.md` (Chapter {N}) for `{proje
 2. All chapter plans in `books/{project}/05-chapter-plans/` — Current chapter plan is authoritative; future plans provide foreshadowing context
 3. `misc/prose-style-{prose_style_key}.md` — Style card (read `prose_style_key` from frontmatter)
 
-**Do NOT read:** 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md.
+**Do NOT read:** 01-premise.md, 02-treatment-approach.md, 03-treatment.md, 04-structure-plan.md. Each chapter-plan is self-contained with all character info, style notes, and pitfalls you need.
 
 **Output:** `books/{project}/06-chapters/chapter-{NN}.md` — Chapter prose
 
-**Guidance:** Follow this chapter's plan as the authoritative contract. Use previous chapter prose for continuity and future chapter plans for foreshadowing context. Keep prose publication-ready.
+**Guidance:** Follow this chapter's plan as the authoritative contract. The chapter-plan contains:
+- **Character States:** Character info with arcs, voice notes, tells for characters in this chapter
+- **Style Notes:** Pacing, tone, dialogue balance, sensory focus for this chapter
+- **Potential Pitfalls:** What to avoid
+- **Scene Breakdown:** Purpose, conflict, beats for each scene
+
+Use previous chapter prose for continuity and future chapter plans for foreshadowing context. Keep prose publication-ready.
 
 You must obey `prose_guidance` from the chapter-plan frontmatter (especially `avoid_overuse`, `pacing_notes`, and `preserve`).
 
@@ -319,6 +335,17 @@ You must obey `plausibility_key` from the chapter-plan frontmatter:
 - `grounded`: assume competent systems/procedures where relevant; include realistic constraints and consequences; avoid implausible shortcuts unless explicitly justified.
 - `heightened`: allow cinematic compression, but keep internal logic; when domain-heavy, include at least one constraint and a cost.
 - `stylized`: keep mechanics light and non-technical; avoid overly specific claims; prioritize voice, theme, and mood.
+
+**Self-review checklist (required):**
+- Each scene has a clear desire / obstacle / turn (and a cost).
+- No "thesis paragraph" unless it is anchored to an immediate sensory stimulus AND a present-moment choice.
+- Supporting-character introductions do not exceed 2 sentences of explicit backstory on first meeting.
+- If domain-heavy: include at least 1 meaningful constraint and consequence appropriate to `plausibility_key`.
+- Confirm compliance with `prose_guidance` (avoid overuse phrases/tics; apply pacing notes; preserve what must be preserved).
+- Check the **Potential Pitfalls** section in chapter-plan and verify you avoided each one.
+- Follow **Style Notes** for pacing, tone, and sensory focus.
+- Use **Character States** for voice notes, tells, and arc consistency.
+- Verify continuity with previous chapters (character states, established facts, open threads).
 
 **Chapter prose format:**
 
@@ -460,11 +487,20 @@ This file is the authoritative plan for all chapter plans.
 - **Must preserve downstream:** chapter order, POV assignments, required reveals/turns, and chapter goals
 - **Downstream changes:** only if the user explicitly requests them (otherwise treat this as the contract)
 
-## Characters
+## Character States
 
-- **{Protagonist}:** {one-line arc summary: starting state → ending state}
-- **{Antagonist/Key character}:** {one-line role summary}
-- **{Other key characters}:** {brief notes}
+### {Protagonist}
+- **Starting emotional state:** {where they begin}
+- **Goal:** {what they want}
+- **Internal conflict:** {tension driving them}
+- **Arc:** {starting state → ending state}
+- **Voice notes:** {how to render their perspective}
+
+### {Other Key Characters}
+- **{Name}:**
+  - **Role:** {their function in the story}
+  - **Tells/Voice:** {distinctive traits, speech patterns}
+  - **Key moments:** {where they matter most}
 
 ## Chapter Breakdown
 
@@ -499,6 +535,31 @@ This file is the authoritative plan for all chapter plans.
 - **Action chapters:** {List chapter numbers}
 - **Character/Reflection chapters:** {List chapter numbers}
 - **Climax chapters:** {List chapter numbers}
+
+## Story Arc Mapping
+
+- **Opening hook:** Chapter {X} — {how it grabs the reader}
+- **Rising action:** Chapters {X-Y} — {where tension builds}
+- **Midpoint:** Chapter {X} — {the shift or revelation}
+- **Climax:** Chapter {X} — {the peak moment}
+- **Resolution:** Chapter {X} — {how it ends}
+
+## Style Notes
+
+- **Pacing:** {overall rhythm}
+- **Tone:** {emotional quality}
+- **Dialogue vs narration:** {balance}
+- **Sensory focus:** {what senses to emphasize}
+
+## Length Strategy
+
+{2-4 sentences analyzing how this story will achieve its word count target — which chapters deserve more space, what naturally invites expansion, where to resist rushing}
+
+## Potential Pitfalls
+
+- {Thing to avoid or be careful about}
+- {Risk to watch for}
+- {Continuity concern}
 
 ## Continuity Tracking
 
@@ -890,17 +951,25 @@ This plan is authoritative for the prose of Chapter {N}.
 
 - **Prose must preserve:** POV, scene order, key beats/reveals, and the planned hook/turn (unless the user explicitly requests changes)
 - **Canon source:** prose agent reads all previous chapter prose for continuity
+- **Character consistency:** use Character States section for voice notes, tells, and arc position
+- **Style compliance:** follow Style Notes and avoid Potential Pitfalls
 
 ## Character States
 
+{Copy/adapt from structure-plan's Character States for characters appearing in this chapter}
+
 ### {POV Character}
-- **Emotional state:** {where they are mentally/emotionally}
+- **Emotional state:** {where they are mentally/emotionally entering this chapter}
 - **Goal this chapter:** {what they want}
 - **Internal conflict:** {what's pulling them in different directions}
-- **Voice notes:** {how their mental state affects prose voice}
+- **Arc position:** {where they are in their overall arc}
+- **Voice notes:** {how their mental state affects prose voice — include distinctive patterns, tells}
 
-### {Other Key Characters}
-- **{Name}:** {state and role this chapter}
+### {Other Key Characters in This Chapter}
+- **{Name}:**
+  - **State this chapter:** {emotional/situational state}
+  - **Role:** {function in this chapter}
+  - **Tells/Voice:** {distinctive traits, speech patterns to preserve}
 
 ## Scene-by-Scene Breakdown
 
