@@ -24,3 +24,5 @@ books/
 *.tmp
 *.log
 improvements.md
+logs/
+cache/
