@@ -170,7 +170,7 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 **For prose iteration (flash/short/novelette):**
 - `books/{project}/06-story.md` - The story being revised
 - `misc/prose-style-{prose_style_key}.md` - Style card
-- Do NOT read earlier stages (including 05-story-plan.md — prose is self-contained for iteration)
+- Do NOT read earlier stages — prose is self-contained for iteration
 
 ## Apply Changes
 
