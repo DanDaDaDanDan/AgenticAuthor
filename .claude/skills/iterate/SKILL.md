@@ -168,10 +168,9 @@ Read `books/{project}/project.yaml` to get the genre for taxonomy lookup.
 - Do NOT read 01-premise.md, 02-treatment-approach.md, 03-treatment.md, or 04-structure-plan.md
 
 **For prose iteration (flash/short/novelette):**
-- `books/{project}/05-story-plan.md` - Story plan (authoritative contract for prose)
 - `books/{project}/06-story.md` - The story being revised
 - `misc/prose-style-{prose_style_key}.md` - Style card
-- Do NOT read earlier stages
+- Do NOT read earlier stages (including 05-story-plan.md — prose is self-contained for iteration)
 
 ## Apply Changes
 
